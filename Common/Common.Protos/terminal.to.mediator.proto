@@ -1,0 +1,16 @@
+﻿syntax = "proto3";
+package protos.grpc;
+
+service TerminalToMediatorService {
+    rpc DeInit(Request) returns (Response);
+    rpc Init(Request) returns (Response);
+}
+
+message Request {
+    string requestMessage = 1;
+}
+
+message Response {
+    string responseMessage = 1;
+    string reasonMessage = 2;
+}
