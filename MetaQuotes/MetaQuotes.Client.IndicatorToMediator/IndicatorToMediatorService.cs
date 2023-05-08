@@ -35,9 +35,10 @@ public static class IndicatorToMediatorService
 
     public static string Init(int symbol, string datetime, int ask, int bid, int environment)
     {
+        Administrator.Instance.Environment = (Environment)environment;
         client = new Client((Symbol)symbol) { EnableLogging = false };
-        var quotation = new Quotation((Symbol)symbol, ParseStringToDateTime(datetime), ask, bid);
-        return Task.Run(() => client.InitAsync(quotation, (Environment)environment)).GetAwaiter().GetResult();
+        var result = client.InitAsync(symbol, datetime, ask, bid, environment).ConfigureAwait(false);
+        return result;
     }
     
     public static string Tick(int symbol, string datetime, int ask, int bid)

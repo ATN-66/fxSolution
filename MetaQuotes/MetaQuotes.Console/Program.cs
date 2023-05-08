@@ -14,7 +14,7 @@ const Environment environment = Environment.Testing;
 const Tick inputTick = Tick.UnModified;
 const int year = 2023;
 int? week = 8;
-int? day = 3;
+int? day = 2;
 
 const string ok = "ok";
 const string audioFilePath = "alert2.wav";

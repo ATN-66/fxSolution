@@ -8,6 +8,7 @@
   <ItemGroup>
     <PackageReference Include="PipeMethodCalls" Version="4.0.1" />
     <PackageReference Include="PipeMethodCalls.NetJson" Version="3.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -15,6 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="App.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -56,28 +56,16 @@ public class QuotationsProcessor
         _saveTimer.Enabled = true;
     }
 
-    private Environment? Environment
-    {
-        get => _administrator.Environment;
-        set => _administrator.Environment = value;
-    }
-
-    private bool IndicatorsIsON
-    {
-        set => _administrator.IndicatorsIsON = value;
-    }
-
     public void DeInit(Symbol symbol, DeInitReason reason)
     {
-        Environment = null;
         _allIndicatorsConnected = false;
-        IndicatorsIsON = false;
+        _administrator.IndicatorsIsON = false;
         _connectedIndicators[(int)symbol - 1] = false;
         _environments[(int)symbol - 1] = null;
         _deInitReasons[(int)symbol - 1] = reason;
     }
 
-    public string Init(Quotation quotation, Environment environment)
+    public string Init(int symbol, string datetime, int ask, int bid, int environment)
     {
         Console.Write(".");
         //if (_lastKnownQuotations[(int)symbol - 1] == null)
@@ -126,7 +114,7 @@ public class QuotationsProcessor
         return ok;
     }
 
-    public string Tick(Quotation quotation)
+    public string Tick(int symbol, string datetime, int ask, int bid)
     {
         //if (Normalize( symbol,  datetime, broker, ask, bid, out var newQuotation))
         // _mediatorToTerminalClient.Tick(newQuotation);
@@ -146,7 +134,7 @@ public class QuotationsProcessor
 
         //if (shouldSave) await SaveQuotationsAsync();
 
-        Console.WriteLine(quotation);
+        Console.WriteLine(datetime);
         return ok;
     }
    

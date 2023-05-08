@@ -22,14 +22,14 @@ public class Client : IDisposable
     private const string noConnection = "Unable to establish a connection with the server.";
     private readonly PipeClient<IQuotationsMessenger> pipeClient;
     private bool connected;
-    private readonly BlockingCollection<Quotation> Quotations = new();
-    private static readonly object ResultsLock = new();
-    private readonly Queue<string> Results = new();
+    //private readonly BlockingCollection<Quotation> Quotations = new();
+    //private static readonly object ResultsLock = new();
+    //private readonly Queue<string> Results = new();
 
     public Client(Symbol symbol)
     {
         pipeClient = new PipeClient<IQuotationsMessenger>(new NetJsonPipeSerializer(), $"IndicatorToMediator_{symbol}");
-        Task.Run(ProcessQuotationsAsync);
+        //Task.Run(ProcessQuotationsAsync);
     }
 
     public bool EnableLogging { get; set; }
@@ -50,14 +50,14 @@ public class Client : IDisposable
             // ignored
         }
     }
-
-    internal async Task<string> InitAsync(Quotation quotation, Environment environment)
+    
+    internal async Task<string> InitAsync(int symbol, string datetime, int ask, int bid, int environment)
     {
         connected = await InitializeClientAsync().ConfigureAwait(false);
         try
         {
             if (!connected) return noConnection;
-            return await pipeClient.InvokeAsync(x => x.Init(quotation, environment)).ConfigureAwait(false);
+            return await pipeClient.InvokeAsync(x => x.Init(symbol, datetime, ask, bid, environment)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -66,12 +66,12 @@ public class Client : IDisposable
         }
     }
 
-    private async Task<string> TickAsync(Quotation quotation)
+    private async Task<string> TickAsync(int symbol, string datetime, int ask, int bid)
     {
         try
         {
             if (!connected) return noConnection;
-            return await pipeClient.InvokeAsync(x => x.Tick(quotation)).ConfigureAwait(false);
+            return await pipeClient.InvokeAsync(x => x.Tick(symbol, datetime, ask, bid)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -121,24 +121,24 @@ public class Client : IDisposable
         return exceptionDetails.ToString();
     }
 
-    private async Task ProcessQuotationsAsync()
-    {
-        foreach (var quotation in Quotations.GetConsumingEnumerable())
-        {
-            var result = await TickAsync(quotation).ConfigureAwait(false);
-            lock (ResultsLock) Results.Enqueue(result);
-        }
-    }
+    //private async Task ProcessQuotationsAsync()
+    //{
+    //    foreach (var quotation in Quotations.GetConsumingEnumerable())
+    //    {
+    //        var result = await TickAsync(quotation).ConfigureAwait(false);
+    //        lock (ResultsLock) Results.Enqueue(result);
+    //    }
+    //}
 
-    public string AddQuotationToQueue(Quotation quotation)
-    {
-        Quotations.Add(quotation);
+    //public string AddQuotationToQueue(Quotation quotation)
+    //{
+    //    Quotations.Add(quotation);
 
-        lock (ResultsLock)
-        {
-            if (Results.Count > 0) { return Results.Dequeue(); }
-        }
+    //    lock (ResultsLock)
+    //    {
+    //        if (Results.Count > 0) { return Results.Dequeue(); }
+    //    }
 
-        return "ok";
-    }
+    //    return "ok";
+    //}
 }
