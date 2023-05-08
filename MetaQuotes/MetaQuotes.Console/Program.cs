@@ -10,37 +10,38 @@ using MetaQuotes.Console;
 using NAudio.Wave;
 using Environment = Common.Entities.Environment;
 
-const Environment environment = Environment.Testing;
-const Tick inputTick = Tick.UnModified;
-const int year = 2023;
-int? week = 8;
-int? day = 2;
+var config = new Configuration()
+{
+    Environment = Environment.Testing,
+    InputTick = Tick.UnModified,
+    Year = 2023,
+    Week = 8,
+    Day = 7
+};
+
 
 const string ok = "ok";
 const string audioFilePath = "alert2.wav";
-var audioFileReader = new AudioFileReader(audioFilePath);
-var waveOut = new WaveOutEvent();
-waveOut.Init(audioFileReader);
+var audioPlayer = new AudioPlayer(audioFilePath);
 
 Console.WriteLine("MT5 platform...");
-Console.WriteLine($"Environment: {environment}.");
-Console.WriteLine($"Input Ticks: {inputTick}.");
-Console.WriteLine($"Year: {year}.");
-Console.WriteLine($"Week: {week?.ToString("00") ?? "null"}.");
-Console.WriteLine($"Day: {day?.ToString("00") ?? "null"}.");
+Console.WriteLine($"Environment: {config.Environment}.");
+Console.WriteLine($"Input Ticks: {config.InputTick}.");
+Console.WriteLine($"Year: {config.Year}.");
+Console.WriteLine($"Week: {config.Week?.ToString("00") ?? "null"}.");
+Console.WriteLine($"Day: {config.Day?.ToString("00") ?? "null"}.");
+
+var (firstQuotations, quotations) = await MSSQLRepository.Instance.GetQuotationsForDayAsync(config.Year, config.Week!.Value, config.Day!.Value, config.Environment, config.InputTick).ConfigureAwait(false);
 
 CancellationTokenSource cts = new();
 var consoleServiceTask = Task.Run(() => HandleConsole(cts));
 
-var (firstQuotations, quotations) = await MSSQLRepository.Instance.GetQuotationsForDayAsync(year, week!.Value, day!.Value, environment, inputTick).ConfigureAwait(false);
 try
 {
-    while (firstQuotations.Count > 0)
-    {
-        var q = firstQuotations.Dequeue();
-        var result = IndicatorToMediatorService.Init((int)q.Symbol, q.DateTime.ToString("yyyy.MM.dd HH:mm:ss"), q.Ask, q.Bid, (int)environment);
-        if (ok != result) throw new Exception(result);
-    }
+    await InitializeIndicators(firstQuotations, config.Environment, cts.Token).ConfigureAwait(false);
+    Console.WriteLine("Initialization done...");
+    await ProcessQuotations(quotations, cts.Token).ConfigureAwait(false);
+    Console.WriteLine("Quotations done...");
 }
 catch (Exception exception)
 {
@@ -48,35 +49,51 @@ catch (Exception exception)
     return -1;
 }
 
-var OnTickTask = Task.Run(async () =>
-{
-    try
-    {
-        while (quotations.Count > 0)
-        {
-            if (cts.Token.IsCancellationRequested) break;
-            var quotation = quotations.Dequeue();
-            var result = IndicatorToMediatorService.Tick((int)quotation.Symbol, quotation.DateTime.ToString("yyyy.MM.dd HH:mm:ss"), quotation.Ask, quotation.Bid);
-            if (ok != result) throw new Exception(result);
-            await Task.Delay(10, cts.Token).ConfigureAwait(false); //TODO: adjust delay
-        }
-        foreach (var symbol in Enum.GetValues(typeof(Symbol))) IndicatorToMediatorService.DeInit((int)symbol, (int)DeInitReason.Terminal_closed);
-    }
-    catch (Exception exception)
-    {
-        EmergencyExit(exception);
-        return -1;
-    }
-
-    Console.WriteLine("There is no more quotations.");
-    return 0;
-}, cts.Token);
-
-await Task.WhenAny(consoleServiceTask, OnTickTask).ConfigureAwait(false);
-
+await Task.WhenAny(consoleServiceTask).ConfigureAwait(false);
+await DeInitializeIndicators(cts.Token).ConfigureAwait(false);
+Console.WriteLine("DeInitialization done...");
 Console.WriteLine("End of the program. Press any key to exit ...");
 Console.ReadKey();
 return 1;
+
+static Task DeInitializeIndicators(CancellationToken ct)
+{
+    foreach (Symbol symbol in Enum.GetValues(typeof(Symbol)))
+    {
+        if (ct.IsCancellationRequested) break;
+        throw new NotImplementedException();
+        //IndicatorToMediatorService.eInit((int)symbol, (int)DeInitReason.Terminal_closed);
+    }
+    return Task.CompletedTask;
+}
+
+static Task InitializeIndicators(Queue<Quotation> firstQuotations, Environment environment, CancellationToken ct)
+{
+    while (firstQuotations.Count > 0)
+    {
+        if (ct.IsCancellationRequested) break;
+        var q = firstQuotations.Dequeue();
+        throw new NotImplementedException();
+        //var result = IndicatorToMediatorService.Init((int)q.Symbol, q.DateTime.ToString("yyyy.MM.dd HH:mm:ss"), q.Ask, q.Bid, (int)environment);
+        //if (ok != result) throw new Exception(result);
+    }
+
+    return Task.CompletedTask;
+}
+
+static Task ProcessQuotations(Queue<Quotation> quotations, CancellationToken ct)
+{
+    while (quotations.Count > 0)
+    {
+        if (ct.IsCancellationRequested) break;
+        var quotation = quotations.Dequeue();
+        throw new NotImplementedException();
+        //var result = IndicatorToMediatorService.Tick((int)quotation.Symbol, quotation.DateTime.ToString("yyyy.MM.dd HH:mm:ss"), quotation.Ask, quotation.Bid);
+        //if (result != "ok") throw new Exception(result);
+    }
+
+    return Task.CompletedTask;
+}
 
 static async Task HandleConsole(CancellationTokenSource cts)
 {
@@ -87,7 +104,7 @@ static async Task HandleConsole(CancellationTokenSource cts)
 
             if (input == null)
             {
-                await Task.Delay(100).ConfigureAwait(false);
+                await Task.Delay(100, cts.Token).ConfigureAwait(false);
                 continue;
             }
 
@@ -106,15 +123,48 @@ static async Task HandleConsole(CancellationTokenSource cts)
         }
         else
         {
-            await Task.Delay(100).ConfigureAwait(false);
+            await Task.Delay(100, cts.Token).ConfigureAwait(false);
         }
 }
 
 void EmergencyExit(Exception exception)
 {
-    waveOut.Play();
+    audioPlayer.Play();
     Debug.WriteLine(exception.Message);
     Console.WriteLine(exception.Message);
     Console.WriteLine("Server is OFF. Press any key to exit...");
     Console.ReadKey();
+}
+
+internal struct Configuration
+{
+    public Environment Environment { get; set; }
+    public Tick InputTick { get; set; }
+    public int Year { get; set; }
+    public int? Week { get; set; }
+    public int? Day { get; set; }
+}
+
+internal class AudioPlayer : IDisposable
+{
+    private readonly AudioFileReader _audioFileReader;
+    private readonly WaveOutEvent _waveOut;
+
+    public AudioPlayer(string audioFilePath)
+    {
+        _audioFileReader = new AudioFileReader(audioFilePath);
+        _waveOut = new WaveOutEvent();
+        _waveOut.Init(_audioFileReader);
+    }
+
+    public void Play()
+    {
+        _waveOut.Play();
+    }
+
+    public void Dispose()
+    {
+        _waveOut.Dispose();
+        _audioFileReader.Dispose();
+    }
 }

@@ -19,7 +19,7 @@ namespace MetaQuotes.Client.IndicatorToMediator;
 public class Client : IDisposable
 {
     private const string ok = "ok";
-    private bool EnableLogging { get; set; }
+    private bool EnableLogging { get; }
     private const string noConnection = "Unable to establish a connection with the server.";
     private readonly PipeClient<IQuotationsMessenger> pipeClient;
     private bool connected;
@@ -30,8 +30,9 @@ public class Client : IDisposable
 
     public Client(Symbol symbol, bool enableLogging = false)
     {
-        EnableLogging = enableLogging;
         pipeClient = new PipeClient<IQuotationsMessenger>(new NetJsonPipeSerializer(), $"IndicatorToMediator_{symbol}");
+        EnableLogging = enableLogging;
+        if (EnableLogging) pipeClient.SetLogger(Console.WriteLine);
         Task.Run(ProcessQuotationsAsync);
     }
 
@@ -84,16 +85,15 @@ public class Client : IDisposable
 
     private async Task<bool> InitializeClientAsync()
     {
-        const int maxAttempts = 10;
+        const int maxAttempts = 5;
         const int retryDelayMilliseconds = 1000;
-        const int connectionTimeoutMilliseconds = 5000;
+        const int connectionTimeoutMilliseconds = 1000;
 
         for (var attempt = 1; attempt <= maxAttempts; attempt++)
             try
             {
                 var cts = new CancellationTokenSource(connectionTimeoutMilliseconds);
                 await pipeClient.ConnectAsync(cts.Token).ConfigureAwait(false);
-                if (EnableLogging) pipeClient.SetLogger(Console.WriteLine);
                 return true;
             }
             catch

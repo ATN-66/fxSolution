@@ -3,15 +3,11 @@
   |                                           QuotationsProcessor.cs |
   +------------------------------------------------------------------+*/
 
-using System;
 using System.Collections.Concurrent;
-using System.Security.Cryptography;
-using System.Threading.Tasks;
 using System.Timers;
 using Common.Entities;
 using Mediator.Client.Mediator.To.Terminal;
 using Mediator.Repository.Interfaces;
-using Protos.Grpc;
 using Environment = Common.Entities.Environment;
 using Timer = System.Timers.Timer;
 

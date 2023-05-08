@@ -28,11 +28,10 @@ public class IndicatorToMediatorServer : IIndicatorToMediatorServer
         while (!cancellationToken.IsCancellationRequested)
             try
             {
-                using var pipeServer = new PipeServer<IQuotationsMessenger>(pipeSerializer, PipeName,
-                    () => new QuotationsMessenger(_quotationsProcessor));
-                await pipeServer.WaitForConnectionAsync(cancellationToken);
+                using var pipeServer = new PipeServer<IQuotationsMessenger>(pipeSerializer, PipeName,() => new QuotationsMessenger(_quotationsProcessor));
+                await pipeServer.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
                 if (cancellationToken.IsCancellationRequested) break;
-                await pipeServer.WaitForRemotePipeCloseAsync(cancellationToken);
+                await pipeServer.WaitForRemotePipeCloseAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
