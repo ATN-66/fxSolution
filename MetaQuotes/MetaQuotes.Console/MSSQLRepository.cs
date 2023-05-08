@@ -50,7 +50,13 @@ public class MSSQLRepository
             await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
-                var quotation = new Quotation((Symbol)reader.GetInt32(0), reader.GetDateTime(1), reader.GetInt32(2), reader.GetInt32(3));
+                var resultSymbol = (Symbol)reader.GetInt32(0);
+                var resultDateTime = reader.GetDateTime(1);
+                resultDateTime = resultDateTime.ToUniversalTime();
+                var resultAsk = reader.GetDouble(2);
+                var resultBid = reader.GetDouble(3);
+                var quotation = new Quotation(resultSymbol, resultDateTime, resultAsk, resultBid);
+
                 if (!firstQuotationsDict.ContainsKey(quotation.Symbol))
                 {
                     firstQuotationsDict[quotation.Symbol] = quotation;
@@ -92,7 +98,13 @@ public class MSSQLRepository
 
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
-                var quotation = new Quotation((Symbol)reader.GetInt32(0), reader.GetDateTime(1), reader.GetInt32(2), reader.GetInt32(3));
+                var resultSymbol = (Symbol)reader.GetInt32(0);
+                var resultDateTime = reader.GetDateTime(1);
+                resultDateTime = resultDateTime.ToUniversalTime();
+                var resultAsk = reader.GetInt32(2);
+                var resultBid = reader.GetInt32(3);
+                var quotation = new Quotation(resultSymbol, resultDateTime, resultAsk, resultBid);
+
                 if (!firstQuotationsDict.ContainsKey(quotation.Symbol))
                 {
                     firstQuotationsDict[quotation.Symbol] = quotation;

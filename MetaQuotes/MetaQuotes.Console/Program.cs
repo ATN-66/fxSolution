@@ -4,6 +4,7 @@
   +------------------------------------------------------------------+*/
 
 using System.Diagnostics;
+using System.Globalization;
 using Common.Entities;
 using MetaQuotes.Client.IndicatorToMediator;
 using MetaQuotes.Console;
@@ -19,7 +20,8 @@ var config = new Configuration()
     Day = 7
 };
 
-
+//const string iso8601Format = "yyyy-MM-ddTHH:mm:ss.fffffffK"; // Currently not in use. Retained for informational purposes only.
+const string mt5Format = "yyyy.MM.dd HH:mm:ss"; // 2023.05.08 19:52:22 <- from MT5 
 const string ok = "ok";
 const string audioFilePath = "alert2.wav";
 var audioPlayer = new AudioPlayer(audioFilePath);
@@ -61,8 +63,7 @@ static Task DeInitializeIndicators(CancellationToken ct)
     foreach (Symbol symbol in Enum.GetValues(typeof(Symbol)))
     {
         if (ct.IsCancellationRequested) break;
-        throw new NotImplementedException();
-        //IndicatorToMediatorService.eInit((int)symbol, (int)DeInitReason.Terminal_closed);
+        IndicatorToMediatorService.DeInit((int)symbol, (int)DeInitReason.Terminal_closed);
     }
     return Task.CompletedTask;
 }
@@ -73,11 +74,9 @@ static Task InitializeIndicators(Queue<Quotation> firstQuotations, Environment e
     {
         if (ct.IsCancellationRequested) break;
         var q = firstQuotations.Dequeue();
-        throw new NotImplementedException();
-        //var result = IndicatorToMediatorService.Init((int)q.Symbol, q.DateTime.ToString("yyyy.MM.dd HH:mm:ss"), q.Ask, q.Bid, (int)environment);
-        //if (ok != result) throw new Exception(result);
+        var result = IndicatorToMediatorService.Init((int)q.Symbol, q.DateTime.ToString(mt5Format), q.Ask, q.Bid, (int)environment);
+        if (ok != result) throw new Exception(result);
     }
-
     return Task.CompletedTask;
 }
 
@@ -87,11 +86,9 @@ static Task ProcessQuotations(Queue<Quotation> quotations, CancellationToken ct)
     {
         if (ct.IsCancellationRequested) break;
         var quotation = quotations.Dequeue();
-        throw new NotImplementedException();
-        //var result = IndicatorToMediatorService.Tick((int)quotation.Symbol, quotation.DateTime.ToString("yyyy.MM.dd HH:mm:ss"), quotation.Ask, quotation.Bid);
-        //if (result != "ok") throw new Exception(result);
+        var result = IndicatorToMediatorService.Tick((int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.Ask, quotation.Bid);
+        if (ok != result) throw new Exception(result);
     }
-
     return Task.CompletedTask;
 }
 
@@ -136,13 +133,13 @@ void EmergencyExit(Exception exception)
     Console.ReadKey();
 }
 
-internal struct Configuration
+internal readonly struct Configuration
 {
-    public Environment Environment { get; set; }
-    public Tick InputTick { get; set; }
-    public int Year { get; set; }
-    public int? Week { get; set; }
-    public int? Day { get; set; }
+    public Environment Environment { get; init; }
+    public Tick InputTick { get; init; }
+    public int Year { get; init; }
+    public int? Week { get; init; }
+    public int? Day { get; init; }
 }
 
 internal class AudioPlayer : IDisposable

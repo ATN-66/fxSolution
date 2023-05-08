@@ -7,12 +7,12 @@ using System;
 
 namespace Common.Entities;
 
-public readonly record struct Quotation(Symbol Symbol, DateTime DateTime, int Ask, int Bid) : IComparable
+public readonly record struct Quotation(Symbol Symbol, DateTime DateTime, double Ask, double Bid) : IComparable
 {
     public readonly Symbol Symbol = Symbol;
     public readonly DateTime DateTime = DateTime;
-    public readonly int Ask = Ask;
-    public readonly int Bid = Bid;
+    public readonly double Ask = Ask;
+    public readonly double Bid = Bid;
 
     public int CompareTo(object obj)
     {
@@ -27,6 +27,6 @@ public readonly record struct Quotation(Symbol Symbol, DateTime DateTime, int As
 
     public override string ToString()
     {
-        return $"{Symbol}|{DateTime:dd.MM.yyyy HH:mm:ss.fff}|{Ask:D6}|{Bid:D6}";
+        return $"{Symbol}|{DateTime:yyyy.MM.dd HH:mm:s.fff}|{Ask:D6}|{Bid:D6}";
     }
 }

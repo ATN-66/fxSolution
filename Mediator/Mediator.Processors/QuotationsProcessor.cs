@@ -3,11 +3,16 @@
   |                                           QuotationsProcessor.cs |
   +------------------------------------------------------------------+*/
 
+using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Globalization;
 using System.Timers;
 using Common.Entities;
 using Mediator.Client.Mediator.To.Terminal;
 using Mediator.Repository.Interfaces;
+using Microsoft.SqlServer.Server;
+using Protos.Grpc;
 using Environment = Common.Entities.Environment;
 using Timer = System.Timers.Timer;
 
@@ -15,12 +20,9 @@ namespace Mediator.Processors;
 
 public class QuotationsProcessor
 {
+    readonly string[] _formats = { "yyyy.MM.dd HH:mm:ss" }; // const string mt5Format = "yyyy.MM.dd HH:mm:ss"; // 2023.05.08 19:52:22 <- from MT5 
+    private const string MultipleConnections = "Indicator cannot connect more that one time.";
     private const string ok = "ok";
-    private const string DevelopmentMachineName = "UNIT1065";
-    private const string ProductionMachineName = "UNIT1068";
-    private const string DevelopmentConnectedMessage = " MT5(Development) connected. ";
-    private const string ProductionConnectedMessage = " MT5(Production) connected. ";
-
     private const int _batchSize = 1000;
     private const int minutes = 10;
     private static readonly int _totalIndicators = Enum.GetValues(typeof(Symbol)).Length;
@@ -63,22 +65,52 @@ public class QuotationsProcessor
 
     public string Init(int symbol, string datetime, double ask, double bid, int environment)
     {
-        _administrator.Environment = (Environment)environment;
-        Console.Write(".");
-        //if (_lastKnownQuotations[(int)symbol - 1] == null)
-        //{
-        //    _lastKnownQuotations[(int)symbol - 1] =
-        //        new Quotation(symbol, datetime, broker, (ask / 10) * 10, (bid / 10) * 10);//last digit to zero
-        //}
-        //else throw new Exception("Indicator cannot connect more that one time.");
+        // 2022-05-01 21:05:45:475 <- in .csv (tickstory-ducascopy)
+        // 2022-01-10 00:00:00.2530000 <- in db testing.unmodified (tickstory-ducascopy)
+        // 2023.05.08 19:52:22 <- from MT5
+        // 2023.02.26 22:00:00 <- from simulator (transformed)
+
+        if (_lastKnownQuotations[symbol - 1] == null)
+        {
+            Debug.Assert(_environments[symbol - 1] == null);
+            _environments[symbol - 1] = (Environment)environment;
+
+            var resultSymbol = (Symbol)symbol;
+            var resultDateTime = DateTime.ParseExact(datetime, _formats, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
+            double resultAsk = ModifyNumber(ask);
+            double resultBid;
+
+            switch (resultSymbol)
+            {
+                case Symbol.EURGBP:
+                case Symbol.EURUSD:
+                case Symbol.GBPUSD:
+                    resultAsk = (int)(ask * 100_000);
+                    resultBid = (int)(bid * 100_000);
+                    break;
+                case Symbol.EURJPY:
+                case Symbol.GBPJPY:
+                case Symbol.USDJPY:
+                    resultAsk = (int)(ask * 1_000);
+                    resultBid = (int)(bid * 1_000);
+                    break;
+                default: throw new ArgumentOutOfRangeException();
+            }
+
+            //wrong! if 0 last digit?
+            throw new NotImplementedException();
+
+            resultAsk = (resultAsk / 10 + 1) * 10; //Act as ceiling
+            resultBid = resultBid / 10 * 10; //Act as a flooring
+        }
+        else throw new Exception(MultipleConnections);
+
+
+
 
         //_connectedIndicators[(int)symbol - 1] = true;
-        //_environments[(int)symbol - 1] = machineName switch
-        //{
-        //    DevelopmentMachineName => Common.Entities.Environment.Development,
-        //    ProductionMachineName => Common.Entities.Environment.Production,
-        //    _ => throw new Exception("Machine Name is unknown.")
-        //};
+       
+       
 
         //_allIndicatorsConnected = true;
         //for (var i = 1; i <= _totalIndicators; i++)
@@ -109,7 +141,23 @@ public class QuotationsProcessor
 
         //IndicatorsIsON = _allIndicatorsConnected;
         return ok;
+
+
+
     }
+
+    public static double ModifyNumber(double input)
+    {
+        int lastDigit = (int)(input * 100000) % 10;
+        if (lastDigit != 0)
+        {
+            input = Math.Floor(input * 10000) / 10000 + 0.0001;
+        }
+        return input;
+    }
+
+
+
 
     public string Tick(int symbol, string datetime, double ask, double bid)
     {
@@ -239,11 +287,8 @@ public class QuotationsProcessor
 //    return resultDateTime;
 //}
 
-//if (Symbol() == "EURUSD") { symbol = 1; k = 100000; }
 
-//else if (Symbol() == "GBPUSD") { symbol = 2; k = 100000; }
-//else if (Symbol() == "USDJPY") { symbol = 3; k = 1000; }
-//else if (Symbol() == "EURGBP") { symbol = 4; k = 100000; }
-//else if (Symbol() == "EURJPY") { symbol = 5; k = 1000; }
-//else if (Symbol() == "GBPJPY") { symbol = 6; k = 1000; }
-//else { Print("This chart has a wrong Symbol."); PlaySound("disconnect.wav"); return INIT_FAILED; }
+
+
+//        datetime = quotation.DateTime;
+//        while (lastKnownQuotation.DateTime >= datetime) datetime = datetime.AddMilliseconds(1);
