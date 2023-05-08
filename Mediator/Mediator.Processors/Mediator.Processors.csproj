@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="C5" Version="2.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\Common.MetaQuotes.Mediator\Common.MetaQuotes.Mediator.csproj" />
+    <ProjectReference Include="..\..\Common\Common.Protos\Common.Protos.csproj" />
+    <ProjectReference Include="..\Mediator.Administrator\Mediator.Administrator.csproj" />
+    <ProjectReference Include="..\Mediator.Client.Mediator.To.Terminal\Mediator.Client.Mediator.To.Terminal.csproj" />
+    <ProjectReference Include="..\Mediator.Repository.Interfaces\Mediator.Repository.Interfaces.csproj" />
+    <ProjectReference Include="..\Mediator.Repository\Mediator.Repository.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,18 @@
+﻿syntax = "proto3";
+package protos.grpc;
+import "timestamp.proto";
+
+service MediatorToTerminalService {
+    rpc Tick(stream gQuotation) returns (stream Reply);
+}
+
+message gQuotation {
+    int32 symbol = 1;
+    google.protobuf.Timestamp dateTime = 2;
+    int32 ask = 3;
+    int32 bid = 4;
+}
+
+message Reply {
+    string replyMessage = 1;
+}
