@@ -24,7 +24,7 @@ public class ConsoleService
                 case "exit":
                     _cts.Cancel();
                     return Task.CompletedTask;
-                case "clear":
+                case "cls":
                     System.Console.Clear();
                     break;
                 default:

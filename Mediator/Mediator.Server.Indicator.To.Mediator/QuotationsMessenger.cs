@@ -8,7 +8,6 @@
 using Common.Entities;
 using Common.MetaQuotes.Mediator;
 using Mediator.Processors;
-using Environment = Common.Entities.Environment;
 
 namespace Mediator.Server.Indicator.To.Mediator;
 
@@ -31,12 +30,12 @@ public class QuotationsMessenger : IQuotationsMessenger // , IDisposable
          _quotationsProcessor.DeInit(symbol, reason);
     }
 
-    public string Init(int symbol, string datetime, int ask, int bid, int environment)
+    public string Init(int symbol, string datetime, double ask, double bid, int environment)
     {
         return _quotationsProcessor.Init(symbol, datetime, ask, bid, environment);
     }
 
-    public string Tick(int symbol, string datetime, int ask, int bid)
+    public string Tick(int symbol, string datetime, double ask, double bid)
     {
         return _quotationsProcessor.Tick(symbol, datetime, ask, bid);
     }

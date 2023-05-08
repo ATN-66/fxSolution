@@ -65,8 +65,9 @@ public class QuotationsProcessor
         _deInitReasons[(int)symbol - 1] = reason;
     }
 
-    public string Init(int symbol, string datetime, int ask, int bid, int environment)
+    public string Init(int symbol, string datetime, double ask, double bid, int environment)
     {
+        _administrator.Environment = (Environment)environment;
         Console.Write(".");
         //if (_lastKnownQuotations[(int)symbol - 1] == null)
         //{
@@ -114,7 +115,7 @@ public class QuotationsProcessor
         return ok;
     }
 
-    public string Tick(int symbol, string datetime, int ask, int bid)
+    public string Tick(int symbol, string datetime, double ask, double bid)
     {
         //if (Normalize( symbol,  datetime, broker, ask, bid, out var newQuotation))
         // _mediatorToTerminalClient.Tick(newQuotation);
@@ -134,7 +135,8 @@ public class QuotationsProcessor
 
         //if (shouldSave) await SaveQuotationsAsync();
 
-        Console.WriteLine(datetime);
+        Console.WriteLine($"{symbol}|{datetime}|{ask:000.00000}|{bid:000.00000}");
+        //Console.Write(".");
         return ok;
     }
    
@@ -230,3 +232,22 @@ public class QuotationsProcessor
         return false;
     }
 }
+
+
+//private static DateTime ParseStringToDateTime(string datetime)
+//{
+//    DateTime resultDateTime;
+//    if (DateTime.TryParse(datetime, out var parsedDateTime)) resultDateTime = parsedDateTime;
+//    else throw new ArgumentException("The provided date string could not be parsed into a valid DateTime.");
+//    if (resultDateTime.Kind != DateTimeKind.Utc) resultDateTime = resultDateTime.ToUniversalTime();
+//    return resultDateTime;
+//}
+
+//if (Symbol() == "EURUSD") { symbol = 1; k = 100000; }
+
+//else if (Symbol() == "GBPUSD") { symbol = 2; k = 100000; }
+//else if (Symbol() == "USDJPY") { symbol = 3; k = 1000; }
+//else if (Symbol() == "EURGBP") { symbol = 4; k = 100000; }
+//else if (Symbol() == "EURJPY") { symbol = 5; k = 1000; }
+//else if (Symbol() == "GBPJPY") { symbol = 6; k = 1000; }
+//else { Print("This chart has a wrong Symbol."); PlaySound("disconnect.wav"); return INIT_FAILED; }

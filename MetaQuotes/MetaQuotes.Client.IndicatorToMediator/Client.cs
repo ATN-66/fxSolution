@@ -13,26 +13,27 @@ using Common.Entities;
 using Common.MetaQuotes.Mediator;
 using PipeMethodCalls;
 using PipeMethodCalls.NetJson;
-using Environment = Common.Entities.Environment;
 
 namespace MetaQuotes.Client.IndicatorToMediator;
 
 public class Client : IDisposable
 {
+    private const string ok = "ok";
+    private bool EnableLogging { get; set; }
     private const string noConnection = "Unable to establish a connection with the server.";
     private readonly PipeClient<IQuotationsMessenger> pipeClient;
     private bool connected;
-    //private readonly BlockingCollection<Quotation> Quotations = new();
-    //private static readonly object ResultsLock = new();
-    //private readonly Queue<string> Results = new();
 
-    public Client(Symbol symbol)
+    private readonly BlockingCollection<(int symbol, string datetime, double ask, double bid)> Quotations = new();
+    private readonly object ResultsLock = new();
+    private readonly Queue<string> Results = new();
+
+    public Client(Symbol symbol, bool enableLogging = false)
     {
+        EnableLogging = enableLogging;
         pipeClient = new PipeClient<IQuotationsMessenger>(new NetJsonPipeSerializer(), $"IndicatorToMediator_{symbol}");
-        //Task.Run(ProcessQuotationsAsync);
+        Task.Run(ProcessQuotationsAsync);
     }
-
-    public bool EnableLogging { get; set; }
 
     public void Dispose()
     {
@@ -50,14 +51,15 @@ public class Client : IDisposable
             // ignored
         }
     }
-    
-    internal async Task<string> InitAsync(int symbol, string datetime, int ask, int bid, int environment)
+
+    internal async Task<string> InitAsync(int symbol, string datetime, double ask, double bid, int environment)
     {
         connected = await InitializeClientAsync().ConfigureAwait(false);
         try
         {
             if (!connected) return noConnection;
-            return await pipeClient.InvokeAsync(x => x.Init(symbol, datetime, ask, bid, environment)).ConfigureAwait(false);
+            var result = await pipeClient.InvokeAsync(x => x.Init(symbol, datetime, ask, bid, environment)).ConfigureAwait(false);
+            return result;
         }
         catch (Exception ex)
         {
@@ -66,12 +68,12 @@ public class Client : IDisposable
         }
     }
 
-    private async Task<string> TickAsync(int symbol, string datetime, int ask, int bid)
+    private async Task<string> TickAsync((int symbol, string datetime, double ask, double bid) quotation)
     {
         try
         {
             if (!connected) return noConnection;
-            return await pipeClient.InvokeAsync(x => x.Tick(symbol, datetime, ask, bid)).ConfigureAwait(false);
+            return await pipeClient.InvokeAsync(x => x.Tick(quotation.symbol, quotation.datetime, quotation.ask, quotation.bid)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -121,24 +123,19 @@ public class Client : IDisposable
         return exceptionDetails.ToString();
     }
 
-    //private async Task ProcessQuotationsAsync()
-    //{
-    //    foreach (var quotation in Quotations.GetConsumingEnumerable())
-    //    {
-    //        var result = await TickAsync(quotation).ConfigureAwait(false);
-    //        lock (ResultsLock) Results.Enqueue(result);
-    //    }
-    //}
+    private async Task ProcessQuotationsAsync()
+    {
+        foreach (var (symbol, datetime, ask, bid) in Quotations.GetConsumingEnumerable())
+        {
+            var result = await TickAsync((symbol, datetime, ask, bid)).ConfigureAwait(false);
+            lock (ResultsLock) Results.Enqueue(result);
+        }
+    }
 
-    //public string AddQuotationToQueue(Quotation quotation)
-    //{
-    //    Quotations.Add(quotation);
-
-    //    lock (ResultsLock)
-    //    {
-    //        if (Results.Count > 0) { return Results.Dequeue(); }
-    //    }
-
-    //    return "ok";
-    //}
+    public string Add(int symbol, string datetime, double ask, double bid)
+    {
+        Quotations.Add((symbol, datetime, ask, bid));
+        lock (ResultsLock) if (Results.Count > 0) { return Results.Dequeue(); }
+        return ok;
+    }
 }
