@@ -32,15 +32,16 @@ public class MediatorToTerminalServer : MediatorToTerminalService.MediatorToTerm
 
     public override async Task Tick(IAsyncStreamReader<gQuotation> requestStream, IServerStreamWriter<Reply> responseStream, ServerCallContext context)
     {
-        while (await requestStream.MoveNext(CancellationToken.None))
-        {
-            var gQuotation = requestStream.Current;
-            var quotation = new Quotation((Symbol)gQuotation.Symbol, gQuotation.DateTime.ToDateTime(), gQuotation.Ask, gQuotation.Bid);
+        throw new NotImplementedException();
+        //while (await requestStream.MoveNext(CancellationToken.None))
+        //{
+        //    var gQuotation = requestStream.Current;
+        //    var quotation = new Quotation((Symbol)gQuotation.Symbol, gQuotation.DateTime.ToDateTime(), gQuotation.Ask, gQuotation.Bid);
 
-            if(quotation.Symbol == Symbol.EURUSD) System.Console.WriteLine(quotation.Ask);
+        //    if(quotation.Symbol == Symbol.EURUSD) System.Console.WriteLine(quotation);
 
-            var message = new Reply { ReplyMessage = "ok" };
-            await responseStream.WriteAsync(message);
-        }
+        //    var message = new Reply { ReplyMessage = "ok" };
+        //    await responseStream.WriteAsync(message);
+        //}
     }
 }

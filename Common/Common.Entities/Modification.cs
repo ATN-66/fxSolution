@@ -1,8 +1,8 @@
 ﻿namespace Common.Entities
 {
-    public enum Tick
+    public enum Modification
     {
         UnModified = 1,
-        AfterFiltration = 2
+        Normalized = 2
     }
 }

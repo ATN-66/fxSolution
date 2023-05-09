@@ -30,29 +30,31 @@ public class OrdersProcessor
 
     public async Task<Response> InitAsync(Request request)
     {
-        if (request.RequestMessage != "Hello") throw new Exception("Wrong request.");
-        Response response;
-        if (_administrator.IndicatorsIsON)//TODO: Expert Advisor
-        {
-            _administrator.TerminalIsON = true;
-            response = new Response
-            {
-                ResponseMessage = "Hello",
-                ReasonMessage = "Let's start!"
-            };
-            Console.WriteLine("Terminal connected!");
-        }
-        else
-        {
-            _administrator.TerminalIsON = false;
-            response = new Response
-            {
-                ResponseMessage = "Goodbye",
-                ReasonMessage = "MetaQuotes.MT5 platform is OFF."
-            };
-            Console.WriteLine("Terminal rejected.");
-        }
+        throw new NotImplementedException();
 
-        return await Task.FromResult(response);
+        //if (request.RequestMessage != "Hello") throw new Exception("Wrong request.");
+        //Response response;
+        //if (_administrator.IndicatorsIsON)//TODO: Expert Advisor
+        //{
+        //    _administrator.TerminalIsON = true;
+        //    response = new Response
+        //    {
+        //        ResponseMessage = "Hello",
+        //        ReasonMessage = "Let's start!"
+        //    };
+        //    Console.WriteLine("Terminal connected!");
+        //}
+        //else
+        //{
+        //    _administrator.TerminalIsON = false;
+        //    response = new Response
+        //    {
+        //        ResponseMessage = "Goodbye",
+        //        ReasonMessage = "MetaQuotes.MT5 platform is OFF."
+        //    };
+        //    Console.WriteLine("Terminal rejected.");
+        //}
+
+        //return await Task.FromResult(response);
     }
 }

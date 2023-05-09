@@ -3,6 +3,8 @@
   |                                     IndicatorToMediatorServer.cs |
   +------------------------------------------------------------------+*/
 
+using System;
+using System.Diagnostics;
 using Common.Entities;
 using Common.MetaQuotes.Mediator;
 using Mediator.Processors;
@@ -29,17 +31,21 @@ public class IndicatorToMediatorServer : IIndicatorToMediatorServer
             try
             {
                 using var pipeServer = new PipeServer<IQuotationsMessenger>(pipeSerializer, PipeName,() => new QuotationsMessenger(_quotationsProcessor));
+                if (cancellationToken.IsCancellationRequested) break;
                 await pipeServer.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
                 if (cancellationToken.IsCancellationRequested) break;
                 await pipeServer.WaitForRemotePipeCloseAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
+                // Operation cancellation is a part of the expected program flow and does not require additional handling.
                 break;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Server error: {ex.Message}"); //TODO: ILoger
+                Debug.WriteLine(ex.Message);
+                Console.WriteLine($"Server error: {ex.Message}");
+                break;
             }
     }
 }

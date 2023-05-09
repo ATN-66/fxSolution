@@ -14,26 +14,25 @@ using Environment = Common.Entities.Environment;
 var config = new Configuration()
 {
     Environment = Environment.Testing,
-    InputTick = Tick.UnModified,
+    InputModification = Modification.UnModified,
     Year = 2023,
     Week = 8,
-    Day = 7
+    Day = 0
 };
 
-//const string iso8601Format = "yyyy-MM-ddTHH:mm:ss.fffffffK"; // Currently not in use. Retained for informational purposes only.
 const string mt5Format = "yyyy.MM.dd HH:mm:ss"; // 2023.05.08 19:52:22 <- from MT5 
 const string ok = "ok";
 const string audioFilePath = "alert2.wav";
 var audioPlayer = new AudioPlayer(audioFilePath);
 
-Console.WriteLine("MT5 platform...");
+Console.WriteLine("MT5 platform simulator...");
 Console.WriteLine($"Environment: {config.Environment}.");
-Console.WriteLine($"Input Ticks: {config.InputTick}.");
+Console.WriteLine($"Input Ticks: {config.InputModification}.");
 Console.WriteLine($"Year: {config.Year}.");
 Console.WriteLine($"Week: {config.Week?.ToString("00") ?? "null"}.");
 Console.WriteLine($"Day: {config.Day?.ToString("00") ?? "null"}.");
 
-var (firstQuotations, quotations) = await MSSQLRepository.Instance.GetQuotationsForDayAsync(config.Year, config.Week!.Value, config.Day!.Value, config.Environment, config.InputTick).ConfigureAwait(false);
+var (firstQuotations, quotations) = await MSSQLRepository.Instance.GetQuotationsForDayAsync(config.Year, config.Week!.Value, config.Day!.Value, config.Environment, config.InputModification).ConfigureAwait(false);
 
 CancellationTokenSource cts = new();
 var consoleServiceTask = Task.Run(() => HandleConsole(cts));
@@ -73,8 +72,8 @@ static Task InitializeIndicators(Queue<Quotation> firstQuotations, Environment e
     while (firstQuotations.Count > 0)
     {
         if (ct.IsCancellationRequested) break;
-        var q = firstQuotations.Dequeue();
-        var result = IndicatorToMediatorService.Init((int)q.Symbol, q.DateTime.ToString(mt5Format), q.Ask, q.Bid, (int)environment);
+        var quotation = firstQuotations.Dequeue();
+        var result = IndicatorToMediatorService.Init((int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.DoubleAsk, quotation.DoubleBid, (int)environment);
         if (ok != result) throw new Exception(result);
     }
     return Task.CompletedTask;
@@ -86,7 +85,7 @@ static Task ProcessQuotations(Queue<Quotation> quotations, CancellationToken ct)
     {
         if (ct.IsCancellationRequested) break;
         var quotation = quotations.Dequeue();
-        var result = IndicatorToMediatorService.Tick((int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.Ask, quotation.Bid);
+        var result = IndicatorToMediatorService.Tick((int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.DoubleAsk, quotation.DoubleBid);
         if (ok != result) throw new Exception(result);
     }
     return Task.CompletedTask;
@@ -136,7 +135,7 @@ void EmergencyExit(Exception exception)
 internal readonly struct Configuration
 {
     public Environment Environment { get; init; }
-    public Tick InputTick { get; init; }
+    public Modification InputModification { get; init; }
     public int Year { get; init; }
     public int? Week { get; init; }
     public int? Day { get; init; }

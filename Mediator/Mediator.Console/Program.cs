@@ -9,8 +9,6 @@ using Mediator.Administrator;
 using Mediator.Client.Mediator.To.Terminal;
 using Mediator.Console;
 using Mediator.Processors;
-using Mediator.Repository;
-using Mediator.Repository.Interfaces;
 using Mediator.Server.Indicator.To.Mediator;
 using Mediator.Server.Terminal.To.Mediator;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,7 +55,6 @@ static IHostBuilder CreateHostBuilder(string[] args)
             services.AddSingleton<Administrator>();
             services.AddSingleton<QuotationsProcessor>();
             services.AddSingleton<OrdersProcessor>();
-            services.AddSingleton<IQuotationsRepository, MSSQLRepository>();
             services.AddSingleton<ConsoleService>();
         });
 }

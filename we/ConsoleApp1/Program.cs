@@ -8,11 +8,9 @@ const double n07 = 0.09126;
 const double n08 = 0.09137;
 const double n09 = 1.09188;
 const double n10 = 1.09129;
-
 const double n11 = 0.091371234;
 const double n12 = 1.091807865;
 const double n13 = 1.091215664532323;
-
 
 var r01 = Ask_EUR_USD_GBP_Ceiling(n01);
 var r02 = Ask_EUR_USD_GBP_Ceiling(n02);
@@ -24,7 +22,6 @@ var r07 = Ask_EUR_USD_GBP_Ceiling(n07);
 var r08 = Ask_EUR_USD_GBP_Ceiling(n08);
 var r09 = Ask_EUR_USD_GBP_Ceiling(n09);
 var r10 = Ask_EUR_USD_GBP_Ceiling(n10);
-
 var r11 = Ask_EUR_USD_GBP_Ceiling(n11);
 var r12 = Ask_EUR_USD_GBP_Ceiling(n12);
 var r13 = Ask_EUR_USD_GBP_Ceiling(n13);
@@ -39,7 +36,6 @@ Console.WriteLine($"Ask_EUR_USD_GBP_Ceiling: {n07} -> {r07}");
 Console.WriteLine($"Ask_EUR_USD_GBP_Ceiling: {n08} -> {r08}");
 Console.WriteLine($"Ask_EUR_USD_GBP_Ceiling: {n09} -> {r09}");
 Console.WriteLine($"Ask_EUR_USD_GBP_Ceiling: {n10} -> {r10}");
-
 Console.WriteLine($"Ask_EUR_USD_GBP_Ceiling: {n11} -> {r11}");
 Console.WriteLine($"Ask_EUR_USD_GBP_Ceiling: {n12} -> {r12}");
 Console.WriteLine($"Ask_EUR_USD_GBP_Ceiling: {n13} -> {r13}");

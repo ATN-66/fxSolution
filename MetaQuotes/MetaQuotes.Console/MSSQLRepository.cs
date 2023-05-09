@@ -6,6 +6,7 @@
 using System.Data;
 using System.Data.SqlClient;
 using Common.Entities;
+using MetaQuotes.Client.IndicatorToMediator;
 using Environment = Common.Entities.Environment;
 
 namespace MetaQuotes.Console;
@@ -25,11 +26,11 @@ public class MSSQLRepository
         }
     }
 
-    public async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForDayAsync(int year, int week, int day, Environment env, Tick dest)
+    public async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForDayAsync(int year, int week, int day, Environment environment, Modification modification)
     {
         switch (day)
         {
-            case 0: return await GetQuotationsForWeekAsync(year, week, env, dest).ConfigureAwait(false);
+            case 0: return await GetQuotationsForWeekAsync(year, week, environment, modification).ConfigureAwait(false);
             case < 1 or > 7: throw new ArgumentOutOfRangeException(nameof(day), "day must be between 1 and 7.");
         }
 
@@ -37,7 +38,7 @@ public class MSSQLRepository
         var firstQuotations = new Queue<Quotation>();
         var quotations = new Queue<Quotation>();
 
-        var databaseName = GetDatabaseName(year, week, env, dest);
+        var databaseName = GetDatabaseName(year, week, environment, modification);
         var connectionString = $"Server=localhost\\SQLEXPRESS;Database={databaseName};Trusted_Connection=True;";
 
         await using (var connection = new SqlConnection(connectionString))
@@ -51,11 +52,10 @@ public class MSSQLRepository
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
                 var resultSymbol = (Symbol)reader.GetInt32(0);
-                var resultDateTime = reader.GetDateTime(1);
-                resultDateTime = resultDateTime.ToUniversalTime();
+                var resultDateTime = reader.GetDateTime(1).ToUniversalTime();
                 var resultAsk = reader.GetDouble(2);
                 var resultBid = reader.GetDouble(3);
-                var quotation = new Quotation(resultSymbol, resultDateTime, resultAsk, resultBid);
+                var quotation = new Quotation(resultSymbol, resultDateTime, resultAsk, resultBid, 0, 0);
 
                 if (!firstQuotationsDict.ContainsKey(quotation.Symbol))
                 {
@@ -78,14 +78,14 @@ public class MSSQLRepository
 
         return (firstQuotations, quotations);
     }
-    
-    public async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForWeekAsync(int year, int week, Environment env, Tick dest)
+
+    public async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForWeekAsync(int year, int week, Environment environment, Modification modification)
     {
         var firstQuotationsDict = new Dictionary<Symbol, Quotation>();
         var firstQuotations = new Queue<Quotation>();
         var quotations = new Queue<Quotation>();
 
-        var databaseName = GetDatabaseName(year, week, env, dest);
+        var databaseName = GetDatabaseName(year, week, environment, modification);
         var connectionString = $"Server=localhost\\SQLEXPRESS;Database={databaseName};Trusted_Connection=True;";
 
         await using (var connection = new SqlConnection(connectionString))
@@ -99,11 +99,10 @@ public class MSSQLRepository
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
                 var resultSymbol = (Symbol)reader.GetInt32(0);
-                var resultDateTime = reader.GetDateTime(1);
-                resultDateTime = resultDateTime.ToUniversalTime();
-                var resultAsk = reader.GetInt32(2);
-                var resultBid = reader.GetInt32(3);
-                var quotation = new Quotation(resultSymbol, resultDateTime, resultAsk, resultBid);
+                var resultDateTime = reader.GetDateTime(1).ToUniversalTime();
+                var resultAsk = reader.GetDouble(2);
+                var resultBid = reader.GetDouble(3);
+                var quotation = new Quotation(resultSymbol, resultDateTime, resultAsk, resultBid, 0, 0);
 
                 if (!firstQuotationsDict.ContainsKey(quotation.Symbol))
                 {
@@ -127,14 +126,14 @@ public class MSSQLRepository
         return (firstQuotations, quotations);
     }
     
-    public async Task<Dictionary<int, (Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)>> GetQuotationsForYearWeeklyAsync(int year, Environment env, Tick dest)
+    public async Task<Dictionary<int, (Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)>> GetQuotationsForYearWeeklyAsync(int year, Environment environment, Modification modification)
     {
         var totalQuotations = 0;
         var quotationsByWeek = new Dictionary<int, (Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)>();
 
         var tasks = Enumerable.Range(1, 52).Select(async week =>
         {
-            var (firstQuotations, quotations) = await GetQuotationsForWeekAsync(year, week, env, dest).ConfigureAwait(false);
+            var (firstQuotations, quotations) = await GetQuotationsForWeekAsync(year, week, environment, modification).ConfigureAwait(false);
             return (week, firstQuotations, quotations);
         });
 
@@ -154,10 +153,10 @@ public class MSSQLRepository
 
         return quotationsByWeek;
     }
-   
-    public static string GetDatabaseName(int yearNumber, int weekNumber, Environment environment, Tick tick)
+
+    private static string GetDatabaseName(int yearNumber, int weekNumber, Environment environment, Modification modification)
     {
-        return $"{environment.ToString().ToLower()}.{tick.ToString().ToLower()}.{yearNumber}.{GetQuarterNumber(weekNumber)}";
+        return $"{environment.ToString().ToLower()}.{modification.ToString().ToLower()}.{yearNumber}.{GetQuarterNumber(weekNumber)}";
     }
 
     private static int GetQuarterNumber(int weekNumber)

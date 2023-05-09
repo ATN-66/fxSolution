@@ -7,12 +7,26 @@ using System;
 
 namespace Common.Entities;
 
-public readonly record struct Quotation(Symbol Symbol, DateTime DateTime, double Ask, double Bid) : IComparable
+public readonly record struct Quotation() : IComparable
 {
-    public readonly Symbol Symbol = Symbol;
-    public readonly DateTime DateTime = DateTime;
-    public readonly double Ask = Ask;
-    public readonly double Bid = Bid;
+    public readonly Symbol Symbol;
+    public readonly DateTime DateTime;
+    public readonly double DoubleAsk;
+    public readonly double DoubleBid;
+    public readonly int IntAsk;
+    public readonly int IntBid;
+    
+    public Quotation(Symbol symbol, DateTime dateTime, double doubleAsk, double doubleBid, int intAsk, int intBid) : this()
+    {
+        Symbol = symbol;
+        DateTime = dateTime;
+        DoubleAsk = doubleAsk;
+        DoubleBid = doubleBid;
+        IntAsk = intAsk;
+        IntBid = intBid;
+    }
+
+    public static Quotation Empty => new(default, default, default, default, default, default);
 
     public int CompareTo(object obj)
     {
@@ -21,12 +35,11 @@ public readonly record struct Quotation(Symbol Symbol, DateTime DateTime, double
         if (Symbol < otherQuotation.Symbol) return -1;
         if (Symbol > otherQuotation.Symbol) return 1;
         if (DateTime < otherQuotation.DateTime) return -1;
-        if (DateTime > otherQuotation.DateTime) return 1;
-        throw new Exception();
+        return DateTime > otherQuotation.DateTime ? 1 : 0;
     }
 
     public override string ToString()
     {
-        return $"{Symbol}|{DateTime:yyyy.MM.dd HH:mm:s.fff}|{Ask:D6}|{Bid:D6}";
+        return $"{Symbol},{DateTime:HH:mm:ss.fff},{DoubleAsk:00000},{DoubleBid:00000}";
     }
 }

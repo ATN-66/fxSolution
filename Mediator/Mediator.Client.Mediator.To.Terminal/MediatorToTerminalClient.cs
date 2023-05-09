@@ -26,29 +26,30 @@ public class MediatorToTerminalClient : IDisposable
 
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
-        var channel = new Channel(Host + ":" + Port, ChannelCredentials.Insecure);
-        _mediatorToTerminalService = new MediatorToTerminalService.MediatorToTerminalServiceClient(channel);
+        throw new NotImplementedException();
+        //var channel = new Channel(Host + ":" + Port, ChannelCredentials.Insecure);
+        //_mediatorToTerminalService = new MediatorToTerminalService.MediatorToTerminalServiceClient(channel);
 
-        try
-        {
-            using (_call = _mediatorToTerminalService.Tick(cancellationToken: cancellationToken))
-            {
-                while (await _call.ResponseStream.MoveNext(CancellationToken.None))
-                {
-                    var serverMessage = _call.ResponseStream.Current;
-                    var otherClientMessage = serverMessage.ReplyMessage;
-                    //var displayMessage = string.Format("{0}:{1}{2}", otherClientMessage.From, otherClientMessage.Message, Environment.NewLine);
-                    //chatTextBox.Text += displayMessage;
-                }
-            }
-        }
-        catch (RpcException exception)//TODO:
-        {
-            throw;
-        }
+        //try
+        //{
+        //    using (_call = _mediatorToTerminalService.Tick(cancellationToken: cancellationToken))
+        //    {
+        //        while (await _call.ResponseStream.MoveNext(CancellationToken.None))
+        //        {
+        //            var serverMessage = _call.ResponseStream.Current;
+        //            var otherClientMessage = serverMessage.ReplyMessage;
+        //            //var displayMessage = string.Format("{0}:{1}{2}", otherClientMessage.From, otherClientMessage.Message, Environment.NewLine);
+        //            //chatTextBox.Text += displayMessage;
+        //        }
+        //    }
+        //}
+        //catch (RpcException exception)//TODO:
+        //{
+        //    throw;
+        //}
 
-        Console.WriteLine($"MediatorToTerminalClient listening on {Host}:{Port}");
-        await Task.Delay(-1, cancellationToken);
+        //Console.WriteLine($"MediatorToTerminalClient listening on {Host}:{Port}");
+        //await Task.Delay(-1, cancellationToken);
     }
 
     public async void Tick(Quotation quotation)

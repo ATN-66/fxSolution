@@ -33,8 +33,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Mediator.Client.Mediator.To.Terminal\Mediator.Client.Mediator.To.Terminal.csproj" />
     <ProjectReference Include="..\Mediator.Processors\Mediator.Processors.csproj" />
-    <ProjectReference Include="..\Mediator.Repository.Interfaces\Mediator.Repository.Interfaces.csproj" />
-    <ProjectReference Include="..\Mediator.Repository\Mediator.Repository.csproj" />
     <ProjectReference Include="..\Mediator.Server.Indicator.To.Mediator\Mediator.Server.Indicator.To.Mediator.csproj" />
     <ProjectReference Include="..\Mediator.Server.Terminal.To.Mediator\Mediator.Server.Terminal.To.Mediator.csproj" />
   </ItemGroup>

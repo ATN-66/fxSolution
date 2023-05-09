@@ -16,8 +16,6 @@
     <ProjectReference Include="..\..\Common\Common.Protos\Common.Protos.csproj" />
     <ProjectReference Include="..\Mediator.Administrator\Mediator.Administrator.csproj" />
     <ProjectReference Include="..\Mediator.Client.Mediator.To.Terminal\Mediator.Client.Mediator.To.Terminal.csproj" />
-    <ProjectReference Include="..\Mediator.Repository.Interfaces\Mediator.Repository.Interfaces.csproj" />
-    <ProjectReference Include="..\Mediator.Repository\Mediator.Repository.csproj" />
   </ItemGroup>
 
 </Project>
