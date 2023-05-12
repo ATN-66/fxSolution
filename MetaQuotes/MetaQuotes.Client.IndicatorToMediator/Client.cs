@@ -74,7 +74,7 @@ public class Client : IDisposable
         try
         {
             if (!connected) return noConnection;
-            return await pipeClient.InvokeAsync(x => x.Tick(quotation.symbol, quotation.datetime, quotation.ask, quotation.bid)).ConfigureAwait(false);
+            return await pipeClient.InvokeAsync(x => x.TickAsync(quotation.symbol, quotation.datetime, quotation.ask, quotation.bid)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

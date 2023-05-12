@@ -40,6 +40,6 @@ public readonly record struct Quotation() : IComparable
 
     public override string ToString()
     {
-        return $"{Symbol},{DateTime:HH:mm:ss.fff},{DoubleAsk:00000},{DoubleBid:00000}";
+        return $"{Symbol}, {DateTime:HH:mm:ss.fff}, {DoubleAsk:###.00000}, {DoubleBid:###.00000}, {IntAsk:00000}, {IntBid:00000}";
     }
 }

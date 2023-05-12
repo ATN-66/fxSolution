@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Timers;
 using Common.Entities;
 using Mediator.Client.Mediator.To.Terminal;
+using Mediator.Repository;
 using Environment = Common.Entities.Environment;
 using Timer = System.Timers.Timer;
 
@@ -16,33 +17,32 @@ namespace Mediator.Processors;
 
 public class QuotationsProcessor
 {
-    readonly string[] _formats = { "yyyy.MM.dd HH:mm:ss" }; // const string mt5Format = "yyyy.MM.dd HH:mm:ss"; // 2023.05.08 19:52:22 <- from MT5 
-    
-    private const string ok = "ok";
-    private const int _batchSize = 1000;
-    private const int minutes = 10;
-    
+    private readonly string[] _formats = { "yyyy.MM.dd HH:mm:ss" }; // const string mt5Format = "yyyy.MM.dd HH:mm:ss"; // 2023.05.08 19:52:22 <- from MT5 
+
     private readonly Administrator.Administrator _administrator;
-   
     private readonly MediatorToTerminalClient _mediatorToTerminalClient;
-    private readonly ReaderWriterLockSlim _queueLock = new();
-    //private readonly IQuotationsRepository _quotationsRepository;
-    private readonly ConcurrentQueue<Quotation> _quotationsToSave = new();
-    private readonly Timer _saveTimer;
+    private readonly IMSSQLRepository _repository;
+
     private readonly Quotation[] _lastKnownQuotations;
 
-    public QuotationsProcessor(Administrator.Administrator administrator, MediatorToTerminalClient mediatorToTerminalClient
-        //,IQuotationsRepository quotationsRepository
-        )
+    private const string ok = "ok";
+    private readonly Timer _saveTimer;
+    private const int _batchSize = 1000;
+    private const int minutes = 10;
+    private readonly ReaderWriterLockSlim _queueLock = new();
+    private readonly ConcurrentQueue<Quotation> _quotationsToSave = new();
+   
+
+    public QuotationsProcessor(Administrator.Administrator administrator, MediatorToTerminalClient mediatorToTerminalClient, IMSSQLRepository repository)
     {
         _administrator = administrator;
         _mediatorToTerminalClient = mediatorToTerminalClient;
-        //_quotationsRepository = quotationsRepository;
+        _repository = repository;
 
         _lastKnownQuotations = new Quotation[_administrator.TotalIndicators];
 
         _saveTimer = new Timer(minutes * 60 * 1000);
-        _saveTimer.Elapsed += OnSaveTimerElapsed;
+        _saveTimer.Elapsed += OnSaveTimerElapsedAsync;
         _saveTimer.AutoReset = true;
         _saveTimer.Enabled = true;
     }
@@ -53,7 +53,7 @@ public class QuotationsProcessor
         _administrator.Environments[(int)symbol - 1] = null;
         _administrator.ConnectedIndicators[(int)symbol - 1] = false;
         _administrator.DeInitReasons[(int)symbol - 1] = reason;
-        Console.WriteLine($"Indicator {symbol} disconnected!");
+        Console.WriteLine($"Indicator {symbol} disconnected.");
     }
 
     public string Init(int symbol, string datetime, double ask, double bid, int environment)
@@ -72,62 +72,49 @@ public class QuotationsProcessor
             var resultBid = Normalize(resultSymbol, Side.Bid, bid);
             var quotation = new Quotation(resultSymbol, resultDateTime, ask, bid, resultAsk, resultBid);
             _lastKnownQuotations[symbol - 1] = quotation;
+            _quotationsToSave.Enqueue(quotation);
         }
         else throw new Exception(Administrator.Administrator.MultipleConnections);
 
-        if (_administrator.IndicatorsConnected) Console.WriteLine($"Indicators connected! Environment is {_administrator.Environment}");
+        if (_administrator.IndicatorsConnected) Console.WriteLine($"The indicators were connected. Environment is {_administrator.Environment}");
         return ok;
     }
 
-    public string Tick(int symbol, string datetime, double ask, double bid)
+    public async Task<string> TickAsync(int symbol, string datetime, double ask, double bid)
     {
         var resultSymbol = (Symbol)symbol;
         var resultDateTime = DateTime.ParseExact(datetime, _formats, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
+        while (_lastKnownQuotations[symbol - 1].DateTime >= resultDateTime) resultDateTime = resultDateTime.AddMilliseconds(1);
         var resultAsk = Normalize(resultSymbol, Side.Ask, ask);
         var resultBid = Normalize(resultSymbol, Side.Bid, bid);
         var quotation = new Quotation(resultSymbol, resultDateTime, ask, bid, resultAsk, resultBid);
-
-        //+milliseconds!!!!
-
-
-        if (_lastKnownQuotations[symbol - 1].IntAsk == quotation.IntAsk && _lastKnownQuotations[symbol - 1].IntBid == quotation.IntBid)
+        
+        if (quotation.IntAsk != _lastKnownQuotations[symbol - 1].IntAsk || quotation.IntBid != _lastKnownQuotations[symbol - 1].IntBid)
         {
-            return ok;
+            //_mediatorToTerminalClient.Modification(newQuotation);
         }
-        else
+
+        bool shouldSave;
+        _queueLock.EnterWriteLock();
+        try
         {
-            Console.WriteLine(quotation);
             _lastKnownQuotations[symbol - 1] = quotation;
+            _quotationsToSave.Enqueue(quotation);
+            shouldSave = _quotationsToSave.Count >= _batchSize;
+        }
+        finally
+        {
+            _queueLock.ExitWriteLock();
         }
 
+        if (shouldSave) await SaveQuotationsAsync().ConfigureAwait(false);
 
-
-        //if (Normalize( symbol,  datetime, broker, ask, bid, out var newQuotation))
-        // _mediatorToTerminalClient.Modification(newQuotation);
-
-        //bool shouldSave;
-        //_queueLock.EnterWriteLock();
-        //try
-        //{
-        //    _latestQuotations.AddOrUpdate(symbol, quotation, (_, _) => quotation);
-        //    _quotationsToSave.Enqueue(quotation);
-        //    shouldSave = _quotationsToSave.Count >= _batchSize;
-        //}
-        //finally
-        //{
-        //    _queueLock.ExitWriteLock();
-        //}
-
-        //if (shouldSave) await SaveQuotationsAsync();
-
-        //Console.WriteLine($"{symbol}|{datetime}|{ask}|{bid}");
-        //Console.Write(".");
         return ok;
     }
    
-    private async void OnSaveTimerElapsed(object? sender, ElapsedEventArgs e)
+    private void OnSaveTimerElapsedAsync(object? sender, ElapsedEventArgs e)
     {
-        await SaveQuotationsAsync();
+        SaveQuotationsAsync().ConfigureAwait(false);
     }
 
     private async Task SaveQuotationsAsync()
@@ -144,16 +131,8 @@ public class QuotationsProcessor
             _queueLock.ExitReadLock();
         }
 
-        await SaveQuotationsToDatabase(quotationsToSave);
-    }
-
-    private async Task SaveQuotationsToDatabase(List<Quotation> quotationsToSave)
-    {
-        throw new NotImplementedException();
-
-        //if (quotationsToSave.Count == 0) return;
-        //var result = await _quotationsRepository.SaveQuotations(quotationsToSave);
-        //Console.Write($"{result}|");
+        if (quotationsToSave.Count == 0) return;
+        await _repository.SaveQuotationsAsync(quotationsToSave).ConfigureAwait(false);
     }
 
     private static int Normalize(Symbol symbol, Side side, double input)
@@ -180,19 +159,3 @@ public class QuotationsProcessor
         return Quotient;
     }
 }
-
-
-//private static DateTime ParseStringToDateTime(string datetime)
-//{
-//    DateTime resultDateTime;
-//    if (DateTime.TryParse(datetime, out var parsedDateTime)) resultDateTime = parsedDateTime;
-//    else throw new ArgumentException("The provided date string could not be parsed into a valid DateTime.");
-//    if (resultDateTime.Kind != DateTimeKind.Utc) resultDateTime = resultDateTime.ToUniversalTime();
-//    return resultDateTime;
-//}
-
-
-
-
-//        datetime = quotation.DateTime;
-//        while (lastKnownQuotation.DateTime >= datetime) datetime = datetime.AddMilliseconds(1);

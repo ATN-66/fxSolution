@@ -9,6 +9,7 @@ using Mediator.Administrator;
 using Mediator.Client.Mediator.To.Terminal;
 using Mediator.Console;
 using Mediator.Processors;
+using Mediator.Repository;
 using Mediator.Server.Indicator.To.Mediator;
 using Mediator.Server.Terminal.To.Mediator;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,10 +50,11 @@ static IHostBuilder CreateHostBuilder(string[] args)
     return Host.CreateDefaultBuilder(args)
         .ConfigureServices((_, services) =>
         {
-            services.AddSingleton<IIndicatorToMediatorServer, IndicatorToMediatorServer>();
-            services.AddSingleton<TerminalToMediatorServer>();
-            services.AddSingleton<MediatorToTerminalClient>();
             services.AddSingleton<Administrator>();
+            services.AddSingleton<IMSSQLRepository, MSSQLRepository>();
+            services.AddSingleton<IIndicatorToMediatorServer, IndicatorToMediatorServer>();
+            services.AddSingleton<TerminalToMediatorServer>();//todo
+            services.AddSingleton<MediatorToTerminalClient>();//todo
             services.AddSingleton<QuotationsProcessor>();
             services.AddSingleton<OrdersProcessor>();
             services.AddSingleton<ConsoleService>();

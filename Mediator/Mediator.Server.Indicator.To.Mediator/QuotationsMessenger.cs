@@ -35,9 +35,9 @@ public class QuotationsMessenger : IQuotationsMessenger // , IDisposable
         return _quotationsProcessor.Init(symbol, datetime, ask, bid, environment);
     }
 
-    public string Tick(int symbol, string datetime, double ask, double bid)
+    public Task<string> TickAsync(int symbol, string datetime, double ask, double bid)
     {
-        return _quotationsProcessor.Tick(symbol, datetime, ask, bid);
+        return _quotationsProcessor.TickAsync(symbol, datetime, ask, bid);
     }
 
     //~QuotationsMessenger()
