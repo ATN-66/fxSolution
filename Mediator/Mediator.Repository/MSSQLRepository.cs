@@ -14,7 +14,6 @@ public class MSSQLRepository : IMSSQLRepository
 {
     public async Task SaveQuotationsAsync(IList<Quotation> quotationsToSave)
     {
-        await Task.Delay(5000).ConfigureAwait(false);
         Console.WriteLine($"{quotationsToSave.Count} were saved.");
 
         //var tableName = RepositoryHelper.GetTableName(weekNumber);
