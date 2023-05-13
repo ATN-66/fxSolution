@@ -39,15 +39,19 @@ public class Administrator
         }
     }
 
-    public Environment Environment
+    public Environment? Environment
     {
         get
         {
-            var result = Environments[0]!.Value;
-            for (var i = 2; i <= TotalIndicators; i++)
+            var result = Environments[0];
+
+            if (result == null)
+                return null;
+
+            for (var i = 1; i < TotalIndicators; i++)
             {
-                if (Environments[i - 1]!.Value == result) continue;
-                throw new Exception(nameof(Environment));
+                if (Environments[i] == null || Environments[i]!.Value != result.Value)
+                    return null;
             }
 
             return result;

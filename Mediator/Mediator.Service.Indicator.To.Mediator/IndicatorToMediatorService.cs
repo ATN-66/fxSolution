@@ -7,7 +7,6 @@ using System.Diagnostics;
 using Common.Entities;
 using Common.MetaQuotes.Mediator;
 using Mediator.Processors;
-using Mediator.Server.Indicator.To.Mediator;
 using PipeMethodCalls;
 using PipeMethodCalls.NetJson;
 

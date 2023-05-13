@@ -17,7 +17,7 @@ var config = new Configuration()
     InputModification = Modification.UnModified,
     Year = 2023,
     Week = 8,
-    Day = 0
+    Day = 7
 };
 
 const string mt5Format = "yyyy.MM.dd HH:mm:ss"; // 2023.05.08 19:52:22 <- from MT5 
@@ -35,7 +35,7 @@ Console.WriteLine($"Day: {config.Day?.ToString("00") ?? "null"}.");
 var (firstQuotations, quotations) = await MSSQLRepository.Instance.GetQuotationsForDayAsync(config.Year, config.Week!.Value, config.Day!.Value, config.Environment, config.InputModification).ConfigureAwait(false);
 
 CancellationTokenSource cts = new();
-var consoleServiceTask = Task.Run(() => HandleConsole(cts));
+var consoleServiceTask = Task.Run(() => ConsoleService(cts));
 
 try
 {
@@ -43,6 +43,9 @@ try
     Console.WriteLine("Initialization done...");
     await ProcessQuotations(quotations, cts.Token).ConfigureAwait(false);
     Console.WriteLine("Quotations done...");
+    await DeInitializeIndicators(cts.Token).ConfigureAwait(false);
+    Console.WriteLine("DeInitialization done...");
+    cts.Cancel();
 }
 catch (Exception exception)
 {
@@ -51,8 +54,7 @@ catch (Exception exception)
 }
 
 await Task.WhenAny(consoleServiceTask).ConfigureAwait(false);
-await DeInitializeIndicators(cts.Token).ConfigureAwait(false);
-Console.WriteLine("DeInitialization done...");
+
 Console.WriteLine("End of the program. Press any key to exit ...");
 Console.ReadKey();
 return 1;
@@ -91,7 +93,7 @@ static Task ProcessQuotations(Queue<Quotation> quotations, CancellationToken ct)
     return Task.CompletedTask;
 }
 
-static async Task HandleConsole(CancellationTokenSource cts)
+static async Task ConsoleService(CancellationTokenSource cts)
 {
     while (!cts.Token.IsCancellationRequested)
         if (Console.KeyAvailable)

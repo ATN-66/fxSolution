@@ -22,7 +22,7 @@ public class TerminalToMediatorService : TerminalToMediator.TerminalToMediatorBa
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var grpcServer = new Grpc.Core.Server
+        var grpcServer = new Server
         {
             Services = { TerminalToMediator.BindService(this) },
             Ports = { new ServerPort(Host, Port, ServerCredentials.Insecure) }
@@ -38,12 +38,12 @@ public class TerminalToMediatorService : TerminalToMediator.TerminalToMediatorBa
         await Task.Delay(-1, cancellationToken).ConfigureAwait(true);
     }
 
-    public async Task<Response> DeInitAsync(Request request, ServerCallContext context)
+    public override async Task<Response> DeInit(Request request, ServerCallContext context)
     {
         return await _ordersProcessor.DeInitAsync(request).ConfigureAwait(false);
     }
 
-    public async Task<Response> InitAsync(Request request, ServerCallContext context)
+    public override async Task<Response> Init(Request request, ServerCallContext context)
     {
         try
         {

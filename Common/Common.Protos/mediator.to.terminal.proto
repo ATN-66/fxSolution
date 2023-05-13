@@ -3,7 +3,7 @@ package protos.grpc;
 import "timestamp.proto";
 
 service MediatorToTerminal {
-    rpc Tick(stream gQuotation) returns (stream Reply);
+    rpc TickAsync(stream gQuotation) returns (stream Reply);
 }
 
 message gQuotation {

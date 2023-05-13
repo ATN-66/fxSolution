@@ -29,18 +29,16 @@ public class MediatorToTerminalService : MediatorToTerminal.MediatorToTerminalBa
         await tcs.Task;
     }
 
-    public override async Task Tick(IAsyncStreamReader<gQuotation> requestStream, IServerStreamWriter<Reply> responseStream, ServerCallContext context)
+    public override async Task TickAsync(IAsyncStreamReader<gQuotation> requestStream, IServerStreamWriter<Reply> responseStream, ServerCallContext context)
     {
-        throw new NotImplementedException();
-        //while (await requestStream.MoveNext(CancellationToken.None))
-        //{
-        //    var gQuotation = requestStream.Current;
-        //    var quotation = new Quotation((Symbol)gQuotation.Symbol, gQuotation.DateTime.ToDateTime(), gQuotation.Ask, gQuotation.Bid);
+        while (await requestStream.MoveNext(CancellationToken.None).ConfigureAwait(false))
+        {
+            var gQuotation = requestStream.Current;
+            //var quotation = new Quotation((Symbol)gQuotation.Symbol, gQuotation.DateTime.ToDateTime(), gQuotation.Ask, gQuotation.Bid);
+            //if (quotation.Symbol == Symbol.EURUSD) System.Console.WriteLine(quotation);
 
-        //    if(quotation.Symbol == Symbol.EURUSD) System.Console.WriteLine(quotation);
-
-        //    var message = new Reply { ReplyMessage = "ok" };
-        //    await responseStream.WriteAsync(message);
-        //}
+            var message = new Reply { ReplyMessage = "ok" };
+            await responseStream.WriteAsync(message);
+        }
     }
 }

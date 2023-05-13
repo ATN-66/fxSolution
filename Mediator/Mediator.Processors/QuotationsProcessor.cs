@@ -10,6 +10,7 @@ using System.Timers;
 using Common.Entities;
 using Mediator.Client.Mediator.To.Terminal;
 using Mediator.Repository;
+using Protos.Grpc;
 using Environment = Common.Entities.Environment;
 using Timer = System.Timers.Timer;
 
@@ -17,7 +18,7 @@ namespace Mediator.Processors;
 
 public class QuotationsProcessor
 {
-    private readonly string[] _formats = { "yyyy.MM.dd HH:mm:ss" }; // const string mt5Format = "yyyy.MM.dd HH:mm:ss"; // 2023.05.08 19:52:22 <- from MT5 
+    private readonly string[] _formats = { "yyyy.MM.dd HH:mm:ss" };
 
     private readonly Administrator.Administrator _administrator;
     private readonly MediatorToTerminalClient _mediatorToTerminalClient;
@@ -30,6 +31,7 @@ public class QuotationsProcessor
     private const int _batchSize = 1000;
     private const int minutes = 10;
     private readonly ReaderWriterLockSlim _queueLock = new();
+    private readonly object lockObject = new();
     private readonly ConcurrentQueue<Quotation> _quotationsToSave = new();
    
     public QuotationsProcessor(Administrator.Administrator administrator, MediatorToTerminalClient mediatorToTerminalClient, IMSSQLRepository repository)
@@ -48,34 +50,53 @@ public class QuotationsProcessor
 
     public void DeInit(Symbol symbol, DeInitReason reason)
     {
-        _lastKnownQuotations[(int)symbol - 1] = Quotation.Empty;
-        _administrator.Environments[(int)symbol - 1] = null;
-        _administrator.ConnectedIndicators[(int)symbol - 1] = false;
-        _administrator.DeInitReasons[(int)symbol - 1] = reason;
-        Console.WriteLine($"Indicator {symbol} disconnected.");
+        lock (lockObject)
+        {
+            Console.Write(".");
+            _lastKnownQuotations[(int)symbol - 1] = Quotation.Empty;
+            _administrator.Environments[(int)symbol - 1] = null;
+            _administrator.ConnectedIndicators[(int)symbol - 1] = false;
+            _administrator.DeInitReasons[(int)symbol - 1] = reason;
+            if (_administrator.ConnectedIndicators.Any(connection => connection)) return;
+            Console.WriteLine($"The indicators were disconnected.");
+        }
     }
 
     public string Init(int symbol, string datetime, double ask, double bid, int environment)
     {
-        if (_lastKnownQuotations[symbol - 1] == Quotation.Empty)
+        lock (lockObject)
         {
-            Debug.Assert(_administrator.Environments[symbol - 1] == null);
-            _administrator.Environments[symbol - 1] = (Environment)environment;
+            if (_lastKnownQuotations[symbol - 1] == Quotation.Empty)
+            {
+                Debug.Assert(_administrator.Environments[symbol - 1] == null);
+                _administrator.Environments[symbol - 1] = (Environment)environment;
 
-            Debug.Assert(_administrator.ConnectedIndicators[symbol - 1] == false);
-            _administrator.ConnectedIndicators[symbol - 1] = true;
+                Debug.Assert(_administrator.ConnectedIndicators[symbol - 1] == false);
+                _administrator.ConnectedIndicators[symbol - 1] = true;
 
-            var resultSymbol = (Symbol)symbol;
-            var resultDateTime = DateTime.ParseExact(datetime, _formats, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
-            var resultAsk = Normalize(resultSymbol, Side.Ask, ask);
-            var resultBid = Normalize(resultSymbol, Side.Bid, bid);
-            var quotation = new Quotation(resultSymbol, resultDateTime, ask, bid, resultAsk, resultBid);
-            _lastKnownQuotations[symbol - 1] = quotation;
-            _quotationsToSave.Enqueue(quotation);
+                var resultSymbol = (Symbol)symbol;
+                var resultDateTime = DateTime
+                    .ParseExact(datetime, _formats, CultureInfo.InvariantCulture, DateTimeStyles.None)
+                    .ToUniversalTime();
+                var resultAsk = Normalize(resultSymbol, Side.Ask, ask);
+                var resultBid = Normalize(resultSymbol, Side.Bid, bid);
+                var quotation = new Quotation(resultSymbol, resultDateTime, ask, bid, resultAsk, resultBid);
+                _lastKnownQuotations[symbol - 1] = quotation;
+                _quotationsToSave.Enqueue(quotation);//todo: to add
+            }
+            else throw new Exception(Administrator.Administrator.MultipleConnections);
+
+            if (_administrator.IndicatorsConnected) Console.WriteLine($".The indicators were connected. Environment is {_administrator.Environment}");
+            else Console.Write(".");
         }
-        else throw new Exception(Administrator.Administrator.MultipleConnections);
 
-        if (_administrator.IndicatorsConnected) Console.WriteLine($"The indicators were connected. Environment is {_administrator.Environment}");
+        return ok;
+    }
+
+    public string Add(int symbol, string datetime, double ask, double bid)
+    {
+        //Quotations.Add((symbol, datetime, ask, bid));
+        //lock (ResultsLock) if (Results.Count > 0) { return Results.Dequeue(); }
         return ok;
     }
 
@@ -90,7 +111,7 @@ public class QuotationsProcessor
         
         if (quotation.IntAsk != _lastKnownQuotations[symbol - 1].IntAsk || quotation.IntBid != _lastKnownQuotations[symbol - 1].IntBid)
         {
-            //_mediatorToTerminalClient.Modification(newQuotation);
+            _mediatorToTerminalClient.Tick(quotation); //todo: async
         }
 
         bool shouldSave;

@@ -9,7 +9,7 @@ using Common.Entities;
 using Common.MetaQuotes.Mediator;
 using Mediator.Processors;
 
-namespace Mediator.Server.Indicator.To.Mediator;
+namespace Mediator.Service.Indicator.To.Mediator;
 
 public class QuotationsMessenger : IQuotationsMessenger // , IDisposable
 {
@@ -35,9 +35,9 @@ public class QuotationsMessenger : IQuotationsMessenger // , IDisposable
         return _quotationsProcessor.Init(symbol, datetime, ask, bid, environment);
     }
 
-    public Task<string> TickAsync(int symbol, string datetime, double ask, double bid)
+    public string Add(int symbol, string datetime, double ask, double bid)
     {
-        return _quotationsProcessor.TickAsync(symbol, datetime, ask, bid);
+        return _quotationsProcessor.Add(symbol, datetime, ask, bid);
     }
 
     //~QuotationsMessenger()
