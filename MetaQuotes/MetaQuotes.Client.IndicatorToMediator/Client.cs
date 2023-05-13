@@ -28,10 +28,10 @@ public class Client : IDisposable
     private readonly Queue<string> Results = new();
 
     private readonly CancellationTokenSource cts = new();
-    public event Action OnInitializationComplete;
+    private event Action OnInitializationComplete;
     private readonly Action processQuotationsAction;
 
-    public Client(Symbol symbol, bool enableLogging = false)
+    internal Client(Symbol symbol, bool enableLogging = false)
     {
         pipeClient = new PipeClient<IQuotationsMessenger>(new NetJsonPipeSerializer(), $"IndicatorToMediator_{symbol}");
         if (enableLogging) pipeClient.SetLogger(Console.WriteLine);
@@ -47,11 +47,13 @@ public class Client : IDisposable
         pipeClient.Dispose();
     }
 
-    internal async Task DeInitAsync(Symbol symbol, DeInitReason reason)
+    internal void DeInit(int symbol, int reason)
     {
         try
         {
-            await pipeClient.InvokeAsync(x => x.DeInit(symbol, reason)).ConfigureAwait(false);
+            if (!Quotations.IsAddingCompleted) Quotations.CompleteAdding();
+            while (!Quotations.IsCompleted) Task.Delay(1000).ConfigureAwait(false).GetAwaiter();
+            pipeClient.InvokeAsync(x => x.DeInit(symbol, reason)).ConfigureAwait(false).GetAwaiter();
         }
         catch (Exception)
         {
@@ -76,7 +78,7 @@ public class Client : IDisposable
         }
     }
 
-    public string Add(int symbol, string datetime, double ask, double bid)
+    internal string Tick(int symbol, string datetime, double ask, double bid)
     {
         Quotations.Add((symbol, datetime, ask, bid));
         lock (ResultsLock) if (Results.Count > 0) { return Results.Dequeue(); }
@@ -138,7 +140,7 @@ public class Client : IDisposable
         try
         {
             if (!connected) return noConnection;
-            return await pipeClient.InvokeAsync(x => x.Add(quotation.symbol, quotation.datetime, quotation.ask, quotation.bid)).ConfigureAwait(false);
+            return await pipeClient.InvokeAsync(x => x.Tick(quotation.symbol, quotation.datetime, quotation.ask, quotation.bid)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -146,6 +148,4 @@ public class Client : IDisposable
             return ExceptionDetails(ex);
         }
     }
-
-   
 }

@@ -5,27 +5,28 @@
 
 //The lifetime of this class is very short. It is instantiated by the Server and promptly discarded.
 
-using Common.Entities;
 using Common.MetaQuotes.Mediator;
 using Mediator.Processors;
 
 namespace Mediator.Service.Indicator.To.Mediator;
 
-public class QuotationsMessenger : IQuotationsMessenger // , IDisposable
+public class QuotationsMessenger : IQuotationsMessenger//, IDisposable
 {
     //private static int _instanceCount;
     //private static int _lastInstanceId;
+    //private static int _instanceId;
+
     private readonly QuotationsProcessor _quotationsProcessor;
 
     public QuotationsMessenger(QuotationsProcessor quotationsProcessor)
     {
         _quotationsProcessor = quotationsProcessor;
-        //var instanceId = ++_lastInstanceId;
+        //_instanceId = ++_lastInstanceId;
         //Interlocked.Increment(ref _instanceCount);
-        //Console.WriteLine($"QuotationsMessenger instance {instanceId} created. Total instances: {_instanceCount}");
+        //Console.WriteLine($"QuotationsMessenger instance {_instanceId} created. Total instances: {_instanceCount}");
     }
 
-    public void DeInit(Symbol symbol, DeInitReason reason)
+    public void DeInit(int symbol, int reason)
     {
          _quotationsProcessor.DeInit(symbol, reason);
     }
@@ -35,31 +36,31 @@ public class QuotationsMessenger : IQuotationsMessenger // , IDisposable
         return _quotationsProcessor.Init(symbol, datetime, ask, bid, environment);
     }
 
-    public string Add(int symbol, string datetime, double ask, double bid)
+    public string Tick(int symbol, string datetime, double ask, double bid)
     {
-        return _quotationsProcessor.Add(symbol, datetime, ask, bid);
+        return _quotationsProcessor.Tick(symbol, datetime, ask, bid);
     }
 
     //~QuotationsMessenger()
     //{
-    //    //Dispose(false);
+    //    Dispose(false);
     //}
 
     //public void Dispose()
     //{
-    //    //Dispose(true);
+    //    Dispose(true);
     //    GC.SuppressFinalize(this);
     //}
 
     //private void Dispose(bool disposing)
     //{
-    //    //if (disposing)
-    //    //{
-    //    //    // Free any managed objects here if needed
-    //    //}
+    //    if (disposing)
+    //    {
+    //        // Free any managed objects here if needed
+    //    }
 
-    //    // Free any unmanaged objects here if needed
-    //    //Interlocked.Decrement(ref _instanceCount);
-    //    //Console.WriteLine($"QuotationsMessenger instance {_instanceId} disposed. Remaining instances: {_instanceCount}");
+    //    //Free any unmanaged objects here if needed
+    //    Interlocked.Decrement(ref _instanceCount);
+    //    Console.WriteLine($"QuotationsMessenger instance {_instanceId} disposed. Remaining instances: {_instanceCount}");
     //}
 }

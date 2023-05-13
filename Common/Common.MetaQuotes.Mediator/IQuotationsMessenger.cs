@@ -3,13 +3,11 @@
   |                                          IQuotationsMessenger.cs |
   +------------------------------------------------------------------+*/
 
-using Common.Entities;
-
 namespace Common.MetaQuotes.Mediator;
 
 public interface IQuotationsMessenger
 {
-    void DeInit(Symbol symbol, DeInitReason reason);
+    void DeInit(int symbol, int reason);
     string Init(int symbol, string datetime, double ask, double bid, int environment);
-    string Add(int symbol, string datetime, double ask, double bid);
+    string Tick(int symbol, string datetime, double ask, double bid);
 }

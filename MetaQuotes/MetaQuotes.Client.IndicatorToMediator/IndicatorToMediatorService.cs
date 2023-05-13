@@ -31,7 +31,7 @@ public static class IndicatorToMediatorService
 
     public static void DeInit(int symbol, int reason)
     {
-        _ = client.DeInitAsync((Symbol)symbol, (DeInitReason)reason);
+        client.DeInit(symbol, reason);
     }
 
     public static string Init(int symbol, string datetime, double ask, double bid, int environment)
@@ -42,6 +42,6 @@ public static class IndicatorToMediatorService
 
     public static string Tick(int symbol, string datetime, double ask, double bid)
     {
-        return client.Add(symbol, datetime, ask, bid);
+        return client.Tick(symbol, datetime, ask, bid);
     }
 }

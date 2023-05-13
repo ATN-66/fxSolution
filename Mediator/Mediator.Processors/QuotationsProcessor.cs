@@ -32,9 +32,11 @@ public class QuotationsProcessor
     private const int minutes = 10;
     private readonly ReaderWriterLockSlim _queueLock = new();
     private readonly object lockObject = new();
+    private readonly BlockingCollection<(int symbol, string datetime, double ask, double bid)> _quotations = new();
     private readonly ConcurrentQueue<Quotation> _quotationsToSave = new();
-   
-    public QuotationsProcessor(Administrator.Administrator administrator, MediatorToTerminalClient mediatorToTerminalClient, IMSSQLRepository repository)
+
+    public QuotationsProcessor(Administrator.Administrator administrator,
+        MediatorToTerminalClient mediatorToTerminalClient, IMSSQLRepository repository)
     {
         _administrator = administrator;
         _mediatorToTerminalClient = mediatorToTerminalClient;
@@ -48,15 +50,15 @@ public class QuotationsProcessor
         _saveTimer.Enabled = true;
     }
 
-    public void DeInit(Symbol symbol, DeInitReason reason)
+    public void DeInit(int symbol, int reason)
     {
         lock (lockObject)
         {
             Console.Write(".");
-            _lastKnownQuotations[(int)symbol - 1] = Quotation.Empty;
-            _administrator.Environments[(int)symbol - 1] = null;
-            _administrator.ConnectedIndicators[(int)symbol - 1] = false;
-            _administrator.DeInitReasons[(int)symbol - 1] = reason;
+            _lastKnownQuotations[symbol - 1] = Quotation.Empty;
+            _administrator.Environments[symbol - 1] = null;
+            _administrator.ConnectedIndicators[symbol - 1] = false;
+            _administrator.DeInitReasons[symbol - 1] = (DeInitReason)reason;
             if (_administrator.ConnectedIndicators.Any(connection => connection)) return;
             Console.WriteLine($"The indicators were disconnected.");
         }
@@ -82,34 +84,38 @@ public class QuotationsProcessor
                 var resultBid = Normalize(resultSymbol, Side.Bid, bid);
                 var quotation = new Quotation(resultSymbol, resultDateTime, ask, bid, resultAsk, resultBid);
                 _lastKnownQuotations[symbol - 1] = quotation;
-                _quotationsToSave.Enqueue(quotation);//todo: to add
+                _quotationsToSave.Enqueue(quotation); //todo: to add
             }
             else throw new Exception(Administrator.Administrator.MultipleConnections);
 
-            if (_administrator.IndicatorsConnected) Console.WriteLine($".The indicators were connected. Environment is {_administrator.Environment}");
+            if (_administrator.IndicatorsConnected)
+                Console.WriteLine($".The indicators were connected. Environment is {_administrator.Environment}");
             else Console.Write(".");
         }
 
         return ok;
     }
 
-    public string Add(int symbol, string datetime, double ask, double bid)
+    public string Tick(int symbol, string datetime, double ask, double bid)
     {
-        //Quotations.Add((symbol, datetime, ask, bid));
+        _quotations.Add((symbol, datetime, ask, bid));
         //lock (ResultsLock) if (Results.Count > 0) { return Results.Dequeue(); }
         return ok;
     }
 
-    public async Task<string> TickAsync(int symbol, string datetime, double ask, double bid)
+    private async Task<string> TickAsync(int symbol, string datetime, double ask, double bid)
     {
         var resultSymbol = (Symbol)symbol;
-        var resultDateTime = DateTime.ParseExact(datetime, _formats, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
-        while (_lastKnownQuotations[symbol - 1].DateTime >= resultDateTime) resultDateTime = resultDateTime.AddMilliseconds(1);
+        var resultDateTime = DateTime.ParseExact(datetime, _formats, CultureInfo.InvariantCulture, DateTimeStyles.None)
+            .ToUniversalTime();
+        while (_lastKnownQuotations[symbol - 1].DateTime >= resultDateTime)
+            resultDateTime = resultDateTime.AddMilliseconds(1);
         var resultAsk = Normalize(resultSymbol, Side.Ask, ask);
         var resultBid = Normalize(resultSymbol, Side.Bid, bid);
         var quotation = new Quotation(resultSymbol, resultDateTime, ask, bid, resultAsk, resultBid);
-        
-        if (quotation.IntAsk != _lastKnownQuotations[symbol - 1].IntAsk || quotation.IntBid != _lastKnownQuotations[symbol - 1].IntBid)
+
+        if (quotation.IntAsk != _lastKnownQuotations[symbol - 1].IntAsk ||
+            quotation.IntBid != _lastKnownQuotations[symbol - 1].IntBid)
         {
             _mediatorToTerminalClient.Tick(quotation); //todo: async
         }
@@ -131,7 +137,7 @@ public class QuotationsProcessor
 
         return ok;
     }
-   
+
     private void OnSaveTimerElapsedAsync(object? sender, ElapsedEventArgs e)
     {
         SaveQuotationsAsync().ConfigureAwait(false);
@@ -172,10 +178,15 @@ public class QuotationsProcessor
         var (Quotient, Remainder) = Math.DivRem(multipliedInput, 10);
         switch (side)
         {
-            case Side.Ask: if (Remainder >= 4) Quotient += 1; break;
-            case Side.Bid: if (Remainder >= 6) Quotient += 1; break;
+            case Side.Ask:
+                if (Remainder >= 4) Quotient += 1;
+                break;
+            case Side.Bid:
+                if (Remainder >= 6) Quotient += 1;
+                break;
             default: throw new ArgumentOutOfRangeException(nameof(side));
         }
+
         return Quotient;
     }
 }
