@@ -6,7 +6,6 @@
 using System.Data;
 using System.Data.SqlClient;
 using Common.Entities;
-using MetaQuotes.Client.IndicatorToMediator;
 using Environment = Common.Entities.Environment;
 
 namespace MetaQuotes.Console;
@@ -49,13 +48,14 @@ public class MSSQLRepository
             command.Parameters.AddWithValue("@Week", week);
             command.Parameters.AddWithValue("@DayOfWeek", day);
             await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
+            int id = default;
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
                 var resultSymbol = (Symbol)reader.GetInt32(0);
                 var resultDateTime = reader.GetDateTime(1).ToUniversalTime();
                 var resultAsk = reader.GetDouble(2);
                 var resultBid = reader.GetDouble(3);
-                var quotation = new Quotation(resultSymbol, resultDateTime, resultAsk, resultBid, 0, 0);
+                var quotation = new Quotation(id++, resultSymbol, resultDateTime, resultAsk, resultBid, 0, 0);
 
                 if (!firstQuotationsDict.ContainsKey(quotation.Symbol))
                 {
@@ -95,14 +95,14 @@ public class MSSQLRepository
             command.CommandType = CommandType.StoredProcedure;
             command.Parameters.AddWithValue("@Week", week);
             await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
-
+            int id = default;
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
                 var resultSymbol = (Symbol)reader.GetInt32(0);
                 var resultDateTime = reader.GetDateTime(1).ToUniversalTime();
                 var resultAsk = reader.GetDouble(2);
                 var resultBid = reader.GetDouble(3);
-                var quotation = new Quotation(resultSymbol, resultDateTime, resultAsk, resultBid, 0, 0);
+                var quotation = new Quotation(id++, resultSymbol, resultDateTime, resultAsk, resultBid, 0, 0);
 
                 if (!firstQuotationsDict.ContainsKey(quotation.Symbol))
                 {

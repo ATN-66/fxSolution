@@ -31,14 +31,14 @@ public class QuotationsMessenger : IQuotationsMessenger//, IDisposable
          _quotationsProcessor.DeInit(symbol, reason);
     }
 
-    public string Init(int symbol, string datetime, double ask, double bid, int environment)
+    public string Init(int id, int symbol, string datetime, double ask, double bid, int environment)
     {
-        return _quotationsProcessor.Init(symbol, datetime, ask, bid, environment);
+        return _quotationsProcessor.Init(id, symbol, datetime, ask, bid, environment);
     }
 
-    public string Tick(int symbol, string datetime, double ask, double bid)
+    public string Tick(int id, int symbol, string datetime, double ask, double bid)
     {
-        return _quotationsProcessor.Tick(symbol, datetime, ask, bid);
+        return _quotationsProcessor.Tick(id, symbol, datetime, ask, bid);
     }
 
     //~QuotationsMessenger()

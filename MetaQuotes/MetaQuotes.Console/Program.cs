@@ -71,11 +71,12 @@ static Task DeInitializeIndicators(CancellationToken ct)
 
 static Task InitializeIndicators(Queue<Quotation> firstQuotations, Environment environment, CancellationToken ct)
 {
+    int id = default;
     while (firstQuotations.Count > 0)
     {
         if (ct.IsCancellationRequested) break;
         var quotation = firstQuotations.Dequeue();
-        var result = IndicatorToMediatorService.Init((int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.DoubleAsk, quotation.DoubleBid, (int)environment);
+        var result = IndicatorToMediatorService.Init(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.DoubleAsk, quotation.DoubleBid, (int)environment);
         if (ok != result) throw new Exception(result);
     }
     return Task.CompletedTask;
@@ -83,11 +84,12 @@ static Task InitializeIndicators(Queue<Quotation> firstQuotations, Environment e
 
 static Task ProcessQuotations(Queue<Quotation> quotations, CancellationToken ct)
 {
+    int id = default;
     while (quotations.Count > 0)
     {
         if (ct.IsCancellationRequested) break;
         var quotation = quotations.Dequeue();
-        var result = IndicatorToMediatorService.Tick((int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.DoubleAsk, quotation.DoubleBid);
+        var result = IndicatorToMediatorService.Tick(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.DoubleAsk, quotation.DoubleBid);
         if (ok != result) throw new Exception(result);
     }
     return Task.CompletedTask;

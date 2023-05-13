@@ -45,8 +45,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mediator.Administrator", "M
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mediator.Repository", "Mediator\Mediator.Repository\Mediator.Repository.csproj", "{E5D27511-8174-44BA-A740-48B61865BC6A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Prototypes", "Prototypes", "{A08BF56C-F6ED-4F12-867A-D1BAC72FD5AB}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mediator.Service.Terminal.To.Mediator", "Mediator\Mediator.Service.Terminal.To.Mediator\Mediator.Service.Terminal.To.Mediator.csproj", "{16DAFB84-7F68-4B09-9005-200998E614B2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mediator.Service.Indicator.To.Mediator", "Mediator\Mediator.Service.Indicator.To.Mediator\Mediator.Service.Indicator.To.Mediator.csproj", "{5B7F14C0-DE93-49ED-8FA5-E8DBB9B8B811}"

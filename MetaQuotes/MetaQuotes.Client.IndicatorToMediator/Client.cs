@@ -1,11 +1,10 @@
 ﻿/*+------------------------------------------------------------------+
-  |                   MetaQuotes.Prototype.Indicator.PipeMethodCalls |
+  |                            MetaQuotes.Client.IndicatorToMediator |
   |                                                        Client.cs |
   +------------------------------------------------------------------+*/
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,16 +15,14 @@ using PipeMethodCalls.NetJson;
 
 namespace MetaQuotes.Client.IndicatorToMediator;
 
-public class Client : IDisposable
+internal sealed class Client : IDisposable
 {
     private const string ok = "ok";
     private const string noConnection = "Unable to establish a connection with the server.";
     private readonly PipeClient<IQuotationsMessenger> pipeClient;
     private bool connected;
 
-    private readonly BlockingCollection<(int symbol, string datetime, double ask, double bid)> Quotations = new();
-    private readonly object ResultsLock = new();
-    private readonly Queue<string> Results = new();
+    private readonly BlockingCollection<(int id, int symbol, string datetime, double ask, double bid)> quotations = new();
 
     private readonly CancellationTokenSource cts = new();
     private event Action OnInitializationComplete;
@@ -51,8 +48,8 @@ public class Client : IDisposable
     {
         try
         {
-            if (!Quotations.IsAddingCompleted) Quotations.CompleteAdding();
-            while (!Quotations.IsCompleted) Task.Delay(1000).ConfigureAwait(false).GetAwaiter();
+            if (!quotations.IsAddingCompleted) quotations.CompleteAdding();
+            while (!quotations.IsCompleted) Task.Delay(1000).ConfigureAwait(false).GetAwaiter();
             pipeClient.InvokeAsync(x => x.DeInit(symbol, reason)).ConfigureAwait(false).GetAwaiter();
         }
         catch (Exception)
@@ -61,13 +58,13 @@ public class Client : IDisposable
         }
     }
 
-    internal async Task<string> InitAsync(int symbol, string datetime, double ask, double bid, int environment)
+    internal async Task<string> InitAsync(int id, int symbol, string datetime, double ask, double bid, int environment)
     {
         connected = await InitializeClientAsync().ConfigureAwait(false);
         try
         {
             if (!connected) return noConnection;
-            var result = await pipeClient.InvokeAsync(x => x.Init(symbol, datetime, ask, bid, environment)).ConfigureAwait(false);
+            var result = await pipeClient.InvokeAsync(x => x.Init(id, symbol, datetime, ask, bid, environment)).ConfigureAwait(false);
             if (result == ok) OnInitializationComplete?.Invoke(); 
             return result;
         }
@@ -78,10 +75,9 @@ public class Client : IDisposable
         }
     }
 
-    internal string Tick(int symbol, string datetime, double ask, double bid)
+    internal string Tick(int id, int symbol, string datetime, double ask, double bid)
     {
-        Quotations.Add((symbol, datetime, ask, bid));
-        lock (ResultsLock) if (Results.Count > 0) { return Results.Dequeue(); }
+        quotations.Add((id, symbol, datetime, ask, bid));
         return ok;
     }
 
@@ -94,8 +90,8 @@ public class Client : IDisposable
         for (var attempt = 1; attempt <= maxAttempts; attempt++)
             try
             {
-                var cts = new CancellationTokenSource(connectionTimeoutMilliseconds);
-                await pipeClient.ConnectAsync(cts.Token).ConfigureAwait(false);
+                var cancellationTokenSource = new CancellationTokenSource(connectionTimeoutMilliseconds);
+                await pipeClient.ConnectAsync(cancellationTokenSource.Token).ConfigureAwait(false);
                 return true;
             }
             catch
@@ -127,25 +123,10 @@ public class Client : IDisposable
 
     private async Task ProcessQuotationsAsync(CancellationToken ct)
     {
-        foreach (var (symbol, datetime, ask, bid) in Quotations.GetConsumingEnumerable())
+        foreach (var (id, symbol, datetime, ask, bid) in quotations.GetConsumingEnumerable())
         {
             if (ct.IsCancellationRequested) break;
-            var result = await TickAsync((symbol, datetime, ask, bid)).ConfigureAwait(false);
-            lock (ResultsLock) Results.Enqueue(result);
-        }
-    }
-
-    private async Task<string> TickAsync((int symbol, string datetime, double ask, double bid) quotation)
-    {
-        try
-        {
-            if (!connected) return noConnection;
-            return await pipeClient.InvokeAsync(x => x.Tick(quotation.symbol, quotation.datetime, quotation.ask, quotation.bid)).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            connected = false;
-            return ExceptionDetails(ex);
+            await pipeClient.InvokeAsync(x => x.Tick(id, symbol, datetime, ask, bid), cancellationToken: ct).ConfigureAwait(false);
         }
     }
 }

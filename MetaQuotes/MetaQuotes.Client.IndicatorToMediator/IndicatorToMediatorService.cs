@@ -34,14 +34,14 @@ public static class IndicatorToMediatorService
         client.DeInit(symbol, reason);
     }
 
-    public static string Init(int symbol, string datetime, double ask, double bid, int environment)
+    public static string Init(int id, int symbol, string datetime, double ask, double bid, int environment)
     {
         client = new Client((Symbol)symbol, enableLogging: false);
-        return Task.Run(() => client.InitAsync(symbol, datetime, ask, bid, environment)).GetAwaiter().GetResult();
+        return Task.Run(() => client.InitAsync(id, symbol, datetime, ask, bid, environment)).GetAwaiter().GetResult();
     }
 
-    public static string Tick(int symbol, string datetime, double ask, double bid)
+    public static string Tick(int id, int symbol, string datetime, double ask, double bid)
     {
-        return client.Tick(symbol, datetime, ask, bid);
+        return client.Tick(id, symbol, datetime, ask, bid);
     }
 }

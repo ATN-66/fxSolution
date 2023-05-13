@@ -15,7 +15,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Common.Entities\Common.Entities.csproj" />
     <ProjectReference Include="..\Mediator.Administrator\Mediator.Administrator.csproj" />
-    <ProjectReference Include="..\Mediator.Repository.Interfaces\Mediator.Repository.Interfaces.csproj" />
   </ItemGroup>
 
 </Project>

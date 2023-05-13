@@ -9,6 +9,7 @@ namespace Common.Entities;
 
 public readonly record struct Quotation() : IComparable
 {
+    public readonly int ID;
     public readonly Symbol Symbol;
     public readonly DateTime DateTime;
     public readonly double DoubleAsk;
@@ -16,8 +17,9 @@ public readonly record struct Quotation() : IComparable
     public readonly int IntAsk;
     public readonly int IntBid;
     
-    public Quotation(Symbol symbol, DateTime dateTime, double doubleAsk, double doubleBid, int intAsk, int intBid) : this()
+    public Quotation(int id, Symbol symbol, DateTime dateTime, double doubleAsk, double doubleBid, int intAsk, int intBid) : this()
     {
+        ID = id;
         Symbol = symbol;
         DateTime = dateTime;
         DoubleAsk = doubleAsk;
@@ -26,7 +28,7 @@ public readonly record struct Quotation() : IComparable
         IntBid = intBid;
     }
 
-    public static Quotation Empty => new(default, default, default, default, default, default);
+    public static Quotation Empty => new(default, default, default, default, default, default, default);
 
     public int CompareTo(object obj)
     {
@@ -40,6 +42,6 @@ public readonly record struct Quotation() : IComparable
 
     public override string ToString()
     {
-        return $"{Symbol}, {DateTime:HH:mm:ss.fff}, {DoubleAsk:###.00000}, {DoubleBid:###.00000}, {IntAsk:00000}, {IntBid:00000}";
+        return $"{ID}, {Symbol}, {DateTime:HH:mm:ss.fff}, {DoubleAsk:###.00000}, {DoubleBid:###.00000}, {IntAsk:00000}, {IntBid:00000}";
     }
 }

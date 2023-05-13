@@ -17,7 +17,7 @@ public class MediatorToTerminalClient : IDisposable
     const int Port = 8080;
 
     private AsyncDuplexStreamingCall<gQuotation, Reply>? _call;
-    private MediatorToTerminal.MediatorToTerminalClient _client;
+    private MediatorToTerminal.MediatorToTerminalClient? _client;
 
     public void Dispose()
     {
@@ -39,9 +39,6 @@ public class MediatorToTerminalClient : IDisposable
                 Debug.Assert(otherClientMessage == "ok");
             }
         }
-
-        Console.WriteLine($"{GetType().Name} is listening on {Host}:{Port}");
-        await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
     }
 
     public async void Tick(Quotation quotation)
