@@ -24,29 +24,29 @@ namespace Terminal.Console
             var connected = false;
             while (!connected && !cancellationToken.IsCancellationRequested)
             {
-                connected = await TryInitializeAsync();
+                connected = await TryInitializeAsync().ConfigureAwait(false);
                 if (connected)
                 {
-                    Administrator.MediatorIsON = true;
+                    Administrator.MediatorConnected = true;
                     System.Console.WriteLine("Successfully connected to Mediator.");
                 }
                 else
                 {
-                    Administrator.MediatorIsON = false;
+                    Administrator.MediatorConnected = false;
                     System.Console.WriteLine("Failed to connect to Mediator. Retrying in 5 seconds...");
-                    await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+                    await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
                 }
             }
 
             // If needed, you can add more code here that should be executed after a successful connection
-            await Task.CompletedTask;
+            await Task.CompletedTask.ConfigureAwait(false);
         }
 
         public async Task<bool> DeInitializeAsync()
         {
             System.Console.Write("Disconnecting from Mediator...");
             var request = new Request { RequestMessage = "Goodbye" };
-            var response = await _terminalToMediatorClient.DeInitAsync(request);
+            var response = await _terminalToMediatorClient.DeInitAsync(request).ConfigureAwait(false);
             System.Console.WriteLine($"Mediator response: {response.ResponseMessage}. Reason: {response.ReasonMessage}");
             return response.ResponseMessage == "Goodbye";
         }
@@ -55,7 +55,7 @@ namespace Terminal.Console
         {
             System.Console.Write("Connecting to Mediator...");
             var request = new Request { RequestMessage = "Hello" };
-            var response = await _terminalToMediatorClient.InitAsync(request);
+            var response = await _terminalToMediatorClient.InitAsync(request).ConfigureAwait(false);
             System.Console.WriteLine($"Mediator response: {response.ResponseMessage}. Reason: {response.ReasonMessage}");
             return response.ResponseMessage == "Hello";
         }

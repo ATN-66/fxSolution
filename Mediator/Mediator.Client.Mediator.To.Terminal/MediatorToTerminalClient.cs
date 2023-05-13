@@ -16,7 +16,7 @@ public class MediatorToTerminalClient : IDisposable
     const int Port = 8080;
 
     private AsyncDuplexStreamingCall<gQuotation, Reply>? _call;
-    private MediatorToTerminalService.MediatorToTerminalServiceClient _mediatorToTerminalService;
+    private MediatorToTerminal.MediatorToTerminalClient _mediatorToTerminalService;
 
     public void Dispose()
     {

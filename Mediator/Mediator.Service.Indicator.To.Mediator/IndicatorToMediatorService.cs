@@ -1,24 +1,24 @@
 ﻿/*+------------------------------------------------------------------+
   |                            Mediator.Server.Indicator.To.Mediator |
-  |                                     IndicatorToMediatorServer.cs |
+  |                                     IndicatorToMediatorService.cs |
   +------------------------------------------------------------------+*/
 
-using System;
 using System.Diagnostics;
 using Common.Entities;
 using Common.MetaQuotes.Mediator;
 using Mediator.Processors;
+using Mediator.Server.Indicator.To.Mediator;
 using PipeMethodCalls;
 using PipeMethodCalls.NetJson;
 
-namespace Mediator.Server.Indicator.To.Mediator;
+namespace Mediator.Service.Indicator.To.Mediator;
 
-public class IndicatorToMediatorServer : IIndicatorToMediatorServer
+public class IndicatorToMediatorService : IIndicatorToMediatorService
 {
     private readonly QuotationsProcessor _quotationsProcessor;
     private readonly IPipeSerializer pipeSerializer = new NetJsonPipeSerializer();
 
-    public IndicatorToMediatorServer(QuotationsProcessor quotationsProcessor)
+    public IndicatorToMediatorService(QuotationsProcessor quotationsProcessor)
     {
         _quotationsProcessor = quotationsProcessor;
     }
@@ -44,7 +44,7 @@ public class IndicatorToMediatorServer : IIndicatorToMediatorServer
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
-                Console.WriteLine($"Server error: {ex.Message}");
+                Console.WriteLine($"{GetType().Name}: {ex.Message}");
                 break;
             }
     }

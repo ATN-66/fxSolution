@@ -25,7 +25,7 @@ const string ok = "ok";
 const string audioFilePath = "alert2.wav";
 var audioPlayer = new AudioPlayer(audioFilePath);
 
-Console.WriteLine("MT5 platform simulator...");
+Console.WriteLine("MetaQuotes.MT5 platform simulator...");
 Console.WriteLine($"Environment: {config.Environment}.");
 Console.WriteLine($"Input Ticks: {config.InputModification}.");
 Console.WriteLine($"Year: {config.Year}.");

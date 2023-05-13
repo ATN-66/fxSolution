@@ -16,45 +16,42 @@ public class OrdersProcessor
         _administrator = administrator;
     }
 
-    public async Task<Response> DeInitAsync(Request request)
+    public Task<Response> DeInitAsync(Request request)
     {
-        if (request.RequestMessage != "Goodbye") throw new Exception("Wrong request.");
-        _administrator.TerminalIsON = false;
-        Console.WriteLine("Terminal was disconnected!");
-        return await Task.FromResult(new Response
+        if (request.RequestMessage != "Goodbye") throw new Exception($"{nameof(request)}");
+        _administrator.TerminalConnected = false;
+        Console.WriteLine("Terminal was disconnected.");
+
+        return Task.FromResult(new Response
         {
             ResponseMessage = "Goodbye",
             ReasonMessage = "Have a nice day!"
         });
     }
 
-    public async Task<Response> InitAsync(Request request)
+    public Task<Response> InitAsync(Request request)
     {
-        throw new NotImplementedException();
+        if (request.RequestMessage != "Hello") throw new Exception($"{nameof(request)}");
 
-        //if (request.RequestMessage != "Hello") throw new Exception("Wrong request.");
-        //Response response;
-        //if (_administrator.IndicatorsIsON)//TODO: Expert Advisor
-        //{
-        //    _administrator.TerminalIsON = true;
-        //    response = new Response
-        //    {
-        //        ResponseMessage = "Hello",
-        //        ReasonMessage = "Let's start!"
-        //    };
-        //    Console.WriteLine("Terminal connected!");
-        //}
-        //else
-        //{
-        //    _administrator.TerminalIsON = false;
-        //    response = new Response
-        //    {
-        //        ResponseMessage = "Goodbye",
-        //        ReasonMessage = "MetaQuotes.MT5 platform is OFF."
-        //    };
-        //    Console.WriteLine("Terminal rejected.");
-        //}
+        if (_administrator is { IndicatorsConnected: true, ExpertAdvisorConnected: true })
+        {
+            _administrator.TerminalConnected = true;
+            Console.WriteLine("Terminal was connected.");
 
-        //return await Task.FromResult(response);
+            return Task.FromResult(new Response
+            {
+                ResponseMessage = "Hello",
+                ReasonMessage = "Let's start!"
+            });
+        }
+
+        _administrator.TerminalConnected = false;
+        Console.WriteLine("Terminal rejected.");
+
+        return Task.FromResult(new Response
+        {
+            ResponseMessage = "Goodbye",
+            ReasonMessage = "MetaQuotes.MT5 platform is OFF."
+        });
     }
 }

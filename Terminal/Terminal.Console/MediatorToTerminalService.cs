@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                                                 Terminal.Console |
-  |                                      MediatorToTerminalServer.cs |
+  |                                      MediatorToTerminalService.cs |
   +------------------------------------------------------------------+*/
 
 using System.Security.Cryptography;
@@ -11,7 +11,7 @@ using Protos.Grpc;
 
 namespace Terminal.Console;
 
-public class MediatorToTerminalServer : MediatorToTerminalService.MediatorToTerminalServiceBase
+public class MediatorToTerminalService : MediatorToTerminal.MediatorToTerminalBase
 {
     private const string Host = "localhost";
     private const int Port = 8080;
@@ -20,12 +20,11 @@ public class MediatorToTerminalServer : MediatorToTerminalService.MediatorToTerm
     {
         var grpcServer = new Server
         {
-            Services = { MediatorToTerminalService.BindService(this) },
-            Ports = { new ServerPort(Host, Port, ServerCredentials.Insecure) }
+            Services = { MediatorToTerminal.BindService(this) }, Ports = { new ServerPort(Host, Port, ServerCredentials.Insecure) }
         };
 
         grpcServer.Start();
-        System.Console.WriteLine($"MediatorToTerminalServer listening on {Host}:{Port}");
+        System.Console.WriteLine($"MediatorToTerminalService listening on {Host}:{Port}");
         var tcs = new TaskCompletionSource<bool>();
         await tcs.Task;
     }

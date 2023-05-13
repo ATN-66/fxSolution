@@ -1,7 +1,7 @@
 ﻿syntax = "proto3";
 package protos.grpc;
 
-service TerminalToMediatorService {
+service TerminalToMediator {
     rpc DeInit(Request) returns (Response);
     rpc Init(Request) returns (Response);
 }

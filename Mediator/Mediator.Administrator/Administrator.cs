@@ -23,6 +23,8 @@ public class Administrator
         DeInitReasons = new DeInitReason?[TotalIndicators];
     }
 
+    public bool ExpertAdvisorConnected => true; // TODO: Expert Advisor
+
     public bool IndicatorsConnected
     {
         get
@@ -52,20 +54,20 @@ public class Administrator
         }
     }
 
-    public event EventHandler? TerminalIsONChanged;
+    public event EventHandler? TerminalConnectedChanged;
     
-    private bool _terminalIsON;
-    public bool TerminalIsON
+    private bool _terminalConnected;
+    public bool TerminalConnected
     {
-        get => _terminalIsON;
+        get => _terminalConnected;
         set
         {
-            if (_terminalIsON == value) return;
-            var wasOff = !_terminalIsON;
-            _terminalIsON = value;
-            if (wasOff && _terminalIsON)
+            if (_terminalConnected == value) return;
+            var wasOff = !_terminalConnected;
+            _terminalConnected = value;
+            if (wasOff && _terminalConnected)
             {
-                TerminalIsONChanged?.Invoke(this, EventArgs.Empty);
+                TerminalConnectedChanged?.Invoke(this, EventArgs.Empty);
             }
         }
     }

@@ -10,8 +10,8 @@ using Mediator.Client.Mediator.To.Terminal;
 using Mediator.Console;
 using Mediator.Processors;
 using Mediator.Repository;
-using Mediator.Server.Indicator.To.Mediator;
-using Mediator.Server.Terminal.To.Mediator;
+using Mediator.Service.Indicator.To.Mediator;
+using Mediator.Service.Terminal.To.Mediator;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -29,13 +29,13 @@ using (var scope = host.Services.CreateScope())
                                     let server = scope.ServiceProvider.GetService<IIndicatorToMediatorServer>()
                                     select Task.Run(() => server.StartAsync(symbol, cts.Token))).ToList();
 
-    var terminalToMediatorServer = scope.ServiceProvider.GetRequiredService<TerminalToMediatorServer>();
+    var terminalToMediatorServer = scope.ServiceProvider.GetRequiredService<TerminalToMediatorService>();
     var terminalToMediatorServerTask = terminalToMediatorServer.StartAsync(cts.Token);
 
     var mediatorToTerminalClient = scope.ServiceProvider.GetRequiredService<MediatorToTerminalClient>();
 
     var administrator = scope.ServiceProvider.GetRequiredService<Administrator>();
-    administrator.TerminalIsONChanged += async (_, _) => { await mediatorToTerminalClient.StartAsync().ConfigureAwait(false); };
+    administrator.TerminalConnectedChanged += async (_, _) => { await mediatorToTerminalClient.StartAsync().ConfigureAwait(false); };
     await Task.WhenAny(consoleTask, Task.WhenAll(indicatorToMediatorTasks), terminalToMediatorServerTask).ConfigureAwait(false);
     cts.Cancel();
 }
@@ -52,9 +52,9 @@ static IHostBuilder CreateHostBuilder(string[] args)
         {
             services.AddSingleton<Administrator>();
             services.AddSingleton<IMSSQLRepository, MSSQLRepository>();
-            services.AddSingleton<IIndicatorToMediatorServer, IndicatorToMediatorServer>();
-            services.AddSingleton<TerminalToMediatorServer>();//todo
-            services.AddSingleton<MediatorToTerminalClient>();//todo
+            services.AddSingleton<IIndicatorToMediatorService, IndicatorToMediatorService>();
+            services.AddSingleton<TerminalToMediatorService>();
+            services.AddSingleton<MediatorToTerminalClient>();
             services.AddSingleton<QuotationsProcessor>();
             services.AddSingleton<OrdersProcessor>();
             services.AddSingleton<ConsoleService>();

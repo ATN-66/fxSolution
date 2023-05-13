@@ -32,7 +32,6 @@ public class QuotationsProcessor
     private readonly ReaderWriterLockSlim _queueLock = new();
     private readonly ConcurrentQueue<Quotation> _quotationsToSave = new();
    
-
     public QuotationsProcessor(Administrator.Administrator administrator, MediatorToTerminalClient mediatorToTerminalClient, IMSSQLRepository repository)
     {
         _administrator = administrator;

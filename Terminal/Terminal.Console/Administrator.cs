@@ -7,6 +7,6 @@ namespace Terminal.Console
 {
     internal static class Administrator
     {
-        public static bool MediatorIsON;
+        public static bool MediatorConnected;
     }
 }
