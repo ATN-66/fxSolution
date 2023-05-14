@@ -52,7 +52,7 @@ public sealed class QuotationsProcessor : IDisposable
         saveTimer.Enabled = true;
 
         processQuotationsAction =
-            () => Task.Run(() => ProcessQuotationsAsync(cts.Token), cts.Token).ConfigureAwait(false);
+            () => Task.Run(() => ProcessAsync(cts.Token), cts.Token).ConfigureAwait(false);
         OnInitializationComplete += processQuotationsAction;
     }
 
@@ -98,7 +98,8 @@ public sealed class QuotationsProcessor : IDisposable
                 var resultBid = Normalize(resultSymbol, Side.Bid, bid);
                 var quotation = new Quotation(id, resultSymbol, resultDateTime, ask, bid, resultAsk, resultBid);
                 lastKnownQuotations[symbol - 1] = quotation;
-                _quotationsToSave.Enqueue(quotation); //TODO: to terminal
+                mediatorToTerminalClient.Tick(quotation); //todo: async
+                _quotationsToSave.Enqueue(quotation);
             }
             else
             {
@@ -125,9 +126,9 @@ public sealed class QuotationsProcessor : IDisposable
         return ok;
     }
 
-    private void ProcessQuotationsAsync(CancellationToken ct)
+    private async Task ProcessAsync(CancellationToken ct)
     {
-        foreach (var (id,symbol, datetime, ask, bid) in quotations.GetConsumingEnumerable(ct))
+        await foreach(var (id,symbol, datetime, ask, bid) in quotations.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
         {
             if (ct.IsCancellationRequested) break;
             Process(id, symbol, datetime, ask, bid);

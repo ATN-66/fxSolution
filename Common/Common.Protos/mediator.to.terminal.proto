@@ -7,10 +7,13 @@ service MediatorToTerminal {
 }
 
 message gQuotation {
-    int32 symbol = 1;
-    google.protobuf.Timestamp dateTime = 2;
-    int32 ask = 3;
-    int32 bid = 4;
+    int32 id = 1;
+    int32 symbol = 2;
+    google.protobuf.Timestamp dateTime = 3;
+    double doubleask = 4;
+    double doublebid = 5;
+    int32 intask = 6;
+    int32 intbid = 7;
 }
 
 message Reply {

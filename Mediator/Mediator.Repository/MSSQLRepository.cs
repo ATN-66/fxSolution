@@ -14,7 +14,11 @@ public class MSSQLRepository : IMSSQLRepository
 {
     public async Task SaveQuotationsAsync(IList<Quotation> quotationsToSave)
     {
-        Console.WriteLine($"{quotationsToSave.Count} were saved.");
+        //foreach (var quotation in quotationsToSave)
+        //{
+        //    Console.WriteLine($"{quotation.ID}");
+        //}
+        
 
         //var tableName = RepositoryHelper.GetTableName(weekNumber);
         //RepositoryHelper.CheckISO8601(yearNumber, weekNumber, quotationsToSave);

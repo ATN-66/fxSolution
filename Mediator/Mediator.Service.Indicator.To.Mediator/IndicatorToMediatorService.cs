@@ -24,7 +24,7 @@ public class IndicatorToMediatorService : IIndicatorToMediatorService
 
     public async Task StartAsync(Symbol symbol, CancellationToken cancellationToken = default)
     {
-        var PipeName = $"IndicatorToMediator_{symbol}";
+        var PipeName = $"IndicatorToMediator_{(int)symbol}";
 
         while (!cancellationToken.IsCancellationRequested)
             try

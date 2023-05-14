@@ -13,7 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Common\Common.Entities\Common.Entities.csproj" />
     <ProjectReference Include="..\..\Common\Common.MetaQuotes.Mediator\Common.MetaQuotes.Mediator.csproj" />
     <ProjectReference Include="..\Mediator.Processors\Mediator.Processors.csproj" />
   </ItemGroup>

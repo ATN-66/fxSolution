@@ -8,7 +8,6 @@ using System.Collections.Concurrent;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.Entities;
 using Common.MetaQuotes.Mediator;
 using PipeMethodCalls;
 using PipeMethodCalls.NetJson;
@@ -28,7 +27,7 @@ internal sealed class Client : IDisposable
     private event Action OnInitializationComplete;
     private readonly Action processQuotationsAction;
 
-    internal Client(Symbol symbol, bool enableLogging = false)
+    internal Client(int symbol, bool enableLogging = false)
     {
         pipeClient = new PipeClient<IQuotationsMessenger>(new NetJsonPipeSerializer(), $"IndicatorToMediator_{symbol}");
         if (enableLogging) pipeClient.SetLogger(Console.WriteLine);

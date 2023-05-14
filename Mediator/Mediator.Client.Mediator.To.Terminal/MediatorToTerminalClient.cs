@@ -3,71 +3,71 @@
   |                                      MediatorToTerminalClient.cs |
   +------------------------------------------------------------------+*/
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using Common.Entities;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Protos.Grpc;
+using Channel = Grpc.Core.Channel;
 
 namespace Mediator.Client.Mediator.To.Terminal;
 
-public class MediatorToTerminalClient : IDisposable
+public sealed class MediatorToTerminalClient : IDisposable
 {
-    const string Host = "localhost";
-    const int Port = 8080;
+    private const string Host = "localhost";
+    private const int Port = 8080;
+    private readonly Channel channel;
+    private AsyncDuplexStreamingCall<gQuotation, Reply>? call;
+    private readonly MediatorToTerminal.MediatorToTerminalClient client;
+    private readonly BlockingCollection<Quotation> quotations = new();
 
-    private AsyncDuplexStreamingCall<gQuotation, Reply>? _call;
-    private MediatorToTerminal.MediatorToTerminalClient? _client;
-
-    public void Dispose()
+    public MediatorToTerminalClient()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
+        channel = new Channel(Host + ":" + Port, ChannelCredentials.Insecure);
+        client = new MediatorToTerminal.MediatorToTerminalClient(channel);
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken = default)
+    public async Task StartAsync(CancellationToken ct)
     {
-        var channel = new Channel(Host + ":" + Port, ChannelCredentials.Insecure);
-        _client = new MediatorToTerminal.MediatorToTerminalClient(channel);
-        
-        using (_call = _client.TickAsync(cancellationToken: cancellationToken))
+        call = client.TickAsync(cancellationToken: ct);
+
+        while (await call.ResponseStream.MoveNext(ct).ConfigureAwait(false))
         {
-            while (await _call.ResponseStream.MoveNext(CancellationToken.None).ConfigureAwait(false))
+            var serverMessage = call.ResponseStream.Current;
+            var otherClientMessage = serverMessage.ReplyMessage;
+            Debug.Assert(otherClientMessage == "ok");
+        }
+    }
+
+    public async Task ProcessAsync(CancellationToken ct)
+    {
+        await foreach (var quotation in quotations.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
+        {
+            var message = new gQuotation
             {
-                var serverMessage = _call.ResponseStream.Current;
-                var otherClientMessage = serverMessage.ReplyMessage;
-                Debug.Assert(otherClientMessage == "ok");
-            }
+               Id = quotation.ID,
+               Symbol = (int)quotation.Symbol,
+               DateTime = Timestamp.FromDateTime(quotation.DateTime),
+               Doubleask = quotation.DoubleAsk,
+               Doublebid = quotation.DoubleBid,
+               Intask = quotation.IntAsk,
+               Intbid = quotation.IntBid
+            };
+
+            await call!.RequestStream.WriteAsync(message, CancellationToken.None).ConfigureAwait(false);
         }
     }
 
-    public async void Tick(Quotation quotation)
+    public void Tick(Quotation quotation)
     {
-        if (_call is null) return;
-
-        var message = new gQuotation
-        {
-            Symbol = (int)quotation.Symbol,
-            DateTime = Timestamp.FromDateTime(quotation.DateTime),
-            Ask = quotation.IntAsk,
-            Bid = quotation.IntBid
-        };
-
-        await _call.RequestStream.WriteAsync(message).ConfigureAwait(false);
+        quotations.Add(quotation);
     }
 
-    ~MediatorToTerminalClient()
+    public async void Dispose()
     {
-        Dispose(false);
-    }
-
-    private void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            //Free any managed objects here if needed
-        }
-
-        //Free any unmanaged objects here if needed
+        call?.Dispose();
+        await channel.ShutdownAsync().ConfigureAwait(false);
+        quotations.Dispose();
     }
 }

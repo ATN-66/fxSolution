@@ -30,7 +30,7 @@ public readonly record struct Quotation() : IComparable
 
     public static Quotation Empty => new(default, default, default, default, default, default, default);
 
-    public int CompareTo(object obj)
+    public int CompareTo(object? obj)
     {
         if (obj == null) return 1;
         var otherQuotation = (Quotation)obj;

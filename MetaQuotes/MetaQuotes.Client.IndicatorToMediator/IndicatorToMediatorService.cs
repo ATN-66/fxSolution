@@ -7,7 +7,6 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
-using Common.Entities;
 
 namespace MetaQuotes.Client.IndicatorToMediator;
 
@@ -36,7 +35,7 @@ public static class IndicatorToMediatorService
 
     public static string Init(int id, int symbol, string datetime, double ask, double bid, int environment)
     {
-        client = new Client((Symbol)symbol, enableLogging: false);
+        client = new Client(symbol, enableLogging: false);
         return Task.Run(() => client.InitAsync(id, symbol, datetime, ask, bid, environment)).GetAwaiter().GetResult();
     }
 

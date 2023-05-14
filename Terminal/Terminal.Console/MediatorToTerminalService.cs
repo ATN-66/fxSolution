@@ -3,9 +3,6 @@
   |                                      MediatorToTerminalService.cs |
   +------------------------------------------------------------------+*/
 
-using System.Security.Cryptography;
-using System.Threading.Tasks;
-using Common.Entities;
 using Grpc.Core;
 using Protos.Grpc;
 
@@ -34,11 +31,12 @@ public class MediatorToTerminalService : MediatorToTerminal.MediatorToTerminalBa
         while (await requestStream.MoveNext(CancellationToken.None).ConfigureAwait(false))
         {
             var gQuotation = requestStream.Current;
-            //var quotation = new Quotation((Symbol)gQuotation.Symbol, gQuotation.DateTime.ToDateTime(), gQuotation.Ask, gQuotation.Bid);
+            //var quotation = new Quotation(gQuotation.Id, (Symbol)gQuotation.Symbol, gQuotation.DateTime.ToDateTime(), gQuotation.Doubleask, gQuotation.Doublebid, gQuotation.Intask, gQuotation.Intbid);
             //if (quotation.Symbol == Symbol.EURUSD) System.Console.WriteLine(quotation);
 
+            System.Console.WriteLine(gQuotation.DateTime);
             var message = new Reply { ReplyMessage = "ok" };
-            await responseStream.WriteAsync(message);
+            await responseStream.WriteAsync(message).ConfigureAwait(false);
         }
     }
 }
