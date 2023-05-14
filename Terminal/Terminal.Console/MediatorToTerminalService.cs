@@ -3,8 +3,8 @@
   |                                      MediatorToTerminalService.cs |
   +------------------------------------------------------------------+*/
 
+using Common.Entities;
 using Google.Protobuf;
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 
 namespace Terminal.Console;
@@ -31,11 +31,10 @@ public class MediatorToTerminalService : MediatorToTerminal.MediatorToTerminalBa
     {
         while (await requestStream.MoveNext(CancellationToken.None).ConfigureAwait(false))
         {
-            var gQuotation = requestStream.Current;
-            //var quotation = new Quotation(gQuotation.Id, (Symbol)gQuotation.Symbol, gQuotation.DateTime.ToDateTime(), gQuotation.Doubleask, gQuotation.Doublebid, gQuotation.Intask, gQuotation.Intbid);
+            var q = requestStream.Current;
+            var quotation = new Quotation(q.Id, (Symbol)q.Symbol, q.DateTime.ToDateTime(), q.Doubleask, q.Doublebid, q.Intask, q.Intbid);
             //if (quotation.Symbol == Symbol.EURUSD) System.Console.WriteLine(quotation);
-
-            System.Console.WriteLine(gQuotation.DateTime);
+            System.Console.WriteLine(quotation);
             var message = new Reply { ReplyMessage = "ok" };
             await responseStream.WriteAsync(message).ConfigureAwait(false);
         }

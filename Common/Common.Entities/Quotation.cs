@@ -32,14 +32,26 @@ public readonly record struct Quotation() : IComparable
     {
         if (obj == null) return 1;
         var otherQuotation = (Quotation)obj;
+        if (DateTime < otherQuotation.DateTime) return -1;
+        if (DateTime > otherQuotation.DateTime) return 1;
         if (Symbol < otherQuotation.Symbol) return -1;
         if (Symbol > otherQuotation.Symbol) return 1;
-        if (DateTime < otherQuotation.DateTime) return -1;
-        return DateTime > otherQuotation.DateTime ? 1 : 0;
+        return 0;
     }
 
     public override string ToString()
     {
-        return $"{ID}, {Symbol}, {DateTime:HH:mm:ss.fff}, {DoubleAsk:###.00000}, {DoubleBid:###.00000}, {IntAsk:00000}, {IntBid:00000}";
+        switch (Symbol)
+        {
+            case Symbol.EURUSD:
+            case Symbol.EURGBP:
+            case Symbol.GBPUSD:
+                return $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {DoubleAsk:##0.00000}, {DoubleBid:##0.00000}, {IntAsk:00000}, {IntBid:00000}";
+            case Symbol.USDJPY:
+            case Symbol.EURJPY:
+            case Symbol.GBPJPY:
+                return $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {DoubleAsk:##0.000}, {DoubleBid:##0.000}, {IntAsk:00000}, {IntBid:00000}";
+            default: throw new Exception(nameof(Symbol));
+        }
     }
 }
