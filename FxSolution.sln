@@ -47,7 +47,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mediator.Service.Terminal.T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mediator.Service.Indicator.To.Mediator", "Mediator\Mediator.Service.Indicator.To.Mediator\Mediator.Service.Indicator.To.Mediator.csproj", "{5B7F14C0-DE93-49ED-8FA5-E8DBB9B8B811}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common.Entities", "Common\Common.Entities\Common.Entities.csproj", "{5CE390C8-BF60-4FA3-AF4B-48545BEA8B62}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common.Entities", "Common\Common.Entities\Common.Entities.csproj", "{5CE390C8-BF60-4FA3-AF4B-48545BEA8B62}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
