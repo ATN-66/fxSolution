@@ -13,7 +13,7 @@ public class MediatorToTerminalService : MediatorToTerminal.MediatorToTerminalBa
     private const string Host = "localhost";
     private const int Port = 8080;
 
-    public async Task StartAsync()
+    public Task StartAsync()
     {
         var grpcServer = new Server
         {
@@ -23,7 +23,7 @@ public class MediatorToTerminalService : MediatorToTerminal.MediatorToTerminalBa
         grpcServer.Start();
         System.Console.WriteLine($"MediatorToTerminalService listening on {Host}:{Port}");
         var tcs = new TaskCompletionSource<bool>();
-        await tcs.Task;
+        return tcs.Task;
     }
 
     public override async Task TickAsync(IAsyncStreamReader<gQuotation> requestStream, IServerStreamWriter<Reply> responseStream, ServerCallContext context)

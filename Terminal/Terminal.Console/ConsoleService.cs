@@ -34,10 +34,10 @@ public class ConsoleService
                     System.Console.Clear();
                     break;
                 case "init":
-                    await _controller.TryInitializeAsync();
+                    await _controller.TryInitializeAsync().ConfigureAwait(false);
                     break;
                 case "deinit":
-                    await _controller.DeInitializeAsync();
+                    await _controller.DeInitializeAsync().ConfigureAwait(false);
                     break;
                 default:
                     System.Console.WriteLine("Unknown command. Try again.");
