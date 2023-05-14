@@ -3,8 +3,8 @@
   |                                      TerminalToMediatorClient.cs |
   +------------------------------------------------------------------+*/
 
+using Google.Protobuf;
 using Grpc.Net.Client;
-using Protos.Grpc;
 
 namespace Terminal.Console;
 

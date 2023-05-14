@@ -3,7 +3,7 @@
   |                                               OrdersProcessor.cs |
   +------------------------------------------------------------------+*/
 
-using Protos.Grpc;
+using Google.Protobuf;
 
 namespace Mediator.Processors;
 

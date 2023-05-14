@@ -3,8 +3,6 @@
   |                                                     Quotation.cs |
   +------------------------------------------------------------------+*/
 
-using System;
-
 namespace Common.Entities;
 
 public readonly record struct Quotation() : IComparable
@@ -16,7 +14,7 @@ public readonly record struct Quotation() : IComparable
     public readonly double DoubleBid;
     public readonly int IntAsk;
     public readonly int IntBid;
-    
+
     public Quotation(int id, Symbol symbol, DateTime dateTime, double doubleAsk, double doubleBid, int intAsk, int intBid) : this()
     {
         ID = id;

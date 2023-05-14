@@ -3,9 +3,9 @@
   |                                     TerminalToMediatorService.cs |
   +------------------------------------------------------------------+*/
 
+using Google.Protobuf;
 using Grpc.Core;
 using Mediator.Processors;
-using Protos.Grpc;
 
 namespace Mediator.Service.Terminal.To.Mediator;
 

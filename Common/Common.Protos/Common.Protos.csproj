@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="grpcquotation.proto" />
     <None Remove="mediator.to.terminal.proto" />
   </ItemGroup>
 
@@ -22,6 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Protobuf Include="grpcquotation.proto">
+      <GrpcServices>Both</GrpcServices>
+    </Protobuf>
     <Protobuf Include="mediator.to.terminal.proto">
       <GrpcServices>Both</GrpcServices>
     </Protobuf>

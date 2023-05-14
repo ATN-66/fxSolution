@@ -3,7 +3,7 @@
   |                                                    Controller.cs |
   +------------------------------------------------------------------+*/
 
-using Protos.Grpc;
+using Google.Protobuf;
 
 namespace Terminal.Console
 {

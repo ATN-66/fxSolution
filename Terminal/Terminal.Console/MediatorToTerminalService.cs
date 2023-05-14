@@ -3,8 +3,9 @@
   |                                      MediatorToTerminalService.cs |
   +------------------------------------------------------------------+*/
 
+using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Protos.Grpc;
 
 namespace Terminal.Console;
 
@@ -26,7 +27,7 @@ public class MediatorToTerminalService : MediatorToTerminal.MediatorToTerminalBa
         return tcs.Task;
     }
 
-    public override async Task TickAsync(IAsyncStreamReader<gQuotation> requestStream, IServerStreamWriter<Reply> responseStream, ServerCallContext context)
+    public override async Task TickAsync(IAsyncStreamReader<grpcquotation> requestStream, IServerStreamWriter<Reply> responseStream, ServerCallContext context)
     {
         while (await requestStream.MoveNext(CancellationToken.None).ConfigureAwait(false))
         {

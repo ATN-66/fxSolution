@@ -9,6 +9,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Timers;
 using Common.Entities;
+using Google.Protobuf.WellKnownTypes;
 using Mediator.Client.Mediator.To.Terminal;
 using Mediator.Repository;
 using Environment = Common.Entities.Environment;

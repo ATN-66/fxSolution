@@ -1,19 +1,9 @@
 ﻿syntax = "proto3";
-package protos.grpc;
-import "timestamp.proto";
+package google.protobuf;
+import "grpcquotation.proto";
 
 service MediatorToTerminal {
-    rpc TickAsync(stream gQuotation) returns (stream Reply);
-}
-
-message gQuotation {
-    int32 id = 1;
-    int32 symbol = 2;
-    google.protobuf.Timestamp dateTime = 3;
-    double doubleask = 4;
-    double doublebid = 5;
-    int32 intask = 6;
-    int32 intbid = 7;
+    rpc TickAsync(stream google.protobuf.grpcquotation) returns (stream Reply);
 }
 
 message Reply {

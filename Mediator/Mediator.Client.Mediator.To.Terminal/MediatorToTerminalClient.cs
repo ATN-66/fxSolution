@@ -6,9 +6,9 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Common.Entities;
+using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Protos.Grpc;
 using Channel = Grpc.Core.Channel;
 
 namespace Mediator.Client.Mediator.To.Terminal;
@@ -18,7 +18,7 @@ public sealed class MediatorToTerminalClient : IDisposable
     private const string Host = "localhost";
     private const int Port = 8080;
     private readonly Channel channel;
-    private AsyncDuplexStreamingCall<gQuotation, Reply>? call;
+    private AsyncDuplexStreamingCall<grpcquotation, Reply>? call;
     private readonly MediatorToTerminal.MediatorToTerminalClient client;
     private readonly BlockingCollection<Quotation> quotations = new();
 
@@ -44,15 +44,15 @@ public sealed class MediatorToTerminalClient : IDisposable
     {
         await foreach (var quotation in quotations.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
         {
-            var message = new gQuotation
+            var message = new grpcquotation()
             {
-               Id = quotation.ID,
-               Symbol = (int)quotation.Symbol,
-               DateTime = Timestamp.FromDateTime(quotation.DateTime),
-               Doubleask = quotation.DoubleAsk,
-               Doublebid = quotation.DoubleBid,
-               Intask = quotation.IntAsk,
-               Intbid = quotation.IntBid
+                Id = quotation.ID,
+                Symbol = (int)quotation.Symbol,
+                DateTime = Timestamp.FromDateTime(quotation.DateTime),
+                Doubleask = quotation.DoubleAsk,
+                Doublebid = quotation.DoubleBid,
+                Intask = quotation.IntAsk,
+                Intbid = quotation.IntBid
             };
 
             await call!.RequestStream.WriteAsync(message, CancellationToken.None).ConfigureAwait(false);
