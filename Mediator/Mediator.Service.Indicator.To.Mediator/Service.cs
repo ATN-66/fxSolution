@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                            Mediator.Server.Indicator.To.Mediator |
-  |                                     IndicatorToMediatorService.cs |
+  |                                     Service.cs |
   +------------------------------------------------------------------+*/
 
 using System.Diagnostics;
@@ -12,23 +12,25 @@ using PipeMethodCalls.NetJson;
 
 namespace Mediator.Service.Indicator.To.Mediator;
 
-public class IndicatorToMediatorService : IIndicatorToMediatorService
+public class Service : IServiceIndicatorToMediator
 {
+    private readonly Guid guid = Guid.NewGuid();
     private readonly QuotationsProcessor _quotationsProcessor;
     private readonly IPipeSerializer pipeSerializer = new NetJsonPipeSerializer();
 
-    public IndicatorToMediatorService(QuotationsProcessor quotationsProcessor)
+    public Service(QuotationsProcessor quotationsProcessor)
     {
         _quotationsProcessor = quotationsProcessor;
     }
 
     public async Task StartAsync(Symbol symbol, CancellationToken cancellationToken = default)
     {
-        var PipeName = $"IndicatorToMediator_{(int)symbol}";
+        var PipeName = $"Indicator.To.Mediator_{(int)symbol}";
 
         while (!cancellationToken.IsCancellationRequested)
             try
             {
+                Console.WriteLine($"{GetType().Namespace}:{symbol}:{guid}");
                 using var pipeServer = new PipeServer<IQuotationsMessenger>(pipeSerializer, PipeName,() => new QuotationsMessenger(_quotationsProcessor));
                 if (cancellationToken.IsCancellationRequested) break;
                 await pipeServer.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);

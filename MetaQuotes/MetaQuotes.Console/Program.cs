@@ -4,9 +4,8 @@
   +------------------------------------------------------------------+*/
 
 using System.Diagnostics;
-using System.Globalization;
 using Common.Entities;
-using MetaQuotes.Client.IndicatorToMediator;
+using MetaQuotes.Client.Indicator.To.Mediator;
 using MetaQuotes.Console;
 using NAudio.Wave;
 using Environment = Common.Entities.Environment;
@@ -64,7 +63,7 @@ static Task DeInitializeIndicators(CancellationToken ct)
     foreach (Symbol symbol in Enum.GetValues(typeof(Symbol)))
     {
         if (ct.IsCancellationRequested) break;
-        IndicatorToMediatorService.DeInit((int)symbol, (int)DeInitReason.Terminal_closed);
+        Mediator.DeInit((int)symbol, (int)DeInitReason.Terminal_closed);
     }
     return Task.CompletedTask;
 }
@@ -76,7 +75,11 @@ static Task InitializeIndicators(Queue<Quotation> firstQuotations, Environment e
     {
         if (ct.IsCancellationRequested) break;
         var quotation = firstQuotations.Dequeue();
-        var result = IndicatorToMediatorService.Init(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.DoubleAsk, quotation.DoubleBid, (int)environment);
+        var output = Mediator.Init(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.DoubleAsk, quotation.DoubleBid, (int)environment).Split(':');
+        var symbol = (Symbol)Convert.ToInt32(output[0]);
+        var guid = Guid.Parse(output[1]);
+        var result = output[2];
+        Console.WriteLine($"Init result: {symbol}({guid}): {result}");
         if (ok != result) throw new Exception(result);
     }
     return Task.CompletedTask;
@@ -89,7 +92,7 @@ static Task ProcessQuotations(Queue<Quotation> quotations, CancellationToken ct)
     {
         if (ct.IsCancellationRequested) break;
         var quotation = quotations.Dequeue();
-        var result = IndicatorToMediatorService.Tick(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.DoubleAsk, quotation.DoubleBid);
+        var result = Mediator.Tick(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.DoubleAsk, quotation.DoubleBid);
         if (ok != result) throw new Exception(result);
     }
     return Task.CompletedTask;

@@ -12,10 +12,11 @@ using Common.MetaQuotes.Mediator;
 using PipeMethodCalls;
 using PipeMethodCalls.NetJson;
 
-namespace MetaQuotes.Client.IndicatorToMediator;
+namespace MetaQuotes.Client.Indicator.To.Mediator;
 
 internal sealed class Client : IDisposable
 {
+    private readonly Guid guid = Guid.NewGuid();
     private const string ok = "ok";
     private const string noConnection = "Unable to establish a connection with the server.";
     private readonly PipeClient<IQuotationsMessenger> pipeClient;
@@ -29,10 +30,10 @@ internal sealed class Client : IDisposable
 
     internal Client(int symbol, bool enableLogging = false)
     {
-        pipeClient = new PipeClient<IQuotationsMessenger>(new NetJsonPipeSerializer(), $"IndicatorToMediator_{symbol}");
+        pipeClient = new PipeClient<IQuotationsMessenger>(new NetJsonPipeSerializer(), $"Indicator.To.Mediator_{symbol}");
         if (enableLogging) pipeClient.SetLogger(Console.WriteLine);
 
-        processQuotationsAction = () => Task.Run(() => ProcessQuotationsAsync(cts.Token), cts.Token).ConfigureAwait(false);
+        processQuotationsAction = () => Task.Run(() => ProcessAsync(cts.Token), cts.Token).ConfigureAwait(false);
         OnInitializationComplete += processQuotationsAction;
     }
 
@@ -65,7 +66,7 @@ internal sealed class Client : IDisposable
             if (!connected) return noConnection;
             var result = await pipeClient.InvokeAsync(x => x.Init(id, symbol, datetime, ask, bid, environment)).ConfigureAwait(false);
             if (result == ok) OnInitializationComplete?.Invoke(); 
-            return result;
+            return $"{symbol}:{guid}:{ok}";
         }
         catch (Exception ex)
         {
@@ -120,9 +121,9 @@ internal sealed class Client : IDisposable
         return exceptionDetails.ToString();
     }
 
-    private async Task ProcessQuotationsAsync(CancellationToken ct)
+    private async Task ProcessAsync(CancellationToken ct)
     {
-        foreach (var (id, symbol, datetime, ask, bid) in quotations.GetConsumingEnumerable())
+        await foreach (var (id, symbol, datetime, ask, bid) in quotations.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
         {
             if (ct.IsCancellationRequested) break;
             await pipeClient.InvokeAsync(x => x.Tick(id, symbol, datetime, ask, bid), cancellationToken: ct).ConfigureAwait(false);

@@ -79,7 +79,7 @@ public class MSSQLRepository
         return (firstQuotations, quotations);
     }
 
-    public async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForWeekAsync(int year, int week, Environment environment, Modification modification)
+    private async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForWeekAsync(int year, int week, Environment environment, Modification modification)
     {
         var firstQuotationsDict = new Dictionary<Symbol, Quotation>();
         var firstQuotations = new Queue<Quotation>();

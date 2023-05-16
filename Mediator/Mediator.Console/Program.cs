@@ -26,7 +26,7 @@ using (var scope = host.Services.CreateScope())
     var consoleTask = Task.Run(() => consoleService.RunAsync(cts.Token));
 
     var indicatorToMediatorTasks = (from Symbol symbol in Enum.GetValues(typeof(Symbol))
-                                    let server = scope.ServiceProvider.GetService<IIndicatorToMediatorService>()
+                                    let server = scope.ServiceProvider.GetService<IServiceIndicatorToMediator>()
                                     select Task.Run(() => server.StartAsync(symbol, cts.Token))).ToList();
 
     var terminalToMediatorServer = scope.ServiceProvider.GetRequiredService<TerminalToMediatorService>();
@@ -54,7 +54,7 @@ static IHostBuilder CreateHostBuilder(string[] args)
         {
             services.AddSingleton<Administrator>();
             services.AddSingleton<IMSSQLRepository, MSSQLRepository>();
-            services.AddSingleton<IIndicatorToMediatorService, IndicatorToMediatorService>();
+            services.AddTransient<IServiceIndicatorToMediator, Service>();
             services.AddSingleton<TerminalToMediatorService>();
             services.AddSingleton<MediatorToTerminalClient>();
             services.AddSingleton<QuotationsProcessor>();

@@ -1,9 +1,11 @@
 MAKE IT ON DEVELOPER COMPUTER:
 
-1) Post-Build action in project "MetaQuotes.Client.IndicatorToMediator":
-
 xcopy "$(TargetDir)Common.Entities.dll" "C:\MT5\Libraries\" /Y /R
+
 xcopy "$(TargetDir)Common.MetaQuotes.Mediator.dll" "C:\MT5\Libraries\" /Y /R
+
+
+1) Post-Build action in project "MetaQuotes.Client.IndicatorToMediator":
 xcopy "$(TargetDir)MetaQuotes.Client.IndicatorToMediator.dll" "C:\MT5\Libraries\" /Y /R
 rem xcopy "C:\Users\andre\.nuget\packages\microsoft.bcl.asyncinterfaces\7.0.0\lib\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll" "C:\MT5\Libraries\" /Y /R
 rem xcopy "C:\Users\andre\.nuget\packages\pipemethodcalls\4.0.1\lib\netstandard2.0\PipeMethodCalls.dll" "C:\MT5\Libraries\" /Y /R

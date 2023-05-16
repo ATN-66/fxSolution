@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Common.Entities\Common.Entities.csproj" />
-    <ProjectReference Include="..\MetaQuotes.Client.IndicatorToMediator\MetaQuotes.Client.IndicatorToMediator.csproj" />
+    <ProjectReference Include="..\MetaQuotes.Client.Indicator.To.Mediator\MetaQuotes.Client.Indicator.To.Mediator.csproj" />
   </ItemGroup>
 
   <ItemGroup>
