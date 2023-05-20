@@ -4,6 +4,7 @@
   +------------------------------------------------------------------+*/
 
 using System.Diagnostics;
+using System.Drawing;
 using Common.Entities;
 using Common.MetaQuotes.Mediator;
 using Mediator.Administrator;
@@ -18,9 +19,11 @@ public class Service : IServiceIndicatorToMediator
     private readonly Guid _guid = Guid.NewGuid();
     private readonly QuotationsProcessor _quotationsProcessor;
     private readonly IPipeSerializer _pipeSerializer = new NetJsonPipeSerializer();
+    private readonly Settings _settings;
 
-    public Service(QuotationsProcessor quotationsProcessor)
+    public Service(Settings settings, QuotationsProcessor quotationsProcessor)
     {
+        _settings = settings;
         _quotationsProcessor = quotationsProcessor;
     }
 
@@ -36,6 +39,8 @@ public class Service : IServiceIndicatorToMediator
                 Console.WriteLine($"I->M Service is ON for {symbol}({_guid})");
                 if (cancellationToken.IsCancellationRequested) break;
                 await pipeServer.WaitForRemotePipeCloseAsync(cancellationToken).ConfigureAwait(false);
+                _settings.Environments[(int)symbol - 1] = null;
+                _settings.ConnectedIndicators[(int)symbol - 1] = false;
                 Console.WriteLine($"I->M Service is OFF for {symbol}({_guid})");
             }
             catch (OperationCanceledException)

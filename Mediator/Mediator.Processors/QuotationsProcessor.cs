@@ -12,6 +12,7 @@ using Common.Entities;
 using Google.Protobuf.WellKnownTypes;
 using Mediator.Client.Mediator.To.Terminal;
 using Mediator.Repository;
+using Enum = System.Enum;
 using Environment = Common.Entities.Environment;
 using Timer = System.Timers.Timer;
 
@@ -19,7 +20,7 @@ namespace Mediator.Processors;
 
 public sealed class QuotationsProcessor : IDisposable
 {
-    private const string ok = "ok";
+    private const string _ok = "ok";
     private const int batchSize = 1000;
     private const int minutes = 10;
     private readonly string[] _formats = { "yyyy.MM.dd HH:mm:ss" };
@@ -65,15 +66,18 @@ public sealed class QuotationsProcessor : IDisposable
 
     private event Action OnInitializationComplete;
 
-    public void DeInit(int symbol, int reason)
+    public void DeInit(int reason)
     {
-        lock (lockObject)//todo
+        lock (lockObject)
         {
-            lastKnownQuotations[symbol - 1] = Quotation.Empty;
-            _settings.Environments[symbol - 1] = null;
-            _settings.ConnectedIndicators[symbol - 1] = false;
-            _settings.DeInitReasons[symbol - 1] = (DeInitReason)reason;
-            if (_settings.ConnectedIndicators.Any(connection => connection)) return;
+            if (!_settings.IndicatorsConnected) return;
+            foreach (var smb in Enum.GetValues(typeof(Symbol)))
+            {
+                lastKnownQuotations[(int)smb - 1] = Quotation.Empty;
+                _settings.Environments[(int)smb - 1] = null;
+                _settings.ConnectedIndicators[(int)smb - 1] = false;
+                _settings.DeInitReasons[(int)smb - 1] = (DeInitReason)reason;
+            }
             Console.WriteLine("The indicators were disconnected.");
         }
     }
@@ -106,18 +110,18 @@ public sealed class QuotationsProcessor : IDisposable
                 throw new Exception(Administrator.Settings.MultipleConnections);
             }
 
-            if (!_settings.IndicatorsConnected) return ok;
+            if (!_settings.IndicatorsConnected) return _ok;
             OnInitializationComplete.Invoke();
             Console.WriteLine($"The indicators were connected. Environment is {_settings.Environment}");
         }
 
-        return ok;
+        return _ok;
     }
 
     public string Tick(int id, int symbol, string datetime, double ask, double bid)
     {
         quotations.Add((id, symbol, datetime, ask, bid));
-        return ok;
+        return _ok;
     }
 
     private async Task ProcessAsync(CancellationToken ct)

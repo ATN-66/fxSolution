@@ -38,8 +38,7 @@ using (var scope = host.Services.CreateScope())
     administrator.TerminalConnectedChanged += async (_, _) => { await mediatorToTerminalClient.StartAsync(cts.Token).ConfigureAwait(false); };
     administrator.TerminalConnectedChanged += async (_, _) => { await mediatorToTerminalClient.ProcessAsync(cts.Token).ConfigureAwait(false); };
 
-    //await Task.WhenAny(consoleTask, Task.WhenAll(indicatorToMediatorTasks), terminalToMediatorServerTask).ConfigureAwait(false);
-    await Task.WhenAny(consoleTask).ConfigureAwait(false);
+    await Task.WhenAny(consoleTask, Task.WhenAll(indicatorToMediatorTasks), terminalToMediatorServerTask).ConfigureAwait(false);
     cts.Cancel();
 }
 

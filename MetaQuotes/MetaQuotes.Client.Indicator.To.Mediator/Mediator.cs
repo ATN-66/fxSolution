@@ -29,9 +29,9 @@ public static class Mediator
         return File.Exists(assemblyPath) ? Assembly.LoadFrom(assemblyPath) : null;
     }
 
-    public static void DeInit(int symbol, int reason)
+    public static void DeInit(int reason)
     {
-        client.DeInit(symbol, reason);
+        client.DeInit(reason);
     }
 
     public static string Init(int id, int symbol, string datetime, double ask, double bid, int environment)

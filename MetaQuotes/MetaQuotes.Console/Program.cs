@@ -42,7 +42,7 @@ try
     Console.WriteLine("Initialization done...");
     await ProcessQuotations(quotations, cts.Token).ConfigureAwait(false);
     Console.WriteLine("Quotations done...");
-    await DeInitializeIndicators(cts.Token).ConfigureAwait(false);
+    await DeInitializeIndicators().ConfigureAwait(false);
     Console.WriteLine("DeInitialization done...");
     cts.Cancel();
 }
@@ -58,13 +58,9 @@ Console.WriteLine("End of the program. Press any key to exit ...");
 Console.ReadKey();
 return 1;
 
-static Task DeInitializeIndicators(CancellationToken ct)
+static Task DeInitializeIndicators()
 {
-    foreach (Symbol symbol in Enum.GetValues(typeof(Symbol)))
-    {
-        if (ct.IsCancellationRequested) break;
-        Mediator.DeInit((int)symbol, (int)DeInitReason.Terminal_closed);
-    }
+    Mediator.DeInit((int)DeInitReason.Terminal_closed);
     return Task.CompletedTask;
 }
 

@@ -44,13 +44,13 @@ internal sealed class Client : IDisposable
         pipeClient.Dispose();
     }
 
-    internal void DeInit(int symbol, int reason)
+    internal void DeInit(int reason)
     {
         try
         {
             if (!quotations.IsAddingCompleted) quotations.CompleteAdding();
             while (!quotations.IsCompleted) Task.Delay(1000).ConfigureAwait(false).GetAwaiter();
-            pipeClient.InvokeAsync(x => x.DeInit(symbol, reason)).ConfigureAwait(false).GetAwaiter();
+            pipeClient.InvokeAsync(x => x.DeInit(reason)).ConfigureAwait(false).GetAwaiter();
         }
         catch (Exception)
         {

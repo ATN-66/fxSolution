@@ -26,9 +26,9 @@ public class QuotationsMessenger : IQuotationsMessenger//, IDisposable
         //Console.WriteLine($"QuotationsMessenger instance {_instanceId} created. Total instances: {_instanceCount}");
     }
 
-    public void DeInit(int symbol, int reason)
+    public void DeInit(int reason)
     {
-         _quotationsProcessor.DeInit(symbol, reason);
+         _quotationsProcessor.DeInit(reason);
     }
 
     public string Init(int id, int symbol, string datetime, double ask, double bid, int environment)
