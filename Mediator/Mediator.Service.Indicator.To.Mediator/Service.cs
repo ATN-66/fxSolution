@@ -6,6 +6,7 @@
 using System.Diagnostics;
 using Common.Entities;
 using Common.MetaQuotes.Mediator;
+using Mediator.Administrator;
 using Mediator.Processors;
 using PipeMethodCalls;
 using PipeMethodCalls.NetJson;
@@ -14,9 +15,9 @@ namespace Mediator.Service.Indicator.To.Mediator;
 
 public class Service : IServiceIndicatorToMediator
 {
-    private readonly Guid guid = Guid.NewGuid();
+    private readonly Guid _guid = Guid.NewGuid();
     private readonly QuotationsProcessor _quotationsProcessor;
-    private readonly IPipeSerializer pipeSerializer = new NetJsonPipeSerializer();
+    private readonly IPipeSerializer _pipeSerializer = new NetJsonPipeSerializer();
 
     public Service(QuotationsProcessor quotationsProcessor)
     {
@@ -30,12 +31,12 @@ public class Service : IServiceIndicatorToMediator
         while (!cancellationToken.IsCancellationRequested)
             try
             {
-                Console.WriteLine($"{GetType().Namespace}:{symbol}:{guid}");
-                using var pipeServer = new PipeServer<IQuotationsMessenger>(pipeSerializer, PipeName,() => new QuotationsMessenger(_quotationsProcessor));
-                if (cancellationToken.IsCancellationRequested) break;
+                using var pipeServer = new PipeServer<IQuotationsMessenger>(_pipeSerializer, PipeName,() => new QuotationsMessenger(_quotationsProcessor));
                 await pipeServer.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
+                Console.WriteLine($"I->M Service is ON for {symbol}({_guid})");
                 if (cancellationToken.IsCancellationRequested) break;
                 await pipeServer.WaitForRemotePipeCloseAsync(cancellationToken).ConfigureAwait(false);
+                Console.WriteLine($"I->M Service is OFF for {symbol}({_guid})");
             }
             catch (OperationCanceledException)
             {

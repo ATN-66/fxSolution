@@ -6,7 +6,7 @@ xcopy "$(TargetDir)Common.MetaQuotes.Mediator.dll" "C:\MT5\Libraries\" /Y /R
 
 
 1) Post-Build action in project "MetaQuotes.Client.IndicatorToMediator":
-xcopy "$(TargetDir)MetaQuotes.Client.IndicatorToMediator.dll" "C:\MT5\Libraries\" /Y /R
+xcopy "$(TargetDir)MetaQuotes.Client.Indicator.To.Mediator.dll" "C:\MT5\Libraries\" /Y /R
 rem xcopy "C:\Users\andre\.nuget\packages\microsoft.bcl.asyncinterfaces\7.0.0\lib\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll" "C:\MT5\Libraries\" /Y /R
 rem xcopy "C:\Users\andre\.nuget\packages\pipemethodcalls\4.0.1\lib\netstandard2.0\PipeMethodCalls.dll" "C:\MT5\Libraries\" /Y /R
 rem xcopy "C:\Users\andre\.nuget\packages\pipemethodcalls.netjson\3.0.0\lib\netstandard2.0\PipeMethodCalls.NetJson.dll" "C:\MT5\Libraries\" /Y /R
@@ -18,7 +18,7 @@ rem xcopy "C:\Users\andre\.nuget\packages\system.text.encodings.web\7.0.0\lib\ne
 rem xcopy "C:\Users\andre\.nuget\packages\system.text.json\7.0.0\lib\netstandard2.0\System.Text.Json.dll" "C:\MT5\Libraries\" /Y /R
 rem xcopy "C:\Users\andre\.nuget\packages\system.threading.tasks.extensions\4.5.4\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll" "C:\MT5\Libraries\" /Y /R
 rem xcopy "C:\MT5\Libraries\*.*" "\\UNIT1068\Users\Public\Downloads\MT5\Libraries\" /Y /R
-xcopy "C:\MT5\Libraries\MetaQuotes.Client.IndicatorToMediator.dll" "C:\Users\andre\AppData\Roaming\MetaQuotes\Terminal\9B101088254A9C260A9790D5079A7B11\MQL5\Libraries\" /Y /R
+xcopy "C:\MT5\Libraries\MetaQuotes.Client.Indicator.To.Mediator.dll" "C:\Users\andre\AppData\Roaming\MetaQuotes\Terminal\9B101088254A9C260A9790D5079A7B11\MQL5\Libraries\" /Y /R
 xcopy "C:\Users\andre\AppData\Roaming\MetaQuotes\Terminal\9B101088254A9C260A9790D5079A7B11\MQL5\Indicators\Examples\Indicator.mq5" "D:\forex\fxSolution\MetaQuotes\MetaQuotes.MQL5\" /Y /R
 rem xcopy "C:\Users\andre\AppData\Roaming\MetaQuotes\Terminal\9B101088254A9C260A9790D5079A7B11\MQL5\Indicators\Examples\Indicator.mq5" "\\UNIT1068\Users\Public\Downloads\MT5\" /Y /R
 rem xcopy "D:\forex\fxSolution\MetaQuotes\MetaQuotes.MQL5\InstallOnUnit1068.bat" "\\UNIT1068\Users\Public\Downloads\" /Y /R

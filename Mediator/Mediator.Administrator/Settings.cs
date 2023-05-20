@@ -1,22 +1,39 @@
 ﻿/*+------------------------------------------------------------------+
   |                                              Mediator.Processors |
-  |                                                 Administrator.cs |
+  |                                                 Settings.cs |
   +------------------------------------------------------------------+*/
 
+using System.Dynamic;
 using Common.Entities;
 using Environment = Common.Entities.Environment;
 
 namespace Mediator.Administrator;
 
-public class Administrator
+public class Settings
 {
+    public string ClientMediatorToTerminalHost
+    {
+        get
+        {
+            return "localhost";
+        }
+    }
+
+    public int ClientMediatorToTerminalPort
+    {
+        get
+        {
+            return 8080;
+        }
+    } 
+    
     public const string MultipleConnections = "Indicator cannot be connected more that one time.";
     public readonly int TotalIndicators = Enum.GetValues(typeof(Symbol)).Length;
     public readonly bool[] ConnectedIndicators;
     public readonly Environment?[] Environments;
     public readonly DeInitReason?[] DeInitReasons;
     
-    public Administrator()
+    public Settings()
     {
         ConnectedIndicators = new bool[TotalIndicators];
         Environments = new Environment?[TotalIndicators];
@@ -57,6 +74,9 @@ public class Administrator
             return result;
         }
     }
+
+
+
 
     public event EventHandler? TerminalConnectedChanged;
     

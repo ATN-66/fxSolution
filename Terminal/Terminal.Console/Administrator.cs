@@ -3,10 +3,9 @@
   |                                                 Administrator.cs |
   +------------------------------------------------------------------+*/
 
-namespace Terminal.Console
+namespace Terminal.Console;
+
+internal static class Administrator
 {
-    internal static class Administrator
-    {
-        public static bool MediatorConnected;
-    }
+    public static bool MediatorConnected;
 }

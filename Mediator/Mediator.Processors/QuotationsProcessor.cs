@@ -25,27 +25,27 @@ public sealed class QuotationsProcessor : IDisposable
     private readonly string[] _formats = { "yyyy.MM.dd HH:mm:ss" };
     private readonly ConcurrentQueue<Quotation> _quotationsToSave = new();
 
-    private readonly Administrator.Administrator administrator;
+    private readonly Administrator.Settings _settings;
 
     private readonly CancellationTokenSource cts = new();
 
     private readonly Quotation[] lastKnownQuotations;
     private readonly object lockObject = new();
-    private readonly MediatorToTerminalClient mediatorToTerminalClient;
+    private readonly Client.Mediator.To.Terminal.Client _client;
     private readonly Action processQuotationsAction;
     private readonly ReaderWriterLockSlim queueLock = new();
     private readonly BlockingCollection<(int id, int symbol, string datetime, double ask, double bid)> quotations = new();
     private readonly IMSSQLRepository repository;
     private readonly Timer saveTimer;
 
-    public QuotationsProcessor(Administrator.Administrator administrator,
-        MediatorToTerminalClient mediatorToTerminalClient, IMSSQLRepository repository)
+    public QuotationsProcessor(Administrator.Settings settings,
+        Client.Mediator.To.Terminal.Client client, IMSSQLRepository repository)
     {
-        this.administrator = administrator;
-        this.mediatorToTerminalClient = mediatorToTerminalClient;
+        this._settings = settings;
+        this._client = client;
         this.repository = repository;
 
-        lastKnownQuotations = new Quotation[this.administrator.TotalIndicators];
+        lastKnownQuotations = new Quotation[this._settings.TotalIndicators];
 
         saveTimer = new Timer(minutes * 60 * 1000);
         saveTimer.Elapsed += OnSaveTimerElapsedAsync;
@@ -67,14 +67,13 @@ public sealed class QuotationsProcessor : IDisposable
 
     public void DeInit(int symbol, int reason)
     {
-        lock (lockObject)
+        lock (lockObject)//todo
         {
-            Console.Write(".");
             lastKnownQuotations[symbol - 1] = Quotation.Empty;
-            administrator.Environments[symbol - 1] = null;
-            administrator.ConnectedIndicators[symbol - 1] = false;
-            administrator.DeInitReasons[symbol - 1] = (DeInitReason)reason;
-            if (administrator.ConnectedIndicators.Any(connection => connection)) return;
+            _settings.Environments[symbol - 1] = null;
+            _settings.ConnectedIndicators[symbol - 1] = false;
+            _settings.DeInitReasons[symbol - 1] = (DeInitReason)reason;
+            if (_settings.ConnectedIndicators.Any(connection => connection)) return;
             Console.WriteLine("The indicators were disconnected.");
         }
     }
@@ -85,11 +84,11 @@ public sealed class QuotationsProcessor : IDisposable
         {
             if (lastKnownQuotations[symbol - 1] == Quotation.Empty)
             {
-                Debug.Assert(administrator.Environments[symbol - 1] == null);
-                administrator.Environments[symbol - 1] = (Environment)environment;
+                Debug.Assert(_settings.Environments[symbol - 1] == null);
+                _settings.Environments[symbol - 1] = (Environment)environment;
 
-                Debug.Assert(administrator.ConnectedIndicators[symbol - 1] == false);
-                administrator.ConnectedIndicators[symbol - 1] = true;
+                Debug.Assert(_settings.ConnectedIndicators[symbol - 1] == false);
+                _settings.ConnectedIndicators[symbol - 1] = true;
 
                 var resultSymbol = (Symbol)symbol;
                 var resultDateTime = DateTime
@@ -99,23 +98,17 @@ public sealed class QuotationsProcessor : IDisposable
                 var resultBid = Normalize(resultSymbol, Side.Bid, bid);
                 var quotation = new Quotation(id, resultSymbol, resultDateTime, ask, bid, resultAsk, resultBid);
                 lastKnownQuotations[symbol - 1] = quotation;
-                mediatorToTerminalClient.Tick(quotation); //todo: async
+                _client.Tick(quotation); //todo: async
                 _quotationsToSave.Enqueue(quotation);
             }
             else
             {
-                throw new Exception(Administrator.Administrator.MultipleConnections);
+                throw new Exception(Administrator.Settings.MultipleConnections);
             }
 
-            if (administrator.IndicatorsConnected)
-            {
-                OnInitializationComplete.Invoke();
-                Console.WriteLine($".The indicators were connected. Environment is {administrator.Environment}");
-            }
-            else
-            {
-                Console.Write(".");
-            }
+            if (!_settings.IndicatorsConnected) return ok;
+            OnInitializationComplete.Invoke();
+            Console.WriteLine($"The indicators were connected. Environment is {_settings.Environment}");
         }
 
         return ok;
@@ -150,7 +143,7 @@ public sealed class QuotationsProcessor : IDisposable
 
         if (quotation.IntAsk != lastKnownQuotations[symbol - 1].IntAsk ||
             quotation.IntBid != lastKnownQuotations[symbol - 1].IntBid)
-            mediatorToTerminalClient.Tick(quotation); //todo: async
+            _client.Tick(quotation); //todo: async
 
         bool shouldSave;
         queueLock.EnterWriteLock();

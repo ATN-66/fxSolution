@@ -9,17 +9,17 @@ namespace Mediator.Processors;
 
 public class OrdersProcessor
 {
-    private readonly Administrator.Administrator _administrator;
+    private readonly Administrator.Settings _settings;
 
-    public OrdersProcessor(Administrator.Administrator administrator)
+    public OrdersProcessor(Administrator.Settings settings)
     {
-        _administrator = administrator;
+        _settings = settings;
     }
 
     public Task<Response> DeInitAsync(Request request)
     {
         if (request.RequestMessage != "Goodbye") throw new Exception($"{nameof(request)}");
-        _administrator.TerminalConnected = false;
+        _settings.TerminalConnected = false;
         Console.WriteLine("Terminal was disconnected.");
 
         return Task.FromResult(new Response
@@ -33,9 +33,9 @@ public class OrdersProcessor
     {
         if (request.RequestMessage != "Hello") throw new Exception($"{nameof(request)}");
 
-        if (_administrator is { IndicatorsConnected: true, ExpertAdvisorConnected: true })
+        if (_settings is { IndicatorsConnected: true, ExpertAdvisorConnected: true })
         {
-            _administrator.TerminalConnected = true;
+            _settings.TerminalConnected = true;
             Console.WriteLine("Terminal was connected.");
 
             return Task.FromResult(new Response
@@ -45,7 +45,7 @@ public class OrdersProcessor
             });
         }
 
-        _administrator.TerminalConnected = false;
+        _settings.TerminalConnected = false;
         Console.WriteLine("Terminal rejected.");
 
         return Task.FromResult(new Response

@@ -27,6 +27,7 @@ using (var scope = host.Services.CreateScope())
     cts.Cancel();
 }
 
+
 await host.StopAsync().ConfigureAwait(false);
 Console.WriteLine("End of the program. Press any key to exit ...");
 Console.ReadKey();

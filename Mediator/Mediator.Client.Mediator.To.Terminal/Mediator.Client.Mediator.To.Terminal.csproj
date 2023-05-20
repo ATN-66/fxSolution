@@ -28,6 +28,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Common.Entities\Common.Entities.csproj" />
     <ProjectReference Include="..\..\Common\Common.Protos\Common.Protos.csproj" />
+    <ProjectReference Include="..\Mediator.Administrator\Mediator.Administrator.csproj" />
   </ItemGroup>
 
 </Project>

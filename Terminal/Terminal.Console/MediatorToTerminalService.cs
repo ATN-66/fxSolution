@@ -32,9 +32,9 @@ public class MediatorToTerminalService : MediatorToTerminal.MediatorToTerminalBa
         while (await requestStream.MoveNext(CancellationToken.None).ConfigureAwait(false))
         {
             var q = requestStream.Current;
-            var quotation = new Quotation(q.Id, (Symbol)q.Symbol, q.DateTime.ToDateTime(), q.Doubleask, q.Doublebid, q.Intask, q.Intbid);
+            //var quotation = new Quotation(q.Id, (Symbol)q.Symbol, q.DateTime.ToDateTime(), q.Doubleask, q.Doublebid, q.Intask, q.Intbid);
             //if (quotation.Symbol == Symbol.EURUSD) System.Console.WriteLine(quotation);
-            System.Console.WriteLine(quotation);
+            System.Console.Write(".");
             var message = new Reply { ReplyMessage = "ok" };
             await responseStream.WriteAsync(message).ConfigureAwait(false);
         }

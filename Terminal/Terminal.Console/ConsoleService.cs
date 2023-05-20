@@ -28,6 +28,7 @@ public class ConsoleService
             switch (command?.ToLower())
             {
                 case "exit":
+                    await _controller.DeInitializeAsync().ConfigureAwait(false);
                     _cts.Cancel();
                     return;
                 case "clear":
