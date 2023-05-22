@@ -1,7 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-
 using Microsoft.UI.Xaml.Controls;
-
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.ViewModels;
 using Terminal.WinUI3.Views;
@@ -15,7 +13,7 @@ public class PageService : IPageService
     public PageService()
     {
         Configure<MainViewModel, MainPage>();
-        Configure<BlankViewModel, BlankPage>();
+        Configure<EURUSDViewModel, EURUSD>();
         Configure<ListDetailsViewModel, ListDetailsPage>();
         Configure<ContentGridViewModel, ContentGridPage>();
         Configure<ContentGridDetailViewModel, ContentGridDetailPage>();
@@ -52,7 +50,8 @@ public class PageService : IPageService
             var type = typeof(V);
             if (_pages.ContainsValue(type))
             {
-                throw new ArgumentException($"This type is already configured with key {_pages.First(p => p.Value == type).Key}");
+                throw new ArgumentException(
+                    $"This type is already configured with key {_pages.First(p => p.Value == type).Key}");
             }
 
             _pages.Add(key, type);

@@ -1,7 +1,5 @@
 ﻿using System.Collections.ObjectModel;
-
 using CommunityToolkit.Mvvm.ComponentModel;
-
 using Terminal.WinUI3.Contracts.ViewModels;
 using Terminal.WinUI3.Core.Contracts.Services;
 using Terminal.WinUI3.Core.Models;
@@ -12,15 +10,17 @@ public partial class ListDetailsViewModel : ObservableRecipient, INavigationAwar
 {
     private readonly ISampleDataService _sampleDataService;
 
-    [ObservableProperty]
-    private SampleOrder? selected;
-
-    public ObservableCollection<SampleOrder> SampleItems { get; private set; } = new ObservableCollection<SampleOrder>();
+    [ObservableProperty] private SampleOrder? selected;
 
     public ListDetailsViewModel(ISampleDataService sampleDataService)
     {
         _sampleDataService = sampleDataService;
     }
+
+    public ObservableCollection<SampleOrder> SampleItems
+    {
+        get;
+    } = new();
 
     public async void OnNavigatedTo(object parameter)
     {
@@ -39,8 +39,5 @@ public partial class ListDetailsViewModel : ObservableRecipient, INavigationAwar
     {
     }
 
-    public void EnsureItemSelected()
-    {
-        Selected ??= SampleItems.First();
-    }
+    public void EnsureItemSelected() => Selected ??= SampleItems.First();
 }

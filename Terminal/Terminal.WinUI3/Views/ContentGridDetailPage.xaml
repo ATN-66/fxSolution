@@ -4,8 +4,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
-    xmlns:models="using:Terminal.WinUI3.Core.Models"
     mc:Ignorable="d">
 
     <Grid x:Name="ContentArea">
@@ -67,7 +65,8 @@
 
                         <StackPanel x:Name="orderDateGroup" Margin="{StaticResource SmallTopMargin}">
                             <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}" Text="Order date" />
-                            <TextBlock Style="{ThemeResource BodyTextBlockStyle}" Text="{x:Bind ViewModel.Item.OrderDate}" />
+                            <TextBlock Style="{ThemeResource BodyTextBlockStyle}"
+                                       Text="{x:Bind ViewModel.Item.OrderDate}" />
                         </StackPanel>
                     </StackPanel>
 
@@ -79,7 +78,8 @@
 
                         <StackPanel x:Name="orderTotalGroup" Margin="{StaticResource SmallTopMargin}">
                             <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}" Text="Order total" />
-                            <TextBlock Style="{ThemeResource BodyTextBlockStyle}" Text="{x:Bind ViewModel.Item.OrderTotal}" />
+                            <TextBlock Style="{ThemeResource BodyTextBlockStyle}"
+                                       Text="{x:Bind ViewModel.Item.OrderTotal}" />
                         </StackPanel>
                     </StackPanel>
 

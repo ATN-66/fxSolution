@@ -78,7 +78,8 @@
                         <AdaptiveTrigger MinWindowWidth="641" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
-                        <Setter Target="ListDetailsViewControl.ListHeaderTemplate" Value="{StaticResource ListHeaderTemplate}" />
+                        <Setter Target="ListDetailsViewControl.ListHeaderTemplate"
+                                Value="{StaticResource ListHeaderTemplate}" />
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
@@ -95,6 +96,6 @@
             ListHeaderTemplate="{StaticResource MinimalListHeaderTemplate}"
             NoSelectionContentTemplate="{StaticResource NoSelectionContentTemplate}"
             SelectedItem="{x:Bind ViewModel.Selected, Mode=TwoWay}"
-            ViewStateChanged="OnViewStateChanged"/>
+            ViewStateChanged="OnViewStateChanged" />
     </Grid>
 </Page>

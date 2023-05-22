@@ -1,9 +1,6 @@
 ﻿using System.Collections.ObjectModel;
-using System.Windows.Input;
-
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
 using Terminal.WinUI3.Core.Contracts.Services;
@@ -16,13 +13,16 @@ public partial class ContentGridViewModel : ObservableRecipient, INavigationAwar
     private readonly INavigationService _navigationService;
     private readonly ISampleDataService _sampleDataService;
 
-    public ObservableCollection<SampleOrder> Source { get; } = new ObservableCollection<SampleOrder>();
-
     public ContentGridViewModel(INavigationService navigationService, ISampleDataService sampleDataService)
     {
         _navigationService = navigationService;
         _sampleDataService = sampleDataService;
     }
+
+    public ObservableCollection<SampleOrder> Source
+    {
+        get;
+    } = new();
 
     public async void OnNavigatedTo(object parameter)
     {

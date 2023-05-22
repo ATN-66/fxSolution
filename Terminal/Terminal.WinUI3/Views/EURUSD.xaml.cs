@@ -3,15 +3,15 @@ using Terminal.WinUI3.ViewModels;
 
 namespace Terminal.WinUI3.Views;
 
-public sealed partial class MainPage : Page
+public sealed partial class EURUSD : Page
 {
-    public MainPage()
+    public EURUSD()
     {
-        ViewModel = App.GetService<MainViewModel>();
+        ViewModel = App.GetService<EURUSDViewModel>();
         InitializeComponent();
     }
 
-    public MainViewModel ViewModel
+    public EURUSDViewModel ViewModel
     {
         get;
     }

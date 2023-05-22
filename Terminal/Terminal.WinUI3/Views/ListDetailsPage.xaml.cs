@@ -1,22 +1,20 @@
 ﻿using CommunityToolkit.WinUI.UI.Controls;
-
 using Microsoft.UI.Xaml.Controls;
-
 using Terminal.WinUI3.ViewModels;
 
 namespace Terminal.WinUI3.Views;
 
 public sealed partial class ListDetailsPage : Page
 {
-    public ListDetailsViewModel ViewModel
-    {
-        get;
-    }
-
     public ListDetailsPage()
     {
         ViewModel = App.GetService<ListDetailsViewModel>();
         InitializeComponent();
+    }
+
+    public ListDetailsViewModel ViewModel
+    {
+        get;
     }
 
     private void OnViewStateChanged(object sender, ListDetailsViewState e)

@@ -1,5 +1,4 @@
 ﻿using Microsoft.UI.Xaml.Controls;
-
 using Terminal.WinUI3.ViewModels;
 
 namespace Terminal.WinUI3.Views;
@@ -8,14 +7,14 @@ namespace Terminal.WinUI3.Views;
 // For more details, see the documentation at https://docs.microsoft.com/windows/communitytoolkit/controls/datagrid.
 public sealed partial class DataGridPage : Page
 {
-    public DataGridViewModel ViewModel
-    {
-        get;
-    }
-
     public DataGridPage()
     {
         ViewModel = App.GetService<DataGridViewModel>();
         InitializeComponent();
+    }
+
+    public DataGridViewModel ViewModel
+    {
+        get;
     }
 }

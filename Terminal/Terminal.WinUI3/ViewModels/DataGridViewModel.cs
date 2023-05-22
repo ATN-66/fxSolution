@@ -1,23 +1,24 @@
 ﻿using System.Collections.ObjectModel;
-
 using CommunityToolkit.Mvvm.ComponentModel;
-
 using Terminal.WinUI3.Contracts.ViewModels;
 using Terminal.WinUI3.Core.Contracts.Services;
 using Terminal.WinUI3.Core.Models;
 
 namespace Terminal.WinUI3.ViewModels;
 
-public partial class DataGridViewModel : ObservableRecipient, INavigationAware
+public class DataGridViewModel : ObservableRecipient, INavigationAware
 {
     private readonly ISampleDataService _sampleDataService;
-
-    public ObservableCollection<SampleOrder> Source { get; } = new ObservableCollection<SampleOrder>();
 
     public DataGridViewModel(ISampleDataService sampleDataService)
     {
         _sampleDataService = sampleDataService;
     }
+
+    public ObservableCollection<SampleOrder> Source
+    {
+        get;
+    } = new();
 
     public async void OnNavigatedTo(object parameter)
     {

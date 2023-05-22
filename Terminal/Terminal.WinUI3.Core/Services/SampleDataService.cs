@@ -14,10 +14,6 @@ public class SampleDataService : ISampleDataService
 {
     private List<SampleOrder> _allOrders;
 
-    public SampleDataService()
-    {
-    }
-
     private static IEnumerable<SampleOrder> AllOrders()
     {
         // The following is order summary data

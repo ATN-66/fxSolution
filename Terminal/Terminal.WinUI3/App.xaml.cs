@@ -22,8 +22,7 @@ public partial class App : Application
     {
         InitializeComponent();
 
-        Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder().UseContentRoot(AppContext.BaseDirectory)
-            .ConfigureServices((context, services) =>
+        Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder().UseContentRoot(AppContext.BaseDirectory).ConfigureServices((context, services) =>
             {
                 // Default Activation Handler
                 services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
@@ -56,16 +55,15 @@ public partial class App : Application
                 services.AddTransient<ContentGridPage>();
                 services.AddTransient<ListDetailsViewModel>();
                 services.AddTransient<ListDetailsPage>();
-                services.AddTransient<BlankViewModel>();
-                services.AddTransient<BlankPage>();
+                services.AddTransient<EURUSDViewModel>();
+                services.AddTransient<EURUSD>();
                 services.AddTransient<MainViewModel>();
                 services.AddTransient<MainPage>();
                 services.AddTransient<ShellPage>();
                 services.AddTransient<ShellViewModel>();
 
                 // Configuration
-                services.Configure<LocalSettingsOptions>(
-                    context.Configuration.GetSection(nameof(LocalSettingsOptions)));
+                services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
             }).Build();
 
         GetService<IAppNotificationService>().Initialize();
@@ -113,10 +111,7 @@ public partial class App : Application
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
-
-        GetService<IAppNotificationService>()
-            .Show(string.Format("AppNotificationSamplePayload".GetLocalized(), AppContext.BaseDirectory));
-
+        GetService<IAppNotificationService>().Show(string.Format("AppNotificationSamplePayload".GetLocalized(), AppContext.BaseDirectory));
         await GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(false);
     }
 }

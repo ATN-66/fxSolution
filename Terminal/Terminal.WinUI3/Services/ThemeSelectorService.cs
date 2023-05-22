@@ -1,5 +1,4 @@
 ﻿using Microsoft.UI.Xaml;
-
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Helpers;
 
@@ -9,14 +8,18 @@ public class ThemeSelectorService : IThemeSelectorService
 {
     private const string SettingsKey = "AppBackgroundRequestedTheme";
 
-    public ElementTheme Theme { get; set; } = ElementTheme.Default;
-
     private readonly ILocalSettingsService _localSettingsService;
 
     public ThemeSelectorService(ILocalSettingsService localSettingsService)
     {
         _localSettingsService = localSettingsService;
     }
+
+    public ElementTheme Theme
+    {
+        get;
+        set;
+    } = ElementTheme.Default;
 
     public async Task InitializeAsync()
     {
@@ -56,8 +59,6 @@ public class ThemeSelectorService : IThemeSelectorService
         return ElementTheme.Default;
     }
 
-    private async Task SaveThemeInSettingsAsync(ElementTheme theme)
-    {
+    private async Task SaveThemeInSettingsAsync(ElementTheme theme) =>
         await _localSettingsService.SaveSettingAsync(SettingsKey, theme.ToString());
-    }
 }

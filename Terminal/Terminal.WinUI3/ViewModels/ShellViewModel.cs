@@ -1,7 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-
 using Microsoft.UI.Xaml.Navigation;
-
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Views;
 
@@ -9,11 +7,16 @@ namespace Terminal.WinUI3.ViewModels;
 
 public partial class ShellViewModel : ObservableRecipient
 {
-    [ObservableProperty]
-    private bool isBackEnabled;
+    [ObservableProperty] private bool isBackEnabled;
 
-    [ObservableProperty]
-    private object? selected;
+    [ObservableProperty] private object? selected;
+
+    public ShellViewModel(INavigationService navigationService, INavigationViewService navigationViewService)
+    {
+        NavigationService = navigationService;
+        NavigationService.Navigated += OnNavigated;
+        NavigationViewService = navigationViewService;
+    }
 
     public INavigationService NavigationService
     {
@@ -23,13 +26,6 @@ public partial class ShellViewModel : ObservableRecipient
     public INavigationViewService NavigationViewService
     {
         get;
-    }
-
-    public ShellViewModel(INavigationService navigationService, INavigationViewService navigationViewService)
-    {
-        NavigationService = navigationService;
-        NavigationService.Navigated += OnNavigated;
-        NavigationViewService = navigationViewService;
     }
 
     private void OnNavigated(object sender, NavigationEventArgs e)

@@ -1,8 +1,6 @@
 ﻿using CommunityToolkit.WinUI.UI.Animations;
-
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
-
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.ViewModels;
 
@@ -10,15 +8,15 @@ namespace Terminal.WinUI3.Views;
 
 public sealed partial class ContentGridDetailPage : Page
 {
-    public ContentGridDetailViewModel ViewModel
-    {
-        get;
-    }
-
     public ContentGridDetailPage()
     {
         ViewModel = App.GetService<ContentGridDetailViewModel>();
         InitializeComponent();
+    }
+
+    public ContentGridDetailViewModel ViewModel
+    {
+        get;
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)

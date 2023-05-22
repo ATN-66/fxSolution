@@ -2,6 +2,6 @@
 
 namespace Terminal.WinUI3.ViewModels;
 
-public class MainViewModel : ObservableRecipient
+public class EURUSDViewModel : ObservableRecipient
 {
 }

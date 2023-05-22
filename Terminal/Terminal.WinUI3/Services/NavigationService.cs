@@ -1,10 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-
 using CommunityToolkit.WinUI.UI.Animations;
-
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
-
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
 using Terminal.WinUI3.Helpers;
@@ -16,8 +13,13 @@ namespace Terminal.WinUI3.Services;
 public class NavigationService : INavigationService
 {
     private readonly IPageService _pageService;
-    private object? _lastParameterUsed;
     private Frame? _frame;
+    private object? _lastParameterUsed;
+
+    public NavigationService(IPageService pageService)
+    {
+        _pageService = pageService;
+    }
 
     public event NavigatedEventHandler? Navigated;
 
@@ -45,27 +47,6 @@ public class NavigationService : INavigationService
     [MemberNotNullWhen(true, nameof(Frame), nameof(_frame))]
     public bool CanGoBack => Frame != null && Frame.CanGoBack;
 
-    public NavigationService(IPageService pageService)
-    {
-        _pageService = pageService;
-    }
-
-    private void RegisterFrameEvents()
-    {
-        if (_frame != null)
-        {
-            _frame.Navigated += OnNavigated;
-        }
-    }
-
-    private void UnregisterFrameEvents()
-    {
-        if (_frame != null)
-        {
-            _frame.Navigated -= OnNavigated;
-        }
-    }
-
     public bool GoBack()
     {
         if (CanGoBack)
@@ -87,7 +68,8 @@ public class NavigationService : INavigationService
     {
         var pageType = _pageService.GetPageType(pageKey);
 
-        if (_frame != null && (_frame.Content?.GetType() != pageType || (parameter != null && !parameter.Equals(_lastParameterUsed))))
+        if (_frame != null && (_frame.Content?.GetType() != pageType ||
+                               (parameter != null && !parameter.Equals(_lastParameterUsed))))
         {
             _frame.Tag = clearNavigation;
             var vmBeforeNavigation = _frame.GetPageViewModel();
@@ -105,6 +87,25 @@ public class NavigationService : INavigationService
         }
 
         return false;
+    }
+
+    public void SetListDataItemForNextConnectedAnimation(object item) =>
+        Frame.SetListDataItemForNextConnectedAnimation(item);
+
+    private void RegisterFrameEvents()
+    {
+        if (_frame != null)
+        {
+            _frame.Navigated += OnNavigated;
+        }
+    }
+
+    private void UnregisterFrameEvents()
+    {
+        if (_frame != null)
+        {
+            _frame.Navigated -= OnNavigated;
+        }
     }
 
     private void OnNavigated(object sender, NavigationEventArgs e)
@@ -125,6 +126,4 @@ public class NavigationService : INavigationService
             Navigated?.Invoke(sender, e);
         }
     }
-
-    public void SetListDataItemForNextConnectedAnimation(object item) => Frame.SetListDataItemForNextConnectedAnimation(item);
 }

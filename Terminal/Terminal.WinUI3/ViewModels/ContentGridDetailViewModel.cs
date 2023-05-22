@@ -1,5 +1,4 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-
 using Terminal.WinUI3.Contracts.ViewModels;
 using Terminal.WinUI3.Core.Contracts.Services;
 using Terminal.WinUI3.Core.Models;
@@ -10,8 +9,7 @@ public partial class ContentGridDetailViewModel : ObservableRecipient, INavigati
 {
     private readonly ISampleDataService _sampleDataService;
 
-    [ObservableProperty]
-    private SampleOrder? item;
+    [ObservableProperty] private SampleOrder? item;
 
     public ContentGridDetailViewModel(ISampleDataService sampleDataService)
     {

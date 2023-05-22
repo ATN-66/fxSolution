@@ -1,15 +1,11 @@
 ﻿using System.Reflection;
 using System.Windows.Input;
-
+using Windows.ApplicationModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-
 using Microsoft.UI.Xaml;
-
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Helpers;
-
-using Windows.ApplicationModel;
 
 namespace Terminal.WinUI3.ViewModels;
 
@@ -17,16 +13,9 @@ public partial class SettingsViewModel : ObservableRecipient
 {
     private readonly IThemeSelectorService _themeSelectorService;
 
-    [ObservableProperty]
-    private ElementTheme _elementTheme;
+    [ObservableProperty] private ElementTheme _elementTheme;
 
-    [ObservableProperty]
-    private string _versionDescription;
-
-    public ICommand SwitchThemeCommand
-    {
-        get;
-    }
+    [ObservableProperty] private string _versionDescription;
 
     public SettingsViewModel(IThemeSelectorService themeSelectorService)
     {
@@ -35,7 +24,7 @@ public partial class SettingsViewModel : ObservableRecipient
         _versionDescription = GetVersionDescription();
 
         SwitchThemeCommand = new RelayCommand<ElementTheme>(
-            async (param) =>
+            async param =>
             {
                 if (ElementTheme != param)
                 {
@@ -43,6 +32,11 @@ public partial class SettingsViewModel : ObservableRecipient
                     await _themeSelectorService.SetThemeAsync(param);
                 }
             });
+    }
+
+    public ICommand SwitchThemeCommand
+    {
+        get;
     }
 
     private static string GetVersionDescription()
@@ -53,13 +47,15 @@ public partial class SettingsViewModel : ObservableRecipient
         {
             var packageVersion = Package.Current.Id.Version;
 
-            version = new(packageVersion.Major, packageVersion.Minor, packageVersion.Build, packageVersion.Revision);
+            version = new Version(packageVersion.Major, packageVersion.Minor, packageVersion.Build,
+                packageVersion.Revision);
         }
         else
         {
             version = Assembly.GetExecutingAssembly().GetName().Version!;
         }
 
-        return $"{"AppDisplayName".GetLocalized()} - {version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
+        return
+            $"{"AppDisplayName".GetLocalized()} - {version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
     }
 }
