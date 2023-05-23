@@ -1,0 +1,22 @@
+﻿<!--  \Controls\BaseChartControl.xaml  -->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Terminal.WinUI3.Controls"
+    xmlns:win2d="using:Microsoft.Graphics.Canvas.UI.Xaml">
+
+    <Style TargetType="controls:BaseChartControl">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:BaseChartControl">
+                    <win2d:CanvasControl
+                        x:Name="canvas"
+                        Padding="{TemplateBinding Padding}" 
+                        Margin="{TemplateBinding Margin}"
+                        Foreground="{TemplateBinding Foreground}"   
+                        Background="{TemplateBinding Background}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

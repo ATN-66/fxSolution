@@ -35,9 +35,7 @@ public class PageService : IPageService
         return pageType;
     }
 
-    private void Configure<VM, V>()
-        where VM : ObservableObject
-        where V : Page
+    private void Configure<VM, V>() where VM : ObservableObject where V : Page
     {
         lock (_pages)
         {

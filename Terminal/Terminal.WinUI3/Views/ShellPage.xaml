@@ -2,9 +2,9 @@
     x:Class="Terminal.WinUI3.Views.ShellPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:i="using:Microsoft.Xaml.Interactivity"
     xmlns:behaviors="using:Terminal.WinUI3.Behaviors"
     xmlns:helpers="using:Terminal.WinUI3.Helpers"
+    xmlns:i="using:Microsoft.Xaml.Interactivity"
     Loaded="OnLoaded">
 
     <Grid>

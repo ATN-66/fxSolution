@@ -15,68 +15,68 @@ using UnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArg
 
 namespace Terminal.WinUI3;
 
-// To learn more about WinUI 3, see https://docs.microsoft.com/windows/apps/winui/winui3/.
-public partial class App : Application
+public partial class App
 {
     public App()
     {
         InitializeComponent();
 
         Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder().UseContentRoot(AppContext.BaseDirectory).ConfigureServices((context, services) =>
-            {
-                // Default Activation Handler
-                services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
+        {
+            // Default Activation Handler
+            services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
 
-                // Other Activation Handlers
-                services.AddTransient<IActivationHandler, AppNotificationActivationHandler>();
+            // Other Activation Handlers
+            services.AddTransient<IActivationHandler, AppNotificationActivationHandler>();
 
-                // Services
-                services.AddSingleton<IAppNotificationService, AppNotificationService>();
-                services.AddSingleton<ILocalSettingsService, LocalSettingsService>();
-                services.AddSingleton<IThemeSelectorService, ThemeSelectorService>();
-                services.AddTransient<INavigationViewService, NavigationViewService>();
+            // Services
+            services.AddSingleton<IAppNotificationService, AppNotificationService>();
+            services.AddSingleton<ILocalSettingsService, LocalSettingsService>();
+            services.AddSingleton<IThemeSelectorService, ThemeSelectorService>();
+            services.AddTransient<INavigationViewService, NavigationViewService>();
 
-                services.AddSingleton<IActivationService, ActivationService>();
-                services.AddSingleton<IPageService, PageService>();
-                services.AddSingleton<INavigationService, NavigationService>();
+            services.AddSingleton<IActivationService, ActivationService>();
+            services.AddSingleton<IPageService, PageService>();
+            services.AddSingleton<INavigationService, NavigationService>();
 
-                // Core Services
-                services.AddSingleton<ISampleDataService, SampleDataService>();
-                services.AddSingleton<IFileService, FileService>();
+            // Visual Services
+            services.AddSingleton<IVisualService, VisualService>();
 
-                // Views and ViewModels
-                services.AddTransient<SettingsViewModel>();
-                services.AddTransient<SettingsPage>();
-                services.AddTransient<DataGridViewModel>();
-                services.AddTransient<DataGridPage>();
-                services.AddTransient<ContentGridDetailViewModel>();
-                services.AddTransient<ContentGridDetailPage>();
-                services.AddTransient<ContentGridViewModel>();
-                services.AddTransient<ContentGridPage>();
-                services.AddTransient<ListDetailsViewModel>();
-                services.AddTransient<ListDetailsPage>();
-                services.AddTransient<EURUSDViewModel>();
-                services.AddTransient<EURUSD>();
-                services.AddTransient<MainViewModel>();
-                services.AddTransient<MainPage>();
-                services.AddTransient<ShellPage>();
-                services.AddTransient<ShellViewModel>();
+            // Core Services
+            services.AddSingleton<ISampleDataService, SampleDataService>();
+            services.AddSingleton<IFileService, FileService>();
 
-                // Configuration
-                services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
-            }).Build();
+            // ViewModels
+            services.AddTransient<EURUSDViewModel>();
+            services.AddTransient<EURUSD>();
+            
+            // Views and ViewModels
+            services.AddTransient<SettingsViewModel>();
+            services.AddTransient<SettingsPage>();
+            services.AddTransient<DataGridViewModel>();
+            services.AddTransient<DataGridPage>();
+            services.AddTransient<ContentGridDetailViewModel>();
+            services.AddTransient<ContentGridDetailPage>();
+            services.AddTransient<ContentGridViewModel>();
+            services.AddTransient<ContentGridPage>();
+            services.AddTransient<ListDetailsViewModel>();
+            services.AddTransient<ListDetailsPage>();
+            services.AddTransient<MainViewModel>();
+            services.AddTransient<MainPage>();
+            services.AddTransient<ShellPage>();
+            services.AddTransient<ShellViewModel>();
+
+            // Configuration
+            services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
+        }).Build();
 
         GetService<IAppNotificationService>().Initialize();
+        GetService<IVisualService>().Initialize();
 
         UnhandledException += App_UnhandledException;
     }
 
-    // The .NET Generic Host provides dependency injection, configuration, logging, and other services.
-    // https://docs.microsoft.com/dotnet/core/extensions/generic-host
-    // https://docs.microsoft.com/dotnet/core/extensions/dependency-injection
-    // https://docs.microsoft.com/dotnet/core/extensions/configuration
-    // https://docs.microsoft.com/dotnet/core/extensions/logging
-    public IHost Host
+    private IHost Host
     {
         get;
     }
@@ -102,11 +102,7 @@ public partial class App : Application
         return service;
     }
 
-    private void App_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-    {
-        // TODO: Log and handle exceptions as appropriate.
-        // https://docs.microsoft.com/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.application.unhandledexception.
-    }
+    private void App_UnhandledException(object sender, UnhandledExceptionEventArgs e) => throw new NotImplementedException();
 
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
