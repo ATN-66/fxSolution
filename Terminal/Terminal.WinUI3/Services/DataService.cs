@@ -1,27 +1,51 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                               MetaQuotes.Console |
-  |                                               MSSQLRepository.cs |
+  |                                          Terminal.WinUI3.Services|
+  |                                                   DataService.cs |
   +------------------------------------------------------------------+*/
 
+using Common.Entities;
 using System.Data;
 using System.Data.SqlClient;
-using Common.Entities;
+using Terminal.WinUI3.AI.Interfaces;
+using Terminal.WinUI3.Contracts.Services;
 using Environment = Common.Entities.Environment;
 
-namespace MetaQuotes.Console;
+namespace Terminal.WinUI3.Services;
 
-public class MSSQLRepository
+public class DataService : IDataService
 {
-    private static readonly object ConsoleLock = new();
-    private static readonly object SyncRoot = new();
-    private static volatile MSSQLRepository? _instance;
-    public static MSSQLRepository Instance
+    private readonly IProcessor _processor;
+    private Queue<Quotation> _firstQuotations = null!;
+    private Queue<Quotation> _quotations = null!;
+
+    public DataService(IProcessor processor)
     {
-        get
+        _processor  = processor;
+    }
+
+    public async Task InitializeAsync()
+    {
+        const Environment environment = Environment.Testing;
+        const Modification inputModification = Modification.UnModified;
+        const int year = 2023;
+        const int week = 8;
+        const int day = 1;
+
+        var (firstQuotations, quotations) = await GetQuotationsForDayAsync(year, week, day, environment, inputModification).ConfigureAwait(false);
+        _firstQuotations = firstQuotations;
+        _quotations = quotations;
+    }
+
+    public async Task StartAsync()
+    {
+        var initializeTasks = _firstQuotations.Select(quotation => _processor.InitializeAsync(quotation)).ToArray();
+        await Task.WhenAll(initializeTasks).ConfigureAwait(false);
+        _firstQuotations.Clear();
+
+        while (_quotations.Any())
         {
-            if (_instance is not null) return _instance;
-            lock (SyncRoot) _instance = new MSSQLRepository();
-            return _instance;
+            var quotation = _quotations.Dequeue();
+            await _processor.TickAsync(quotation).ConfigureAwait(false);
         }
     }
 
@@ -30,7 +54,7 @@ public class MSSQLRepository
         switch (day)
         {
             case 0: return await GetQuotationsForWeekAsync(year, week, environment, modification).ConfigureAwait(false);
-            case < 1 or > 7: throw new ArgumentOutOfRangeException(nameof(day), "day must be between 1 and 7.");
+            case < 1 or > 7: throw new ArgumentOutOfRangeException(nameof(day), Windows.ApplicationModel.Resources.Core.ResourceManager.Current.MainResourceMap.GetValue("Resources/DataService_GetQuotationsForDayAsync_day_must_be_between_1_and_7_").ValueAsString);
         }
 
         var firstQuotationsDict = new Dictionary<Symbol, Quotation>();
@@ -67,13 +91,6 @@ public class MSSQLRepository
                     quotations.Enqueue(quotation);
                 }
             }
-        }
-
-        lock (ConsoleLock)
-        {
-            System.Console.ForegroundColor = ConsoleColor.Green;
-            System.Console.WriteLine($"Week:{week:00}, Day:{day:00} -> {quotations.Count:##,##0} quotations.");
-            System.Console.ForegroundColor = ConsoleColor.White;
         }
 
         return (firstQuotations, quotations);
@@ -116,19 +133,11 @@ public class MSSQLRepository
             }
         }
 
-        lock (ConsoleLock)
-        {
-            System.Console.ForegroundColor = ConsoleColor.Green;
-            System.Console.WriteLine($"Week:{week:00} -> {quotations.Count:##,##0} quotations.");
-            System.Console.ForegroundColor = ConsoleColor.White;
-        }
-
         return (firstQuotations, quotations);
     }
-    
+
     public async Task<Dictionary<int, (Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)>> GetQuotationsForYearWeeklyAsync(int year, Environment environment, Modification modification)
     {
-        var totalQuotations = 0;
         var quotationsByWeek = new Dictionary<int, (Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)>();
 
         var tasks = Enumerable.Range(1, 52).Select(async week =>
@@ -139,16 +148,7 @@ public class MSSQLRepository
 
         foreach (var (weekNumber, firstQuotations, quotations) in await Task.WhenAll(tasks).ConfigureAwait(false))
         {
-            totalQuotations += firstQuotations.Count;
-            totalQuotations += quotations.Count;
             quotationsByWeek[weekNumber] = (firstQuotations, quotations);
-        }
-
-        lock (ConsoleLock)
-        {
-            System.Console.ForegroundColor = ConsoleColor.Green;
-            System.Console.WriteLine($"Year:{year:00} -> {totalQuotations:##,###} quotations.");
-            System.Console.ForegroundColor = ConsoleColor.White;
         }
 
         return quotationsByWeek;

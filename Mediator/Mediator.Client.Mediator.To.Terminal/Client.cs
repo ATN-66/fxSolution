@@ -61,10 +61,8 @@ public sealed class Client : IDisposable
                 Id = quotation.ID,
                 Symbol = (int)quotation.Symbol,
                 DateTime = Timestamp.FromDateTime(quotation.DateTime),
-                Doubleask = quotation.DoubleAsk,
-                Doublebid = quotation.DoubleBid,
-                Intask = quotation.IntAsk,
-                Intbid = quotation.IntBid
+                Ask = quotation.Ask,
+                Bid = quotation.Bid,
             };
 
             await _call!.RequestStream.WriteAsync(message, CancellationToken.None).ConfigureAwait(false);

@@ -84,38 +84,39 @@ public sealed class QuotationsProcessor : IDisposable
 
     public string Init(int id, int symbol, string datetime, double ask, double bid, int environment)
     {
-        lock (lockObject)
-        {
-            if (lastKnownQuotations[symbol - 1] == Quotation.Empty)
-            {
-                Debug.Assert(_settings.Environments[symbol - 1] == null);
-                _settings.Environments[symbol - 1] = (Environment)environment;
+        throw new NotImplementedException();
+        //lock (lockObject)
+        //{
+        //    if (lastKnownQuotations[symbol - 1] == Quotation.Empty)
+        //    {
+        //        Debug.Assert(_settings.Environments[symbol - 1] == null);
+        //        _settings.Environments[symbol - 1] = (Environment)environment;
 
-                Debug.Assert(_settings.ConnectedIndicators[symbol - 1] == false);
-                _settings.ConnectedIndicators[symbol - 1] = true;
+        //        Debug.Assert(_settings.ConnectedIndicators[symbol - 1] == false);
+        //        _settings.ConnectedIndicators[symbol - 1] = true;
 
-                var resultSymbol = (Symbol)symbol;
-                var resultDateTime = DateTime
-                    .ParseExact(datetime, _formats, CultureInfo.InvariantCulture, DateTimeStyles.None)
-                    .ToUniversalTime();
-                var resultAsk = Normalize(resultSymbol, Side.Ask, ask);
-                var resultBid = Normalize(resultSymbol, Side.Bid, bid);
-                var quotation = new Quotation(id, resultSymbol, resultDateTime, ask, bid, resultAsk, resultBid);
-                lastKnownQuotations[symbol - 1] = quotation;
-                _client.Tick(quotation); //todo: async
-                _quotationsToSave.Enqueue(quotation);
-            }
-            else
-            {
-                throw new Exception(Administrator.Settings.MultipleConnections);
-            }
+        //        var resultSymbol = (Symbol)symbol;
+        //        var resultDateTime = DateTime
+        //            .ParseExact(datetime, _formats, CultureInfo.InvariantCulture, DateTimeStyles.None)
+        //            .ToUniversalTime();
+        //        var resultAsk = Normalize(resultSymbol, Side.Ask, ask);
+        //        var resultBid = Normalize(resultSymbol, Side.Bid, bid);
+        //        var quotation = new Quotation(id, resultSymbol, resultDateTime, ask, bid, resultAsk, resultBid);
+        //        lastKnownQuotations[symbol - 1] = quotation;
+        //        _client.Tick(quotation); //todo: async
+        //        _quotationsToSave.Enqueue(quotation);
+        //    }
+        //    else
+        //    {
+        //        throw new Exception(Administrator.Settings.MultipleConnections);
+        //    }
 
-            if (!_settings.IndicatorsConnected) return _ok;
-            OnInitializationComplete.Invoke();
-            Console.WriteLine($"The indicators were connected. Environment is {_settings.Environment}");
-        }
+        //    if (!_settings.IndicatorsConnected) return _ok;
+        //    OnInitializationComplete.Invoke();
+        //    Console.WriteLine($"The indicators were connected. Environment is {_settings.Environment}");
+        //}
 
-        return _ok;
+        //return _ok;
     }
 
     public string Tick(int id, int symbol, string datetime, double ask, double bid)
@@ -133,36 +134,36 @@ public sealed class QuotationsProcessor : IDisposable
         }
     }
 
-    [SuppressMessage("ReSharper", "InconsistentlySynchronizedField")]
     private void Process(int id, int symbol, string datetime, double ask, double bid)
     {
-        var resultSymbol = (Symbol)symbol;
-        var resultDateTime = DateTime.ParseExact(datetime, _formats, CultureInfo.InvariantCulture, DateTimeStyles.None)
-            .ToUniversalTime();
-        while (lastKnownQuotations[symbol - 1].DateTime >= resultDateTime)
-            resultDateTime = resultDateTime.AddMilliseconds(1);
-        var resultAsk = Normalize(resultSymbol, Side.Ask, ask);
-        var resultBid = Normalize(resultSymbol, Side.Bid, bid);
-        var quotation = new Quotation(id, resultSymbol, resultDateTime, ask, bid, resultAsk, resultBid);
+        throw new NotImplementedException();
+        //var resultSymbol = (Symbol)symbol;
+        //var resultDateTime = DateTime.ParseExact(datetime, _formats, CultureInfo.InvariantCulture, DateTimeStyles.None)
+        //    .ToUniversalTime();
+        //while (lastKnownQuotations[symbol - 1].DateTime >= resultDateTime)
+        //    resultDateTime = resultDateTime.AddMilliseconds(1);
+        //var resultAsk = Normalize(resultSymbol, Side.Ask, ask);
+        //var resultBid = Normalize(resultSymbol, Side.Bid, bid);
+        //var quotation = new Quotation(id, resultSymbol, resultDateTime, ask, bid, resultAsk, resultBid);
 
-        if (quotation.IntAsk != lastKnownQuotations[symbol - 1].IntAsk ||
-            quotation.IntBid != lastKnownQuotations[symbol - 1].IntBid)
-            _client.Tick(quotation); //todo: async
+        //if (quotation.IntAsk != lastKnownQuotations[symbol - 1].IntAsk ||
+        //    quotation.IntBid != lastKnownQuotations[symbol - 1].IntBid)
+        //    _client.Tick(quotation); //todo: async
 
-        bool shouldSave;
-        queueLock.EnterWriteLock();
-        try
-        {
-            lastKnownQuotations[symbol - 1] = quotation;
-            _quotationsToSave.Enqueue(quotation);
-            shouldSave = _quotationsToSave.Count >= batchSize;
-        }
-        finally
-        {
-            queueLock.ExitWriteLock();
-        }
+        //bool shouldSave;
+        //queueLock.EnterWriteLock();
+        //try
+        //{
+        //    lastKnownQuotations[symbol - 1] = quotation;
+        //    _quotationsToSave.Enqueue(quotation);
+        //    shouldSave = _quotationsToSave.Count >= batchSize;
+        //}
+        //finally
+        //{
+        //    queueLock.ExitWriteLock();
+        //}
 
-        if (shouldSave) SaveQuotationsAsync().ConfigureAwait(false);
+        //if (shouldSave) SaveQuotationsAsync().ConfigureAwait(false);
     }
 
     private void OnSaveTimerElapsedAsync(object? sender, ElapsedEventArgs e)

@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
 using Terminal.WinUI3.Activation;
+using Terminal.WinUI3.AI.Interfaces;
+using Terminal.WinUI3.AI.Services;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Core.Contracts.Services;
 using Terminal.WinUI3.Core.Services;
@@ -20,7 +22,6 @@ public partial class App
     public App()
     {
         InitializeComponent();
-
         Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder().UseContentRoot(AppContext.BaseDirectory).ConfigureServices((context, services) =>
         {
             // Default Activation Handler
@@ -39,10 +40,12 @@ public partial class App
             services.AddSingleton<IPageService, PageService>();
             services.AddSingleton<INavigationService, NavigationService>();
 
-            // Visual Services
+            // Business Services
+            services.AddSingleton<IProcessor, Processor>();
+            services.AddSingleton<IDataService, DataService>();
             services.AddSingleton<IVisualService, VisualService>();
 
-            // Core Services
+            // Kernel Services
             services.AddSingleton<ISampleDataService, SampleDataService>();
             services.AddSingleton<IFileService, FileService>();
 
@@ -69,10 +72,6 @@ public partial class App
             // Configuration
             services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
         }).Build();
-
-        GetService<IAppNotificationService>().Initialize();
-        GetService<IVisualService>().Initialize();
-
         UnhandledException += App_UnhandledException;
     }
 
@@ -107,7 +106,16 @@ public partial class App
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
+
+        var dataServiceTask = GetService<IDataService>().InitializeAsync();
+
+        GetService<IAppNotificationService>().Initialize();
         GetService<IAppNotificationService>().Show(string.Format("AppNotificationSamplePayload".GetLocalized(), AppContext.BaseDirectory));
         await GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(false);
+
+        await dataServiceTask.ConfigureAwait(false);
+#pragma warning disable CS4014
+        Task.Run(() => GetService<IDataService>().StartAsync());
+#pragma warning restore CS4014
     }
 }

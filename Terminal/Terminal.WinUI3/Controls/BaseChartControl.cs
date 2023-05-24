@@ -5,19 +5,22 @@ using Windows.UI;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Controls;
+using Terminal.WinUI3.AI.Data;
 
 namespace Terminal.WinUI3.Controls;
 
 public class BaseChartControl : Control
 {
+    private Kernel _kernel;
     private CanvasControl? _canvas;
     private const float DataStrokeThickness = 1;
     private readonly List<double> _data = new();
     private readonly Random _rand = new();
     private double _lastValue = 0.5;
 
-    public BaseChartControl()
+    public BaseChartControl(Kernel kernel)
     {
+        _kernel = kernel;
         DefaultStyleKey = typeof(BaseChartControl);
     }
     

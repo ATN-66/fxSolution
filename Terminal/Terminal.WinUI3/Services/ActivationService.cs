@@ -23,24 +23,16 @@ public class ActivationService : IActivationService
 
     public async Task ActivateAsync(object activationArgs)
     {
-        // Execute tasks before activation.
-        await InitializeAsync();
-
-        // Set the MainWindow Content.
+        await InitializeAsync().ConfigureAwait(true);
         if (App.MainWindow.Content == null)
         {
             _shell = App.GetService<ShellPage>();
             App.MainWindow.Content = _shell ?? new Frame();
         }
 
-        // Handle activation via ActivationHandlers.
-        await HandleActivationAsync(activationArgs);
-
-        // Activate the MainWindow.
+        await HandleActivationAsync(activationArgs).ConfigureAwait(true);
         App.MainWindow.Activate();
-
-        // Execute tasks after activation.
-        await StartupAsync();
+        await StartupAsync().ConfigureAwait(true);
     }
 
     private async Task HandleActivationAsync(object activationArgs)
@@ -49,24 +41,24 @@ public class ActivationService : IActivationService
 
         if (activationHandler != null)
         {
-            await activationHandler.HandleAsync(activationArgs);
+            await activationHandler.HandleAsync(activationArgs).ConfigureAwait(false);
         }
 
         if (_defaultHandler.CanHandle(activationArgs))
         {
-            await _defaultHandler.HandleAsync(activationArgs);
+            await _defaultHandler.HandleAsync(activationArgs).ConfigureAwait(false);
         }
     }
 
     private async Task InitializeAsync()
     {
         await _themeSelectorService.InitializeAsync().ConfigureAwait(false);
-        await Task.CompletedTask;
+        await Task.CompletedTask.ConfigureAwait(false);
     }
 
     private async Task StartupAsync()
     {
-        await _themeSelectorService.SetRequestedThemeAsync();
-        await Task.CompletedTask;
+        await _themeSelectorService.SetRequestedThemeAsync().ConfigureAwait(false);
+        await Task.CompletedTask.ConfigureAwait(false);
     }
 }

@@ -71,7 +71,7 @@ static Task InitializeIndicators(Queue<Quotation> firstQuotations, Environment e
     {
         if (ct.IsCancellationRequested) break;
         var quotation = firstQuotations.Dequeue();
-        var output = Mediator.Init(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.DoubleAsk, quotation.DoubleBid, (int)environment).Split(':');
+        var output = Mediator.Init(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.Ask, quotation.Bid, (int)environment).Split(':');
         var symbol = (Symbol)Convert.ToInt32(output[0]);
         var guid = Guid.Parse(output[1]);
         var result = output[2];
@@ -88,7 +88,7 @@ static Task ProcessQuotations(Queue<Quotation> quotations, CancellationToken ct)
     {
         if (ct.IsCancellationRequested) break;
         var quotation = quotations.Dequeue();
-        var result = Mediator.Tick(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.DoubleAsk, quotation.DoubleBid);
+        var result = Mediator.Tick(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.Ask, quotation.Bid);
         if (ok != result) throw new Exception(result);
     }
     return Task.CompletedTask;

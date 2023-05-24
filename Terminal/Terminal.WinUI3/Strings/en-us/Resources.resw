@@ -182,4 +182,7 @@
   &lt;/actions&gt;
 &lt;/toast&gt;</value>
   </data>
+  <data name="DataService_GetQuotationsForDayAsync_day_must_be_between_1_and_7_" xml:space="preserve">
+    <value>day must be between 1 and 7.</value>
+  </data>
 </root>
