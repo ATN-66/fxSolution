@@ -11,6 +11,8 @@ public class Kernel
 {
     private Symbol _symbol;
     private readonly IList<Quotation> _quotations = new List<Quotation>();
+    //collection to keep candlesticks
+    //collection to keep any other data
 
     public Kernel(Symbol symbol)
     {
@@ -25,5 +27,18 @@ public class Kernel
     public void Tick(Quotation quotation)
     {
         _quotations.Add(quotation);
+    }
+
+    public Quotation this[int i]
+    {
+        get
+        {
+            if (i < 0 || i >= _quotations.Count)
+            {
+                throw new IndexOutOfRangeException($"Index {i} is out of range. There are only {_quotations.Count} quotations.");
+            }
+
+            return _quotations[_quotations.Count - 1 - i];
+        }
     }
 }

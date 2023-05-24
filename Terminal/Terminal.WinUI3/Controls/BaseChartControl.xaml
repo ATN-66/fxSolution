@@ -1,4 +1,4 @@
-﻿<!--  \Controls\BaseChartControl.xaml  -->
+﻿<!-- \Controls\BaseChartControl.xaml -->
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -9,12 +9,28 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="controls:BaseChartControl">
-                    <win2d:CanvasControl
-                        x:Name="canvas"
-                        Padding="{TemplateBinding Padding}" 
-                        Margin="{TemplateBinding Margin}"
-                        Foreground="{TemplateBinding Foreground}"   
-                        Background="{TemplateBinding Background}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <!-- Column for axis -->
+                            <ColumnDefinition Width="*" />
+                            <!-- Column for graph -->
+                        </Grid.ColumnDefinitions>
+                        <win2d:CanvasControl
+                            x:Name="graphCanvas"
+                            Padding="{TemplateBinding Padding}" 
+                            Margin="{TemplateBinding Margin}"
+                            Foreground="{TemplateBinding Foreground}"   
+                            Background="{TemplateBinding Background}"
+                            Grid.Column="0" />
+                        <win2d:CanvasControl
+                            x:Name="yAxisCanvas"
+                            Padding="{TemplateBinding Padding}" 
+                            Margin="{TemplateBinding Margin}"
+                            Foreground="{TemplateBinding Foreground}"   
+                            Background="{TemplateBinding Background}"
+                            Grid.Column="1" />
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
