@@ -14,6 +14,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Terminal.WinUI3.AI.Data;
 using Microsoft.UI.Xaml.Input;
+using Windows.UI.Core;
+using Microsoft.UI.Input;
+using System.Diagnostics;
 
 namespace Terminal.WinUI3.Controls;
 
@@ -22,32 +25,34 @@ public class BaseChartControl : Control
     private CanvasControl? _graphCanvas;
     private CanvasControl? _yAxisCanvas;
     private readonly Kernel _kernel;
-    private readonly Vector2[] _data;
+    private Vector2[] _data;
 
     private const float Pip = 0.0001f;
-    private const float PipsAxisStep = 10f;
+    private const float YAxisStepInPips = 10f;
     private float _graphWidth;
     private float _yAxisWidth;
     private float _height;
-    private const int UnitsPerChart = 2000; //axis X
-    private int _pipsPerChart = 100; //axis Y
+    private const int UnitsPerChart = 10; //axis X //todo: settings
+    private float _pipsPerChart = 30; //axis Y //todo: settings
     private float _graphHorizontalScale;
     private float _verticalScale;
 
-    private readonly int _horizontalShift = 0;
-    private int _verticalShift = 0;
-    private int _unitsShift = 0;
+    private float _verticalShiftInPips; // positive moves graph up, negative moves graph down
+    private int _horizontalShiftInUnits = 0; //It has to be >= 0 and < UnitsPerChart
+    //private int _unitsShift = 0;
 
-    private new const float YAxisFontSize = 12;
-    private new const string YAxisFontFamily = "Lucida Console";
+    private const float YAxisFontSize = 12;
+    private const string YAxisFontFamily = "Lucida Console";
     private readonly CanvasTextFormat _yAxisTextFormat = new() { FontSize = YAxisFontSize, FontFamily = YAxisFontFamily };
-    private const string YAxisTextExample = "1.2345";
+    private const string YAxisTextExample = "1.23456";
+    private float _yAxisTextWidth;
     private const float YAxisAdjustment = 3;
 
     private const float GraphDataStrokeThickness = 1;
     private readonly Color _graphBackgroundColor = Colors.Black;
     private readonly Color _graphForegroundColor = Colors.White;
-    private readonly Color _yAxisForegroundColor = Colors.White;
+    private readonly Color _yAxisForegroundColor = Colors.Gray;
+    private readonly Color _yAxisAskBidForegroundColor = Colors.White;
     private const string HexCode = "#202020"; // Raisin Black color
     private readonly  Color _yAxisBackgroundColor = Color.FromArgb(
         255,
@@ -58,6 +63,7 @@ public class BaseChartControl : Control
 
     private bool _isMouseDown;
     private float _previousMouseY;
+    private float _previousMouseX;
 
     public BaseChartControl(Kernel kernel)
     {
@@ -80,9 +86,14 @@ public class BaseChartControl : Control
 
         _graphCanvas.SizeChanged += OnGraphCanvasSizeChanged;
         _graphCanvas.Draw += GraphCanvas_OnDraw;
+        _graphCanvas.PointerPressed += OnGraphCanvasPointerPressed;
+        _graphCanvas.PointerMoved += OnGraphCanvasPointerMoved;
+        _graphCanvas.PointerReleased += OnGraphCanvasPointerReleased;
 
         _yAxisCanvas.SizeChanged += OnYAxisCanvasSizeChanged;
         _yAxisCanvas.Draw += YAxisCanvasOnDraw;
+        _yAxisCanvas.PointerEntered += OnYAxisCanvasPointerEntered;
+        _yAxisCanvas.PointerExited += OnYAxisCanvasPointerExited;
         _yAxisCanvas.PointerPressed += OnYAxisCanvasPointerPressed;
         _yAxisCanvas.PointerMoved += OnYAxisCanvasPointerMoved;
         _yAxisCanvas.PointerReleased += OnYAxisCanvasPointerReleased;
@@ -95,9 +106,10 @@ public class BaseChartControl : Control
         _graphHorizontalScale = _graphWidth / (UnitsPerChart - 1);
         _verticalScale = _height / (_pipsPerChart - 1);
 
+        _data = new Vector2[UnitsPerChart];
         for (var unit = 0; unit < UnitsPerChart; unit++)
         {
-            _data[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit - _horizontalShift) * _graphHorizontalScale };
+            _data[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * _graphHorizontalScale };
         }
     }
 
@@ -109,7 +121,8 @@ public class BaseChartControl : Control
             throw new InvalidOperationException("Canvas controls not found.");
         }
 
-        _yAxisWidth = CalculateAxisCanvasWidth();
+        _yAxisTextWidth = CalculateAxisCanvasWidth();
+        _yAxisWidth = _yAxisTextWidth + YAxisAdjustment;
         var grid = yAxisCanvas.Parent as Grid;
         if (grid == null || grid.ColumnDefinitions.Count <= 1)
         {
@@ -124,7 +137,7 @@ public class BaseChartControl : Control
     {
         var textLayout = new CanvasTextLayout(CanvasDevice.GetSharedDevice(), YAxisTextExample, _yAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
         var textBounds = textLayout.LayoutBounds;
-        return (float)textBounds.Width + YAxisAdjustment;
+        return (float)textBounds.Width;
     }
 
     private void GraphCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
@@ -154,15 +167,17 @@ public class BaseChartControl : Control
         using var cpb = new CanvasPathBuilder(args.DrawingSession);
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 
-        var highestPrice = (float)_kernel[0].Ask + (_pipsPerChart * Pip) / 2f + _verticalShift;
-        _data[0].Y = (highestPrice - (float)_kernel[0].Ask) / Pip * _verticalScale;
-
-        cpb.BeginFigure(_data[0]);
+        var ask = (float)_kernel[0].Ask;
+        var highestPrice = ask + (_pipsPerChart * Pip) / 2f - _verticalShiftInPips * Pip;
+        _data[_horizontalShiftInUnits].Y = (highestPrice - ask) / Pip * _verticalScale;
+        cpb.BeginFigure(_data[_horizontalShiftInUnits]);
 
         for (var unit = 1; unit < UnitsPerChart; unit++)
         {
-            _data[unit].Y = (highestPrice - (float)_kernel[unit].Ask) / Pip * _verticalScale;
+            if (unit + _horizontalShiftInUnits >= UnitsPerChart) break;
+            _data[unit + _horizontalShiftInUnits].Y = (highestPrice - (float)_kernel[unit].Ask) / Pip * _verticalScale;
             cpb.AddLine(_data[unit]);
+            args.DrawingSession.DrawCircle(_data[unit], 3, Colors.White);
         }
 
         cpb.EndFigure(CanvasFigureLoop.Open);
@@ -175,21 +190,31 @@ public class BaseChartControl : Control
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 
         var ask = (float)_kernel[0].Ask;
-        var highestPrice = ask + (_pipsPerChart * Pip) / 2f + _verticalShift;
-        const float divisor = 1f / (PipsAxisStep * Pip);
+        var bid = (float)_kernel[0].Bid;
+
+        var highestPrice = ask + (_pipsPerChart * Pip) / 2f - _verticalShiftInPips * Pip;
+        const float divisor = 1f / (YAxisStepInPips * Pip);
         var firstPriceDivisibleBy10Pips = (float)Math.Floor(highestPrice * divisor) / divisor;
         
-        cpb.BeginFigure(new Vector2(0, (highestPrice - ask) / Pip * _verticalScale));
-        cpb.AddLine(new Vector2(_yAxisWidth, (highestPrice - ask) / Pip * _verticalScale));
+        var y = (highestPrice - ask) / Pip * _verticalScale;
+        cpb.BeginFigure(new Vector2(0, y));
+        cpb.AddLine(new Vector2(_yAxisWidth, y));
         cpb.EndFigure(CanvasFigureLoop.Open);
+        var textLayout = new CanvasTextLayout(args.DrawingSession, ask.ToString("F5"), _yAxisTextFormat, _yAxisWidth, YAxisFontSize);
+        args.DrawingSession.DrawTextLayout(textLayout, 0, y - YAxisFontSize - YAxisAdjustment, _yAxisAskBidForegroundColor);
 
-        for (var price = firstPriceDivisibleBy10Pips; price >= highestPrice - _pipsPerChart * Pip; price -= Pip * PipsAxisStep)
+        y = (highestPrice - bid) / Pip * _verticalScale;
+        cpb.BeginFigure(new Vector2(0, y));
+        cpb.AddLine(new Vector2(_yAxisWidth, y));
+        cpb.EndFigure(CanvasFigureLoop.Open);
+        textLayout = new CanvasTextLayout(args.DrawingSession, bid.ToString("F5"), _yAxisTextFormat, _yAxisWidth, YAxisFontSize);
+        args.DrawingSession.DrawTextLayout(textLayout, 0, y + YAxisAdjustment, _yAxisAskBidForegroundColor);
+
+        for (var price = firstPriceDivisibleBy10Pips; price >= highestPrice - _pipsPerChart * Pip; price -= Pip * YAxisStepInPips)
         {
-            var y = (highestPrice - price) / Pip * _verticalScale;
-            var textLayout = new CanvasTextLayout(args.DrawingSession, price.ToString("F4"), _yAxisTextFormat, _yAxisWidth, YAxisFontSize);
-            var textWidth = textLayout.DrawBounds.Width;
-           
-            args.DrawingSession.DrawTextLayout(textLayout, _yAxisWidth - (float)textWidth - YAxisAdjustment, y - YAxisFontSize - YAxisAdjustment, _yAxisForegroundColor);
+            y = (highestPrice - price) / Pip * _verticalScale;
+            textLayout = new CanvasTextLayout(args.DrawingSession, price.ToString("F5"), _yAxisTextFormat, _yAxisWidth, YAxisFontSize);
+            args.DrawingSession.DrawTextLayout(textLayout, 0, y - YAxisFontSize - YAxisAdjustment, _yAxisForegroundColor);
 
             cpb.BeginFigure(new Vector2(0, y));
             cpb.AddLine(new Vector2(_yAxisWidth, y));
@@ -197,10 +222,16 @@ public class BaseChartControl : Control
         }
 
         args.DrawingSession.DrawGeometry(CanvasGeometry.CreatePath(cpb), _yAxisForegroundColor, 1);
+    }
 
-        var pipsTextLayout = new CanvasTextLayout(args.DrawingSession, $"PipsPerChart: {_pipsPerChart}", _yAxisTextFormat, _yAxisWidth, YAxisFontSize);
-        var pipsTextWidth = pipsTextLayout.DrawBounds.Width;
-        args.DrawingSession.DrawTextLayout(pipsTextLayout, _yAxisWidth - (float)pipsTextWidth - YAxisAdjustment, YAxisAdjustment, _yAxisForegroundColor);
+    private void OnYAxisCanvasPointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
+    }
+
+    private void OnYAxisCanvasPointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
     }
 
     private void OnYAxisCanvasPointerPressed(object sender, PointerRoutedEventArgs e)
@@ -219,16 +250,15 @@ public class BaseChartControl : Control
 
         var currentMouseY = (float)e.GetCurrentPoint(_yAxisCanvas).Position.Y;
         var deltaY = _previousMouseY - currentMouseY;
-        var pipsChange = (int)Math.Floor(deltaY / _verticalScale);
+        var pipsChange = deltaY / _verticalScale;
 
-        if (pipsChange == 0)
+        if (Math.Abs(pipsChange) < 1)
         {
             return;
         }
 
         _pipsPerChart += pipsChange;
         _pipsPerChart = Math.Clamp(_pipsPerChart, 10, 200);
-
         _verticalScale = _height / (_pipsPerChart - 1);
 
         _graphCanvas!.Invalidate();
@@ -243,18 +273,72 @@ public class BaseChartControl : Control
         _yAxisCanvas!.ReleasePointerCapture(e.Pointer);
     }
 
+    private void OnGraphCanvasPointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
+        _isMouseDown = true;
+        _previousMouseY = (float)e.GetCurrentPoint(_graphCanvas).Position.Y;
+        _previousMouseX = (float)e.GetCurrentPoint(_graphCanvas).Position.X;
+        _graphCanvas!.CapturePointer(e.Pointer);
+    }
+
+    private void OnGraphCanvasPointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_isMouseDown)
+        {
+            return;
+        }
+
+        var currentMouseY = (float)e.GetCurrentPoint(_graphCanvas).Position.Y;
+        var deltaY = _previousMouseY - currentMouseY;
+        var pipsChange = deltaY / _verticalScale;
+
+        var currentMouseX = (float)e.GetCurrentPoint(_graphCanvas).Position.X;
+        var deltaX = _previousMouseX - currentMouseX;
+        var barsChange = (int)Math.Floor(deltaX / _graphHorizontalScale);
+        
+        if (Math.Abs(pipsChange) < 1 && Math.Abs(barsChange) < 1)
+        {
+            return;
+        }
+
+        _verticalShiftInPips += pipsChange;
+        _horizontalShiftInUnits += barsChange;
+        _horizontalShiftInUnits = Math.Clamp(_horizontalShiftInUnits, 0, UnitsPerChart - 1);
+        Debug.WriteLine(_horizontalShiftInUnits);//todo: remove
+
+        _graphCanvas!.Invalidate();
+        _yAxisCanvas!.Invalidate();
+
+        _previousMouseY = currentMouseY;
+        _previousMouseX = currentMouseX;
+    }
+
+    private void OnGraphCanvasPointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+        _isMouseDown = false;
+        _graphCanvas!.ReleasePointerCapture(e.Pointer);
+    }
+
     public void Detach()
     {
         if (_graphCanvas != null)
         {
             _graphCanvas.SizeChanged -= OnGraphCanvasSizeChanged;
             _graphCanvas.Draw -= GraphCanvas_OnDraw;
+            _graphCanvas.PointerPressed -= OnGraphCanvasPointerPressed;
+            _graphCanvas.PointerMoved -= OnGraphCanvasPointerMoved;
+            _graphCanvas.PointerReleased -= OnGraphCanvasPointerReleased;
+
         }
-        
+
         if (_yAxisCanvas != null)
         {
             _yAxisCanvas.SizeChanged -= OnYAxisCanvasSizeChanged;
             _yAxisCanvas.Draw -= YAxisCanvasOnDraw;
+            _yAxisCanvas.PointerEntered -= OnYAxisCanvasPointerEntered;
+            _yAxisCanvas.PointerExited -= OnYAxisCanvasPointerExited;
             _yAxisCanvas.PointerPressed -= OnYAxisCanvasPointerPressed;
             _yAxisCanvas.PointerMoved -= OnYAxisCanvasPointerMoved;
             _yAxisCanvas.PointerReleased -= OnYAxisCanvasPointerReleased;
