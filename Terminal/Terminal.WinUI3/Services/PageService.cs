@@ -12,8 +12,17 @@ public class PageService : IPageService
 
     public PageService()
     {
-        Configure<MainViewModel, MainPage>();
-        Configure<EURUSDViewModel, EURUSD>();
+        Configure<HomeViewModel, HomePage>();
+
+        Configure<USDViewModel, USDPage>();
+        Configure<EURViewModel, EURPage>();
+        Configure<GBPViewModel, GBPPage>();
+        Configure<JPYViewModel, JPYPage>();
+
+        Configure<EURUSDViewModel, EURUSDPage>();
+        Configure<GBPUSDViewModel, GBPUSDPage>();
+        Configure<EURGBPViewModel, EURGBPPage>();
+
         Configure<ListDetailsViewModel, ListDetailsPage>();
         Configure<ContentGridViewModel, ContentGridPage>();
         Configure<ContentGridDetailViewModel, ContentGridDetailPage>();

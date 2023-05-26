@@ -12,7 +12,7 @@ namespace Terminal.WinUI3.Services;
 
 public class VisualService : IVisualService
 {
-    private readonly IDictionary<Symbol, BaseChartControl> _charts = new Dictionary<Symbol, BaseChartControl>();
+    private readonly IDictionary<Symbol, BaseChartControl?> _charts = new Dictionary<Symbol, BaseChartControl?>();
     private IDictionary<Symbol, Kernel> _kernels;
 
     public void Initialize(IDictionary<Symbol, Kernel> kernels)
@@ -20,8 +20,10 @@ public class VisualService : IVisualService
         _kernels = kernels;
     }
 
-    public BaseChartControl GetChartControl(Symbol symbol)
+    public BaseChartControl? GetChartControl(Symbol symbol, bool isOpposite)
     {
+        if (isOpposite) throw new NotImplementedException();
+
         _charts[symbol] = new BaseChartControl(_kernels[symbol]);
         return _charts[symbol];
     }

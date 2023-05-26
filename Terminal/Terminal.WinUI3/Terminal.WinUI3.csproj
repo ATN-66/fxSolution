@@ -18,6 +18,13 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Generic.xaml" />
+    <None Remove="Styles\CommandBar.xaml" />
+    <None Remove="Views\EURGBPPage.xaml" />
+    <None Remove="Views\EURPage.xaml" />
+    <None Remove="Views\GBPPage.xaml" />
+    <None Remove="Views\GBPUSDPage.xaml" />
+    <None Remove="Views\JPYPage.xaml" />
+    <None Remove="Views\USDPage.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Page Remove="Generic.xaml" />
@@ -65,6 +72,33 @@
 
   <ItemGroup>
     <Folder Include="AI\Models\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Styles\CommandBar.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="Views\EURPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\EURGBPPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="Views\GBPUSDPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="Views\GBPPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\JPYPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\USDPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
   </ItemGroup>
   
   <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">

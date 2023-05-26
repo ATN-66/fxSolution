@@ -1,4 +1,5 @@
-﻿using Windows.System;
+﻿using System.Diagnostics;
+using Windows.System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -9,8 +10,7 @@ using Terminal.WinUI3.ViewModels;
 
 namespace Terminal.WinUI3.Views;
 
-// TODO: Update NavigationViewItem titles and icons in ShellPage.xaml.
-public sealed partial class ShellPage : Page
+public sealed partial class ShellPage
 {
     public ShellPage(ShellViewModel viewModel)
     {
@@ -23,10 +23,11 @@ public sealed partial class ShellPage : Page
         // TODO: Set the title bar icon by updating /Assets/WindowIcon.ico.
         // A custom title bar is required for full window theme and Mica support.
         // https://docs.microsoft.com/windows/apps/develop/title-bar?tabs=winui3#full-customization
-        App.MainWindow.ExtendsContentIntoTitleBar = true;
-        App.MainWindow.SetTitleBar(AppTitleBar);
-        App.MainWindow.Activated += MainWindow_Activated;
-        AppTitleBarText.Text = "AppDisplayName".GetLocalized();
+
+        //App.MainWindow.ExtendsContentIntoTitleBar = true;
+        //App.MainWindow.SetTitleBar(AppTitleBar);
+        //App.MainWindow.Activated += MainWindow_Activated;
+        //AppTitleBarText.Text = "AppDisplayName".GetLocalized();
     }
 
     public ShellViewModel ViewModel
@@ -36,29 +37,33 @@ public sealed partial class ShellPage : Page
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        TitleBarHelper.UpdateTitleBar(RequestedTheme);
-
+        //TitleBarHelper.UpdateTitleBar(RequestedTheme);
         KeyboardAccelerators.Add(BuildKeyboardAccelerator(VirtualKey.Left, VirtualKeyModifiers.Menu));
         KeyboardAccelerators.Add(BuildKeyboardAccelerator(VirtualKey.GoBack));
     }
 
-    private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
-    {
-        var resource = args.WindowActivationState == WindowActivationState.Deactivated
-            ? "WindowCaptionForegroundDisabled"
-            : "WindowCaptionForeground";
+    //private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
+    //{
+    //    var resource = args.WindowActivationState == WindowActivationState.Deactivated
+    //        ? "WindowCaptionForegroundDisabled"
+    //        : "WindowCaptionForeground";
 
-        AppTitleBarText.Foreground = (SolidColorBrush)Application.Current.Resources[resource];
-        App.AppTitlebar = AppTitleBarText;
+    //    AppTitleBarText.Foreground = (SolidColorBrush)Application.Current.Resources[resource];
+    //    App.AppTitlebar = AppTitleBarText;
+    //}
+
+    private void NavigationViewControl_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    {
+        //Debug.WriteLine($"NavigationViewControl_SelectionChanged: {args.IsSettingsSelected}");
     }
 
-    private void NavigationViewControl_DisplayModeChanged(NavigationView sender, NavigationViewDisplayModeChangedEventArgs args) => AppTitleBar.Margin = new Thickness
-    {
-        Left = sender.CompactPaneLength * (sender.DisplayMode == NavigationViewDisplayMode.Minimal ? 2 : 1),
-        Top = AppTitleBar.Margin.Top,
-        Right = AppTitleBar.Margin.Right,
-        Bottom = AppTitleBar.Margin.Bottom
-    };
+    //private void NavigationViewControl_DisplayModeChanged(NavigationView sender, NavigationViewDisplayModeChangedEventArgs args) => AppTitleBar.Margin = new Thickness
+    //{
+    //    Left = sender.CompactPaneLength * (sender.DisplayMode == NavigationViewDisplayMode.Minimal ? 2 : 1),
+    //    Top = AppTitleBar.Margin.Top,
+    //    Right = AppTitleBar.Margin.Right,
+    //    Bottom = AppTitleBar.Margin.Bottom
+    //};
 
     private static KeyboardAccelerator BuildKeyboardAccelerator(VirtualKey key, VirtualKeyModifiers? modifiers = null)
     {

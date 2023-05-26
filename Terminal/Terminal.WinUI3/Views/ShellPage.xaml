@@ -4,93 +4,154 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:Terminal.WinUI3.Behaviors"
     xmlns:helpers="using:Terminal.WinUI3.Helpers"
-    xmlns:i="using:Microsoft.Xaml.Interactivity"
+    xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     Loaded="OnLoaded">
-
-    <Grid>
-        <Grid
-            x:Name="AppTitleBar"
-            Height="{Binding ElementName=NavigationViewControl, Path=CompactPaneLength}"
-            VerticalAlignment="Top"
-            Canvas.ZIndex="1"
-            IsHitTestVisible="True">
-            <Image
-                Width="16"
-                Height="16"
-                HorizontalAlignment="Left"
-                Source="/Assets/WindowIcon.ico" />
-            <TextBlock
-                x:Name="AppTitleBarText"
-                Margin="28,0,0,0"
-                VerticalAlignment="Center"
-                Style="{StaticResource CaptionTextBlockStyle}"
-                TextWrapping="NoWrap" />
-        </Grid>
+    <Grid Background="Transparent">
         <NavigationView
             x:Name="NavigationViewControl"
+            AlwaysShowHeader="True"
             Canvas.ZIndex="0"
-            DisplayModeChanged="NavigationViewControl_DisplayModeChanged"
-            ExpandedModeThresholdWidth="1280"
             Header="{x:Bind ((ContentControl)ViewModel.Selected).Content, Mode=OneWay}"
             IsBackButtonVisible="Visible"
             IsBackEnabled="{x:Bind ViewModel.IsBackEnabled, Mode=OneWay}"
+            IsPaneToggleButtonVisible="True"
             IsSettingsVisible="True"
-            SelectedItem="{x:Bind ViewModel.Selected, Mode=OneWay}">
+            IsTabStop="True"
+            PaneDisplayMode="Left"
+            PaneTitle="Navigation Pane"
+            SelectedItem="{x:Bind ViewModel.Selected, Mode=OneWay}"
+            SelectionChanged="NavigationViewControl_SelectionChanged"
+            SelectionFollowsFocus="Disabled">
             <NavigationView.MenuItems>
-                <!--
-                TODO: Update item titles by updating <x:Uid>.Content entries in Strings/en-us/Resources.resw.
-                https://docs.microsoft.com/windows/uwp/app-resources/localize-strings-ui-manifest#refer-to-a-string-resource-identifier-from-xaml
+                <NavigationViewItem
+                    x:Uid="Shell_Home"
+                    helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.HomeViewModel"
+                    Icon="Home" />
+                <NavigationViewItemHeader Content="Charts" />
+                <NavigationViewItem x:Uid="Shell_USD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.USDViewModel">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x24;" />
+                    </NavigationViewItem.Icon>
+                    <NavigationViewItem.MenuItems>
+                        <NavigationViewItem x:Uid="Shell_EURUSD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURUSDViewModel">
+                            <NavigationViewItem.Icon>
+                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x20AC;&#xB7;&#x24;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        <NavigationViewItem x:Uid="Shell_GBPUSD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.GBPUSDViewModel">
+                            <NavigationViewItem.Icon>
+                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA3;&#xB7;&#x24;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        <!--<NavigationViewItem Content="JPYUSD"/>-->
+                    </NavigationViewItem.MenuItems>
+                </NavigationViewItem>
+                <NavigationViewItem x:Uid="Shell_EUR" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURViewModel">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x20AC;" />
+                    </NavigationViewItem.Icon>
+                    <!--<NavigationViewItem.MenuItems>
+                        <NavigationViewItem Content="USDEUR" />
+                        <NavigationViewItem Content="GBPEUR" />
+                        <NavigationViewItem Content="JPYEUR" />
+                    </NavigationViewItem.MenuItems>-->
+                </NavigationViewItem>
+                <NavigationViewItem x:Uid="Shell_GBP" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.GBPViewModel">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA3;" />
+                    </NavigationViewItem.Icon>
+                    <NavigationViewItem.MenuItems>
+                        <!--<NavigationViewItem Content="USDGBP" />-->
+                        <NavigationViewItem x:Uid="Shell_EURGBP" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURGBPViewModel">
+                            <NavigationViewItem.Icon>
+                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x20AC;&#xB7;&#xA3;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        <!--<NavigationViewItem Content="JPYGBP" />-->
+                    </NavigationViewItem.MenuItems>
+                </NavigationViewItem>
+                <NavigationViewItem x:Uid="Shell_JPY" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.JPYViewModel">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA5;" />
+                    </NavigationViewItem.Icon>
+                    <NavigationViewItem.MenuItems>
+                        <NavigationViewItem Content="USDJPY" />
+                        <!--<NavigationViewItem Content="EURJPY" />-->
+                        <!--<NavigationViewItem Content="GBPJPY" />-->
+                    </NavigationViewItem.MenuItems>
+                </NavigationViewItem>
 
-                TODO: Update item icons by updating FontIcon.Glyph properties.
-                https://docs.microsoft.com/windows/apps/design/style/segoe-fluent-icons-font#icon-list
-                -->
-                <NavigationViewItem x:Uid="Shell_Main" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.MainViewModel">
-                    <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xe7c3;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem x:Uid="Shell_EURUSD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURUSDViewModel">
-                    <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xe7c3;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem x:Uid="Shell_ListDetails" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.ListDetailsViewModel">
-                    <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xea37;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem x:Uid="Shell_ContentGrid" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.ContentGridViewModel">
-                    <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xf0e2;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem x:Uid="Shell_DataGrid" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.DataGridViewModel">
-                    <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xe80a;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
+                <!--<NavigationViewItemHeader Content="Orders" />-->
             </NavigationView.MenuItems>
+            <!--<NavigationView.FooterMenuItems>
+                <NavigationViewItem
+                    Content="Account"
+                    Icon="Contact"
+                    Tag="SamplePage4" />
+                <NavigationViewItem
+                    Content="Your Cart"
+                    Icon="Shop"
+                    Tag="SamplePage5" />
+                <NavigationViewItem
+                    Content="Help"
+                    Icon="Help"
+                    Tag="SamplePage5" />
+            </NavigationView.FooterMenuItems>-->
+            <!--<NavigationView.PaneFooter>
+                <StackPanel
+                    x:Name="FooterStackPanel"
+                    Orientation="Vertical"
+                    Visibility="Collapsed">
+                    <NavigationViewItem AutomationProperties.Name="download" Icon="Download" />
+                    <NavigationViewItem AutomationProperties.Name="favorite" Icon="Favorite" />
+                </StackPanel>
+            </NavigationView.PaneFooter>-->
+
             <NavigationView.HeaderTemplate>
                 <DataTemplate>
                     <Grid>
-                        <TextBlock Style="{ThemeResource TitleTextBlockStyle}" Text="{Binding}" />
+                        <TextBlock
+                            Foreground="Red"
+                            Style="{ThemeResource TitleTextBlockStyle}"
+                            Text="{Binding}" />
                     </Grid>
                 </DataTemplate>
             </NavigationView.HeaderTemplate>
-            <i:Interaction.Behaviors>
+            <interactivity:Interaction.Behaviors>
                 <behaviors:NavigationViewHeaderBehavior DefaultHeader="{x:Bind ((ContentControl)ViewModel.Selected).Content, Mode=OneWay}">
                     <behaviors:NavigationViewHeaderBehavior.DefaultHeaderTemplate>
                         <DataTemplate>
                             <Grid>
-                                <TextBlock Style="{ThemeResource TitleTextBlockStyle}" Text="{Binding}" />
+                                <TextBlock
+                                    Foreground="Blue"
+                                    Style="{ThemeResource TitleTextBlockStyle}"
+                                    Text="{Binding}" />
                             </Grid>
                         </DataTemplate>
                     </behaviors:NavigationViewHeaderBehavior.DefaultHeaderTemplate>
                 </behaviors:NavigationViewHeaderBehavior>
-            </i:Interaction.Behaviors>
+            </interactivity:Interaction.Behaviors>
+
             <Grid Margin="{StaticResource NavigationViewPageContentMargin}">
-                <Frame x:Name="NavigationFrame" />
+                <Frame x:Name="NavigationFrame">
+                    <!--<Frame.ContentTransitions>
+                        <TransitionCollection>
+                            <NavigationThemeTransition>
+                                <NavigationThemeTransition.DefaultNavigationTransitionInfo>
+                                    <SlideNavigationTransitionInfo Effect="FromRight" />
+                                </NavigationThemeTransition.DefaultNavigationTransitionInfo>
+                            </NavigationThemeTransition>
+                        </TransitionCollection>
+                    </Frame.ContentTransitions>-->
+                </Frame>
             </Grid>
         </NavigationView>
     </Grid>
 </Page>
+
+<!--  &#xA3;   pound  -->
+<!--  &#x20AC; euro  -->
+<!--  &#x24;   dollar  -->
+<!--  &#xA5;   yen  -->
+<!--  &#xB7;   Middle Dot  -->
+<!--  DisplayModeChanged="NavigationViewControl_DisplayModeChanged"  -->

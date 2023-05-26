@@ -10,3 +10,10 @@ RECT
 SendMessage
 SetWindowPos
 WM_SETICON
+RegisterHotKey
+SetWindowLongPtr
+CallWindowProc
+ShowWindow
+SetForegroundWindow
+SetFocus
+SetActiveWindow

@@ -12,6 +12,6 @@ namespace Terminal.WinUI3.Contracts.Services;
 public interface IVisualService
 {
     void Initialize(IDictionary<Symbol, Kernel> kernels);
-    BaseChartControl GetChartControl(Symbol symbol);
+    BaseChartControl? GetChartControl(Symbol symbol, bool isOpposite);
     void Tick();
 }

@@ -123,11 +123,11 @@
   <data name="AppDescription" xml:space="preserve">
     <value>Terminal.WinUI3</value>
   </data>
-  <data name="Shell_Main.Content" xml:space="preserve">
-    <value>Main</value>
+  <data name="Shell_Home.Content" xml:space="preserve">
+    <value>Home page</value>
   </data>
   <data name="Shell_EURUSD.Content" xml:space="preserve">
-    <value>EURUSD</value>
+    <value>EUR-USD</value>
   </data>
   <data name="ListDetails_NoSelection.Text" xml:space="preserve">
     <value>Select an item from the list.</value>
@@ -184,5 +184,47 @@
   </data>
   <data name="DataService_GetQuotationsForDayAsync_day_must_be_between_1_and_7_" xml:space="preserve">
     <value>day must be between 1 and 7.</value>
+  </data>
+  <data name="Shell_USD.Content" xml:space="preserve">
+    <value>USD</value>
+  </data>
+  <data name="HomeViewModel_HeaderContext" xml:space="preserve">
+    <value>Home page</value>
+  </data>
+  <data name="EURUSDViewModel_HeaderContext" xml:space="preserve">
+    <value>EUR-USD</value>
+  </data>
+  <data name="EURViewModel_HeaderContext" xml:space="preserve">
+    <value>EUR</value>
+  </data>
+  <data name="GBPViewModel_HeaderContext" xml:space="preserve">
+    <value>GBP</value>
+  </data>
+  <data name="Shell_EUR.Content" xml:space="preserve">
+    <value>EUR</value>
+  </data>
+  <data name="USDViewModel_HeaderContext" xml:space="preserve">
+    <value>USD</value>
+  </data>
+  <data name="EURGBPViewModel_HeaderContext" xml:space="preserve">
+    <value>EUR-GBP</value>
+  </data>
+  <data name="GBPUSDViewModel_HeaderContext" xml:space="preserve">
+    <value>GBP-USD</value>
+  </data>
+  <data name="JPYViewModel_HeaderContext" xml:space="preserve">
+    <value>JPY</value>
+  </data>
+  <data name="Shell_GBP.Content" xml:space="preserve">
+    <value>GBP</value>
+  </data>
+  <data name="Shell_GBPUSD.Content" xml:space="preserve">
+    <value>GBP-USD</value>
+  </data>
+  <data name="Shell_JPY.Content" xml:space="preserve">
+    <value>JPY</value>
+  </data>
+  <data name="Shell_EURGBP.Content" xml:space="preserve">
+    <value>EUR-GBP</value>
   </data>
 </root>

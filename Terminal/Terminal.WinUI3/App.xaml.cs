@@ -50,8 +50,21 @@ public partial class App
             services.AddSingleton<IFileService, FileService>();
 
             // ViewModels
+            services.AddTransient<USDViewModel>();
+            services.AddTransient<USDPage>();
+            services.AddTransient<EURViewModel>();
+            services.AddTransient<EURPage>();
+            services.AddTransient<GBPViewModel>();
+            services.AddTransient<GBPPage>();
+            services.AddTransient<JPYViewModel>();
+            services.AddTransient<JPYPage>();
+
             services.AddTransient<EURUSDViewModel>();
-            services.AddTransient<EURUSD>();
+            services.AddTransient<EURUSDPage>();
+            services.AddTransient<GBPUSDViewModel>();
+            services.AddTransient<GBPUSDPage>();
+            services.AddTransient<EURGBPViewModel>();
+            services.AddTransient<EURGBPPage>();
             
             // Views and ViewModels
             services.AddTransient<SettingsViewModel>();
@@ -64,8 +77,8 @@ public partial class App
             services.AddTransient<ContentGridPage>();
             services.AddTransient<ListDetailsViewModel>();
             services.AddTransient<ListDetailsPage>();
-            services.AddTransient<MainViewModel>();
-            services.AddTransient<MainPage>();
+            services.AddTransient<HomeViewModel>();
+            services.AddTransient<HomePage>();
             services.AddTransient<ShellPage>();
             services.AddTransient<ShellViewModel>();
 

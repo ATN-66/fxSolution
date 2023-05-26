@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                                        Terminal.WinUI3.ViewModels|
-  |                                               EURUSDViewModel.cs |
+  |                                               GBPUSDViewModel.cs |
   +------------------------------------------------------------------+*/
 
 
@@ -14,15 +14,15 @@ using Terminal.WinUI3.Helpers;
 
 namespace Terminal.WinUI3.ViewModels;
 
-public partial class EURUSDViewModel : ObservableRecipient, INavigationAware
+public partial class GBPUSDViewModel : ObservableRecipient, INavigationAware
 {
     [ObservableProperty] private string _headerContext = "EURUSDViewModel_HeaderContext".GetLocalized();
     private BaseChartControl? _baseChartControl;
 
-    public EURUSDViewModel()
+    public GBPUSDViewModel()
     {
         var visualService = App.GetService<IVisualService>();
-        _baseChartControl = visualService.GetChartControl(Symbol.EURUSD, false);
+        _baseChartControl = visualService.GetChartControl(Symbol.GBPUSD, false);
     }
 
     public UIElement? Chart => _baseChartControl;
