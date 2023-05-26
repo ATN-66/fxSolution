@@ -25,15 +25,18 @@ public class BaseChartControl : Control
     private CanvasControl? _yAxisCanvas;
     private CanvasControl? _xAxisCanvas;
     private readonly Kernel _kernel;
-    private readonly Vector2[] _data;
+    private Vector2[] _data = null!;
 
-    private const float Pip = 0.0001f;
-    private const float YAxisStepInPips = 10f;
+    private const float Pip = 0.0001f; //todo: symbol dependent
+    private const float YAxisStepInPips = 10f; //todo: symbol dependent
     private float _width;
     private float _yAxisWidth;
     private float _height;
     private float _xAxisHeight;//todo
-    private const int UnitsPerChart = 1000; //axis X //todo: settings
+    private int _unitsPerChart = 1000; //axis X //todo: settings
+    private float _pendingUnitsPerChart;
+    private const int MaxUnitsPerChart = 5000; //todo: settings
+    private const int MinUnitsPerChart = 10; //todo: settings
     private float _pipsPerChart = 30; //axis Y //todo: settings
     private float _horizontalScale;
     private float _verticalScale;
@@ -45,7 +48,7 @@ public class BaseChartControl : Control
     private const float YAxisFontSize = 12;
     private const string YAxisFontFamily = "Lucida Console";
     private readonly CanvasTextFormat _yAxisTextFormat = new() { FontSize = YAxisFontSize, FontFamily = YAxisFontFamily };
-    private const string YAxisTextExample = "1.23456";
+    private const string YAxisTextExample = "1.23456"; //todo: symbol dependent
     private float _yAxisTextWidth;
     private const float YAxisAdjustment = 3;
 
@@ -69,7 +72,6 @@ public class BaseChartControl : Control
     public BaseChartControl(Kernel kernel)
     {
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
-        _data = new Vector2[UnitsPerChart];
         DefaultStyleKey = typeof(BaseChartControl);
     }
 
@@ -113,23 +115,19 @@ public class BaseChartControl : Control
     {
         _width = (float)e.NewSize.Width;
         _height = (float)e.NewSize.Height;
-        _horizontalScale = _width / (UnitsPerChart - 1);
+        _horizontalScale = _width / (_unitsPerChart - 1);
         _verticalScale = _height / (_pipsPerChart - 1);
 
-        for (var unit = 0; unit < UnitsPerChart; unit++)
+        _data = new Vector2[_unitsPerChart];
+        for (var unit = 0; unit < _unitsPerChart; unit++)
         {
-            _data[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * _horizontalScale };
+            _data[unit] = new Vector2 { X = (_unitsPerChart - 1 - unit) * _horizontalScale };
         }
     }
 
     private void OnYAxisCanvasSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        var yAxisCanvas = sender as CanvasControl;
-        if (yAxisCanvas == null)
-        {
-            throw new InvalidOperationException("Canvas controls not found.");
-        }
-
+        var yAxisCanvas = sender as CanvasControl ?? throw new InvalidOperationException("Canvas controls not found.");
         _yAxisTextWidth = CalculateAxisCanvasWidth();
         _yAxisWidth = _yAxisTextWidth + YAxisAdjustment;
         var grid = yAxisCanvas.Parent as Grid;
@@ -144,13 +142,8 @@ public class BaseChartControl : Control
 
     private void OnXAxisCanvasSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        var xAxisCanvas = sender as CanvasControl;
-        if (xAxisCanvas == null)
-        {
-            throw new InvalidOperationException("Canvas controls not found.");
-        }
-
-        _xAxisHeight = 100;
+        var xAxisCanvas = sender as CanvasControl ?? throw new InvalidOperationException("Canvas controls not found.");
+        _xAxisHeight = _yAxisWidth;
         var grid = xAxisCanvas.Parent as Grid;
         if (grid == null || grid.RowDefinitions.Count <= 1)
         {
@@ -212,9 +205,9 @@ public class BaseChartControl : Control
         args.DrawingSession.DrawCircle(_data[_horizontalGraphShiftInUnits], 3, Colors.White);
         cpb.BeginFigure(_data[_horizontalGraphShiftInUnits]);
 
-        for (var unit = 1; unit < UnitsPerChart; unit++)
+        for (var unit = 1; unit < _unitsPerChart; unit++)
         {
-            if (unit + _horizontalGraphShiftInUnits >= UnitsPerChart) break;
+            if (unit + _horizontalGraphShiftInUnits >= _unitsPerChart) break;
             _data[unit + _horizontalGraphShiftInUnits].Y = (highestPrice - (float)_kernel[unit + _horizontalKernelShiftInUnits].Ask) / Pip * _verticalScale;
             args.DrawingSession.DrawCircle(_data[unit + _horizontalGraphShiftInUnits], 1, Colors.White);
             cpb.AddLine(_data[unit + _horizontalGraphShiftInUnits]);
@@ -310,12 +303,12 @@ public class BaseChartControl : Control
             if (barsChange > 0)
             {
                 _horizontalGraphShiftInUnits += barsChange;
-                _horizontalGraphShiftInUnits = Math.Clamp(_horizontalGraphShiftInUnits, 0, UnitsPerChart - 1);
+                _horizontalGraphShiftInUnits = Math.Clamp(_horizontalGraphShiftInUnits, 0, _unitsPerChart - 1);
             }
             else if (barsChange < 0)
             {
                 _horizontalKernelShiftInUnits -= barsChange;
-                _horizontalKernelShiftInUnits = Math.Clamp(_horizontalKernelShiftInUnits, 0, _kernel.Count - UnitsPerChart);
+                _horizontalKernelShiftInUnits = Math.Clamp(_horizontalKernelShiftInUnits, 0, _kernel.Count - _unitsPerChart);
             }
             else
             {
@@ -326,13 +319,13 @@ public class BaseChartControl : Control
         {
             Debug.Assert(_horizontalKernelShiftInUnits == 0);
             _horizontalGraphShiftInUnits += barsChange;
-            _horizontalGraphShiftInUnits = Math.Clamp(_horizontalGraphShiftInUnits, 0, UnitsPerChart - 1);
+            _horizontalGraphShiftInUnits = Math.Clamp(_horizontalGraphShiftInUnits, 0, _unitsPerChart - 1);
         }
         else if (_horizontalKernelShiftInUnits > 0)
         {
             Debug.Assert(_horizontalGraphShiftInUnits == 0);
             _horizontalKernelShiftInUnits -= barsChange;
-            _horizontalKernelShiftInUnits = Math.Clamp(_horizontalKernelShiftInUnits, 0, _kernel.Count - UnitsPerChart);
+            _horizontalKernelShiftInUnits = Math.Clamp(_horizontalKernelShiftInUnits, 0, _kernel.Count - _unitsPerChart);
         }
         else
         {
@@ -341,6 +334,7 @@ public class BaseChartControl : Control
 
         _graphCanvas!.Invalidate();
         _yAxisCanvas!.Invalidate();
+        _xAxisCanvas!.Invalidate();
 
         _previousMouseY = currentMouseY;
         _previousMouseX = currentMouseX;
@@ -392,6 +386,7 @@ public class BaseChartControl : Control
 
         _graphCanvas!.Invalidate();
         _yAxisCanvas!.Invalidate();
+        _xAxisCanvas!.Invalidate();
 
         _previousMouseY = currentMouseY;
     }
@@ -415,7 +410,7 @@ public class BaseChartControl : Control
     private void OnXAxisCanvasPointerPressed(object sender, PointerRoutedEventArgs e)
     {
         _isMouseDown = true;
-        _previousMouseX = (float)e.GetCurrentPoint(_yAxisCanvas).Position.X;
+        _previousMouseX = (float)e.GetCurrentPoint(_xAxisCanvas).Position.X;
         _xAxisCanvas!.CapturePointer(e.Pointer);
     }
 
@@ -428,7 +423,7 @@ public class BaseChartControl : Control
 
         var currentMouseX = (float)e.GetCurrentPoint(_xAxisCanvas).Position.X;
         var deltaX = _previousMouseX - currentMouseX;
-        var unitsChange = (int)Math.Round(deltaX / _horizontalScale);
+        var unitsChange = deltaX / _horizontalScale;
 
         if (Math.Abs(unitsChange) < 1)
         {
@@ -436,25 +431,28 @@ public class BaseChartControl : Control
         }
 
         _pendingUnitsPerChart += unitsChange;
-        //_pendingUnitsPerChart = Math.Clamp(_pendingUnitsPerChart, 10, 200); //todo
-        
-
         _previousMouseX = currentMouseX;
     }
 
-    private int _pendingUnitsPerChart;
-
-
     private void OnXAxisCanvasPointerReleased(object sender, PointerRoutedEventArgs e)
     {
-        Debug.WriteLine(_pendingUnitsPerChart);
-        _pendingUnitsPerChart = 0;
+        _unitsPerChart -= (int)Math.Floor(_pendingUnitsPerChart);
+        _unitsPerChart = Math.Clamp(_unitsPerChart, MinUnitsPerChart, MaxUnitsPerChart);
+        _horizontalScale = _width / (_unitsPerChart - 1);
 
-        //_horizontalScale = _width / (_pendingUnitsPerChart - 1);
-
+        _data = new Vector2[_unitsPerChart];
+        for (var unit = 0; unit < _unitsPerChart; unit++)
+        {
+            _data[unit] = new Vector2 { X = (_unitsPerChart - 1 - unit) * _horizontalScale };
+        }
 
         _isMouseDown = false;
         _xAxisCanvas!.ReleasePointerCapture(e.Pointer);
+        _pendingUnitsPerChart = 0;
+
+        _graphCanvas!.Invalidate();
+        _yAxisCanvas!.Invalidate();
+        _xAxisCanvas!.Invalidate();
     }
 
     public void Detach()
