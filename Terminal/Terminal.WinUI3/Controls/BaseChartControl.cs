@@ -14,7 +14,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Terminal.WinUI3.AI.Data;
 using Microsoft.UI.Xaml.Input;
-using Windows.UI.Core;
 using Microsoft.UI.Input;
 using System.Diagnostics;
 
@@ -32,14 +31,14 @@ public class BaseChartControl : Control
     private float _graphWidth;
     private float _yAxisWidth;
     private float _height;
-    private const int UnitsPerChart = 10; //axis X //todo: settings
+    private const int UnitsPerChart = 1000; //axis X //todo: settings
     private float _pipsPerChart = 30; //axis Y //todo: settings
     private float _graphHorizontalScale;
     private float _verticalScale;
 
     private float _verticalShiftInPips; // positive moves graph up, negative moves graph down
-    private int _horizontalShiftInUnits = 0; //It has to be >= 0 and < UnitsPerChart
-    //private int _unitsShift = 0;
+    private int _horizontalGraphShiftInUnits; //It has to be >= 0 and < UnitsPerChart
+    private int _horizontalKernelShiftInUnits;
 
     private const float YAxisFontSize = 12;
     private const string YAxisFontFamily = "Lucida Console";
@@ -167,17 +166,18 @@ public class BaseChartControl : Control
         using var cpb = new CanvasPathBuilder(args.DrawingSession);
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 
-        var ask = (float)_kernel[0].Ask;
+        var ask = (float)_kernel[_horizontalKernelShiftInUnits].Ask;
         var highestPrice = ask + (_pipsPerChart * Pip) / 2f - _verticalShiftInPips * Pip;
-        _data[_horizontalShiftInUnits].Y = (highestPrice - ask) / Pip * _verticalScale;
-        cpb.BeginFigure(_data[_horizontalShiftInUnits]);
+        _data[_horizontalGraphShiftInUnits].Y = (highestPrice - ask) / Pip * _verticalScale;
+        args.DrawingSession.DrawCircle(_data[_horizontalGraphShiftInUnits], 3, Colors.White);
+        cpb.BeginFigure(_data[_horizontalGraphShiftInUnits]);
 
         for (var unit = 1; unit < UnitsPerChart; unit++)
         {
-            if (unit + _horizontalShiftInUnits >= UnitsPerChart) break;
-            _data[unit + _horizontalShiftInUnits].Y = (highestPrice - (float)_kernel[unit].Ask) / Pip * _verticalScale;
-            cpb.AddLine(_data[unit]);
-            args.DrawingSession.DrawCircle(_data[unit], 3, Colors.White);
+            if (unit + _horizontalGraphShiftInUnits >= UnitsPerChart) break;
+            _data[unit + _horizontalGraphShiftInUnits].Y = (highestPrice - (float)_kernel[unit + _horizontalKernelShiftInUnits].Ask) / Pip * _verticalScale;
+            args.DrawingSession.DrawCircle(_data[unit + _horizontalGraphShiftInUnits], 1, Colors.White);
+            cpb.AddLine(_data[unit + _horizontalGraphShiftInUnits]);
         }
 
         cpb.EndFigure(CanvasFigureLoop.Open);
@@ -189,8 +189,8 @@ public class BaseChartControl : Control
         using var cpb = new CanvasPathBuilder(args.DrawingSession);
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 
-        var ask = (float)_kernel[0].Ask;
-        var bid = (float)_kernel[0].Bid;
+        var ask = (float)_kernel[_horizontalKernelShiftInUnits].Ask;
+        var bid = (float)_kernel[_horizontalKernelShiftInUnits].Bid;
 
         var highestPrice = ask + (_pipsPerChart * Pip) / 2f - _verticalShiftInPips * Pip;
         const float divisor = 1f / (YAxisStepInPips * Pip);
@@ -295,17 +295,53 @@ public class BaseChartControl : Control
 
         var currentMouseX = (float)e.GetCurrentPoint(_graphCanvas).Position.X;
         var deltaX = _previousMouseX - currentMouseX;
-        var barsChange = (int)Math.Floor(deltaX / _graphHorizontalScale);
-        
+        var barsChange = deltaX switch
+        {
+            > 0 => (int)Math.Floor(deltaX / _graphHorizontalScale),
+            < 0 => (int)Math.Ceiling(deltaX / _graphHorizontalScale),
+            _ => 0
+        };
+
         if (Math.Abs(pipsChange) < 1 && Math.Abs(barsChange) < 1)
         {
             return;
         }
 
         _verticalShiftInPips += pipsChange;
-        _horizontalShiftInUnits += barsChange;
-        _horizontalShiftInUnits = Math.Clamp(_horizontalShiftInUnits, 0, UnitsPerChart - 1);
-        Debug.WriteLine(_horizontalShiftInUnits);//todo: remove
+
+        if (_horizontalGraphShiftInUnits == 0 && _horizontalKernelShiftInUnits == 0)
+        {
+            if (barsChange > 0)
+            {
+                _horizontalGraphShiftInUnits += barsChange;
+                _horizontalGraphShiftInUnits = Math.Clamp(_horizontalGraphShiftInUnits, 0, UnitsPerChart - 1);
+            }
+            else if (barsChange < 0)
+            {
+                _horizontalKernelShiftInUnits -= barsChange;
+                _horizontalKernelShiftInUnits = Math.Clamp(_horizontalKernelShiftInUnits, 0, _kernel.Count - UnitsPerChart);
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+        else if (_horizontalGraphShiftInUnits > 0)
+        {
+            Debug.Assert(_horizontalKernelShiftInUnits == 0);
+            _horizontalGraphShiftInUnits += barsChange;
+            _horizontalGraphShiftInUnits = Math.Clamp(_horizontalGraphShiftInUnits, 0, UnitsPerChart - 1);
+        }
+        else if (_horizontalKernelShiftInUnits > 0)
+        {
+            Debug.Assert(_horizontalGraphShiftInUnits == 0);
+            _horizontalKernelShiftInUnits -= barsChange;
+            _horizontalKernelShiftInUnits = Math.Clamp(_horizontalKernelShiftInUnits, 0, _kernel.Count - UnitsPerChart);
+        }
+        else
+        {
+            throw new InvalidOperationException();
+        }
 
         _graphCanvas!.Invalidate();
         _yAxisCanvas!.Invalidate();

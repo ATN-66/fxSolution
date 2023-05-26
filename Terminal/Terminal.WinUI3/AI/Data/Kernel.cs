@@ -29,6 +29,8 @@ public class Kernel
         _quotations.Add(quotation);
     }
 
+    public int Count => _quotations.Count;
+
     public Quotation this[int i]
     {
         get
