@@ -23,17 +23,19 @@ public class BaseChartControl : Control
 {
     private CanvasControl? _graphCanvas;
     private CanvasControl? _yAxisCanvas;
+    private CanvasControl? _xAxisCanvas;
     private readonly Kernel _kernel;
-    private Vector2[] _data;
+    private readonly Vector2[] _data;
 
     private const float Pip = 0.0001f;
     private const float YAxisStepInPips = 10f;
-    private float _graphWidth;
+    private float _width;
     private float _yAxisWidth;
     private float _height;
+    private float _xAxisHeight;//todo
     private const int UnitsPerChart = 1000; //axis X //todo: settings
     private float _pipsPerChart = 30; //axis Y //todo: settings
-    private float _graphHorizontalScale;
+    private float _horizontalScale;
     private float _verticalScale;
 
     private float _verticalShiftInPips; // positive moves graph up, negative moves graph down
@@ -53,7 +55,7 @@ public class BaseChartControl : Control
     private readonly Color _yAxisForegroundColor = Colors.Gray;
     private readonly Color _yAxisAskBidForegroundColor = Colors.White;
     private const string HexCode = "#202020"; // Raisin Black color
-    private readonly  Color _yAxisBackgroundColor = Color.FromArgb(
+    private readonly  Color _yxAxisBackgroundColor = Color.FromArgb(
         255,
         Convert.ToByte(HexCode.Substring(1, 2), 16),
         Convert.ToByte(HexCode.Substring(3, 2), 16),
@@ -77,8 +79,9 @@ public class BaseChartControl : Control
 
         _graphCanvas = GetTemplateChild("graphCanvas") as CanvasControl;
         _yAxisCanvas = GetTemplateChild("yAxisCanvas") as CanvasControl;
+        _xAxisCanvas = GetTemplateChild("xAxisCanvas") as CanvasControl;
 
-        if (_graphCanvas == null || _yAxisCanvas == null)
+        if (_graphCanvas == null || _yAxisCanvas == null || _xAxisCanvas == null)
         {
             throw new InvalidOperationException("Canvas controls not found in the template.");
         }
@@ -96,19 +99,26 @@ public class BaseChartControl : Control
         _yAxisCanvas.PointerPressed += OnYAxisCanvasPointerPressed;
         _yAxisCanvas.PointerMoved += OnYAxisCanvasPointerMoved;
         _yAxisCanvas.PointerReleased += OnYAxisCanvasPointerReleased;
+
+        _xAxisCanvas.SizeChanged += OnXAxisCanvasSizeChanged;
+        _xAxisCanvas.Draw += XAxisCanvasOnDraw;
+        _xAxisCanvas.PointerEntered += OnXAxisCanvasPointerEntered;
+        _xAxisCanvas.PointerExited += OnXAxisCanvasPointerExited;
+        _xAxisCanvas.PointerPressed += OnXAxisCanvasPointerPressed;
+        _xAxisCanvas.PointerMoved += OnXAxisCanvasPointerMoved;
+        _xAxisCanvas.PointerReleased += OnXAxisCanvasPointerReleased;
     }
 
     private void OnGraphCanvasSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        _graphWidth = (float)e.NewSize.Width;
+        _width = (float)e.NewSize.Width;
         _height = (float)e.NewSize.Height;
-        _graphHorizontalScale = _graphWidth / (UnitsPerChart - 1);
+        _horizontalScale = _width / (UnitsPerChart - 1);
         _verticalScale = _height / (_pipsPerChart - 1);
 
-        _data = new Vector2[UnitsPerChart];
         for (var unit = 0; unit < UnitsPerChart; unit++)
         {
-            _data[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * _graphHorizontalScale };
+            _data[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * _horizontalScale };
         }
     }
 
@@ -132,6 +142,25 @@ public class BaseChartControl : Control
         axisColumn.Width = new GridLength(_yAxisWidth);
     }
 
+    private void OnXAxisCanvasSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var xAxisCanvas = sender as CanvasControl;
+        if (xAxisCanvas == null)
+        {
+            throw new InvalidOperationException("Canvas controls not found.");
+        }
+
+        _xAxisHeight = 100;
+        var grid = xAxisCanvas.Parent as Grid;
+        if (grid == null || grid.RowDefinitions.Count <= 1)
+        {
+            throw new InvalidOperationException("Canvas control has no parent grid.");
+        }
+
+        var axisRow = grid.RowDefinitions[1];
+        axisRow.Height = new GridLength(_xAxisHeight);
+    }
+
     private float CalculateAxisCanvasWidth()
     {
         var textLayout = new CanvasTextLayout(CanvasDevice.GetSharedDevice(), YAxisTextExample, _yAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
@@ -148,7 +177,13 @@ public class BaseChartControl : Control
     private void YAxisCanvasOnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
         ClearYAxisCanvas(args);
-        RenderAxes(args);
+        RenderYAxis(args);
+    }
+
+    private void XAxisCanvasOnDraw(CanvasControl sender, CanvasDrawEventArgs args)
+    {
+        ClearXAxisCanvas(args);
+        RenderXAxis(args);
     }
 
     private void ClearGraphCanvas(CanvasDrawEventArgs args)
@@ -158,7 +193,12 @@ public class BaseChartControl : Control
 
     private void ClearYAxisCanvas(CanvasDrawEventArgs args)
     {
-        args.DrawingSession.Clear(_yAxisBackgroundColor);
+        args.DrawingSession.Clear(_yxAxisBackgroundColor);
+    }
+
+    private void ClearXAxisCanvas(CanvasDrawEventArgs args)
+    {
+        args.DrawingSession.Clear(_yxAxisBackgroundColor);
     }
 
     private void RenderData(CanvasDrawEventArgs args)
@@ -184,7 +224,7 @@ public class BaseChartControl : Control
         args.DrawingSession.DrawGeometry(CanvasGeometry.CreatePath(cpb), _graphForegroundColor, GraphDataStrokeThickness);
     }
 
-    private void RenderAxes(CanvasDrawEventArgs args)
+    private void RenderYAxis(CanvasDrawEventArgs args)
     {
         using var cpb = new CanvasPathBuilder(args.DrawingSession);
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
@@ -224,53 +264,9 @@ public class BaseChartControl : Control
         args.DrawingSession.DrawGeometry(CanvasGeometry.CreatePath(cpb), _yAxisForegroundColor, 1);
     }
 
-    private void OnYAxisCanvasPointerEntered(object sender, PointerRoutedEventArgs e)
+    private void RenderXAxis(CanvasDrawEventArgs args)
     {
-        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
-    }
-
-    private void OnYAxisCanvasPointerExited(object sender, PointerRoutedEventArgs e)
-    {
-        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
-    }
-
-    private void OnYAxisCanvasPointerPressed(object sender, PointerRoutedEventArgs e)
-    {
-        _isMouseDown = true;
-        _previousMouseY = (float)e.GetCurrentPoint(_yAxisCanvas).Position.Y;
-        _yAxisCanvas!.CapturePointer(e.Pointer);
-    }
-
-    private void OnYAxisCanvasPointerMoved(object sender, PointerRoutedEventArgs e)
-    {
-        if (!_isMouseDown)
-        {
-            return;
-        }
-
-        var currentMouseY = (float)e.GetCurrentPoint(_yAxisCanvas).Position.Y;
-        var deltaY = _previousMouseY - currentMouseY;
-        var pipsChange = deltaY / _verticalScale;
-
-        if (Math.Abs(pipsChange) < 1)
-        {
-            return;
-        }
-
-        _pipsPerChart += pipsChange;
-        _pipsPerChart = Math.Clamp(_pipsPerChart, 10, 200);
-        _verticalScale = _height / (_pipsPerChart - 1);
-
-        _graphCanvas!.Invalidate();
-        _yAxisCanvas!.Invalidate();
-
-        _previousMouseY = currentMouseY;
-    }
-
-    private void OnYAxisCanvasPointerReleased(object sender, PointerRoutedEventArgs e)
-    {
-        _isMouseDown = false;
-        _yAxisCanvas!.ReleasePointerCapture(e.Pointer);
+        
     }
 
     private void OnGraphCanvasPointerPressed(object sender, PointerRoutedEventArgs e)
@@ -297,8 +293,8 @@ public class BaseChartControl : Control
         var deltaX = _previousMouseX - currentMouseX;
         var barsChange = deltaX switch
         {
-            > 0 => (int)Math.Floor(deltaX / _graphHorizontalScale),
-            < 0 => (int)Math.Ceiling(deltaX / _graphHorizontalScale),
+            > 0 => (int)Math.Floor(deltaX / _horizontalScale),
+            < 0 => (int)Math.Ceiling(deltaX / _horizontalScale),
             _ => 0
         };
 
@@ -357,6 +353,110 @@ public class BaseChartControl : Control
         _graphCanvas!.ReleasePointerCapture(e.Pointer);
     }
 
+    private void OnYAxisCanvasPointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
+    }
+
+    private void OnYAxisCanvasPointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+    }
+
+    private void OnYAxisCanvasPointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        _isMouseDown = true;
+        _previousMouseY = (float)e.GetCurrentPoint(_yAxisCanvas).Position.Y;
+        _yAxisCanvas!.CapturePointer(e.Pointer);
+    }
+
+    private void OnYAxisCanvasPointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_isMouseDown)
+        {
+            return;
+        }
+
+        var currentMouseY = (float)e.GetCurrentPoint(_yAxisCanvas).Position.Y;
+        var deltaY = _previousMouseY - currentMouseY;
+        var pipsChange = deltaY / _verticalScale;
+
+        if (Math.Abs(pipsChange) < 1)
+        {
+            return;
+        }
+
+        _pipsPerChart += pipsChange;
+        _pipsPerChart = Math.Clamp(_pipsPerChart, 10, 200);
+        _verticalScale = _height / (_pipsPerChart - 1);
+
+        _graphCanvas!.Invalidate();
+        _yAxisCanvas!.Invalidate();
+
+        _previousMouseY = currentMouseY;
+    }
+
+    private void OnYAxisCanvasPointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        _isMouseDown = false;
+        _yAxisCanvas!.ReleasePointerCapture(e.Pointer);
+    }
+
+    private void OnXAxisCanvasPointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
+    }
+
+    private void OnXAxisCanvasPointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+    }
+
+    private void OnXAxisCanvasPointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        _isMouseDown = true;
+        _previousMouseX = (float)e.GetCurrentPoint(_yAxisCanvas).Position.X;
+        _xAxisCanvas!.CapturePointer(e.Pointer);
+    }
+
+    private void OnXAxisCanvasPointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_isMouseDown)
+        {
+            return;
+        }
+
+        var currentMouseX = (float)e.GetCurrentPoint(_xAxisCanvas).Position.X;
+        var deltaX = _previousMouseX - currentMouseX;
+        var unitsChange = (int)Math.Round(deltaX / _horizontalScale);
+
+        if (Math.Abs(unitsChange) < 1)
+        {
+            return;
+        }
+
+        _pendingUnitsPerChart += unitsChange;
+        //_pendingUnitsPerChart = Math.Clamp(_pendingUnitsPerChart, 10, 200); //todo
+        
+
+        _previousMouseX = currentMouseX;
+    }
+
+    private int _pendingUnitsPerChart;
+
+
+    private void OnXAxisCanvasPointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        Debug.WriteLine(_pendingUnitsPerChart);
+        _pendingUnitsPerChart = 0;
+
+        //_horizontalScale = _width / (_pendingUnitsPerChart - 1);
+
+
+        _isMouseDown = false;
+        _xAxisCanvas!.ReleasePointerCapture(e.Pointer);
+    }
+
     public void Detach()
     {
         if (_graphCanvas != null)
@@ -378,6 +478,17 @@ public class BaseChartControl : Control
             _yAxisCanvas.PointerPressed -= OnYAxisCanvasPointerPressed;
             _yAxisCanvas.PointerMoved -= OnYAxisCanvasPointerMoved;
             _yAxisCanvas.PointerReleased -= OnYAxisCanvasPointerReleased;
+        }
+
+        if (_xAxisCanvas != null)
+        {
+            _xAxisCanvas.SizeChanged -= OnXAxisCanvasSizeChanged;
+            _xAxisCanvas.Draw -= XAxisCanvasOnDraw;
+            _xAxisCanvas.PointerEntered -= OnXAxisCanvasPointerEntered;
+            _xAxisCanvas.PointerExited -= OnXAxisCanvasPointerExited;
+            _xAxisCanvas.PointerPressed -= OnXAxisCanvasPointerPressed;
+            _xAxisCanvas.PointerMoved -= OnXAxisCanvasPointerMoved;
+            _xAxisCanvas.PointerReleased -= OnXAxisCanvasPointerReleased;
         }
     }
 }
