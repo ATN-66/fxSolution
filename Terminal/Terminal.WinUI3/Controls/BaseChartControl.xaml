@@ -11,16 +11,13 @@
                 <ControlTemplate TargetType="controls:BaseChartControl">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <!--  Column for axis  -->
-                            <ColumnDefinition Width="*" />
-                            <!--  Column for graph  -->
+                            <ColumnDefinition Width="*" /><!--  Column for graph = 0 -->
+                            <ColumnDefinition Width="*" /><!--  Column for Y-axis = 1 -->
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <!--  Row for graph  -->
-                            <RowDefinition Height="*" />
-                            <!--  Row for X-axis  -->
+                            <RowDefinition Height="*" /><!--  Row for graph  = 0 -->
+                            <RowDefinition Height="*" /><!--  Row for X-axis = 1 -->
+                            <RowDefinition Height="*" /><!--  Row for Debug = 2 -->
                         </Grid.RowDefinitions>
                         <win2d:CanvasControl
                             x:Name="graphCanvas"
@@ -42,6 +39,15 @@
                             x:Name="xAxisCanvas"
                             Grid.Row="1"
                             Grid.Column="0"
+                            Margin="{TemplateBinding Margin}"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            Foreground="{TemplateBinding Foreground}" />
+                        <win2d:CanvasControl
+                            x:Name="debugCanvas"
+                            Grid.Row="2"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
                             Margin="{TemplateBinding Margin}"
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
