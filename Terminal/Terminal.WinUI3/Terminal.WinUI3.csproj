@@ -24,6 +24,7 @@
     <None Remove="Views\GBPPage.xaml" />
     <None Remove="Views\GBPUSDPage.xaml" />
     <None Remove="Views\JPYPage.xaml" />
+    <None Remove="Views\USDJPYPage.xaml" />
     <None Remove="Views\USDPage.xaml" />
   </ItemGroup>
   <ItemGroup>
@@ -83,6 +84,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Views\EURGBPPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="Views\USDJPYPage.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
     </Page>
     <Page Update="Views\GBPUSDPage.xaml">

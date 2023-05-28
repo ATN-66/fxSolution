@@ -65,7 +65,9 @@ public partial class App
             services.AddTransient<GBPUSDPage>();
             services.AddTransient<EURGBPViewModel>();
             services.AddTransient<EURGBPPage>();
-            
+            services.AddTransient<USDJPYViewModel>();
+            services.AddTransient<USDJPYPage>();
+
             // Views and ViewModels
             services.AddTransient<SettingsViewModel>();
             services.AddTransient<SettingsPage>();

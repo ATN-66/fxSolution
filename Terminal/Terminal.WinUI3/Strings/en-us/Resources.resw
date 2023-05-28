@@ -227,4 +227,10 @@
   <data name="Shell_EURGBP.Content" xml:space="preserve">
     <value>EUR-GBP</value>
   </data>
+  <data name="Shell_USDJPY.Content" xml:space="preserve">
+    <value>USD-JPY</value>
+  </data>
+  <data name="USDJPYViewModel_HeaderContext" xml:space="preserve">
+    <value>USD-JPY</value>
+  </data>
 </root>

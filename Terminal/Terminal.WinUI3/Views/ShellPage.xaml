@@ -50,11 +50,11 @@
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x20AC;" />
                     </NavigationViewItem.Icon>
-                    <!--<NavigationViewItem.MenuItems>
-                        <NavigationViewItem Content="USDEUR" />
-                        <NavigationViewItem Content="GBPEUR" />
-                        <NavigationViewItem Content="JPYEUR" />
-                    </NavigationViewItem.MenuItems>-->
+                    <NavigationViewItem.MenuItems>
+                        <!--<NavigationViewItem Content="USDEUR" />-->
+                        <!--<NavigationViewItem Content="GBPEUR" />-->
+                        <!--<NavigationViewItem Content="JPYEUR" />-->
+                    </NavigationViewItem.MenuItems>
                 </NavigationViewItem>
                 <NavigationViewItem x:Uid="Shell_GBP" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.GBPViewModel">
                     <NavigationViewItem.Icon>
@@ -75,7 +75,11 @@
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA5;" />
                     </NavigationViewItem.Icon>
                     <NavigationViewItem.MenuItems>
-                        <NavigationViewItem Content="USDJPY" />
+                        <NavigationViewItem x:Uid="Shell_USDJPY" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.USDJPYViewModel" >
+                            <NavigationViewItem.Icon>
+                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x24;&#xB7;&#xA5;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
                         <!--<NavigationViewItem Content="EURJPY" />-->
                         <!--<NavigationViewItem Content="GBPJPY" />-->
                     </NavigationViewItem.MenuItems>
