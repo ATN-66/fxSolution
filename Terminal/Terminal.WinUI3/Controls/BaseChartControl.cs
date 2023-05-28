@@ -16,6 +16,7 @@ using Terminal.WinUI3.AI.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Input;
 using System.Diagnostics;
+using Symbol = Common.Entities.Symbol;
 
 namespace Terminal.WinUI3.Controls;
 
@@ -27,12 +28,12 @@ public class BaseChartControl : Control
     private readonly Kernel _kernel;
     private Vector2[] _data = null!;
 
-    private const float Pip = 0.0001f; //todo: symbol dependent
-    private const float YAxisStepInPips = 10f; //todo: symbol dependent
+    private readonly float _pip;
+    private const float YAxisStepInPips = 10f; //todo: symbol dependent ???
     private float _width;
     private float _yAxisWidth;
     private float _height;
-    private float _xAxisHeight;//todo
+    private float _xAxisHeight;
     private int _unitsPerChart = 1000; //axis X //todo: settings
     private float _pendingUnitsPerChart;
     private const int MaxUnitsPerChart = 5000; //todo: settings
@@ -48,7 +49,7 @@ public class BaseChartControl : Control
     private const float YAxisFontSize = 12;
     private const string YAxisFontFamily = "Lucida Console";
     private readonly CanvasTextFormat _yAxisTextFormat = new() { FontSize = YAxisFontSize, FontFamily = YAxisFontFamily };
-    private const string YAxisTextExample = "1.23456"; //todo: symbol dependent
+    private readonly string _yAxisTextExample;
     private float _yAxisTextWidth;
     private const float YAxisAdjustment = 3;
 
@@ -58,6 +59,7 @@ public class BaseChartControl : Control
     private readonly Color _yAxisForegroundColor = Colors.Gray;
     private readonly Color _yAxisAskBidForegroundColor = Colors.White;
     private const string HexCode = "#202020"; // Raisin Black color
+    private readonly string _yxAxisLabelFormat;
     private readonly  Color _yxAxisBackgroundColor = Color.FromArgb(
         255,
         Convert.ToByte(HexCode.Substring(1, 2), 16),
@@ -69,10 +71,30 @@ public class BaseChartControl : Control
     private float _previousMouseY;
     private float _previousMouseX;
 
-    public BaseChartControl(Kernel kernel)
+    public BaseChartControl(Kernel kernel, Common.Entities.Symbol symbol, bool isOpposite)
     {
-        _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
+        if (isOpposite) throw new NotImplementedException();
+
         DefaultStyleKey = typeof(BaseChartControl);
+        _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
+        switch (symbol)
+        {
+            case Symbol.EURGBP:
+            case Symbol.EURUSD:
+            case Symbol.GBPUSD:
+                _pip = 0.0001f;
+                _yAxisTextExample = "0.12345";
+                _yxAxisLabelFormat = "f5";
+                break;
+            case Symbol.USDJPY:
+            case Symbol.EURJPY:
+            case Symbol.GBPJPY:
+                _pip = 0.01f;
+                _yAxisTextExample = "012.345";
+                _yxAxisLabelFormat = "f3";
+                break;
+            default: throw new ArgumentOutOfRangeException(nameof(symbol), symbol, null);
+        }
     }
 
     protected override void OnApplyTemplate()
@@ -156,7 +178,7 @@ public class BaseChartControl : Control
 
     private float CalculateAxisCanvasWidth()
     {
-        var textLayout = new CanvasTextLayout(CanvasDevice.GetSharedDevice(), YAxisTextExample, _yAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
+        var textLayout = new CanvasTextLayout(CanvasDevice.GetSharedDevice(), _yAxisTextExample, _yAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
         var textBounds = textLayout.LayoutBounds;
         return (float)textBounds.Width;
     }
@@ -200,15 +222,15 @@ public class BaseChartControl : Control
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 
         var ask = (float)_kernel[_horizontalKernelShiftInUnits].Ask;
-        var highestPrice = ask + (_pipsPerChart * Pip) / 2f - _verticalShiftInPips * Pip;
-        _data[_horizontalGraphShiftInUnits].Y = (highestPrice - ask) / Pip * _verticalScale;
+        var highestPrice = ask + (_pipsPerChart * _pip) / 2f - _verticalShiftInPips * _pip;
+        _data[_horizontalGraphShiftInUnits].Y = (highestPrice - ask) / _pip * _verticalScale;
         args.DrawingSession.DrawCircle(_data[_horizontalGraphShiftInUnits], 3, Colors.White);
         cpb.BeginFigure(_data[_horizontalGraphShiftInUnits]);
 
         for (var unit = 1; unit < _unitsPerChart; unit++)
         {
             if (unit + _horizontalGraphShiftInUnits >= _unitsPerChart) break;
-            _data[unit + _horizontalGraphShiftInUnits].Y = (highestPrice - (float)_kernel[unit + _horizontalKernelShiftInUnits].Ask) / Pip * _verticalScale;
+            _data[unit + _horizontalGraphShiftInUnits].Y = (highestPrice - (float)_kernel[unit + _horizontalKernelShiftInUnits].Ask) / _pip * _verticalScale;
             args.DrawingSession.DrawCircle(_data[unit + _horizontalGraphShiftInUnits], 1, Colors.White);
             cpb.AddLine(_data[unit + _horizontalGraphShiftInUnits]);
         }
@@ -225,28 +247,28 @@ public class BaseChartControl : Control
         var ask = (float)_kernel[_horizontalKernelShiftInUnits].Ask;
         var bid = (float)_kernel[_horizontalKernelShiftInUnits].Bid;
 
-        var highestPrice = ask + (_pipsPerChart * Pip) / 2f - _verticalShiftInPips * Pip;
-        const float divisor = 1f / (YAxisStepInPips * Pip);
+        var highestPrice = ask + (_pipsPerChart * _pip) / 2f - _verticalShiftInPips * _pip;
+        var divisor = 1f / (YAxisStepInPips * _pip);
         var firstPriceDivisibleBy10Pips = (float)Math.Floor(highestPrice * divisor) / divisor;
         
-        var y = (highestPrice - ask) / Pip * _verticalScale;
+        var y = (highestPrice - ask) / _pip * _verticalScale;
         cpb.BeginFigure(new Vector2(0, y));
         cpb.AddLine(new Vector2(_yAxisWidth, y));
         cpb.EndFigure(CanvasFigureLoop.Open);
-        var textLayout = new CanvasTextLayout(args.DrawingSession, ask.ToString("F5"), _yAxisTextFormat, _yAxisWidth, YAxisFontSize);
+        var textLayout = new CanvasTextLayout(args.DrawingSession, ask.ToString(_yxAxisLabelFormat), _yAxisTextFormat, _yAxisWidth, YAxisFontSize);
         args.DrawingSession.DrawTextLayout(textLayout, 0, y - YAxisFontSize - YAxisAdjustment, _yAxisAskBidForegroundColor);
 
-        y = (highestPrice - bid) / Pip * _verticalScale;
+        y = (highestPrice - bid) / _pip * _verticalScale;
         cpb.BeginFigure(new Vector2(0, y));
         cpb.AddLine(new Vector2(_yAxisWidth, y));
         cpb.EndFigure(CanvasFigureLoop.Open);
-        textLayout = new CanvasTextLayout(args.DrawingSession, bid.ToString("F5"), _yAxisTextFormat, _yAxisWidth, YAxisFontSize);
+        textLayout = new CanvasTextLayout(args.DrawingSession, bid.ToString(_yxAxisLabelFormat), _yAxisTextFormat, _yAxisWidth, YAxisFontSize);
         args.DrawingSession.DrawTextLayout(textLayout, 0, y + YAxisAdjustment, _yAxisAskBidForegroundColor);
 
-        for (var price = firstPriceDivisibleBy10Pips; price >= highestPrice - _pipsPerChart * Pip; price -= Pip * YAxisStepInPips)
+        for (var price = firstPriceDivisibleBy10Pips; price >= highestPrice - _pipsPerChart * _pip; price -= _pip * YAxisStepInPips)
         {
-            y = (highestPrice - price) / Pip * _verticalScale;
-            textLayout = new CanvasTextLayout(args.DrawingSession, price.ToString("F5"), _yAxisTextFormat, _yAxisWidth, YAxisFontSize);
+            y = (highestPrice - price) / _pip * _verticalScale;
+            textLayout = new CanvasTextLayout(args.DrawingSession, price.ToString(_yxAxisLabelFormat), _yAxisTextFormat, _yAxisWidth, YAxisFontSize);
             args.DrawingSession.DrawTextLayout(textLayout, 0, y - YAxisFontSize - YAxisAdjustment, _yAxisForegroundColor);
 
             cpb.BeginFigure(new Vector2(0, y));

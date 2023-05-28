@@ -23,6 +23,9 @@ public class PageService : IPageService
         Configure<GBPUSDViewModel, GBPUSDPage>();
         Configure<EURGBPViewModel, EURGBPPage>();
         Configure<USDJPYViewModel, USDJPYPage>();
+        Configure<JPYUSDViewModel, JPYUSDPage>();
+        Configure<EURJPYViewModel, EURJPYPage>();
+        Configure<GBPJPYViewModel, GBPJPYPage>();
 
         Configure<ListDetailsViewModel, ListDetailsPage>();
         Configure<ContentGridViewModel, ContentGridPage>();

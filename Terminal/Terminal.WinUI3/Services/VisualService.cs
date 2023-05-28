@@ -13,7 +13,8 @@ namespace Terminal.WinUI3.Services;
 public class VisualService : IVisualService
 {
     private readonly IDictionary<Symbol, BaseChartControl?> _charts = new Dictionary<Symbol, BaseChartControl?>();
-    private IDictionary<Symbol, Kernel> _kernels;
+    private readonly IDictionary<Symbol, BaseChartControl?> _chartsOpposite = new Dictionary<Symbol, BaseChartControl?>();
+    private IDictionary<Symbol, Kernel> _kernels = null!;
 
     public void Initialize(IDictionary<Symbol, Kernel> kernels)
     {
@@ -22,10 +23,16 @@ public class VisualService : IVisualService
 
     public BaseChartControl? GetChartControl(Symbol symbol, bool isOpposite)
     {
-        if (isOpposite) throw new NotImplementedException();
-
-        _charts[symbol] = new BaseChartControl(_kernels[symbol]);
-        return _charts[symbol];
+        if (isOpposite)
+        {
+            _chartsOpposite[symbol] = new BaseChartControl(_kernels[symbol], symbol, isOpposite);
+            return _chartsOpposite[symbol];
+        }
+        else
+        {
+            _charts[symbol] = new BaseChartControl(_kernels[symbol], symbol, isOpposite);
+            return _charts[symbol];
+        }
     }
 
     public void Tick()

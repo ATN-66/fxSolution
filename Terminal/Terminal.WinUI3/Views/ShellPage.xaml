@@ -43,7 +43,11 @@
                                 <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA3;&#xB7;&#x24;" />
                             </NavigationViewItem.Icon>
                         </NavigationViewItem>
-                        <!--<NavigationViewItem Content="JPYUSD"/>-->
+                        <NavigationViewItem x:Uid="Shell_JPYUSD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.JPYUSDViewModel">
+                            <NavigationViewItem.Icon>
+                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA5;&#xB7;&#x24;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
                     </NavigationViewItem.MenuItems>
                 </NavigationViewItem>
                 <NavigationViewItem x:Uid="Shell_EUR" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURViewModel">
@@ -80,12 +84,19 @@
                                 <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x24;&#xB7;&#xA5;" />
                             </NavigationViewItem.Icon>
                         </NavigationViewItem>
-                        <!--<NavigationViewItem Content="EURJPY" />-->
-                        <!--<NavigationViewItem Content="GBPJPY" />-->
+                        <NavigationViewItem x:Uid="Shell_EURJPY" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURJPYViewModel" >
+                            <NavigationViewItem.Icon>
+                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x20AC;&#xB7;&#xA5;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        <NavigationViewItem x:Uid="Shell_GBPJPY" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.GBPJPYViewModel" >
+                            <NavigationViewItem.Icon>
+                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA3;&#xB7;&#xA5;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
                     </NavigationViewItem.MenuItems>
                 </NavigationViewItem>
-
-                <!--<NavigationViewItemHeader Content="Orders" />-->
+                <NavigationViewItemHeader Content="Orders" />
             </NavigationView.MenuItems>
             <!--<NavigationView.FooterMenuItems>
                 <NavigationViewItem
