@@ -29,7 +29,7 @@ public class DataService : IDataService
         const Modification inputModification = Modification.UnModified;
         const int year = 2023;
         const int week = 8;
-        const int day = 7;
+        const int day = 1;
 
         var (firstQuotations, quotations) = await GetQuotationsForDayAsync(year, week, day, environment, inputModification).ConfigureAwait(false);
         _firstQuotations = firstQuotations;

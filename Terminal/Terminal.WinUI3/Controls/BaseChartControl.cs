@@ -17,6 +17,8 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Input;
 using System.Diagnostics;
 using Symbol = Common.Entities.Symbol;
+using ColorCode.Compilation.Languages;
+using Microsoft.UI.Xaml.Shapes;
 
 namespace Terminal.WinUI3.Controls;
 
@@ -29,6 +31,7 @@ public class BaseChartControl : Control
     private readonly Kernel _kernel;
     private Vector2[] _askData = null!;
     private Vector2[] _bidData = null!;
+    private bool _isChangeling;
 
     private readonly float _pip;
     private const float YAxisStepInPips = 10f; 
@@ -36,7 +39,7 @@ public class BaseChartControl : Control
     private float _yAxisWidth;
     private float _height;
     private float _xAxisHeight;
-    private int _unitsPerChart = int.MaxValue; //axis X //todo: settings
+    private int _unitsPerChart = int.MaxValue; //axis X //todo: settings //todo:changed when size changed
     private float _pendingUnitsPerChart;
     private int _maxUnitsPerChart;
     private const int MinUnitsPerChart = 10; //todo: settings
@@ -76,10 +79,26 @@ public class BaseChartControl : Control
 
     private DebugInfo _debugInfo;
 
-    public BaseChartControl(Kernel kernel, Symbol symbol, bool isOpposite)
+    private const float ArrowheadLength = 10;
+    private const float ArrowheadWidth = 5;
+
+    private readonly IList<(Vector2 startPoint, Vector2 endPoint)> _arrowLines = new List<(Vector2, Vector2)>()
+    {
+        new(new Vector2(10, 10), new Vector2(110, 10)),
+        new(new Vector2(110, 10), new Vector2(110, 110)),
+        new(new Vector2(110, 110), new Vector2(10, 110)),
+        new(new Vector2(10, 110), new Vector2(10, 10)),
+        new(new Vector2(10, 10), new Vector2(60, 60)),
+        new(new Vector2(110, 10), new Vector2(60, 60)),
+        new( new Vector2(110, 110), new Vector2(60, 60)),
+        new(new Vector2(10, 110), new Vector2(60, 60))
+    };
+    
+    public BaseChartControl(Kernel kernel, Symbol symbol, bool isChangeling)
     {
         DefaultStyleKey = typeof(BaseChartControl);
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
+        _isChangeling = isChangeling;
         switch (symbol)
         {
             case Symbol.EURGBP:
@@ -247,48 +266,119 @@ public class BaseChartControl : Control
 
     private void RenderData(CanvasDrawEventArgs args)
     {
-        using var cpb = new CanvasPathBuilder(args.DrawingSession);
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
+        var drawGeometries = new List<CanvasGeometry>();
+        var fillGeometries = new List<CanvasGeometry>();
+        DrawData(drawGeometries, fillGeometries);
+        DrawArrowLines(drawGeometries, fillGeometries);
+        Execute(drawGeometries, fillGeometries);
 
-        var ask = (float)_kernel[_kernelShift].Ask;
-        var highestPrice = ask + (_pipsPerChart * _pip) / 2f - _verticalShift * _pip;
-
-        _askData[_horizontalShift].Y = (highestPrice - ask) / _pip * _verticalScale;
-        args.DrawingSession.DrawCircle(_askData[_horizontalShift], 10, Colors.Red);
-        cpb.BeginFigure(_askData[_horizontalShift]);
-        
-        var unit = 1;
-        while (unit < _unitsPerChart - _horizontalShift)
+        void DrawData(ICollection<CanvasGeometry> dg, ICollection<CanvasGeometry> fg)
         {
-            if (unit + _kernelShift > _kernel.Count - 1) break;//todo
-            _askData[unit + _horizontalShift].Y = (highestPrice - (float)_kernel[unit + _kernelShift].Ask) / _pip * _verticalScale;
-            //args.DrawingSession.DrawCircle(_askData[unit + _horizontalShift], 3, Colors.Green);
-            cpb.AddLine(_askData[unit + _horizontalShift]);
-            unit++;
+            using var drawCpb = new CanvasPathBuilder(args.DrawingSession);
+            var drawDataGeometry = GetDrawDataGeometry(drawCpb);
+            dg.Add(drawDataGeometry);
+            using var fillCpb = new CanvasPathBuilder(args.DrawingSession);
+            var fillDataGeometry = GetFillDataGeometry(fillCpb);
+            fg.Add(fillDataGeometry);
         }
-        args.DrawingSession.DrawCircle(_askData[unit + _horizontalShift - 1], 10, Colors.Red);
 
-        unit--;
-        _bidData[unit + _horizontalShift].Y = (highestPrice - (float)_kernel[unit + _kernelShift].Bid) / _pip * _verticalScale;
-        cpb.AddLine(_bidData[unit + _horizontalShift]);
-        args.DrawingSession.DrawCircle(_bidData[unit + _horizontalShift], 10, Colors.Red);
-
-        while (unit >= 0)
+        CanvasGeometry GetDrawDataGeometry(CanvasPathBuilder cpb, bool isReversed = true)
         {
-            _bidData[unit + _horizontalShift].Y = (highestPrice - (float)_kernel[unit + _kernelShift].Bid) / _pip * _verticalScale;
-            //args.DrawingSession.DrawCircle(_bidData[unit + _horizontalShift], 3, Colors.Blue);
-            cpb.AddLine(_bidData[unit + _horizontalShift]);
+            var ask = (float)_kernel[_kernelShift].Ask;
+            var highestPrice = ask + (_pipsPerChart * _pip) / 2f - _verticalShift * _pip;
+            var scale = isReversed ? -1 : 1;
+            _askData[_horizontalShift].Y = scale * (highestPrice - ask) / _pip * _verticalScale;
+            cpb.BeginFigure(_askData[_horizontalShift]);
+
+            var unit = 1;
+            while (unit < _unitsPerChart - _horizontalShift)
+            {
+                _askData[unit + _horizontalShift].Y = scale * (highestPrice - (float)_kernel[unit + _kernelShift].Ask) / _pip * _verticalScale;
+                cpb.AddLine(_askData[unit + _horizontalShift]);
+                unit++;
+            }
+
             unit--;
+            while (unit >= 0)
+            {
+                _bidData[unit + _horizontalShift].Y = scale * (highestPrice - (float)_kernel[unit + _kernelShift].Bid) / _pip * _verticalScale;
+                cpb.AddLine(_bidData[unit + _horizontalShift]);
+                unit--;
+            }
+
+            cpb.EndFigure(CanvasFigureLoop.Open);
+            var drawDataGeometry = CanvasGeometry.CreatePath(cpb);
+            return drawDataGeometry;
         }
 
-        unit++;
-        args.DrawingSession.DrawCircle(_bidData[unit + _horizontalShift], 10, Colors.Red);
-        cpb.EndFigure(CanvasFigureLoop.Open);
-        args.DrawingSession.DrawGeometry(CanvasGeometry.CreatePath(cpb), _graphForegroundColor, GraphDataStrokeThickness);
+        CanvasGeometry GetFillDataGeometry(CanvasPathBuilder cpb)
+        {
+            var drawDataGeometry = CanvasGeometry.CreatePath(cpb);
+            return drawDataGeometry;
+        }
 
-        //cpb.AddLine(_askData[_horizontalShift]);
-        //cpb.EndFigure(CanvasFigureLoop.Closed);
-        //args.DrawingSession.FillGeometry(CanvasGeometry.CreatePath(cpb), _graphForegroundColor);
+        void DrawArrowLines(ICollection<CanvasGeometry> dg, ICollection<CanvasGeometry> fg)
+        {
+            foreach (var line in _arrowLines)
+            {
+                using var drawCpb = new CanvasPathBuilder(args.DrawingSession);
+                var drawLineGeometry = GetDrawLineGeometry(drawCpb, line);
+                dg.Add(drawLineGeometry);
+                using var fillCpb = new CanvasPathBuilder(args.DrawingSession);
+                var fillLineGeometry = GetFillLineGeometry(fillCpb, line);
+                fg.Add(fillLineGeometry);
+            }
+        }
+
+        static CanvasGeometry GetDrawLineGeometry(CanvasPathBuilder cpb, (Vector2 startPoint, Vector2 endPoint) line)
+        {
+            cpb.BeginFigure(line.startPoint);
+            cpb.AddLine(line.endPoint);
+            cpb.EndFigure(CanvasFigureLoop.Open);
+            var drawLineGeometry = CanvasGeometry.CreatePath(cpb);
+            return drawLineGeometry;
+        }
+
+        static CanvasGeometry GetFillLineGeometry(CanvasPathBuilder cpb, (Vector2 startPoint, Vector2 endPoint) line)
+        {
+            var (arrowHeadLeftPoint, arrowHeadRightPoint) = GetArrowPoints(line.endPoint, line.startPoint, ArrowheadLength, ArrowheadWidth);
+            cpb.BeginFigure(line.endPoint);
+            cpb.AddLine(arrowHeadLeftPoint);
+            cpb.AddLine(arrowHeadRightPoint);
+            cpb.AddLine(line.endPoint);
+            cpb.EndFigure(CanvasFigureLoop.Closed);
+            var fillLineGeometry = CanvasGeometry.CreatePath(cpb);
+            return fillLineGeometry;
+        }
+
+        static (Vector2 arrowHeadLeftPoint, Vector2 arrowHeadRightPoint) GetArrowPoints(Vector2 endPoint, Vector2 startPoint, float arrowheadLength, float arrowheadWidth)
+        {
+            var direction = Vector2.Normalize(endPoint - startPoint);
+            const double angleRadians = Math.PI / 2;
+
+            var arrowHeadLeftDirection = new Vector2(
+                (float)(direction.X * Math.Cos(angleRadians) + direction.Y * Math.Sin(angleRadians)),
+                (float)(-direction.X * Math.Sin(angleRadians) + direction.Y * Math.Cos(angleRadians))
+            );
+            var arrowHeadRightDirection = new Vector2(
+                (float)(direction.X * Math.Cos(-angleRadians) - direction.Y * Math.Sin(-angleRadians)),
+                (float)(direction.X * Math.Sin(-angleRadians) + direction.Y * Math.Cos(-angleRadians))
+            );
+
+            var arrowHeadLeftPoint = endPoint - arrowheadLength * direction + arrowheadWidth * arrowHeadLeftDirection;
+            var arrowHeadRightPoint = endPoint - arrowheadLength * direction - arrowheadWidth * arrowHeadRightDirection;
+
+            return (arrowHeadLeftPoint, arrowHeadRightPoint);
+        }
+
+        void Execute(List<CanvasGeometry> dg, List<CanvasGeometry> fg)
+        {
+            var combinedDrawGeometry = CanvasGeometry.CreateGroup(args.DrawingSession.Device, dg.ToArray());
+            var combinedFillGeometry = CanvasGeometry.CreateGroup(args.DrawingSession.Device, fg.ToArray());
+            args.DrawingSession.DrawGeometry(combinedDrawGeometry, _graphForegroundColor, GraphDataStrokeThickness);
+            args.DrawingSession.FillGeometry(combinedFillGeometry, _graphForegroundColor);
+        }
     }
 
     private void RenderYAxis(CanvasDrawEventArgs args)
