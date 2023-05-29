@@ -31,7 +31,7 @@ public class BaseChartControl : Control
     private readonly Kernel _kernel;
     private Vector2[] _askData = null!;
     private Vector2[] _bidData = null!;
-    private bool _isChangeling;
+    private readonly bool _isReversed;
 
     private readonly float _pip;
     private const float YAxisStepInPips = 10f; 
@@ -94,11 +94,11 @@ public class BaseChartControl : Control
         new(new Vector2(10, 110), new Vector2(60, 60))
     };
     
-    public BaseChartControl(Kernel kernel, Symbol symbol, bool isChangeling)
+    public BaseChartControl(Kernel kernel, Symbol symbol, bool isReversed)
     {
         DefaultStyleKey = typeof(BaseChartControl);
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
-        _isChangeling = isChangeling;
+        _isReversed = isReversed;
         switch (symbol)
         {
             case Symbol.EURGBP:
@@ -165,7 +165,7 @@ public class BaseChartControl : Control
         _unitsPerChart = Math.Clamp(_unitsPerChart, MinUnitsPerChart, _maxUnitsPerChart);
         _height = (float)e.NewSize.Height;
         _horizontalScale = _width / (_unitsPerChart - 1);
-        _verticalScale = _height / (_pipsPerChart - 1);
+        _verticalScale = _height / _pipsPerChart;
 
         _askData = new Vector2[_unitsPerChart];
         for (var unit = 0; unit < _unitsPerChart; unit++)
@@ -283,18 +283,22 @@ public class BaseChartControl : Control
             fg.Add(fillDataGeometry);
         }
 
-        CanvasGeometry GetDrawDataGeometry(CanvasPathBuilder cpb, bool isReversed = true)
+        CanvasGeometry GetDrawDataGeometry(CanvasPathBuilder cpb)
         {
+            var offset = _isReversed ? _height : 0;
+
             var ask = (float)_kernel[_kernelShift].Ask;
-            var highestPrice = ask + (_pipsPerChart * _pip) / 2f - _verticalShift * _pip;
-            var scale = isReversed ? -1 : 1;
-            _askData[_horizontalShift].Y = scale * (highestPrice - ask) / _pip * _verticalScale;
+            var yZeroPrice = ask + (_pipsPerChart * _pip) / 2f - _verticalShift * _pip;
+
+            var unit = 0;
+            _askData[_horizontalShift].Y = _isReversed ? offset - (yZeroPrice - ask) / _pip * _verticalScale : (yZeroPrice - ask) / _pip * _verticalScale;
+
             cpb.BeginFigure(_askData[_horizontalShift]);
 
-            var unit = 1;
             while (unit < _unitsPerChart - _horizontalShift)
             {
-                _askData[unit + _horizontalShift].Y = scale * (highestPrice - (float)_kernel[unit + _kernelShift].Ask) / _pip * _verticalScale;
+                _askData[unit + _horizontalShift].Y =
+                    _isReversed ? offset - (yZeroPrice - (float)_kernel[unit + _kernelShift].Ask) / _pip * _verticalScale : (yZeroPrice - (float)_kernel[unit + _kernelShift].Ask) / _pip * _verticalScale;
                 cpb.AddLine(_askData[unit + _horizontalShift]);
                 unit++;
             }
@@ -302,7 +306,7 @@ public class BaseChartControl : Control
             unit--;
             while (unit >= 0)
             {
-                _bidData[unit + _horizontalShift].Y = scale * (highestPrice - (float)_kernel[unit + _kernelShift].Bid) / _pip * _verticalScale;
+                _bidData[unit + _horizontalShift].Y = _isReversed ? offset - (yZeroPrice - (float)_kernel[unit + _kernelShift].Bid) / _pip * _verticalScale : (yZeroPrice - (float)_kernel[unit + _kernelShift].Bid) / _pip * _verticalScale;
                 cpb.AddLine(_bidData[unit + _horizontalShift]);
                 unit--;
             }
@@ -383,33 +387,34 @@ public class BaseChartControl : Control
 
     private void RenderYAxis(CanvasDrawEventArgs args)
     {
+        var offset = _isReversed ? _height : 0;
+
         using var cpb = new CanvasPathBuilder(args.DrawingSession);
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 
-        var ask = (float)_kernel[_kernelShift].Ask;
-        var bid = (float)_kernel[_kernelShift].Bid;
-
-        var highestPrice = ask + (_pipsPerChart * _pip) / 2f - _verticalShift * _pip;
-        var divisor = 1f / (YAxisStepInPips * _pip);
-        var firstPriceDivisibleBy10Pips = (float)Math.Floor(highestPrice * divisor) / divisor;
-        
-        var y = (highestPrice - ask) / _pip * _verticalScale;
+        var ask = (float)_kernel[_kernelShift].Ask; 
+        var yZeroPrice = ask + (_pip * _pipsPerChart) / 2f - _verticalShift * _pip;
+        var y = Math.Abs(offset - (yZeroPrice - ask) / _pip * _verticalScale);
         cpb.BeginFigure(new Vector2(0, y));
         cpb.AddLine(new Vector2(_yAxisWidth, y));
         cpb.EndFigure(CanvasFigureLoop.Open);
         var textLayout = new CanvasTextLayout(args.DrawingSession, ask.ToString(_yxAxisLabelFormat), _yxAxisTextFormat, _yAxisWidth, YAxisFontSize);
         args.DrawingSession.DrawTextLayout(textLayout, 0, y - (float)textLayout.LayoutBounds.Height, _yAxisAskBidForegroundColor);
 
-        y = (highestPrice - bid) / _pip * _verticalScale;
+        var bid = (float)_kernel[_kernelShift].Bid;
+        y = Math.Abs(offset - (yZeroPrice - bid) / _pip * _verticalScale);
         cpb.BeginFigure(new Vector2(0, y));
         cpb.AddLine(new Vector2(_yAxisWidth, y));
         cpb.EndFigure(CanvasFigureLoop.Open);
         textLayout = new CanvasTextLayout(args.DrawingSession, bid.ToString(_yxAxisLabelFormat), _yxAxisTextFormat, _yAxisWidth, YAxisFontSize);
-        args.DrawingSession.DrawTextLayout(textLayout, 0, y, _yAxisAskBidForegroundColor);//todo:
+        args.DrawingSession.DrawTextLayout(textLayout, 0, y, _yAxisAskBidForegroundColor);
 
-        for (var price = firstPriceDivisibleBy10Pips; price >= highestPrice - _pipsPerChart * _pip; price -= _pip * YAxisStepInPips)
+        var divisor = 1f / (YAxisStepInPips * _pip);
+        var firstPriceDivisibleBy10Pips = (float)Math.Floor(yZeroPrice * divisor) / divisor;
+
+        for (var price = firstPriceDivisibleBy10Pips; price >= yZeroPrice - _pipsPerChart * _pip; price -= _pip * YAxisStepInPips)
         {
-            y = (highestPrice - price) / _pip * _verticalScale;
+            y = Math.Abs(offset - (yZeroPrice - price) / _pip * _verticalScale);
             textLayout = new CanvasTextLayout(args.DrawingSession, price.ToString(_yxAxisLabelFormat), _yxAxisTextFormat, _yAxisWidth, YAxisFontSize);
             args.DrawingSession.DrawTextLayout(textLayout, 0, y - (float)textLayout.LayoutBounds.Height, _yxAxisForegroundColor);
 
@@ -434,6 +439,11 @@ public class BaseChartControl : Control
         var startTime = _kernel[endUnit].DateTime;//todo
         var timeSpan = endTime - startTime;
         var totalSeconds = timeSpan.TotalSeconds;
+        if (totalSeconds <= 0)
+        {
+            return;
+        }
+
         var pixelsPerSecond = _width / totalSeconds;
 
         _debugInfo.StartTime = startTime;

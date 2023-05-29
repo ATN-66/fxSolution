@@ -11,7 +11,7 @@
             x:Name="NavigationViewControl"
             AlwaysShowHeader="True"
             Canvas.ZIndex="0"
-            Header="{x:Bind ((ContentControl)ViewModel.Selected).Content, Mode=OneWay}"
+           
             IsBackButtonVisible="Visible"
             IsBackEnabled="{x:Bind ViewModel.IsBackEnabled, Mode=OneWay}"
             IsPaneToggleButtonVisible="True"
@@ -170,3 +170,4 @@
 <!--  &#xA5;   yen  -->
 <!--  &#xB7;   Middle Dot  -->
 <!--  DisplayModeChanged="NavigationViewControl_DisplayModeChanged"  -->
+<!--Header="{x:Bind ((ContentControl)ViewModel.Selected).Content, Mode=OneWay}"-->
