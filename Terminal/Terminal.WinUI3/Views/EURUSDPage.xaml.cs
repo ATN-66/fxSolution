@@ -47,7 +47,7 @@ public sealed partial class EURUSDPage
     {
         if (sender is FrameworkElement fe && fe.FindName("PageCommandBar") is CommandBar cb)
         {
-            cb.ClosedDisplayMode = AppBarClosedDisplayMode.Minimal;
+            cb.ClosedDisplayMode = AppBarClosedDisplayMode.Compact;
         }
     }
 

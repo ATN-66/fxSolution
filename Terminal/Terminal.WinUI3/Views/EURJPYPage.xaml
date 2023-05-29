@@ -18,10 +18,11 @@
                 PointerExited="StackPanel_MouseExited">
                 <CommandBar
                     x:Name="PageCommandBar"
-                    ClosedDisplayMode="Minimal"
+                    ClosedDisplayMode="Compact"
                     Closing="CommandBar_Closing"
                     DefaultLabelPosition="Right"
                     Opening="CommandBar_Opening"
+                    HorizontalAlignment="Left"
                     Style="{StaticResource CommandBarStyle}">
                     <CommandBar.Content>
                         <TextBlock Text="{x:Bind HeaderContext, Mode=OneWay}" />

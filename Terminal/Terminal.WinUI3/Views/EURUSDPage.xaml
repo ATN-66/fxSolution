@@ -18,24 +18,29 @@
                 PointerExited="StackPanel_MouseExited">
                 <CommandBar
                     x:Name="PageCommandBar"
-                    ClosedDisplayMode="Minimal"
+                    ClosedDisplayMode="Compact"
                     Closing="CommandBar_Closing"
                     DefaultLabelPosition="Right"
                     Opening="CommandBar_Opening"
+                    HorizontalAlignment="Left"
                     Style="{StaticResource CommandBarStyle}">
                     <CommandBar.Content>
                         <TextBlock Text="{x:Bind HeaderContext, Mode=OneWay}" />
                     </CommandBar.Content>
+                    <AppBarSeparator />
                     <AppBarElementContainer>
-                        <SplitButton Content="Insert" ToolTipService.ToolTip="Insert">
-                            <SplitButton.Flyout>
-                                <MenuFlyout Placement="RightEdgeAlignedTop">
-                                    <MenuFlyoutItem Text="Insert above" />
-                                    <MenuFlyoutItem Text="Insert between" />
-                                    <MenuFlyoutItem Text="Insert below" />
+                        <Slider Width="200" Minimum="500" Maximum="1000" StepFrequency="10" SmallChange="10" Value="1000" />
+                    </AppBarElementContainer>
+                    <AppBarElementContainer>
+                        <DropDownButton Content="Units">
+                            <DropDownButton.Flyout>
+                                <MenuFlyout Placement="Bottom">
+                                    <MenuFlyoutItem Text="Max"/>
+                                    <MenuFlyoutItem Text="Custom"/>
+                                    <MenuFlyoutItem Text="Min"/>
                                 </MenuFlyout>
-                            </SplitButton.Flyout>
-                        </SplitButton>
+                            </DropDownButton.Flyout>
+                        </DropDownButton>
                     </AppBarElementContainer>
                     <AppBarToggleButton
                         Click="AppBarButton_Click"
@@ -81,3 +86,4 @@
 
     <Grid x:Name="ContentArea" Background="Transparent" />
 </Page>
+

@@ -85,4 +85,20 @@ public sealed partial class ShellPage
         var result = navigationService.GoBack();
         args.Handled = result;
     }
-}
+
+    private void NavigationViewControl_OnLoaded(object sender, RoutedEventArgs e)
+    {
+        //open all items. it doesn't work
+        //foreach (var menuItem in NavigationViewControl.MenuItems)
+        //{
+        //    if (menuItem is NavigationViewItem item && item.MenuItems.Count > 0)
+        //    {
+        //        // This will cause the item to expand
+        //        NavigationViewControl.SelectedItem = item;
+        //    }
+        //}
+
+        //// Reset selection to first item or null, as needed
+        //NavigationViewControl.SelectedItem = NavigationViewControl.MenuItems[0];
+    }
+}   

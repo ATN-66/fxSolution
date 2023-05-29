@@ -11,7 +11,7 @@
             x:Name="NavigationViewControl"
             AlwaysShowHeader="True"
             Canvas.ZIndex="0"
-           
+            Loaded="NavigationViewControl_OnLoaded"           
             IsBackButtonVisible="Visible"
             IsBackEnabled="{x:Bind ViewModel.IsBackEnabled, Mode=OneWay}"
             IsPaneToggleButtonVisible="True"
