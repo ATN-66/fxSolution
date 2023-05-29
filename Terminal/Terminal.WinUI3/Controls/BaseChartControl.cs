@@ -17,8 +17,6 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Input;
 using System.Diagnostics;
 using Symbol = Common.Entities.Symbol;
-using ColorCode.Compilation.Languages;
-using Microsoft.UI.Xaml.Shapes;
 
 namespace Terminal.WinUI3.Controls;
 
@@ -72,6 +70,9 @@ public class BaseChartControl : Control
         Convert.ToByte(HexCode.Substring(3, 2), 16),
         Convert.ToByte(HexCode.Substring(5, 2), 16)
     );
+
+    private const int MinTicks = 2;
+    private const int MaxTicks = 20;
 
     private bool _isMouseDown;
     private float _previousMouseY;
@@ -335,22 +336,28 @@ public class BaseChartControl : Control
             }
         }
 
-        static CanvasGeometry GetDrawLineGeometry(CanvasPathBuilder cpb, (Vector2 startPoint, Vector2 endPoint) line)
+        CanvasGeometry GetDrawLineGeometry(CanvasPathBuilder cpb, (Vector2 startPoint, Vector2 endPoint) line)
         {
-            cpb.BeginFigure(line.startPoint);
-            cpb.AddLine(line.endPoint);
+            var startPointToDraw = _isReversed ? line.startPoint with { Y = _height - line.startPoint.Y } : line.startPoint;
+            var endPointToDraw = _isReversed ? line.endPoint with { Y = _height - line.endPoint.Y } : line.endPoint;
+
+            cpb.BeginFigure(startPointToDraw);
+            cpb.AddLine(endPointToDraw);
             cpb.EndFigure(CanvasFigureLoop.Open);
             var drawLineGeometry = CanvasGeometry.CreatePath(cpb);
             return drawLineGeometry;
         }
 
-        static CanvasGeometry GetFillLineGeometry(CanvasPathBuilder cpb, (Vector2 startPoint, Vector2 endPoint) line)
+        CanvasGeometry GetFillLineGeometry(CanvasPathBuilder cpb, (Vector2 startPoint, Vector2 endPoint) line)
         {
-            var (arrowHeadLeftPoint, arrowHeadRightPoint) = GetArrowPoints(line.endPoint, line.startPoint, ArrowheadLength, ArrowheadWidth);
-            cpb.BeginFigure(line.endPoint);
+            var startPointToDraw = _isReversed ? line.startPoint with { Y = _height - line.startPoint.Y } : line.startPoint;
+            var endPointToDraw = _isReversed ? line.endPoint with { Y = _height - line.endPoint.Y } : line.endPoint;
+
+            var (arrowHeadLeftPoint, arrowHeadRightPoint) = GetArrowPoints(endPointToDraw, startPointToDraw, ArrowheadLength, ArrowheadWidth);
+            cpb.BeginFigure(endPointToDraw);
             cpb.AddLine(arrowHeadLeftPoint);
             cpb.AddLine(arrowHeadRightPoint);
-            cpb.AddLine(line.endPoint);
+            cpb.AddLine(endPointToDraw);
             cpb.EndFigure(CanvasFigureLoop.Closed);
             var fillLineGeometry = CanvasGeometry.CreatePath(cpb);
             return fillLineGeometry;
@@ -450,10 +457,9 @@ public class BaseChartControl : Control
         _debugInfo.EndTime = endTime;
         _debugInfo.TimeSpan = timeSpan;
         
-        var minTicks = 2;
-        var maxTicks = 20;
-        var minTimeStep = totalSeconds / maxTicks; 
-        var maxTimeStep = totalSeconds / minTicks;
+        
+        var minTimeStep = totalSeconds / MaxTicks; 
+        var maxTimeStep = totalSeconds / MinTicks;
 
         var timeSteps = new List<double> { 1, 5, 10, 30, 60, 5 * 60, 10 * 60, 15 * 60, 30 * 60, 60 * 60 };
         var timeStep = timeSteps.First(t => t >= minTimeStep);
@@ -512,7 +518,11 @@ public class BaseChartControl : Control
         }
 
         var currentMouseY = (float)e.GetCurrentPoint(_graphCanvas).Position.Y;
+
+
         var deltaY = _previousMouseY - currentMouseY;
+        deltaY = _isReversed ? -deltaY : deltaY;
+
         var pipsChange = deltaY / _verticalScale;
 
         var currentMouseX = (float)e.GetCurrentPoint(_graphCanvas).Position.X;

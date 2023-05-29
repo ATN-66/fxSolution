@@ -61,16 +61,36 @@ public partial class App
 
             services.AddTransient<EURUSDViewModel>();
             services.AddTransient<EURUSDPage>();
+            
+            services.AddTransient<USDEURViewModel>();
+            services.AddTransient<USDEURPage>();
+
             services.AddTransient<GBPUSDViewModel>();
             services.AddTransient<GBPUSDPage>();
+
+            services.AddTransient<USDGBPViewModel>();
+            services.AddTransient<USDGBPPage>();
+
             services.AddTransient<EURGBPViewModel>();
             services.AddTransient<EURGBPPage>();
+
+            services.AddTransient<GBPEURViewModel>();
+            services.AddTransient<GBPEURPage>();
+
+
             services.AddTransient<USDJPYViewModel>();
             services.AddTransient<USDJPYPage>();
             services.AddTransient<EURJPYViewModel>();
             services.AddTransient<EURJPYPage>();
+
+            services.AddTransient<JPYEURViewModel>();
+            services.AddTransient<JPYEURPage>();
+
             services.AddTransient<GBPJPYViewModel>();
             services.AddTransient<GBPJPYPage>();
+
+            services.AddTransient<JPYGBPViewModel>();
+            services.AddTransient<JPYGBPPage>();
 
             services.AddTransient<JPYUSDViewModel>();
             services.AddTransient<JPYUSDPage>();

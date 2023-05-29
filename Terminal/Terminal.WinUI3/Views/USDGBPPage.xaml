@@ -1,5 +1,5 @@
 ﻿<Page
-    x:Class="Terminal.WinUI3.Views.GBPUSDPage"
+    x:Class="Terminal.WinUI3.Views.USDGBPPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:Terminal.WinUI3.Behaviors"
@@ -11,7 +11,7 @@
     <behaviors:NavigationViewHeaderBehavior.HeaderMode>Always</behaviors:NavigationViewHeaderBehavior.HeaderMode>
 
     <behaviors:NavigationViewHeaderBehavior.HeaderTemplate>
-        <DataTemplate x:DataType="viewModels:GBPUSDViewModel">
+        <DataTemplate x:DataType="viewModels:USDGBPViewModel">
             <StackPanel
                 Height="48"
                 Background="Transparent"

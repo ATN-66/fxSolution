@@ -22,11 +22,16 @@
     <None Remove="Views\EURGBPPage.xaml" />
     <None Remove="Views\EURJPYPage.xaml" />
     <None Remove="Views\EURPage.xaml" />
+    <None Remove="Views\GBPEURPage.xaml" />
     <None Remove="Views\GBPJPYPage.xaml" />
     <None Remove="Views\GBPPage.xaml" />
     <None Remove="Views\GBPUSDPage.xaml" />
+    <None Remove="Views\JPYEURPage.xaml" />
+    <None Remove="Views\JPYGBPPage.xaml" />
     <None Remove="Views\JPYPage.xaml" />
     <None Remove="Views\JPYUSDPage.xaml" />
+    <None Remove="Views\USDEURPage.xaml" />
+    <None Remove="Views\USDGBPPage.xaml" />
     <None Remove="Views\USDJPYPage.xaml" />
     <None Remove="Views\USDPage.xaml" />
   </ItemGroup>
@@ -80,6 +85,25 @@
 
   <ItemGroup>
     <Page Update="Styles\CommandBar.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="Views\JPYGBPPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\USDGBPPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\JPYEURPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\GBPEURPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\USDEURPage.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
     </Page>
     <Page Update="Views\GBPJPYPage.xaml">

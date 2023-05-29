@@ -251,4 +251,34 @@
   <data name="JPYUSDViewModel_HeaderContext" xml:space="preserve">
     <value>JPY-USD</value>
   </data>
+  <data name="Shell_USDEUR.Content" xml:space="preserve">
+    <value>USD-EUR</value>
+  </data>
+  <data name="USDEURViewModel_HeaderContext" xml:space="preserve">
+    <value>USD-EUR</value>
+  </data>
+  <data name="GBPEURViewModel_HeaderContext" xml:space="preserve">
+    <value>GBP-EUR</value>
+  </data>
+  <data name="JPYEURViewModel_HeaderContext" xml:space="preserve">
+    <value>JPY-EUR</value>
+  </data>
+  <data name="Shell_GBPEUR.Content" xml:space="preserve">
+    <value>GBP-EUR</value>
+  </data>
+  <data name="Shell_JPYEUR.Content" xml:space="preserve">
+    <value>JPY-EUR</value>
+  </data>
+  <data name="Shell_USDGBP.Content" xml:space="preserve">
+    <value>USD-GBP</value>
+  </data>
+  <data name="USDGBPViewModel_HeaderContext" xml:space="preserve">
+    <value>USD-GBP</value>
+  </data>
+  <data name="JPYGBPViewModel_HeaderContext" xml:space="preserve">
+    <value>JPY-GBP</value>
+  </data>
+  <data name="Shell_JPYGBP.Content" xml:space="preserve">
+    <value>JPY-GBP</value>
+  </data>
 </root>
