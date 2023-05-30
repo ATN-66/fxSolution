@@ -11,32 +11,26 @@
                 <ControlTemplate TargetType="controls:TickChartControl">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" /><!--  Column for graph = 0 -->
-                            <ColumnDefinition Width="*" /><!--  Column for Y-axis = 1 -->
-                            <ColumnDefinition Width="Auto" /><!--  Column for Slider = 2 -->
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" /><!--  Row for graph  = 0 -->
-                            <RowDefinition Height="*" /><!--  Row for X-axis = 1 -->
-                            <!--<RowDefinition Height="*" />--><!--  Row for Debug = 2 -->
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <!--<RowDefinition Height="Auto" />-->
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <win2d:CanvasControl
-                            x:Name="graphCanvas"
+                        <Slider
                             Grid.Row="0"
                             Grid.Column="0"
-                            Margin="{TemplateBinding Margin}"
-                            Padding="{TemplateBinding Padding}"
-                            Background="{TemplateBinding Background}"
-                            Foreground="{TemplateBinding Foreground}" />
-                        <win2d:CanvasControl
-                            x:Name="yAxisCanvas"
-                            Grid.Row="0"
-                            Grid.Column="1"
-                            Margin="{TemplateBinding Margin}"
-                            Padding="{TemplateBinding Padding}"
-                            Background="{TemplateBinding Background}"
-                            Foreground="{TemplateBinding Foreground}" />
-                        <Slider x:Name="SliderPipScale" Grid.Column="2" Grid.Row="0" Orientation="Vertical" Minimum="10" Maximum="200" StepFrequency="10" SmallChange="2" Value="{Binding PipScale, Mode=TwoWay}" />
+                            Maximum="{Binding MaxUnitsPerChart, Mode=TwoWay}"
+                            Minimum="{Binding MinUnitsPerChart, Mode=OneWay}"
+                            Orientation="Horizontal"
+                            SmallChange="5"
+                            StepFrequency="10"
+                            Value="{Binding UnitsPerChart, Mode=TwoWay}" />
                         <win2d:CanvasControl
                             x:Name="xAxisCanvas"
                             Grid.Row="1"
@@ -49,11 +43,44 @@
                             x:Name="debugCanvas"
                             Grid.Row="2"
                             Grid.Column="0"
-                            Grid.ColumnSpan="2"
                             Margin="{TemplateBinding Margin}"
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
                             Foreground="{TemplateBinding Foreground}" />-->
+                        <win2d:CanvasControl
+                            x:Name="graphCanvas"
+                            Grid.Row="2"
+                            Grid.Column="0"
+                            Margin="{TemplateBinding Margin}"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            Foreground="{TemplateBinding Foreground}" />
+                        <Slider
+                            Grid.Row="3"
+                            Grid.Column="0"
+                            Maximum="100"
+                            Minimum="0"
+                            Orientation="Horizontal"
+                            SmallChange="1"
+                            StepFrequency="1"
+                            Value="{Binding KernelShiftPercent, Mode=TwoWay}" />
+                        <win2d:CanvasControl
+                            x:Name="yAxisCanvas"
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Margin="{TemplateBinding Margin}"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            Foreground="{TemplateBinding Foreground}" />
+                        <Slider
+                            Grid.Row="2"
+                            Grid.Column="2"
+                            Maximum="{Binding MaxPipsPerChart, Mode=OneWay}"
+                            Minimum="{Binding MinPipsPerChart, Mode=OneWay}"
+                            Orientation="Vertical"
+                            SmallChange="2"
+                            StepFrequency="10"
+                            Value="{Binding PipsPerChart, Mode=TwoWay}" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>

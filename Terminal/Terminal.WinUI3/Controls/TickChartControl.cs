@@ -2,6 +2,7 @@
   |                                         Terminal.WinUI3.Controls |
   |                                              TickChartControl.cs |
   +------------------------------------------------------------------+*/
+//#define DEBUGWIN2DCanvasControl
 
 using System.Numerics;
 using Windows.UI;
@@ -32,32 +33,19 @@ public class TickChartControl : Control
     private Vector2[] _askData = null!;
     private Vector2[] _bidData = null!;
     private readonly bool _isReversed;
-
     private readonly float _pip;
-    private const float YAxisStepInPips = 10f; 
-    private float _width;
+    private const float YAxisStepInPips = 10f;
     private float _yAxisWidth;
     private float _height;
     private float _xAxisHeight;
-    private int _unitsPerChart = int.MaxValue; //axis X //todo: settings //todo:changed when size changed
     private float _pendingUnitsPerChart;
-    private int _maxUnitsPerChart;
-    private const int MinUnitsPerChart = 10; //todo: settings
-
-    public float PipsPerChart
-    {
-        get;
-        set;
-    } = 10;
-
-    private const int MaxPipsPerChart = 200; //todo: settings
-    private const int MinPipsPerChart = 10; //todo: settings
+    private float _graphWidth;
     private float _horizontalScale;
     private float _verticalScale;
-
     private float _verticalShift; 
-    private int _horizontalShift; 
+    private int _horizontalShift;
     private int _kernelShift;
+    private bool _enableDrawing = true;
 
     private const float YAxisFontSize = 12;
     private const string YAxisFontFamily = "Lucida Console";
@@ -102,7 +90,121 @@ public class TickChartControl : Control
         new( new Vector2(110, 110), new Vector2(60, 60)),
         new(new Vector2(10, 110), new Vector2(60, 60))
     };
-    
+
+    private float GraphWidth
+    {
+        get => _graphWidth;
+        set
+        {
+            _graphWidth = value;
+            MaxUnitsPerChart = (int)Math.Floor(_graphWidth);
+            if (MaxUnitsPerChart < MinUnitsPerChart)
+            {
+                MaxUnitsPerChart = MinUnitsPerChart;
+            }
+        }
+    }
+    private int KernelShift
+    {
+        set
+        {
+            _kernelShift = value;
+            _kernelShift = Math.Clamp(_kernelShift, 0, _kernel.Count - UnitsPerChart);
+            _enableDrawing = false;
+            var range = _kernel.Count - UnitsPerChart;
+            KernelShiftPercent = ((range - _kernelShift) / (double)range) * 100;
+            _enableDrawing = true;
+        }
+    }
+    public static readonly DependencyProperty MaxUnitsPerChartProperty = DependencyProperty.Register(nameof(MaxUnitsPerChart), typeof(int), typeof(TickChartControl), new PropertyMetadata(500));
+    public int MaxUnitsPerChart
+    {
+        get => (int)GetValue(MaxUnitsPerChartProperty);
+        set
+        {
+            if (MaxUnitsPerChart == value)
+            {
+                return;
+            }
+
+            SetValue(MaxUnitsPerChartProperty, value);
+        }
+    }
+    public static readonly DependencyProperty MinUnitsPerChartProperty = DependencyProperty.Register(nameof(MinUnitsPerChart), typeof(int), typeof(TickChartControl), new PropertyMetadata(10));
+    public int MinUnitsPerChart
+    {
+        get => (int)GetValue(MinUnitsPerChartProperty);
+        set
+        {
+            if (MinUnitsPerChart == value)
+            {
+                return;
+            }
+
+            SetValue(MinUnitsPerChartProperty, value);
+        }
+    }
+    public static readonly DependencyProperty UnitsPerChartProperty = DependencyProperty.Register(nameof(UnitsPerChart), typeof(int), typeof(TickChartControl), new PropertyMetadata(100));
+    public int UnitsPerChart
+    {
+        get => (int)GetValue(UnitsPerChartProperty);
+        set
+        {
+            if (UnitsPerChart == value)
+            {
+                return;
+            }
+
+            SetValue(UnitsPerChartProperty, value);
+            OnUnitsPerChartChanged();
+        }
+    }
+    public static readonly DependencyProperty PipsPerChartProperty = DependencyProperty.Register(nameof(PipsPerChart), typeof(float), typeof(TickChartControl), new PropertyMetadata(10f));
+    public float PipsPerChart
+    {
+        get => (float)GetValue(PipsPerChartProperty);
+        set
+        {
+            if (value.Equals(PipsPerChart))
+            {
+                return;
+            }
+
+            SetValue(PipsPerChartProperty, value);
+            OnPipsPerChartChanged();
+        }
+    }
+    public static readonly DependencyProperty MaxPipsPerChartProperty = DependencyProperty.Register(nameof(MaxPipsPerChart), typeof(float), typeof(TickChartControl), new PropertyMetadata(200f));
+    public float MaxPipsPerChart
+    {
+        get => (float)GetValue(MaxPipsPerChartProperty);
+        set => SetValue(MaxPipsPerChartProperty, value);
+    }
+    public static readonly DependencyProperty MinPipsPerChartProperty = DependencyProperty.Register(nameof(MinPipsPerChart), typeof(float), typeof(TickChartControl), new PropertyMetadata(10f));
+    public float MinPipsPerChart
+    {
+        get => (float)GetValue(MinPipsPerChartProperty);
+        set => SetValue(MinPipsPerChartProperty, value);
+    }
+    public static readonly DependencyProperty KernelShiftPercentProperty = DependencyProperty.Register(nameof(KernelShiftPercent), typeof(double), typeof(TickChartControl), new PropertyMetadata(0d));
+    public double KernelShiftPercent
+    {
+        get => (double)GetValue(KernelShiftPercentProperty);
+        set
+        {
+            if (value.Equals(KernelShiftPercent))
+            {
+                return;
+            }
+
+            SetValue(KernelShiftPercentProperty, value);
+            if (_enableDrawing)
+            {
+                OnKernelShiftPercentChanged(value);
+            }
+        }
+    }
+
     public TickChartControl(Kernel kernel, Symbol symbol, bool isReversed)
     {
         DefaultStyleKey = typeof(TickChartControl);
@@ -173,23 +275,22 @@ public class TickChartControl : Control
 
     private void GraphCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        _width = (float)e.NewSize.Width;
-        _maxUnitsPerChart = (int)Math.Floor(_width);
-        _maxUnitsPerChart = Math.Clamp(_maxUnitsPerChart, MinUnitsPerChart, int.MaxValue);
-        _unitsPerChart = Math.Clamp(_unitsPerChart, MinUnitsPerChart, _maxUnitsPerChart);
+        GraphWidth = (float)e.NewSize.Width;
         _height = (float)e.NewSize.Height;
-        _horizontalScale = _width / (_unitsPerChart - 1);
+        UnitsPerChart = Math.Clamp(UnitsPerChart, MinUnitsPerChart, MaxUnitsPerChart);
+
+        _horizontalScale = GraphWidth / (UnitsPerChart - 1);
         _verticalScale = _height / PipsPerChart;
 
-        _askData = new Vector2[_unitsPerChart];
-        for (var unit = 0; unit < _unitsPerChart; unit++)
+        _askData = new Vector2[UnitsPerChart];
+        for (var unit = 0; unit < UnitsPerChart; unit++)
         {
-            _askData[unit] = new Vector2 { X = (_unitsPerChart - 1 - unit) * _horizontalScale };
+            _askData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * _horizontalScale };
         }
-        _bidData = new Vector2[_unitsPerChart];
-        for (var unit = 0; unit < _unitsPerChart; unit++)
+        _bidData = new Vector2[UnitsPerChart];
+        for (var unit = 0; unit < UnitsPerChart; unit++)
         {
-            _bidData[unit] = new Vector2 { X = (_unitsPerChart - 1 - unit) * _horizontalScale };
+            _bidData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * _horizontalScale };
         }
     }
 
@@ -220,7 +321,7 @@ public class TickChartControl : Control
         var axisRow = grid.RowDefinitions[1];
         axisRow.Height = new GridLength(_xAxisHeight);
     }
-
+#if DEBUGWIN2DCanvasControl
     private void DebugCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
         var debugCanvas = sender as CanvasControl ?? throw new InvalidOperationException("Canvas controls not found.");
@@ -231,55 +332,12 @@ public class TickChartControl : Control
         }
 
         var debugRow = grid.RowDefinitions[2];
-        debugRow.Height = new GridLength(CalculateTextBounds(YAxisTextSample, _yxAxisTextFormat).height * 2);//todo: 2 rows now
+        debugRow.Height = new GridLength(CalculateTextBounds(YAxisTextSample, _yxAxisTextFormat).height * 3);//todo: 3 rows now
     }
-
+#endif
     private void GraphCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
-        ClearGraphCanvas(args);
-        RenderData(args);
-    }
-
-    private void YAxisCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
-    {
-        ClearYAxisCanvas(args);
-        RenderYAxis(args);
-    }
-
-    private void XAxisCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
-    {
-        ClearXAxisCanvas(args);
-        RenderXAxis(args);
-    }
-#if DEBUGWIN2DCanvasControl
-    private void DebugCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
-    {
-        ClearDebugCanvas(args);
-        RenderDebug(args);
-    }
-#endif
-    private void ClearGraphCanvas(CanvasDrawEventArgs args)
-    {
         args.DrawingSession.Clear(_graphBackgroundColor);
-    }
-
-    private void ClearYAxisCanvas(CanvasDrawEventArgs args)
-    {
-        args.DrawingSession.Clear(_yxAxisBackgroundColor);
-    }
-
-    private void ClearXAxisCanvas(CanvasDrawEventArgs args)
-    {
-        args.DrawingSession.Clear(_yxAxisBackgroundColor);
-    }
-#if DEBUGWIN2DCanvasControl
-    private void ClearDebugCanvas(CanvasDrawEventArgs args)
-    {
-        args.DrawingSession.Clear(_graphBackgroundColor);
-    }
-#endif
-    private void RenderData(CanvasDrawEventArgs args)
-    {
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
         var drawGeometries = new List<CanvasGeometry>();
         var fillGeometries = new List<CanvasGeometry>();
@@ -309,7 +367,7 @@ public class TickChartControl : Control
 
             cpb.BeginFigure(_askData[_horizontalShift]);
 
-            while (unit < _unitsPerChart - _horizontalShift)
+            while (unit < UnitsPerChart - _horizontalShift)
             {
                 _askData[unit + _horizontalShift].Y =
                     _isReversed ? offset - (yZeroPrice - (float)_kernel[unit + _kernelShift].Ask) / _pip * _verticalScale : (yZeroPrice - (float)_kernel[unit + _kernelShift].Ask) / _pip * _verticalScale;
@@ -405,14 +463,15 @@ public class TickChartControl : Control
         }
     }
 
-    private void RenderYAxis(CanvasDrawEventArgs args)
+    private void YAxisCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
-        var offset = _isReversed ? _height : 0;
-
+        args.DrawingSession.Clear(_yxAxisBackgroundColor);
         using var cpb = new CanvasPathBuilder(args.DrawingSession);
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 
-        var ask = (float)_kernel[_kernelShift].Ask; 
+        var offset = _isReversed ? _height : 0;
+
+        var ask = (float)_kernel[_kernelShift].Ask;
         var yZeroPrice = ask + (_pip * PipsPerChart) / 2f - _verticalShift * _pip;
         var y = Math.Abs(offset - (yZeroPrice - ask) / _pip * _verticalScale);
         cpb.BeginFigure(new Vector2(0, y));
@@ -446,14 +505,14 @@ public class TickChartControl : Control
         args.DrawingSession.DrawGeometry(CanvasGeometry.CreatePath(cpb), _yxAxisForegroundColor, 1);
     }
 
-    private void RenderXAxis(CanvasDrawEventArgs args)
+    private void XAxisCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
+        args.DrawingSession.Clear(_yxAxisBackgroundColor);
         using var cpb = new CanvasPathBuilder(args.DrawingSession);
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
-        
+
         var startUnit = _kernelShift;
-        var endUnit = _unitsPerChart - _horizontalShift + _kernelShift - 1;
-        var totalUnits = endUnit - startUnit + 1;
+        var endUnit = UnitsPerChart - _horizontalShift + _kernelShift - 1;
 
         var endTime = _kernel[startUnit].DateTime;
         var startTime = _kernel[endUnit].DateTime;//todo
@@ -464,13 +523,13 @@ public class TickChartControl : Control
             return;
         }
 
-        var pixelsPerSecond = _width / totalSeconds;
+        var pixelsPerSecond = GraphWidth / totalSeconds;
 #if DEBUGWIN2DCanvasControl
         _debugInfo.StartTime = startTime;
         _debugInfo.EndTime = endTime;
         _debugInfo.TimeSpan = timeSpan;
 #endif
-        var minTimeStep = totalSeconds / MaxTicks; 
+        var minTimeStep = totalSeconds / MaxTicks;
         var maxTimeStep = totalSeconds / MinTicks;
 
         var timeSteps = new List<double> { 1, 5, 10, 30, 60, 5 * 60, 10 * 60, 15 * 60, 30 * 60, 60 * 60 };
@@ -501,19 +560,74 @@ public class TickChartControl : Control
         args.DrawingSession.DrawGeometry(CanvasGeometry.CreatePath(cpb), _yxAxisForegroundColor, 1);
     }
 #if DEBUGWIN2DCanvasControl
-    private void RenderDebug(CanvasDrawEventArgs args)
+    private void DebugCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
+        args.DrawingSession.Clear(_graphBackgroundColor);
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
-        var output1 = $"width:{_width:0000}, height:{_height:0000}, units:{_unitsPerChart:0000}, pips:{PipsPerChart:0000}, vertical shift:{_verticalShift:###,##}, horizontal shift:{_horizontalShift:0000}, kernel shift:{_kernelShift:000000}, kernel.Count:{_kernel.Count:000000}";
-        var output2 = $"Start Time:{_debugInfo.StartTime}, End Time:{_debugInfo.EndTime}, Time Span:{_debugInfo.TimeSpan:g}, Time Step:{_debugInfo.TimeStep}, New Start Time:{_debugInfo.NewStartTime}";
+        var output1 = $"width:{GraphWidth:0000}, max units per chart:{MaxUnitsPerChart:0000}, units per chart:{UnitsPerChart:0000}, horizontal shift:{_horizontalShift:0000}, kernel shift:{_kernelShift:000000}, kernel.Count:{_kernel.Count:000000}";
+        var output2 = $"height:{_height:0000}, pips per chart:{PipsPerChart:0000}, vertical shift:{_verticalShift:###,##}";
+        var output3 = $"start Time:{_debugInfo.StartTime}, end time:{_debugInfo.EndTime}, time span:{_debugInfo.TimeSpan:g}, time step:{_debugInfo.TimeStep}, new start time:{_debugInfo.NewStartTime}";
 
         var textLayout1 = new CanvasTextLayout(args.DrawingSession, output1, _yxAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
         args.DrawingSession.DrawTextLayout(textLayout1, 0, 0, Colors.White);
 
         var textLayout2 = new CanvasTextLayout(args.DrawingSession, output2, _yxAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
         args.DrawingSession.DrawTextLayout(textLayout2, 0, (float)textLayout1.LayoutBounds.Height, Colors.White);
+
+        var textLayout3 = new CanvasTextLayout(args.DrawingSession, output3, _yxAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
+        args.DrawingSession.DrawTextLayout(textLayout3, 0, (float)textLayout1.LayoutBounds.Height * 2, Colors.White);
     }
 #endif
+    private void OnPipsPerChartChanged()
+    {
+        _verticalScale = _height / PipsPerChart;
+        _graphCanvas!.Invalidate();
+        _yAxisCanvas!.Invalidate();
+        _xAxisCanvas!.Invalidate();
+#if DEBUGWIN2DCanvasControl
+        _debugCanvas!.Invalidate();
+#endif
+    }
+
+    private void OnUnitsPerChartChanged()
+    {
+        _horizontalScale = GraphWidth / (UnitsPerChart - 1);
+        _askData = new Vector2[UnitsPerChart];
+        for (var unit = 0; unit < UnitsPerChart; unit++)
+        {
+            _askData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * _horizontalScale };
+        }
+        _bidData = new Vector2[UnitsPerChart];
+        for (var unit = 0; unit < UnitsPerChart; unit++)
+        {
+            _bidData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * _horizontalScale };
+        }
+        _graphCanvas!.Invalidate();
+        _yAxisCanvas!.Invalidate();
+        _xAxisCanvas!.Invalidate();
+#if DEBUGWIN2DCanvasControl
+        _debugCanvas!.Invalidate();
+#endif
+    }
+
+    private void OnKernelShiftPercentChanged(double value)
+    {
+        if (_horizontalShift > 0)
+        {
+            _horizontalShift = 0;
+        }
+
+        var range = _kernel.Count - UnitsPerChart;
+        _kernelShift = (int)(range - (value / 100d) * range);
+
+        _graphCanvas!.Invalidate();
+        _yAxisCanvas!.Invalidate();
+        _xAxisCanvas!.Invalidate();
+#if DEBUGWIN2DCanvasControl
+        _debugCanvas!.Invalidate();
+#endif
+    }
+
     private void GraphCanvas_OnPointerPressed(object sender, PointerRoutedEventArgs e)
     {
         ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
@@ -559,12 +673,11 @@ public class TickChartControl : Control
             if (barsChange > 0)
             {
                 _horizontalShift += barsChange;
-                _horizontalShift = Math.Clamp(_horizontalShift, 0, _unitsPerChart - 1);
+                _horizontalShift = Math.Clamp(_horizontalShift, 0, UnitsPerChart - 1);
             }
             else if (barsChange < 0)
             {
-                _kernelShift -= barsChange;
-                _kernelShift = Math.Clamp(_kernelShift, 0, _kernel.Count - _unitsPerChart);
+                KernelShift = _kernelShift - barsChange;
             }
             else
             {
@@ -575,13 +688,12 @@ public class TickChartControl : Control
         {
             Debug.Assert(_kernelShift == 0);
             _horizontalShift += barsChange;
-            _horizontalShift = Math.Clamp(_horizontalShift, 0, _unitsPerChart - 1);
+            _horizontalShift = Math.Clamp(_horizontalShift, 0, UnitsPerChart - 1);
         }
         else if (_kernelShift > 0)
         {
             Debug.Assert(_horizontalShift == 0);
-            _kernelShift -= barsChange;
-            _kernelShift = Math.Clamp(_kernelShift, 0, _kernel.Count - _unitsPerChart);
+            KernelShift = _kernelShift - barsChange;
         }
         else
         {
@@ -696,20 +808,20 @@ public class TickChartControl : Control
 
     private void XAxisCanvas_OnPointerReleased(object sender, PointerRoutedEventArgs e)
     {
-        _unitsPerChart -= (int)Math.Floor(_pendingUnitsPerChart);
-        _unitsPerChart = Math.Clamp(_unitsPerChart, MinUnitsPerChart, _maxUnitsPerChart);
-        _horizontalScale = _width / (_unitsPerChart - 1);
+        UnitsPerChart -= (int)Math.Floor(_pendingUnitsPerChart);
+        UnitsPerChart = Math.Clamp(UnitsPerChart, MinUnitsPerChart, MaxUnitsPerChart);
+        _horizontalScale = GraphWidth / (UnitsPerChart - 1);
 
-        _askData = new Vector2[_unitsPerChart];
-        for (var unit = 0; unit < _unitsPerChart; unit++)
+        _askData = new Vector2[UnitsPerChart];
+        for (var unit = 0; unit < UnitsPerChart; unit++)
         {
-            _askData[unit] = new Vector2 { X = (_unitsPerChart - 1 - unit) * _horizontalScale };
+            _askData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * _horizontalScale };
         }
 
-        _bidData = new Vector2[_unitsPerChart];
-        for (var unit = 0; unit < _unitsPerChart; unit++)
+        _bidData = new Vector2[UnitsPerChart];
+        for (var unit = 0; unit < UnitsPerChart; unit++)
         {
-            _bidData[unit] = new Vector2 { X = (_unitsPerChart - 1 - unit) * _horizontalScale };
+            _bidData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * _horizontalScale };
         }
 
         _isMouseDown = false;

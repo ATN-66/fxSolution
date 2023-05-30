@@ -1,1 +1,2 @@
-﻿global using WinUIEx;
+﻿#define DEBUGWIN2DCanvasControl
+global using WinUIEx;

@@ -79,6 +79,7 @@
 
   <ItemGroup>
     <Folder Include="AI\Models\" />
+    <Folder Include="Converters\" />
   </ItemGroup>
 
   <ItemGroup>

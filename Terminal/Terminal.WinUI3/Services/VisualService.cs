@@ -12,8 +12,8 @@ namespace Terminal.WinUI3.Services;
 
 public class VisualService : IVisualService
 {
-    private readonly IDictionary<Symbol, TickChartControl?> _tickCharts = new Dictionary<Symbol, TickChartControl?>();
-    private readonly IDictionary<Symbol, TickChartControl?> _tickChartsReversed = new Dictionary<Symbol, TickChartControl?>();
+    private readonly IDictionary<Symbol, TickChartControl> _tickCharts = new Dictionary<Symbol, TickChartControl>();
+    private readonly IDictionary<Symbol, TickChartControl> _tickChartsReversed = new Dictionary<Symbol, TickChartControl>();
     private IDictionary<Symbol, Kernel> _kernels = null!;
 
     public void Initialize(IDictionary<Symbol, Kernel> kernels)
@@ -21,7 +21,7 @@ public class VisualService : IVisualService
         _kernels = kernels;
     }
 
-    public TickChartControl? GetTickChartControl(Symbol symbol, bool isOpposite)
+    public TickChartControl GetTickChartControl(Symbol symbol, bool isOpposite)
     {
         if (isOpposite)
         {
