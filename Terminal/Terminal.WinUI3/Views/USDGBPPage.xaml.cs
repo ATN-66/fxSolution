@@ -11,7 +11,6 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using Terminal.WinUI3.Behaviors;
 using Terminal.WinUI3.Contracts.Services;
-using Terminal.WinUI3.Controls;
 using Terminal.WinUI3.ViewModels;
 using Symbol = Common.Entities.Symbol;
 
@@ -24,10 +23,9 @@ public sealed partial class USDGBPPage
         ViewModel = App.GetService<USDGBPViewModel>();
         InitializeComponent();
         SetBinding(NavigationViewHeaderBehavior.HeaderContextProperty, new Binding { Source = ViewModel, Mode = BindingMode.OneWay });
-        ContentArea.Children.Add(ViewModel.Chart);
+        ContentArea.Children.Add(ViewModel.TickChartControl);
     }
 
-    // ReSharper disable once MemberCanBePrivate.Global
     public USDGBPViewModel ViewModel
     {
         get;
@@ -36,7 +34,7 @@ public sealed partial class USDGBPPage
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         base.OnNavigatedFrom(e);
-        ContentArea.Children.Remove(ViewModel.Chart);
+        ContentArea.Children.Remove(ViewModel.TickChartControl);
     }
 
     private void StackPanel_MouseEnter(object sender, PointerRoutedEventArgs pointerRoutedEventArgs)

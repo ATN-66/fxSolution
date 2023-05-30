@@ -20,10 +20,9 @@ public sealed partial class USDEURPage
         ViewModel = App.GetService<USDEURViewModel>();
         InitializeComponent();
         SetBinding(NavigationViewHeaderBehavior.HeaderContextProperty, new Binding { Source = ViewModel, Mode = BindingMode.OneWay });
-        ContentArea.Children.Add(ViewModel.Chart);
+        ContentArea.Children.Add(ViewModel.TickChartControl);
     }
 
-    // ReSharper disable once MemberCanBePrivate.Global
     public USDEURViewModel ViewModel
     {
         get;
@@ -32,7 +31,7 @@ public sealed partial class USDEURPage
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         base.OnNavigatedFrom(e);
-        ContentArea.Children.Remove(ViewModel.Chart);
+        ContentArea.Children.Remove(ViewModel.TickChartControl);
     }
 
     private void StackPanel_MouseEnter(object sender, PointerRoutedEventArgs pointerRoutedEventArgs)

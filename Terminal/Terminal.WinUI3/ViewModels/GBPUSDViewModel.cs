@@ -17,15 +17,15 @@ namespace Terminal.WinUI3.ViewModels;
 public partial class GBPUSDViewModel : ObservableRecipient, INavigationAware
 {
     [ObservableProperty] private string _headerContext = "GBPUSDViewModel_HeaderContext".GetLocalized();
-    private BaseChartControl? _baseChartControl;
+    private TickChartControl? _tickChartControl;
 
     public GBPUSDViewModel()
     {
         var visualService = App.GetService<IVisualService>();
-        _baseChartControl = visualService.GetChartControl(Symbol.GBPUSD, false);
+        _tickChartControl = visualService.GetTickChartControl(Symbol.GBPUSD, false);
     }
 
-    public UIElement? Chart => _baseChartControl;
+    public UIElement? TickChartControl => _tickChartControl;
 
     public void OnNavigatedTo(object parameter)
     {
@@ -34,7 +34,7 @@ public partial class GBPUSDViewModel : ObservableRecipient, INavigationAware
 
     public void OnNavigatedFrom()
     {
-        _baseChartControl?.Detach();
-        _baseChartControl = null;
+        _tickChartControl?.Detach();
+        _tickChartControl = null;
     }
 }

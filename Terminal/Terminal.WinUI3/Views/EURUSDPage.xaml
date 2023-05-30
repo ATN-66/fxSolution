@@ -11,74 +11,17 @@
     <behaviors:NavigationViewHeaderBehavior.HeaderMode>Always</behaviors:NavigationViewHeaderBehavior.HeaderMode>
     <behaviors:NavigationViewHeaderBehavior.HeaderTemplate>
         <DataTemplate x:DataType="viewModels:EURUSDViewModel">
-            <StackPanel
-                Height="48"
-                Background="Transparent"
-                PointerEntered="StackPanel_MouseEnter"
-                PointerExited="StackPanel_MouseExited">
+            <StackPanel Height="48" Background="Transparent">
                 <CommandBar
                     x:Name="PageCommandBar"
                     ClosedDisplayMode="Compact"
-                    Closing="CommandBar_Closing"
                     DefaultLabelPosition="Right"
-                    Opening="CommandBar_Opening"
                     HorizontalAlignment="Left"
                     Style="{StaticResource CommandBarStyle}">
                     <CommandBar.Content>
                         <TextBlock Text="{x:Bind HeaderContext, Mode=OneWay}" />
                     </CommandBar.Content>
                     <AppBarSeparator />
-                    <AppBarElementContainer>
-                        <Slider Width="200" Minimum="500" Maximum="1000" StepFrequency="10" SmallChange="10" Value="1000" />
-                    </AppBarElementContainer>
-                    <AppBarElementContainer>
-                        <DropDownButton Content="Units">
-                            <DropDownButton.Flyout>
-                                <MenuFlyout Placement="Bottom">
-                                    <MenuFlyoutItem Text="Max"/>
-                                    <MenuFlyoutItem Text="Custom"/>
-                                    <MenuFlyoutItem Text="Min"/>
-                                </MenuFlyout>
-                            </DropDownButton.Flyout>
-                        </DropDownButton>
-                    </AppBarElementContainer>
-                    <AppBarToggleButton
-                        Click="AppBarButton_Click"
-                        Label="a really &#x00AD;long label"
-                        ToolTipService.ToolTip="Digit One">
-                        <AppBarToggleButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x31;" />
-                        </AppBarToggleButton.Icon>
-                    </AppBarToggleButton>
-                    <AppBarToggleButton Click="AppBarButton_Click" Label="Digit Two">
-                        <AppBarToggleButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x32;" />
-                        </AppBarToggleButton.Icon>
-                    </AppBarToggleButton>
-                    <AppBarSeparator />
-                    <AppBarButton Click="AppBarButton_Click" Label="Digit Three">
-                        <AppBarButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x33;" />
-                        </AppBarButton.Icon>
-                    </AppBarButton>
-                    <AppBarButton Click="AppBarButton_Click" Label="Digit Four">
-                        <AppBarButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x34;" />
-                        </AppBarButton.Icon>
-                    </AppBarButton>
-                    <CommandBar.SecondaryCommands>
-                        <AppBarButton Click="AppBarButton_Click" Label="Digit Five">
-                            <AppBarButton.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x35;" />
-                            </AppBarButton.Icon>
-                        </AppBarButton>
-                        <AppBarSeparator />
-                        <AppBarButton Click="AppBarButton_Click" Label="Digit Six">
-                            <AppBarButton.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x36;" />
-                            </AppBarButton.Icon>
-                        </AppBarButton>
-                    </CommandBar.SecondaryCommands>
                 </CommandBar>
             </StackPanel>
         </DataTemplate>
@@ -86,4 +29,3 @@
 
     <Grid x:Name="ContentArea" Background="Transparent" />
 </Page>
-

@@ -3,7 +3,6 @@
   |                                               EURUSDViewModel.cs |
   +------------------------------------------------------------------+*/
 
-
 using Common.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Xaml;
@@ -17,15 +16,16 @@ namespace Terminal.WinUI3.ViewModels;
 public partial class EURUSDViewModel : ObservableRecipient, INavigationAware
 {
     [ObservableProperty] private string _headerContext = "EURUSDViewModel_HeaderContext".GetLocalized();
-    private BaseChartControl? _baseChartControl;
-
+    //[ObservableProperty] private double _pipScale;
+    private TickChartControl? _tickChartControl;
+    
     public EURUSDViewModel()
     {
         var visualService = App.GetService<IVisualService>();
-        _baseChartControl = visualService.GetChartControl(Symbol.EURUSD, false);
+        _tickChartControl = visualService.GetTickChartControl(Symbol.EURUSD, false);
     }
 
-    public UIElement? Chart => _baseChartControl;
+    public UIElement? TickChartControl => _tickChartControl;
 
     public void OnNavigatedTo(object parameter)
     {
@@ -34,7 +34,7 @@ public partial class EURUSDViewModel : ObservableRecipient, INavigationAware
 
     public void OnNavigatedFrom()
     {
-        _baseChartControl?.Detach();
-        _baseChartControl = null;
+        _tickChartControl?.Detach();
+        _tickChartControl = null;
     }
 }

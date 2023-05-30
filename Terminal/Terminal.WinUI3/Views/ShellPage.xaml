@@ -50,7 +50,7 @@
                         </NavigationViewItem>
                     </NavigationViewItem.MenuItems>
                 </NavigationViewItem>
-                <NavigationViewItem x:Uid="Shell_EUR" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURViewModel">
+                <!--<NavigationViewItem x:Uid="Shell_EUR" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURViewModel">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x20AC;" />
                     </NavigationViewItem.Icon>
@@ -71,8 +71,8 @@
                             </NavigationViewItem.Icon>
                         </NavigationViewItem>
                     </NavigationViewItem.MenuItems>
-                </NavigationViewItem>
-                <NavigationViewItem x:Uid="Shell_GBP" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.GBPViewModel">
+                </NavigationViewItem>-->
+                <!--<NavigationViewItem x:Uid="Shell_GBP" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.GBPViewModel">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA3;" />
                     </NavigationViewItem.Icon>
@@ -93,8 +93,8 @@
                             </NavigationViewItem.Icon>
                         </NavigationViewItem>
                     </NavigationViewItem.MenuItems>
-                </NavigationViewItem>
-                <NavigationViewItem x:Uid="Shell_JPY" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.JPYViewModel">
+                </NavigationViewItem>-->
+                <!--<NavigationViewItem x:Uid="Shell_JPY" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.JPYViewModel">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA5;" />
                     </NavigationViewItem.Icon>
@@ -115,8 +115,8 @@
                             </NavigationViewItem.Icon>
                         </NavigationViewItem>
                     </NavigationViewItem.MenuItems>
-                </NavigationViewItem>
-                <NavigationViewItemHeader Content="Orders" />
+                </NavigationViewItem>-->
+                <!--<NavigationViewItemHeader Content="Orders" />-->
             </NavigationView.MenuItems>
             <!--<NavigationView.FooterMenuItems>
                 <NavigationViewItem

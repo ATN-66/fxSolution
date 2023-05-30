@@ -17,15 +17,15 @@ namespace Terminal.WinUI3.ViewModels;
 public partial class JPYEURViewModel : ObservableRecipient, INavigationAware
 {
     [ObservableProperty] private string _headerContext = "JPYEURViewModel_HeaderContext".GetLocalized();
-    private BaseChartControl? _baseChartControl;
+    private TickChartControl? _tickChartControl;
 
     public JPYEURViewModel()
     {
         var visualService = App.GetService<IVisualService>();
-        _baseChartControl = visualService.GetChartControl(Symbol.EURJPY, true);
+        _tickChartControl = visualService.GetTickChartControl(Symbol.EURJPY, true);
     }
 
-    public UIElement? Chart => _baseChartControl;
+    public UIElement? TickChartControl => _tickChartControl;
 
     public void OnNavigatedTo(object parameter)
     {
@@ -34,7 +34,7 @@ public partial class JPYEURViewModel : ObservableRecipient, INavigationAware
 
     public void OnNavigatedFrom()
     {
-        _baseChartControl?.Detach();
-        _baseChartControl = null;
+        _tickChartControl?.Detach();
+        _tickChartControl = null;
     }
 }
