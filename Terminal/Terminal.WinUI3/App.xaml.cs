@@ -1,19 +1,19 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Windows.ApplicationModel.Activation;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
 using Terminal.WinUI3.Activation;
 using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.AI.Services;
 using Terminal.WinUI3.Contracts.Services;
-using Terminal.WinUI3.Core.Contracts.Services;
-using Terminal.WinUI3.Core.Services;
 using Terminal.WinUI3.Helpers;
-using Terminal.WinUI3.Models;
 using Terminal.WinUI3.Notifications;
 using Terminal.WinUI3.Services;
 using Terminal.WinUI3.ViewModels;
 using Terminal.WinUI3.Views;
+using LaunchActivatedEventArgs = Microsoft.UI.Xaml.LaunchActivatedEventArgs;
 using UnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
+using Terminal.WinUI3.Models.Settings;
 
 namespace Terminal.WinUI3;
 
@@ -35,21 +35,28 @@ public partial class App
             services.AddSingleton<ILocalSettingsService, LocalSettingsService>();
             services.AddSingleton<IThemeSelectorService, ThemeSelectorService>();
             services.AddTransient<INavigationViewService, NavigationViewService>();
+            services.AddSingleton<IFileService, FileService>();
 
             services.AddSingleton<IActivationService, ActivationService>();
             services.AddSingleton<IPageService, PageService>();
             services.AddSingleton<INavigationService, NavigationService>();
+            services.AddSingleton<IDashboardService, DashboardService>();
 
             // Business Services
             services.AddSingleton<IProcessor, Processor>();
             services.AddSingleton<IDataService, DataService>();
             services.AddSingleton<IVisualService, VisualService>();
 
-            // Kernel Services
-            services.AddSingleton<ISampleDataService, SampleDataService>();
-            services.AddSingleton<IFileService, FileService>();
+            // Views and ViewModels
+            services.AddTransient<SettingsViewModel>();
+            services.AddTransient<SettingsPage>();
 
-            // ViewModels
+            services.AddTransient<HomeViewModel>();
+            services.AddTransient<HomePage>();
+            services.AddTransient<ShellPage>();
+            services.AddTransient<ShellViewModel>();
+
+            //todo: to fabric
             services.AddTransient<USDViewModel>();
             services.AddTransient<USDPage>();
             services.AddTransient<EURViewModel>();
@@ -58,58 +65,30 @@ public partial class App
             services.AddTransient<GBPPage>();
             services.AddTransient<JPYViewModel>();
             services.AddTransient<JPYPage>();
-
             services.AddTransient<EURUSDViewModel>();
             services.AddTransient<EURUSDPage>();
-            
             services.AddTransient<USDEURViewModel>();
             services.AddTransient<USDEURPage>();
-
             services.AddTransient<GBPUSDViewModel>();
             services.AddTransient<GBPUSDPage>();
-
             services.AddTransient<USDGBPViewModel>();
             services.AddTransient<USDGBPPage>();
-
             services.AddTransient<EURGBPViewModel>();
             services.AddTransient<EURGBPPage>();
-
             services.AddTransient<GBPEURViewModel>();
             services.AddTransient<GBPEURPage>();
-
-
             services.AddTransient<USDJPYViewModel>();
             services.AddTransient<USDJPYPage>();
             services.AddTransient<EURJPYViewModel>();
             services.AddTransient<EURJPYPage>();
-
             services.AddTransient<JPYEURViewModel>();
             services.AddTransient<JPYEURPage>();
-
             services.AddTransient<GBPJPYViewModel>();
             services.AddTransient<GBPJPYPage>();
-
             services.AddTransient<JPYGBPViewModel>();
             services.AddTransient<JPYGBPPage>();
-
             services.AddTransient<JPYUSDViewModel>();
             services.AddTransient<JPYUSDPage>();
-
-            // Views and ViewModels
-            services.AddTransient<SettingsViewModel>();
-            services.AddTransient<SettingsPage>();
-            services.AddTransient<DataGridViewModel>();
-            services.AddTransient<DataGridPage>();
-            services.AddTransient<ContentGridDetailViewModel>();
-            services.AddTransient<ContentGridDetailPage>();
-            services.AddTransient<ContentGridViewModel>();
-            services.AddTransient<ContentGridPage>();
-            services.AddTransient<ListDetailsViewModel>();
-            services.AddTransient<ListDetailsPage>();
-            services.AddTransient<HomeViewModel>();
-            services.AddTransient<HomePage>();
-            services.AddTransient<ShellPage>();
-            services.AddTransient<ShellViewModel>();
 
             // Configuration
             services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
@@ -143,21 +122,30 @@ public partial class App
         return service;
     }
 
-    private void App_UnhandledException(object sender, UnhandledExceptionEventArgs e) => throw new NotImplementedException();
+    private static void App_UnhandledException(object sender, UnhandledExceptionEventArgs e) => throw new NotImplementedException();
 
-    protected async override void OnLaunched(LaunchActivatedEventArgs args)
+    protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
+        if (System.Diagnostics.Debugger.IsAttached)
+        {
+            DebugSettings.BindingFailed += DebugSettings_BindingFailed;
+        }
 
-        var dataServiceTask = GetService<IDataService>().InitializeAsync();
+        GetService<IDashboardService>().InitializeAsync();
 
-        GetService<IAppNotificationService>().Initialize();
-        GetService<IAppNotificationService>().Show(string.Format("AppNotificationSamplePayload".GetLocalized(), AppContext.BaseDirectory));
-        await GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(false);
+        //GetService<IAppNotificationService>().Initialize();
+        //GetService<IAppNotificationService>().Show(string.Format("AppNotificationSamplePayload".GetLocalized(), AppContext.BaseDirectory));
+        GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(false);
+    }
 
-        await dataServiceTask.ConfigureAwait(false);
-#pragma warning disable CS4014
-        Task.Run(() => GetService<IDataService>().StartAsync());
-#pragma warning restore CS4014
+    private void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs e)
+    {
+        throw new NotImplementedException();
     }
 }
+
+
+//var dataServiceTask = GetService<IDataService>().InitializeAsync();
+//await dataServiceTask.ConfigureAwait(false);
+//Task.Run(() => GetService<IDataService>().StartAsync());

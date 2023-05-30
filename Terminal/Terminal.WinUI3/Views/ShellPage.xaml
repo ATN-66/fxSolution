@@ -27,8 +27,8 @@
                     x:Uid="Shell_Home"
                     helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.HomeViewModel"
                     Icon="Home" />
-                <NavigationViewItemHeader Content="Charts" />
-                <NavigationViewItem x:Uid="Shell_USD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.USDViewModel">
+                <!--<NavigationViewItemHeader Content="Charts" />-->
+                <!--<NavigationViewItem x:Uid="Shell_USD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.USDViewModel">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x24;" />
                     </NavigationViewItem.Icon>
@@ -49,7 +49,7 @@
                             </NavigationViewItem.Icon>
                         </NavigationViewItem>
                     </NavigationViewItem.MenuItems>
-                </NavigationViewItem>
+                </NavigationViewItem>-->
                 <!--<NavigationViewItem x:Uid="Shell_EUR" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURViewModel">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x20AC;" />

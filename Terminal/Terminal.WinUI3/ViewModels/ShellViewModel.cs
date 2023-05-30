@@ -7,15 +7,14 @@ namespace Terminal.WinUI3.ViewModels;
 
 public partial class ShellViewModel : ObservableRecipient
 {
-    [ObservableProperty] private bool isBackEnabled;
-
-    [ObservableProperty] private object? selected;
+    [ObservableProperty] private bool _isBackEnabled;
+    [ObservableProperty] private object? _selected;
 
     public ShellViewModel(INavigationService navigationService, INavigationViewService navigationViewService)
     {
         NavigationService = navigationService;
-        NavigationService.Navigated += OnNavigated;
         NavigationViewService = navigationViewService;
+        NavigationService.Navigated += OnNavigated;
     }
 
     public INavigationService NavigationService

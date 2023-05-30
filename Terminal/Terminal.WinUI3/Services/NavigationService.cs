@@ -10,6 +10,7 @@ namespace Terminal.WinUI3.Services;
 
 // For more information on navigation between pages see
 // https://github.com/microsoft/TemplateStudio/blob/main/docs/WinUI/navigation.md
+
 public class NavigationService : INavigationService
 {
     private readonly IPageService _pageService;
@@ -49,27 +50,27 @@ public class NavigationService : INavigationService
 
     public bool GoBack()
     {
-        if (CanGoBack)
+        if (!CanGoBack)
         {
-            var vmBeforeNavigation = _frame.GetPageViewModel();
-            _frame.GoBack();
-            if (vmBeforeNavigation is INavigationAware navigationAware)
-            {
-                navigationAware.OnNavigatedFrom();
-            }
-
-            return true;
+            return false;
         }
 
-        return false;
+        var vmBeforeNavigation = _frame.GetPageViewModel();
+        _frame.GoBack();
+        if (vmBeforeNavigation is INavigationAware navigationAware)
+        {
+            navigationAware.OnNavigatedFrom();
+        }
+
+        return true;
+
     }
 
     public bool NavigateTo(string pageKey, object? parameter = null, bool clearNavigation = false)
     {
         var pageType = _pageService.GetPageType(pageKey);
 
-        if (_frame != null && (_frame.Content?.GetType() != pageType ||
-                               (parameter != null && !parameter.Equals(_lastParameterUsed))))
+        if (_frame != null && (_frame.Content?.GetType() != pageType || (parameter != null && !parameter.Equals(_lastParameterUsed))))
         {
             _frame.Tag = clearNavigation;
             var vmBeforeNavigation = _frame.GetPageViewModel();

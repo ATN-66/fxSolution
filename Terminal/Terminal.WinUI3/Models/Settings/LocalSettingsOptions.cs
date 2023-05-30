@@ -1,4 +1,4 @@
-﻿namespace Terminal.WinUI3.Models;
+﻿namespace Terminal.WinUI3.Models.Settings;
 
 public class LocalSettingsOptions
 {

@@ -21,6 +21,6 @@ public class DefaultActivationHandler : ActivationHandler<LaunchActivatedEventAr
     {
         _navigationService.NavigateTo(typeof(HomeViewModel).FullName!, args.Arguments);
 
-        await Task.CompletedTask;
+        await Task.CompletedTask.ConfigureAwait(false);
     }
 }

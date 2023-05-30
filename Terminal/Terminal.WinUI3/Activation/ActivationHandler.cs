@@ -2,8 +2,8 @@
 
 // Extend this class to implement new ActivationHandlers. See DefaultActivationHandler for an example.
 // https://github.com/microsoft/TemplateStudio/blob/main/docs/WinUI/activation.md
-public abstract class ActivationHandler<T> : IActivationHandler
-    where T : class
+
+public abstract class ActivationHandler<T> : IActivationHandler where T : class
 {
     public bool CanHandle(object args) => args is T && CanHandleInternal((args as T)!);
 

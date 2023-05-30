@@ -17,8 +17,12 @@
     <SupportedOSPlatformVersion>10.0.22621.0</SupportedOSPlatformVersion>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Assets\GalleryHeaderImage.png" />
+    <None Remove="Controls\HomePageHeaderImage.xaml" />
     <None Remove="Controls\TickChartControl.xaml" />
     <None Remove="Generic.xaml" />
+    <None Remove="ItemTemplates.xaml" />
+    <None Remove="Models\WorkflowInfoData.json" />
     <None Remove="Styles\CommandBar.xaml" />
     <None Remove="Views\EURGBPPage.xaml" />
     <None Remove="Views\EURJPYPage.xaml" />
@@ -39,6 +43,11 @@
   <ItemGroup>
     <Page Remove="Generic.xaml" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Dashboard.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />
@@ -56,18 +65,24 @@
     </PackageReference>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.4.230518007-experimental1" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.WinUI.Managed" Version="2.0.9" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
     <PackageReference Include="WinUIEx" Version="2.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Common.Entities\Common.Entities.csproj" />
-    <ProjectReference Include="..\Terminal.WinUI3.Core\Terminal.WinUI3.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <Page Update="ItemTemplates.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\HomePageHeaderImage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Controls\TickChartControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -79,6 +94,7 @@
 
   <ItemGroup>
     <Folder Include="AI\Models\" />
+    <Folder Include="Common\" />
     <Folder Include="Converters\" />
   </ItemGroup>
 
