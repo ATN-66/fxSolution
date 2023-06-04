@@ -3,11 +3,8 @@
   |                                                 DashboardPage.cs |
   +------------------------------------------------------------------+*/
 
-using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Media.Animation;
 using Terminal.WinUI3.Models.Dashboard;
 using Terminal.WinUI3.ViewModels;
 
@@ -59,7 +56,5 @@ public partial class DashboardPage
     {
         var item = (DashboardItem)e.ClickedItem;
         ViewModel.SelectedDashboardItemId = item.Id;
-
-        //NavigationRootPage.GetForElement(this).Navigate(typeof(ItemPage), _itemId, new DrillInNavigationTransitionInfo());
     }
 }
