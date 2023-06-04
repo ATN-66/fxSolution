@@ -2,11 +2,12 @@
     x:Class="Terminal.WinUI3.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:winUi3="using:Terminal.WinUI3">
+    xmlns:winUi3="using:Terminal.WinUI3"
+    xmlns:controls="using:Terminal.WinUI3.Controls">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <winUi3:ItemTemplates />
+                <controls:DashboardItemTemplate />
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
                 <ResourceDictionary Source="/Styles/FontSizes.xaml" />
                 <ResourceDictionary Source="/Styles/Thickness.xaml" />

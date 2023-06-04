@@ -45,10 +45,9 @@ public class FileService : IFileService
         //var sourceUri = new Uri("ms-appx:///" + relativeFilePath);
         //var file = await StorageFile.GetFileFromApplicationUriAsync(sourceUri); 
         //return await FileIO.ReadTextAsync(file);
-
-        var sourcePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location)!, relativeFilePath));
-        var file = await StorageFile.GetFileFromPathAsync(sourcePath);
-        return await FileIO.ReadTextAsync(file);
+            var sourcePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location)!, relativeFilePath));
+            var file = await StorageFile.GetFileFromPathAsync(sourcePath);
+            return await FileIO.ReadTextAsync(file);
     }
 
     public async Task<IList<string>> LoadLinesAsync(string relativeFilePath)

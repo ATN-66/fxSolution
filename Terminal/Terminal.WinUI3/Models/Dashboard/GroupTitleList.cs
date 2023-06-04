@@ -1,24 +1,22 @@
 ﻿namespace Terminal.WinUI3.Models.Dashboard;
 
-public class DashboardItem
+public class GroupTitleList : List<object>
 {
-    public DashboardItem(string id, string title)
+    public GroupTitleList(IEnumerable<object> items) : base(items)
     {
-        Id = id;
-        Title = title;
     }
 
-    public string Id
+    public object Key
     {
         get;
         set;
-    }
+    } = null!;
 
     public string Title
     {
         get;
         set;
-    }
+    } = null!;
 
     public override string ToString() => Title;
 }

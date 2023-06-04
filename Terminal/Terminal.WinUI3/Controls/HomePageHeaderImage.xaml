@@ -10,7 +10,6 @@
     Loading="OnLoading"
     Unloaded="OnUnloaded"
     mc:Ignorable="d">
-
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
@@ -38,16 +37,14 @@
                 x:Name="HeroImage"
                 ui:VisualExtensions.NormalizedCenterPoint="0.5"
                 ImageOpened="OnImageOpened"
-                Source="/Assets/GalleryHeaderImage.png"
+                Source="/Assets/c1.webp"
                 Stretch="UniformToFill" />
-
             <Image
                 x:Name="HeroOverlayImage"
                 ui:VisualExtensions.NormalizedCenterPoint="0.5"
                 Opacity="0.5"
-                Source="/Assets/GalleryHeaderImage.png"
+                Source="/Assets/c1.webp"
                 Stretch="UniformToFill" />
-
         </Grid>
         <Rectangle x:Name="ImageGridSurfaceRec" Fill="Transparent" />
     </Grid>

@@ -25,7 +25,7 @@
             <NavigationView.MenuItems>
                 <NavigationViewItem
                     x:Uid="Shell_Home"
-                    helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.HomeViewModel"
+                    helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.DashboardViewModel"
                     Icon="Home" />
                 <!--<NavigationViewItemHeader Content="Charts" />-->
                 <!--<NavigationViewItem x:Uid="Shell_USD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.USDViewModel">

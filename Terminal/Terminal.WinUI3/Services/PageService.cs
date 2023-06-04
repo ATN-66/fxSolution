@@ -12,7 +12,7 @@ public class PageService : IPageService
 
     public PageService()
     {
-        Configure<HomeViewModel, HomePage>();
+        Configure<DashboardViewModel, DashboardPage>();
 
         Configure<USDViewModel, USDPage>();
         Configure<EURViewModel, EURPage>();
