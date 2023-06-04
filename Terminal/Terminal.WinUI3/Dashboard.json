@@ -6,11 +6,13 @@
       "Items": [
         {
           "Id": "AvaDemo",
-          "Title": "Ava Demo Title"
+          "Title": "Ava Demo Title",
+          "IsEnabled": true
         },
         {
           "Id": "Ava Real",
-          "Title": "Ava Real Title"
+          "Title": "Ava Real Title",
+          "IsEnabled": false
         }
       ]
     },
@@ -20,19 +22,23 @@
       "Items": [
         {
           "Id": "OpenOrders",
-          "Title": "OpenOrders Title"
+          "Title": "OpenOrders Title",
+          "IsEnabled": true
         },
         {
           "Id": "ClosedOrders",
-          "Title": "ClosedOrders Title"
+          "Title": "ClosedOrders Title",
+          "IsEnabled": true
         },
         {
           "Id": "Perfomance",
-          "Title": "Perfomance Title"
+          "Title": "Perfomance Title",
+          "IsEnabled": true
         },
         {
           "Id": "Plans",
-          "Title": "Plans Title"
+          "Title": "Plans Title",
+          "IsEnabled": true
         }
       ]
     },
@@ -42,15 +48,18 @@
       "Items": [
         {
           "Id": "Quotations",
-          "Title": "Quotations Title"
+          "Title": "Quotations Title",
+          "IsEnabled": true
         },
         {
           "Id": "Sticks",
-          "Title": "Sticks Title"
+          "Title": "Sticks Title",
+          "IsEnabled": true
         },
         {
           "Id": "Backup",
-          "Title": "Backup Title"
+          "Title": "Backup Title",
+          "IsEnabled": true
         }
       ]
     }

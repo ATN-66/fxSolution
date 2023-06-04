@@ -2,10 +2,11 @@
 
 public class DashboardItem
 {
-    public DashboardItem(string id, string title)
+    public DashboardItem(string id, string title, bool isEnabled)
     {
         Id = id;
         Title = title;
+        IsEnabled = isEnabled;
     }
 
     public string Id
@@ -15,6 +16,12 @@ public class DashboardItem
     }
 
     public string Title
+    {
+        get;
+        set;
+    }
+
+    public bool IsEnabled
     {
         get;
         set;

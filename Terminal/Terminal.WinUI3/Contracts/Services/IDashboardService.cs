@@ -7,4 +7,9 @@ public interface IDashboardService
 {
     Task InitializeAsync();
     ObservableCollection<GroupTitleList> GetGroupsWithItems();
+    string SelectedDashboardItemId
+    {
+        get;
+        set;
+    }
 }

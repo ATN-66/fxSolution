@@ -17,6 +17,7 @@ public class DashboardService : IDashboardService
     public DashboardService(IFileService fileService)
     {
         _fileService = fileService;
+        SelectedDashboardItemId = "Backup";//todo:
     }
 
     public async Task InitializeAsync()
@@ -42,5 +43,11 @@ public class DashboardService : IDashboardService
             };
 
         return new ObservableCollection<GroupTitleList>(query);
+    }
+
+    public string SelectedDashboardItemId
+    {
+        get;
+        set;
     }
 }

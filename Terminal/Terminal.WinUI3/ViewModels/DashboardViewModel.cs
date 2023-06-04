@@ -14,11 +14,29 @@ namespace Terminal.WinUI3.ViewModels;
 public partial class DashboardViewModel : ObservableRecipient, INavigationAware
 {
     [ObservableProperty] private ObservableCollection<GroupTitleList> _groupList;
+    private readonly IDashboardService _dashboardService;
+    private string _selectedDashboardItemId = null!;
 
-    public DashboardViewModel()
+    public DashboardViewModel(IDashboardService dashboardService)
     {
-        var dashboardService = App.GetService<IDashboardService>();
-        _groupList = dashboardService.GetGroupsWithItems();
+        _dashboardService = dashboardService;
+        SelectedDashboardItemId = _dashboardService.SelectedDashboardItemId;
+        _groupList = _dashboardService.GetGroupsWithItems();
+    }
+
+    public string SelectedDashboardItemId
+    {
+        get => _selectedDashboardItemId;
+        set
+        {
+            if (_selectedDashboardItemId == value)
+            {
+                return;
+            }
+
+            _selectedDashboardItemId = value;
+            _dashboardService.SelectedDashboardItemId = _selectedDashboardItemId;
+        }
     }
 
     public void OnNavigatedTo(object parameter)

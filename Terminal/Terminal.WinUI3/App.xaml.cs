@@ -6,7 +6,6 @@ using Terminal.WinUI3.Activation;
 using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.AI.Services;
 using Terminal.WinUI3.Contracts.Services;
-using Terminal.WinUI3.Helpers;
 using Terminal.WinUI3.Notifications;
 using Terminal.WinUI3.Services;
 using Terminal.WinUI3.ViewModels;
