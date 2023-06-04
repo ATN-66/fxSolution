@@ -1,12 +1,16 @@
-﻿using System.Diagnostics;
+﻿/*+------------------------------------------------------------------+
+  |                                             Terminal.WinUI3.Views|
+  |                                                     ShellPage.cs |
+  +------------------------------------------------------------------+*/
+
+using System.Diagnostics;
 using Windows.System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Terminal.WinUI3.Contracts.Services;
-using Terminal.WinUI3.Helpers;
 using Terminal.WinUI3.ViewModels;
+using Terminal.WinUI3.Helpers;
 
 namespace Terminal.WinUI3.Views;
 
@@ -19,6 +23,13 @@ public sealed partial class ShellPage
 
         ViewModel.NavigationService.Frame = NavigationFrame;
         ViewModel.NavigationViewService.Initialize(NavigationViewControl);
+
+        foreach (var item in ViewModel.NavigationItems)
+        {
+            NavigationViewControl.MenuItems.Add(item);
+        }
+
+        ViewModel.NavigationItems.CollectionChanged += NavigationItems_CollectionChanged;
     }
 
     public ShellViewModel ViewModel
@@ -34,7 +45,17 @@ public sealed partial class ShellPage
 
     private void NavigationViewControl_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
-        //Debug.WriteLine($"NavigationViewControl_SelectionChanged: {args.IsSettingsSelected}");
+        var navItem = args.SelectedItemContainer as NavigationViewItem;
+        if (navItem == null)
+        {
+            return;
+        }
+
+        var viewModelName = NavigationHelper.GetNavigateTo(navItem);
+        if (viewModelName == null)
+        {
+            Debug.Assert(args.IsSettingsSelected);
+        }
     }
 
     private static KeyboardAccelerator BuildKeyboardAccelerator(VirtualKey key, VirtualKeyModifiers? modifiers = null)
@@ -60,5 +81,29 @@ public sealed partial class ShellPage
 
     private void NavigationViewControl_OnLoaded(object sender, RoutedEventArgs e)
     {
+        ViewModel.IsActive = true;
+    }
+
+    private void NavigationViewControl_OnUnLoaded(object sender, RoutedEventArgs e)
+    {
+        ViewModel.IsActive = false;
+    }
+
+    private void NavigationItems_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)//todo
+    {
+        if (e.NewItems != null)
+        {
+            foreach (NavigationViewItem newItem in e.NewItems)
+            {
+                NavigationViewControl.MenuItems.Add(newItem);
+            }
+        }
+        if (e.OldItems != null)
+        {
+            foreach (NavigationViewItem oldItem in e.OldItems)
+            {
+                NavigationViewControl.MenuItems.Remove(oldItem);
+            }
+        }
     }
 }   

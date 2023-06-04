@@ -56,5 +56,6 @@ public partial class DashboardPage
     {
         var item = (DashboardItem)e.ClickedItem;
         ViewModel.SelectedDashboardItemId = item.Id;
+        ViewModel.SendMessage(item.Id);
     }
 }

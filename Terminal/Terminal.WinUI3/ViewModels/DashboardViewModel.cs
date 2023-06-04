@@ -5,9 +5,11 @@
 
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
 using Terminal.WinUI3.Models.Dashboard;
+using Terminal.WinUI3.Services.Messenger.Messages;
 
 namespace Terminal.WinUI3.ViewModels;
 
@@ -41,9 +43,16 @@ public partial class DashboardViewModel : ObservableRecipient, INavigationAware
 
     public void OnNavigatedTo(object parameter)
     {
+
     }
 
     public void OnNavigatedFrom()
     {
+
+    }
+
+    public void SendMessage(string id)
+    {
+        Messenger.Send(new DashboardChangedMessage(new DashboardMessage() { Id = id }));
     }
 }
