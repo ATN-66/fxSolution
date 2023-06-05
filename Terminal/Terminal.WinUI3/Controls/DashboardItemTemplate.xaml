@@ -22,6 +22,21 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
+                <StackPanel
+                    Grid.Column="1"
+                    Grid.ColumnSpan="2"
+                    Margin="16,0,0,0"
+                    VerticalAlignment="Center"
+                    Orientation="Vertical"
+                    Spacing="2">
+                    <TextBlock
+                        x:Name="titleText"
+                        Style="{StaticResource BodyStrongTextBlockStyle}"
+                        Text="{x:Bind Title}"
+                        TextLineBounds="TrimToCapHeight"
+                        TextWrapping="NoWrap" />
+                </StackPanel>
+
                 <VisualStateManager.VisualStateGroups>
                     <VisualStateGroup x:Name="LayoutVisualStates">
                         <VisualState x:Name="WideLayout">
@@ -41,21 +56,6 @@
                         </VisualState>
                     </VisualStateGroup>
                 </VisualStateManager.VisualStateGroups>
-
-                <StackPanel
-                    Grid.Column="1"
-                    Grid.ColumnSpan="2"
-                    Margin="16,0,0,0"
-                    VerticalAlignment="Center"
-                    Orientation="Vertical"
-                    Spacing="2">
-                    <TextBlock
-                        x:Name="titleText"
-                        Style="{StaticResource BodyStrongTextBlockStyle}"
-                        Text="{x:Bind Title}"
-                        TextLineBounds="TrimToCapHeight"
-                        TextWrapping="NoWrap" />
-                </StackPanel>
             </Grid>
         </UserControl>
     </DataTemplate>

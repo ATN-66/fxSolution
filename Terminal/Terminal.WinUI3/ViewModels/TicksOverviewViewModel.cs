@@ -3,15 +3,24 @@
   |                                        TicksOverviewViewModel.cs |
   +------------------------------------------------------------------+*/
 
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
-using Terminal.WinUI3.Helpers;
+using Terminal.WinUI3.Models.Maintenance;
 
 namespace Terminal.WinUI3.ViewModels;
 
 public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAware
 {
     [ObservableProperty] private string _headerContext = "Overview";
+    [ObservableProperty] private ObservableCollection<Contribution> _items;
+
+    public TicksOverviewViewModel(IDataService dataService)
+    {
+        var tempList = dataService.GetTicksContributions();
+        _items = new ObservableCollection<Contribution>(tempList);
+    }
 
     public void OnNavigatedTo(object parameter)
     {

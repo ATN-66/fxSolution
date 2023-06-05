@@ -18,6 +18,14 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Assets\GalleryHeaderImage.png" />
+    <None Remove="Assets\SampleMedia\LandscapeImage1.jpg" />
+    <None Remove="Assets\SampleMedia\LandscapeImage2.jpg" />
+    <None Remove="Assets\SampleMedia\LandscapeImage3.jpg" />
+    <None Remove="Assets\SampleMedia\LandscapeImage4.jpg" />
+    <None Remove="Assets\SampleMedia\LandscapeImage5.jpg" />
+    <None Remove="Assets\SampleMedia\LandscapeImage6.jpg" />
+    <None Remove="Assets\SampleMedia\LandscapeImage7.jpg" />
+    <None Remove="Assets\SampleMedia\LandscapeImage8.jpg" />
     <None Remove="Controls\HomePageHeaderImage.xaml" />
     <None Remove="Controls\TickChartControl.xaml" />
     <None Remove="Generic.xaml" />
@@ -97,7 +105,6 @@
     <Folder Include="AI\Models\" />
     <Folder Include="Common\" />
     <Folder Include="Converters\" />
-    <Folder Include="Models\Maintenance\" />
   </ItemGroup>
 
   <ItemGroup>
