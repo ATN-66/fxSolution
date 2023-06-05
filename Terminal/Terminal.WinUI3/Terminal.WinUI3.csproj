@@ -44,7 +44,7 @@
     <Page Remove="Generic.xaml" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Dashboard.json">
+    <Content Include="dashboard.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -27,7 +27,7 @@ public class DashboardService : IDashboardService
 
     public async Task InitializeAsync()
     {
-        var jsonText = await _fileService.LoadTextAsync("Dashboard.json").ConfigureAwait(false);
+        var jsonText = await _fileService.LoadTextAsync("dashboard.json").ConfigureAwait(false);
         var input = JsonSerializer.Deserialize<Root>(jsonText, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         foreach (var group in input!.Groups!)
         {

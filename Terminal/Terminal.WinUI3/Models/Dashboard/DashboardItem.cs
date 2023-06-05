@@ -1,4 +1,7 @@
-﻿namespace Terminal.WinUI3.Models.Dashboard;
+﻿using System.Collections.ObjectModel;
+using CommunityToolkit.WinUI.UI.Controls;
+
+namespace Terminal.WinUI3.Models.Dashboard;
 
 public class DashboardItem
 {
@@ -28,6 +31,12 @@ public class DashboardItem
     }
 
     public bool IsSelected
+    {
+        get;
+        set;
+    }
+
+    public ObservableCollection<NavigationItem> NavigationItems
     {
         get;
         set;

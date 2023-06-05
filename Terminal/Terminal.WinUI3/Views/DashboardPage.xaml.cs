@@ -3,8 +3,10 @@
   |                                                 DashboardPage.cs |
   +------------------------------------------------------------------+*/
 
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Terminal.WinUI3.Models.Dashboard;
 using Terminal.WinUI3.ViewModels;
 
@@ -24,21 +26,6 @@ public partial class DashboardPage
         get;
     }
 
-    private void OnItemGridViewLoaded(object sender, RoutedEventArgs e)//todo:
-    {
-        var gridView = (GridView)sender;
-        var groupTitleLists = ViewModel.Groups;
-        var items = groupTitleLists.SelectMany(g => g).OfType<DashboardItem>();
-        var item = items.FirstOrDefault(s => s.Id == ViewModel.SelectedItem);
-        if (item == null)
-        {
-            return;
-        }
-
-        gridView.ScrollIntoView(item);
-        ((GridViewItem)gridView.ContainerFromItem(item))?.Focus(FocusState.Programmatic);
-    }
-
     private void OnItemGridViewContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
     {
         if (sender.ContainerFromItem(sender.Items.LastOrDefault()) is GridViewItem container)
@@ -51,11 +38,15 @@ public partial class DashboardPage
             return;
         }
 
-        args.ItemContainer.IsEnabled = item.IsEnabled;
-        if (item.IsSelected)
+        args.ItemContainer.IsEnabled = item.IsEnabled & !item.IsSelected;
+
+        if (item.Id != ViewModel.SelectedItem || !item.IsEnabled)
         {
-            args.ItemContainer.IsEnabled = false;
+            return;
         }
+
+        args.ItemContainer.Foreground = new SolidColorBrush(Colors.Yellow);
+        ToolTipService.SetToolTip(args.ItemContainer, "This item is currently selected");
     }
     
     private void OnItemGridViewItemClick(object sender, ItemClickEventArgs e)

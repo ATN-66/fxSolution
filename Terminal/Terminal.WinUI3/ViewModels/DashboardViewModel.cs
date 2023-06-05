@@ -17,7 +17,6 @@ public partial class DashboardViewModel : ObservableRecipient, INavigationAware
 {
     [ObservableProperty] private ObservableCollection<TitledGroups> _groups;
     private readonly IDashboardService _dashboardService;
-    private string? _selectedItem;
 
     public DashboardViewModel(IDashboardService dashboardService)
     {
@@ -27,17 +26,21 @@ public partial class DashboardViewModel : ObservableRecipient, INavigationAware
 
     public string SelectedItem
     {
-        get => _selectedItem!;
+        get => _dashboardService.SelectedItem!;
         set
         {
-            if (_selectedItem == value)
+            if (value == _dashboardService.SelectedItem)
             {
                 return;
             }
 
-            _selectedItem = value;
-            _dashboardService.SelectedItem = _selectedItem;
-            Messenger.Send(new DashboardChangedMessage(new DashboardMessage() { Id = _selectedItem }));
+            _dashboardService.SelectedItem = value;
+
+            var selectedItem = Groups
+                .SelectMany(group => group)
+                .FirstOrDefault(item => item.Id == _dashboardService.SelectedItem);
+
+            Messenger.Send(new DashboardChangedMessage(new DashboardMessage(selectedItem!)));
         }
     }
 

@@ -4,6 +4,7 @@
   +------------------------------------------------------------------+*/
 
 using System.Collections.ObjectModel;
+using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
@@ -74,19 +75,22 @@ public partial class ShellViewModel : ObservableRecipient
     {
         base.OnActivated();
 
-        Messenger.Register<DashboardChangedMessage>(this, (r, m) =>
+        Messenger.Register<DashboardChangedMessage>(this, (_, m) =>
         {
-            AvaTrade(m);
-        });
-    }
+            var item = m.Value.DashboardItem;
+            foreach (var navigationItem in item.NavigationItems)
+            {
+                var viewItem = new NavigationViewItem
+                {
+                    Content = navigationItem.Content,
+                    Tag = navigationItem.Tag,
+                    Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = navigationItem.Glyph }
+                };
 
-    private void AvaTrade(DashboardChangedMessage m)
-    {
-        var id = m.Value.Id;
-        if (id == "AvaDemo")
-        {
-            var header = new NavigationViewItemHeader() { Content = "Charts" };
-            NavigationItems.Add(header);
-        }
+                var viewModel = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{navigationItem.NavigateTo}")!.FullName;
+                NavigationHelper.SetNavigateTo(viewItem, viewModel!);
+                NavigationItems.Add(viewItem);
+            }
+        });
     }
 }

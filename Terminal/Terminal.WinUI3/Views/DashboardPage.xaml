@@ -27,7 +27,6 @@
             ItemContainerStyle="{StaticResource IndentedGridViewItemStyle}"
             ItemTemplate="{StaticResource DashboardItemTemplate}"
             ItemsSource="{x:Bind itemsCVS.View, Mode=OneWay}"
-            Loaded="OnItemGridViewLoaded"
             SelectionMode="None">
             <GridView.Header>
                 <Grid x:Name="HeaderGrid" Margin="-24,0,-24,0">

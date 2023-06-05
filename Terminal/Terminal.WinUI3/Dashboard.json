@@ -44,12 +44,26 @@
     },
     {
       "Id": "DatabaseMaintenance",
-      "Title": "DatabaseMaintenance Title",
+      "Title": "Database Maintenance",
       "Items": [
         {
-          "Id": "Quotations",
-          "Title": "Quotations Title",
-          "IsEnabled": true
+          "Id": "TicksImport",
+          "Title": "Ticks Import",
+          "IsEnabled": true,
+          "NavigationItems": [
+            {
+              "Content": "Content1",
+              "Tag": "Tag1",
+              "Glyph": "\uF246",
+              "NavigateTo": "USDViewModel"
+            },
+            {
+              "Content": "Content1",
+              "Tag": "Tag1",
+              "Glyph": "\uF246",
+              "NavigateTo": "USDViewModel"
+            }
+          ]
         },
         {
           "Id": "Sticks",
