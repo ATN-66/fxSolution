@@ -4,6 +4,7 @@
   +------------------------------------------------------------------+*/
 
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
@@ -13,6 +14,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Helpers;
+using Terminal.WinUI3.Services;
 using Terminal.WinUI3.Services.Messenger.Messages;
 using Terminal.WinUI3.Views;
 
@@ -78,6 +80,8 @@ public partial class ShellViewModel : ObservableRecipient
         Messenger.Register<DashboardChangedMessage>(this, (_, m) =>
         {
             var item = m.Value.DashboardItem;
+            var pageToNavigate = string.Empty;
+
             foreach (var navigationItem in item.NavigationItems)
             {
                 var viewItem = new NavigationViewItem
@@ -87,10 +91,16 @@ public partial class ShellViewModel : ObservableRecipient
                     Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = navigationItem.Glyph }
                 };
 
-                var viewModel = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{navigationItem.NavigateTo}")!.FullName;
-                NavigationHelper.SetNavigateTo(viewItem, viewModel!);
+                var page = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{navigationItem.NavigateTo}")!.FullName;
+                if (navigationItem.IsMain)
+                {
+                    pageToNavigate = page;
+                }
+                NavigationHelper.SetNavigateTo(viewItem, page!);
                 NavigationItems.Add(viewItem);
             }
+
+            NavigationService.NavigateTo(pageToNavigate!);
         });
     }
 }

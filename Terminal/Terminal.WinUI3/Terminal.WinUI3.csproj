@@ -35,6 +35,7 @@
     <None Remove="Views\JPYGBPPage.xaml" />
     <None Remove="Views\JPYPage.xaml" />
     <None Remove="Views\JPYUSDPage.xaml" />
+    <None Remove="Views\TicksOverviewPage.xaml" />
     <None Remove="Views\USDEURPage.xaml" />
     <None Remove="Views\USDGBPPage.xaml" />
     <None Remove="Views\USDJPYPage.xaml" />
@@ -96,6 +97,7 @@
     <Folder Include="AI\Models\" />
     <Folder Include="Common\" />
     <Folder Include="Converters\" />
+    <Folder Include="Models\Maintenance\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -151,6 +153,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Views\JPYPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\TicksOverviewPage.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>

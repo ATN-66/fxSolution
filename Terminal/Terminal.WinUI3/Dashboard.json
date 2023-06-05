@@ -52,16 +52,18 @@
           "IsEnabled": true,
           "NavigationItems": [
             {
-              "Content": "Content1",
-              "Tag": "Tag1",
-              "Glyph": "\uF246",
-              "NavigateTo": "USDViewModel"
+              "Content": "Overview",
+              "Tag": "Ticks overview",
+              "Glyph": "\uF245",
+              "NavigateTo": "TicksOverviewViewModel",
+              "IsMain": true
             },
             {
-              "Content": "Content1",
-              "Tag": "Tag1",
-              "Glyph": "\uF246",
-              "NavigateTo": "USDViewModel"
+              "Content": "USDViewModel",
+              "Tag": "USDViewModel",
+              "Glyph": "\uF244",
+              "NavigateTo": "USDViewModel",
+              "IsMain": false
             }
           ]
         },

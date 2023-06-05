@@ -55,6 +55,10 @@ public partial class App
             services.AddTransient<ShellPage>();
             services.AddTransient<ShellViewModel>();
 
+            //DatabaseMaintenance
+            services.AddTransient<TicksOverviewViewModel>();
+            services.AddTransient<TicksOverviewPage>();
+            
             //todo: to fabric
             services.AddTransient<USDViewModel>();
             services.AddTransient<USDPage>();
