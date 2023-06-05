@@ -4,7 +4,6 @@
   +------------------------------------------------------------------+*/
 
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
@@ -77,8 +76,17 @@ public partial class ShellViewModel : ObservableRecipient
 
         Messenger.Register<DashboardChangedMessage>(this, (r, m) =>
         {
-            var tmp = m.Value.Id;
-            Debug.WriteLine(tmp);
+            AvaTrade(m);
         });
+    }
+
+    private void AvaTrade(DashboardChangedMessage m)
+    {
+        var id = m.Value.Id;
+        if (id == "AvaDemo")
+        {
+            var header = new NavigationViewItemHeader() { Content = "Charts" };
+            NavigationItems.Add(header);
+        }
     }
 }

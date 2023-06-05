@@ -93,17 +93,20 @@ public sealed partial class ShellPage
     {
         if (e.NewItems != null)
         {
-            foreach (NavigationViewItem newItem in e.NewItems)
+            foreach (NavigationViewItemBase newItem in e.NewItems)
             {
                 NavigationViewControl.MenuItems.Add(newItem);
             }
         }
-        if (e.OldItems != null)
+
+        if (e.OldItems == null)
         {
-            foreach (NavigationViewItem oldItem in e.OldItems)
-            {
-                NavigationViewControl.MenuItems.Remove(oldItem);
-            }
+            return;
+        }
+
+        foreach (NavigationViewItemBase oldItem in e.OldItems)
+        {
+            NavigationViewControl.MenuItems.Remove(oldItem);
         }
     }
 }   

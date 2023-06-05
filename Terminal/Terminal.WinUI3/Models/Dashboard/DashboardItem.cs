@@ -27,5 +27,11 @@ public class DashboardItem
         set;
     }
 
+    public bool IsSelected
+    {
+        get;
+        set;
+    }
+
     public override string ToString() => Title;
 }

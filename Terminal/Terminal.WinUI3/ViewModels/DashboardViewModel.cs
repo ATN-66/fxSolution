@@ -15,29 +15,29 @@ namespace Terminal.WinUI3.ViewModels;
 
 public partial class DashboardViewModel : ObservableRecipient, INavigationAware
 {
-    [ObservableProperty] private ObservableCollection<GroupTitleList> _groupList;
+    [ObservableProperty] private ObservableCollection<TitledGroups> _groups;
     private readonly IDashboardService _dashboardService;
-    private string _selectedDashboardItemId = null!;
+    private string? _selectedItem;
 
     public DashboardViewModel(IDashboardService dashboardService)
     {
         _dashboardService = dashboardService;
-        SelectedDashboardItemId = _dashboardService.SelectedDashboardItemId;
-        _groupList = _dashboardService.GetGroupsWithItems();
+        _groups = _dashboardService.GetTitledGroups();
     }
 
-    public string SelectedDashboardItemId
+    public string SelectedItem
     {
-        get => _selectedDashboardItemId;
+        get => _selectedItem!;
         set
         {
-            if (_selectedDashboardItemId == value)
+            if (_selectedItem == value)
             {
                 return;
             }
 
-            _selectedDashboardItemId = value;
-            _dashboardService.SelectedDashboardItemId = _selectedDashboardItemId;
+            _selectedItem = value;
+            _dashboardService.SelectedItem = _selectedItem;
+            Messenger.Send(new DashboardChangedMessage(new DashboardMessage() { Id = _selectedItem }));
         }
     }
 
@@ -49,10 +49,5 @@ public partial class DashboardViewModel : ObservableRecipient, INavigationAware
     public void OnNavigatedFrom()
     {
 
-    }
-
-    public void SendMessage(string id)
-    {
-        Messenger.Send(new DashboardChangedMessage(new DashboardMessage() { Id = id }));
     }
 }

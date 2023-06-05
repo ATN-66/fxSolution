@@ -17,7 +17,12 @@ public class DashboardService : IDashboardService
     public DashboardService(IFileService fileService)
     {
         _fileService = fileService;
-        SelectedDashboardItemId = "Backup";//todo:
+    }
+
+    public string? SelectedItem
+    {
+        get;
+        set;
     }
 
     public async Task InitializeAsync()
@@ -33,21 +38,30 @@ public class DashboardService : IDashboardService
         }
     }
 
-    public ObservableCollection<GroupTitleList> GetGroupsWithItems()
+    public ObservableCollection<TitledGroups> GetTitledGroups()
     {
         var query = from g in Groups 
-            select new GroupTitleList(g.Items)
+            select new TitledGroups(g.Items)
             {
                 Key = g.Id,
                 Title = g.Title
             };
 
-        return new ObservableCollection<GroupTitleList>(query);
-    }
+        var result = new ObservableCollection<TitledGroups>(query);
 
-    public string SelectedDashboardItemId
-    {
-        get;
-        set;
+        if (SelectedItem is null)
+        {
+            return result;
+        }
+
+        foreach (var group in result)
+        {
+            foreach (var item in group)
+            {
+                item.IsSelected = item.Id == SelectedItem;
+            }
+        }
+
+        return result;
     }
 }

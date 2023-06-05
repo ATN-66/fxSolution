@@ -1,4 +1,9 @@
-﻿using System.Collections.ObjectModel;
+﻿/*+------------------------------------------------------------------+
+  |                                 Terminal.WinUI3.Models.Dashboard |
+  |                                                DashboardGroup.cs |
+  +------------------------------------------------------------------+*/
+
+using System.Collections.ObjectModel;
 
 namespace Terminal.WinUI3.Models.Dashboard;
 

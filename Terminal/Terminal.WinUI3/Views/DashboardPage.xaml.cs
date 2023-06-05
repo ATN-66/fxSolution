@@ -16,7 +16,7 @@ public partial class DashboardPage
     {
         ViewModel = App.GetService<DashboardViewModel>();
         InitializeComponent();
-        itemsCVS.Source = ViewModel.GroupList;
+        itemsCVS.Source = ViewModel.Groups;
     }
 
     public DashboardViewModel ViewModel
@@ -24,12 +24,12 @@ public partial class DashboardPage
         get;
     }
 
-    private void OnItemGridViewLoaded(object sender, RoutedEventArgs e)
+    private void OnItemGridViewLoaded(object sender, RoutedEventArgs e)//todo:
     {
         var gridView = (GridView)sender;
-        var groupTitleLists = ViewModel.GroupList;
+        var groupTitleLists = ViewModel.Groups;
         var items = groupTitleLists.SelectMany(g => g).OfType<DashboardItem>();
-        var item = items.FirstOrDefault(s => s.Id == ViewModel.SelectedDashboardItemId);
+        var item = items.FirstOrDefault(s => s.Id == ViewModel.SelectedItem);
         if (item == null)
         {
             return;
@@ -46,16 +46,21 @@ public partial class DashboardPage
             container.XYFocusDown = container;
         }
 
-        if (args.Item is DashboardItem item)
+        if (args.Item is not DashboardItem item)
         {
-            args.ItemContainer.IsEnabled = item.IsEnabled;
+            return;
+        }
+
+        args.ItemContainer.IsEnabled = item.IsEnabled;
+        if (item.IsSelected)
+        {
+            args.ItemContainer.IsEnabled = false;
         }
     }
     
     private void OnItemGridViewItemClick(object sender, ItemClickEventArgs e)
     {
         var item = (DashboardItem)e.ClickedItem;
-        ViewModel.SelectedDashboardItemId = item.Id;
-        ViewModel.SendMessage(item.Id);
+        ViewModel.SelectedItem = item.Id;
     }
 }

@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:Terminal.WinUI3.Behaviors"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
+    xmlns:helpers="using:Terminal.WinUI3.Helpers"
     Loaded="OnLoaded">
     <Grid Background="Transparent">
         <NavigationView
@@ -31,17 +32,17 @@
                 </NavigationViewItem>
                 <NavigationViewItemSeparator />
             </NavigationView.MenuItems>-->
+            <!--<NavigationViewItemHeader Content="Charts" />-->
 
-
-
-
-                <!--<NavigationViewItemHeader Content="Charts" />-->
                 <!--<NavigationViewItem x:Uid="Shell_USD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.USDViewModel">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x24;" />
                     </NavigationViewItem.Icon>
-                    <NavigationViewItem.MenuItems>
-                        <NavigationViewItem x:Uid="Shell_EURUSD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURUSDViewModel">
+                    <NavigationViewItem.MenuItems>-->
+            
+            
+            
+                   <!--     <NavigationViewItem x:Uid="Shell_EURUSD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURUSDViewModel">
                             <NavigationViewItem.Icon>
                                 <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x20AC;&#xB7;&#x24;" />
                             </NavigationViewItem.Icon>

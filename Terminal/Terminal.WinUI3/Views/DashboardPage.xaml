@@ -44,7 +44,7 @@
             <GridView.GroupStyle>
                 <GroupStyle>
                     <GroupStyle.HeaderTemplate>
-                        <DataTemplate x:DataType="dashboard:GroupTitleList">
+                        <DataTemplate x:DataType="dashboard:TitledGroups">
                             <TextBlock
                                 x:Name="pageSubtitle"
                                 Margin="4,32,0,0"
