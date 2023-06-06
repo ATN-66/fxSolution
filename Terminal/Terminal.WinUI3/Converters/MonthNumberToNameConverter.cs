@@ -1,15 +1,17 @@
-﻿using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI;
+﻿using System.Globalization;
+using Microsoft.UI.Xaml.Data;
 
 namespace Terminal.WinUI3.Converters;
 
-public class BoolToColorConverter : IValueConverter
+public class MonthNumberToNameConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
     {
-        var hasContribution = (bool)value;
-        return hasContribution ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.LightGray);
+        if (value is int monthNumber)
+        {
+            return CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(monthNumber);
+        }
+        return value;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language)

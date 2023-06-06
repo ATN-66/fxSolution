@@ -13,7 +13,6 @@ public sealed partial class TicksOverviewPage
     {
         ViewModel = App.GetService<TicksOverviewViewModel>();
         InitializeComponent();
-        //itemsCVS.Source = ViewModel.Groups;
     }
 
     public TicksOverviewViewModel ViewModel

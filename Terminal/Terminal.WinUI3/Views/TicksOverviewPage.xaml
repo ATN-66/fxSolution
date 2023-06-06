@@ -13,15 +13,31 @@
 
     <Page.Resources>
         <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
+        <converters:MonthNumberToNameConverter x:Key="MonthNumberToNameConverter" />
 
         <DataTemplate x:Key="DailyTemplate" x:DataType="maintenance:DailyContribution">
-            <Rectangle
-                Width="30"
-                Height="30"
-                Margin="3"
-                Fill="{x:Bind HasContribution, Converter={StaticResource BoolToColorConverter}}" />
+            <Grid>
+                <Rectangle
+                    Width="30"
+                    Height="30"
+                    Margin="3"
+                    Fill="{x:Bind HasContribution, Converter={StaticResource BoolToColorConverter}}" />
+                <Border
+                    Width="30"
+                    Height="30"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Foreground="White"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Text="{x:Bind FormatDate(Date)}"
+                        TextAlignment="Center" />
+                </Border>
+            </Grid>
         </DataTemplate>
-
         <DataTemplate x:Key="MonthlyTemplate" x:DataType="maintenance:MonthlyContribution">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -31,34 +47,59 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Column="0" Text="{x:Bind Month}" FontSize="16" FontWeight="Bold" />
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <ItemsRepeater ItemsSource="{x:Bind DailyContributions}">
-                        <ItemsRepeater.ItemTemplate>
-                            <StaticResource ResourceKey="DailyTemplate" />
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
+                <StackPanel x:Name="MonthPanel" Grid.Column="0" Width="120">
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Text="{x:Bind Month, Converter={StaticResource MonthNumberToNameConverter}}" />
                 </StackPanel>
-
+                <ItemsRepeater Grid.Column="1" ItemsSource="{x:Bind DailyContributions}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Orientation="Horizontal" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <StaticResource ResourceKey="DailyTemplate" />
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
             </Grid>
         </DataTemplate>
-
+        <DataTemplate x:Key="YearlyTemplate" x:DataType="maintenance:YearlyContribution">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBlock
+                    Grid.Row="0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontSize="20"
+                    FontWeight="Bold"
+                    Text="{x:Bind Year}" />
+                <ItemsRepeater Grid.Row="1" ItemsSource="{x:Bind Months}">
+                    <ItemsRepeater.ItemTemplate>
+                        <StaticResource ResourceKey="MonthlyTemplate" />
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </Grid>
+        </DataTemplate>
     </Page.Resources>
+
     <Grid>
-        <ItemsRepeaterScrollHost>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <ItemsRepeaterScrollHost Grid.Row="0">
             <ScrollViewer x:Name="scrollViewer">
                 <ItemsRepeater x:Name="yearRepeater" ItemsSource="{x:Bind ViewModel.Groups}">
                     <ItemsRepeater.ItemTemplate>
-                        <DataTemplate x:DataType="maintenance:YearlyContribution">
-                            <StackPanel Orientation="Vertical">
-                                <TextBlock FontSize="20" FontWeight="Bold" Text="{x:Bind Year}" />
-                                <ItemsRepeater ItemsSource="{x:Bind Months}">
-                                    <ItemsRepeater.ItemTemplate>
-                                        <StaticResource ResourceKey="MonthlyTemplate" />
-                                    </ItemsRepeater.ItemTemplate>
-                                </ItemsRepeater>
-                            </StackPanel>
-                        </DataTemplate>
+                        <StaticResource ResourceKey="YearlyTemplate" />
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
             </ScrollViewer>

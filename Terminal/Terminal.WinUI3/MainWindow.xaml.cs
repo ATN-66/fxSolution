@@ -73,7 +73,6 @@ public sealed partial class MainWindow
         return PInvoke.CallWindowProc(origPrc, hwnd, uMsg, wParam, lParam);
     }
 
-    
     private void SetWindowSize(HWND hwnd, int width, int height)
     {
         uint dpi = GetDpiForWindow(hwnd);
