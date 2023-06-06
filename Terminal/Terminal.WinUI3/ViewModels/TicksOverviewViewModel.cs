@@ -12,24 +12,31 @@ namespace Terminal.WinUI3.ViewModels;
 
 public partial class TicksOverviewViewModel : ObservableRecipient
 {
-    [ObservableProperty] private ObservableCollection<MonthlyContributions> _groups;
+    [ObservableProperty] private ObservableCollection<YearlyContribution> _groups;
 
     public TicksOverviewViewModel(IDataService dataService)
     {
+        _groups = new ObservableCollection<YearlyContribution>();
         var input = dataService.GetTicksContributions();
-        var groupedContributions = input.GroupBy(c => new { c.Date.Year, c.Date.Month }).ToList();
 
-        _groups = new ObservableCollection<MonthlyContributions>();
-
-
-        foreach (var group in groupedContributions)
-        {
-            _groups.Add(new MonthlyContributions
+        var groupedByYear = input
+            .GroupBy(c => c.Date.Year)
+            .Select(yearGroup => new YearlyContribution
             {
-                Year = group.Key.Year,
-                Month = group.Key.Month,
-                Contributions = group.ToList()
+                Year = yearGroup.Key,
+                Months = yearGroup
+                    .GroupBy(c => c.Date.Month)
+                    .Select(monthGroup => new MonthlyContribution
+                    {
+                        Month = monthGroup.Key,
+                        DailyContributions = monthGroup.ToList()
+                    })
+                    .ToList()
             });
+
+        foreach (var year in groupedByYear)
+        {
+            _groups.Add(year);
         }
     }
 }

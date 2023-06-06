@@ -13,82 +13,55 @@
 
     <Page.Resources>
         <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
-        <CollectionViewSource
-            x:Name="itemsCVS"
-            IsSourceGrouped="true"
-            ItemsPath="Contributions" />
-    </Page.Resources>
 
-    <GridView
-        Margin="0"
-        Padding="0"
-        ItemsSource="{Binding Source={StaticResource itemsCVS}}">
-        <GridView.ItemTemplate>
-            <DataTemplate x:DataType="maintenance:Contribution">
-                <StackPanel 
-                    IsTabStop = "False"
-                    Width="50"
-                    Margin="0"
-                    Padding="5,0,0,0"
-                    BorderBrush="{x:Bind HasContribution, Converter={StaticResource BoolToColorConverter}}"
-                    BorderThickness="2"
-                    CornerRadius="3">
-                    <TextBlock
-                        Margin="0"
-                        Padding="0"
-                        FontSize="12"
-                        FontWeight="Bold"
-                        Foreground="White"
-                        Text="{x:Bind FormatDate(Date)}" />
+        <DataTemplate x:Key="DailyTemplate" x:DataType="maintenance:DailyContribution">
+            <Rectangle
+                Width="30"
+                Height="30"
+                Margin="3"
+                Fill="{x:Bind HasContribution, Converter={StaticResource BoolToColorConverter}}" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="MonthlyTemplate" x:DataType="maintenance:MonthlyContribution">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Column="0" Text="{x:Bind Month}" FontSize="16" FontWeight="Bold" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <ItemsRepeater ItemsSource="{x:Bind DailyContributions}">
+                        <ItemsRepeater.ItemTemplate>
+                            <StaticResource ResourceKey="DailyTemplate" />
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
                 </StackPanel>
-            </DataTemplate>
-        </GridView.ItemTemplate>
-        <GridView.GroupStyle>
-            <GroupStyle HidesIfEmpty="False">
-                <GroupStyle.HeaderTemplate>
-                    <DataTemplate x:DataType="maintenance:MonthlyContributions">
-                        <StackPanel Background="Transparent">
-                            <Grid Background="Transparent">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Border
-                                    Grid.Row="0"
-                                    Grid.Column="0"
-                                    Margin="0,0,5,0"
-                                    Padding="3,0,3,0"
-                                    Background="LightGray"
-                                    CornerRadius="3">
-                                    <TextBlock Foreground="Black" Text="{x:Bind Year}" />
-                                </Border>
-                                <Border
-                                    Grid.Row="0"
-                                    Grid.Column="1"
-                                    Margin="0,0,5,0"
-                                    Padding="3,0,3,0"
-                                    Background="LightGray"
-                                    CornerRadius="3">
-                                    <TextBlock Foreground="Black" Text="{x:Bind Month}" />
-                                </Border>
-                            </Grid>
-                            <Grid Background="Transparent">
-                                <Line
-                                    VerticalAlignment="Bottom"
-                                    Stroke="Yellow"
-                                    X1="0"
-                                    X2="500"
-                                    Y1="0"
-                                    Y2="0" />
-                            </Grid>
-                        </StackPanel>
-                    </DataTemplate>
-                </GroupStyle.HeaderTemplate>
-            </GroupStyle>
-        </GridView.GroupStyle>
-    </GridView>
+
+            </Grid>
+        </DataTemplate>
+
+    </Page.Resources>
+    <Grid>
+        <ItemsRepeaterScrollHost>
+            <ScrollViewer x:Name="scrollViewer">
+                <ItemsRepeater x:Name="yearRepeater" ItemsSource="{x:Bind ViewModel.Groups}">
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="maintenance:YearlyContribution">
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock FontSize="20" FontWeight="Bold" Text="{x:Bind Year}" />
+                                <ItemsRepeater ItemsSource="{x:Bind Months}">
+                                    <ItemsRepeater.ItemTemplate>
+                                        <StaticResource ResourceKey="MonthlyTemplate" />
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </ScrollViewer>
+        </ItemsRepeaterScrollHost>
+    </Grid>
 </Page>

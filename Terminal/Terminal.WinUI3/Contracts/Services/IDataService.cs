@@ -12,6 +12,6 @@ public interface IDataService
 {    
     Task InitializeAsync();
     Task StartAsync();
-    List<Contribution> GetTicksContributions();
+    List<DailyContribution> GetTicksContributions();
     List<SampleDataObject> GetSampleDataObjects();
 }

@@ -1,13 +1,13 @@
 ﻿/*+------------------------------------------------------------------+
   |                               Terminal.WinUI3.Models.Maintenance |
-  |                                                  Contribution.cs |
+  |                                             DailyContribution.cs |
   +------------------------------------------------------------------+*/
 
 namespace Terminal.WinUI3.Models.Maintenance;
 
-public record struct Contribution
+public record struct DailyContribution
 {
-    public Contribution(DateTime date, bool hasContribution)
+    public DailyContribution(DateTime date, bool hasContribution)
     {
         Date = date;
         HasContribution = hasContribution;

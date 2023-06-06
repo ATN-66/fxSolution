@@ -1,23 +1,18 @@
 ﻿/*+------------------------------------------------------------------+
   |                               Terminal.WinUI3.Models.Maintenance |
-  |                                          MonthlyContributions.cs |
+  |                                           MonthlyContribution.cs |
   +------------------------------------------------------------------+*/
 
 namespace Terminal.WinUI3.Models.Maintenance;
 
-public class MonthlyContributions
+public class MonthlyContribution
 {
-    public int Year
-    {
-        get; set;
-    }
-
     public int Month
     {
         get; set;
     }
 
-    public List<Contribution> Contributions
+    public List<DailyContribution> DailyContributions
     {
         get; set;
     }
