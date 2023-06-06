@@ -7,7 +7,7 @@
         {
           "Id": "AvaDemo",
           "Title": "Ava Demo Title",
-          "IsEnabled": true
+          "IsEnabled": false
         },
         {
           "Id": "Ava Real",
@@ -23,22 +23,22 @@
         {
           "Id": "OpenOrders",
           "Title": "OpenOrders Title",
-          "IsEnabled": true
+          "IsEnabled": false
         },
         {
           "Id": "ClosedOrders",
           "Title": "ClosedOrders Title",
-          "IsEnabled": true
+          "IsEnabled": false
         },
         {
           "Id": "Perfomance",
           "Title": "Perfomance Title",
-          "IsEnabled": true
+          "IsEnabled": false
         },
         {
           "Id": "Plans",
           "Title": "Plans Title",
-          "IsEnabled": true
+          "IsEnabled": false
         }
       ]
     },
@@ -70,12 +70,12 @@
         {
           "Id": "Sticks",
           "Title": "Sticks Title",
-          "IsEnabled": true
+          "IsEnabled": false
         },
         {
           "Id": "Backup",
           "Title": "Backup Title",
-          "IsEnabled": true
+          "IsEnabled": false
         }
       ]
     }

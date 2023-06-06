@@ -30,9 +30,9 @@
                     <TextBlock
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Foreground="White"
                         FontSize="16"
                         FontWeight="Bold"
+                        Foreground="Black"
                         Text="{x:Bind FormatDate(Date)}"
                         TextAlignment="Center" />
                 </Border>
@@ -47,7 +47,10 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <StackPanel x:Name="MonthPanel" Grid.Column="0" Width="120">
+                <StackPanel
+                    x:Name="MonthPanel"
+                    Grid.Column="0"
+                    Width="120">
                     <TextBlock
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
@@ -90,19 +93,14 @@
         </DataTemplate>
     </Page.Resources>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <ItemsRepeaterScrollHost Grid.Row="0">
-            <ScrollViewer x:Name="scrollViewer">
-                <ItemsRepeater x:Name="yearRepeater" ItemsSource="{x:Bind ViewModel.Groups}">
-                    <ItemsRepeater.ItemTemplate>
-                        <StaticResource ResourceKey="YearlyTemplate" />
-                    </ItemsRepeater.ItemTemplate>
-                </ItemsRepeater>
-            </ScrollViewer>
-        </ItemsRepeaterScrollHost>
-    </Grid>
+    <Border BorderBrush="#FFFFD700" BorderThickness="2">
+        <ScrollViewer>
+            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Groups}">
+                <ItemsRepeater.ItemTemplate>
+                    <StaticResource ResourceKey="YearlyTemplate" />
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
+        </ScrollViewer>
+    </Border>
+
 </Page>

@@ -59,12 +59,22 @@ public class DataService : IDataService
     public List<DailyContribution> GetTicksContributions()
     {
         var result = new List<DailyContribution>();
-        var date = new DateTime(2022, 1, 1);
+        var date = new DateTime(2021, 1, 1);
         do
         {
             result.Add(new DailyContribution(date, true));
             date = date.AddDays(1);
-            if(date.Year == 2024)
+            if(date.Year == 2023)
+            {
+                break;
+            }
+        } while (true);
+
+        do
+        {
+            result.Add(new DailyContribution(date, false));
+            date = date.AddDays(1);
+            if (date.Year == 2025)
             {
                 break;
             }
