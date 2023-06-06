@@ -104,7 +104,6 @@
   <ItemGroup>
     <Folder Include="AI\Models\" />
     <Folder Include="Common\" />
-    <Folder Include="Converters\" />
   </ItemGroup>
 
   <ItemGroup>

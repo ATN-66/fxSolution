@@ -3,14 +3,18 @@
   |                                                   DataService.cs |
   +------------------------------------------------------------------+*/
 
+using System.Collections;
 using Common.Entities;
 using System.Data;
 using System.Data.SqlClient;
+using ABI.Windows.Networking.Sockets;
 using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Models;
 using Terminal.WinUI3.Models.Maintenance;
 using Environment = Common.Entities.Environment;
+using Symbol = Common.Entities.Symbol;
+
 // ReSharper disable StringLiteralTypo
 
 namespace Terminal.WinUI3.Services;

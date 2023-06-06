@@ -3,20 +3,92 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:Terminal.WinUI3.Behaviors"
+    xmlns:converters="using:Terminal.WinUI3.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:maintenance="using:Terminal.WinUI3.Models.Maintenance"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
     <behaviors:NavigationViewHeaderBehavior.HeaderMode>Never</behaviors:NavigationViewHeaderBehavior.HeaderMode>
 
-    <GridView x:Name="gridView">
+    <Page.Resources>
+        <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
+        <CollectionViewSource
+            x:Name="itemsCVS"
+            IsSourceGrouped="true"
+            ItemsPath="Contributions" />
+    </Page.Resources>
+
+    <GridView
+        Margin="0"
+        Padding="0"
+        ItemsSource="{Binding Source={StaticResource itemsCVS}}">
         <GridView.ItemTemplate>
-            <DataTemplate x:Key="ImageOverlayTemplate" x:DataType="maintenance:Contribution">
-                <Border Background="White">
-                    <TextBox Text="{x:Bind Path=Date}" Foreground="Black"/>
-                </Border>
+            <DataTemplate x:DataType="maintenance:Contribution">
+                <StackPanel 
+                    IsTabStop = "False"
+                    Width="50"
+                    Margin="0"
+                    Padding="5,0,0,0"
+                    BorderBrush="{x:Bind HasContribution, Converter={StaticResource BoolToColorConverter}}"
+                    BorderThickness="2"
+                    CornerRadius="3">
+                    <TextBlock
+                        Margin="0"
+                        Padding="0"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        Text="{x:Bind FormatDate(Date)}" />
+                </StackPanel>
             </DataTemplate>
         </GridView.ItemTemplate>
+        <GridView.GroupStyle>
+            <GroupStyle HidesIfEmpty="False">
+                <GroupStyle.HeaderTemplate>
+                    <DataTemplate x:DataType="maintenance:MonthlyContributions">
+                        <StackPanel Background="Transparent">
+                            <Grid Background="Transparent">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Border
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    Margin="0,0,5,0"
+                                    Padding="3,0,3,0"
+                                    Background="LightGray"
+                                    CornerRadius="3">
+                                    <TextBlock Foreground="Black" Text="{x:Bind Year}" />
+                                </Border>
+                                <Border
+                                    Grid.Row="0"
+                                    Grid.Column="1"
+                                    Margin="0,0,5,0"
+                                    Padding="3,0,3,0"
+                                    Background="LightGray"
+                                    CornerRadius="3">
+                                    <TextBlock Foreground="Black" Text="{x:Bind Month}" />
+                                </Border>
+                            </Grid>
+                            <Grid Background="Transparent">
+                                <Line
+                                    VerticalAlignment="Bottom"
+                                    Stroke="Yellow"
+                                    X1="0"
+                                    X2="500"
+                                    Y1="0"
+                                    Y2="0" />
+                            </Grid>
+                        </StackPanel>
+                    </DataTemplate>
+                </GroupStyle.HeaderTemplate>
+            </GroupStyle>
+        </GridView.GroupStyle>
     </GridView>
 </Page>

@@ -23,6 +23,11 @@ public record struct Contribution
         get; set;
     }
 
+    public string FormatDate(DateTime date)
+    {
+        return date.Day.ToString("00");
+    }
+
     public override string ToString()
     {
         return $"{Date:D}, {HasContribution}";

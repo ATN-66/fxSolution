@@ -13,7 +13,7 @@ public sealed partial class TicksOverviewPage
     {
         ViewModel = App.GetService<TicksOverviewViewModel>();
         InitializeComponent();
-        gridView.ItemsSource = ViewModel.Items;
+        itemsCVS.Source = ViewModel.Groups;
     }
 
     public TicksOverviewViewModel ViewModel
