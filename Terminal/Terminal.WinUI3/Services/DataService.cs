@@ -14,6 +14,8 @@ using Terminal.WinUI3.Models;
 using Terminal.WinUI3.Models.Maintenance;
 using Environment = Common.Entities.Environment;
 using Symbol = Common.Entities.Symbol;
+using System.Collections.ObjectModel;
+using CommunityToolkit.WinUI.UI.Controls.TextToolbarSymbols;
 
 // ReSharper disable StringLiteralTypo
 
@@ -56,29 +58,28 @@ public class DataService : IDataService
         }
     }
 
-    public List<DailyContribution> GetTicksContributions()
+    public async Task<List<HourlyContribution>> GetTicksContributionsAsync()
     {
-        var result = new List<DailyContribution>();
-        var date = new DateTime(2021, 1, 1);
-        do
-        {
-            result.Add(new DailyContribution(date, true));
-            date = date.AddDays(1);
-            if(date.Year == 2023)
-            {
-                break;
-            }
-        } while (true);
+        var result = new List<HourlyContribution>();
 
-        do
+        var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);//todo: from settings
+        var endDate = DateTime.Now;
+        
+        const string connectionString = $"Server=localhost\\SQLEXPRESS;Database=forex.solution;Trusted_Connection=True;";
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync().ConfigureAwait(false);
+        await using var cmd = new SqlCommand("GetTicksContributions", connection) { CommandType = CommandType.StoredProcedure };
+        cmd.Parameters.Add(new SqlParameter("@StartDate", SqlDbType.DateTime) { Value = startDate });
+        cmd.Parameters.Add(new SqlParameter("@EndDate", SqlDbType.DateTime) { Value = endDate });
+        await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+
+        while (await reader.ReadAsync().ConfigureAwait(false))
         {
-            result.Add(new DailyContribution(date, false));
-            date = date.AddDays(1);
-            if (date.Year == 2025)
-            {
-                break;
-            }
-        } while (true);
+            var hour = reader.GetInt64(0);
+            var date = reader.GetDateTime(1);
+            var hasContribution = reader.GetBoolean(2);
+            result.Add(new HourlyContribution(hour, date, hasContribution));
+        }
 
         return result;
     }
@@ -105,8 +106,8 @@ public class DataService : IDataService
             command.CommandType = CommandType.StoredProcedure;
             command.Parameters.AddWithValue("@Week", week);
             command.Parameters.AddWithValue("@DayOfWeek", day);
-            await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
             int id = default;
+            await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
                 var resultSymbol = (Symbol)reader.GetInt32(0);

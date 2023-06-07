@@ -6,6 +6,7 @@
 
 using Common.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
@@ -16,7 +17,7 @@ namespace Terminal.WinUI3.ViewModels;
 
 public partial class GBPUSDViewModel : ObservableRecipient, INavigationAware
 {
-    [ObservableProperty] private string _headerContext = "GBPUSDViewModel_HeaderContext".GetLocalized();
+    [ObservableProperty] private string _headerContext = "GBPUSDViewModel_HeaderContext".GetLocalizedString();
     private TickChartControl? _tickChartControl;
 
     public GBPUSDViewModel()

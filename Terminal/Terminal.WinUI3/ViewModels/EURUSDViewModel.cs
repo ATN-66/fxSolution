@@ -5,6 +5,7 @@
 
 using Common.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Terminal.WinUI3.Contracts.Services;
@@ -16,7 +17,7 @@ namespace Terminal.WinUI3.ViewModels;
 
 public partial class EURUSDViewModel : ObservableRecipient, INavigationAware
 {
-    [ObservableProperty] private string _headerContext = "EURUSDViewModel_HeaderContext".GetLocalized();
+    [ObservableProperty] private string _headerContext = "EURUSDViewModel_HeaderContext".GetLocalizedString();
     [ObservableProperty] private float _pipsPerChart = 100;//settings
     [ObservableProperty] private float _maxPipsPerChart = 200;//settings
     [ObservableProperty] private float _minPipsPerChart = 10;//settings

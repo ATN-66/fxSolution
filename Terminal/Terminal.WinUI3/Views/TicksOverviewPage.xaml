@@ -12,7 +12,7 @@
     <behaviors:NavigationViewHeaderBehavior.HeaderMode>Never</behaviors:NavigationViewHeaderBehavior.HeaderMode>
 
     <Page.Resources>
-        <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
+        <converters:ContributionToColorConverter x:Key="ContributionToColorConverter" />
         <converters:MonthNumberToNameConverter x:Key="MonthNumberToNameConverter" />
 
         <DataTemplate x:Key="DailyTemplate" x:DataType="maintenance:DailyContribution">
@@ -20,8 +20,8 @@
                 <Rectangle
                     Width="30"
                     Height="30"
-                    Margin="3"
-                    Fill="{x:Bind HasContribution, Converter={StaticResource BoolToColorConverter}}" />
+                    Margin="1"
+                    Fill="{x:Bind Contribution, Converter={StaticResource ContributionToColorConverter}}" />
                 <Border
                     Width="30"
                     Height="30"
@@ -33,7 +33,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="Black"
-                        Text="{x:Bind FormatDate(Date)}"
+                        Text="{x:Bind FormatDate(DateTime)}"
                         TextAlignment="Center" />
                 </Border>
             </Grid>
@@ -52,6 +52,7 @@
                     Grid.Column="0"
                     Width="120">
                     <TextBlock
+                        Margin="0,0,5,0"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         FontSize="16"
@@ -84,7 +85,7 @@
                     FontSize="20"
                     FontWeight="Bold"
                     Text="{x:Bind Year}" />
-                <ItemsRepeater Grid.Row="1" ItemsSource="{x:Bind Months}">
+                <ItemsRepeater Grid.Row="1" ItemsSource="{x:Bind MonthlyContributions}">
                     <ItemsRepeater.ItemTemplate>
                         <StaticResource ResourceKey="MonthlyTemplate" />
                     </ItemsRepeater.ItemTemplate>
@@ -93,14 +94,12 @@
         </DataTemplate>
     </Page.Resources>
 
-    <Border BorderBrush="#FFFFD700" BorderThickness="2">
-        <ScrollViewer>
-            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Groups}">
-                <ItemsRepeater.ItemTemplate>
-                    <StaticResource ResourceKey="YearlyTemplate" />
-                </ItemsRepeater.ItemTemplate>
-            </ItemsRepeater>
-        </ScrollViewer>
-    </Border>
+    <ScrollViewer HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
+        <ItemsRepeater ItemsSource="{x:Bind ViewModel.Groups}">
+            <ItemsRepeater.ItemTemplate>
+                <StaticResource ResourceKey="YearlyTemplate" />
+            </ItemsRepeater.ItemTemplate>
+        </ItemsRepeater>
+    </ScrollViewer>
 
 </Page>

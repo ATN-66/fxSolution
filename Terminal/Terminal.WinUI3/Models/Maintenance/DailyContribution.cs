@@ -5,20 +5,25 @@
 
 namespace Terminal.WinUI3.Models.Maintenance;
 
-public record struct DailyContribution
+public class DailyContribution
 {
-    public DailyContribution(DateTime date, bool hasContribution)
+    public DailyContribution(DateTime dateTime, Contribution contribution)
     {
-        Date = date;
-        HasContribution = hasContribution;
+        DateTime = dateTime;
+        Contribution = contribution;
     }
 
-    public DateTime Date
+    public DateTime DateTime
+    {
+        get; private set;
+    }
+
+    public Contribution Contribution
     {
         get; set;
     }
 
-    public bool HasContribution
+    public List<HourlyContribution> HourlyContributions
     {
         get; set;
     }
@@ -30,6 +35,6 @@ public record struct DailyContribution
 
     public override string ToString()
     {
-        return $"{Date:D}, {HasContribution}";
+        return $"{DateTime:D}, {Contribution}";
     }
 }

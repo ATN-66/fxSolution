@@ -4,6 +4,7 @@
   +------------------------------------------------------------------+*/
 
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.WinUI;
 using Terminal.WinUI3.Contracts.ViewModels;
 using Terminal.WinUI3.Helpers;
 
@@ -11,7 +12,7 @@ namespace Terminal.WinUI3.ViewModels;
 
 public partial class JPYViewModel : ObservableRecipient, INavigationAware
 {
-    [ObservableProperty] private string _headerContext = "JPYViewModel_HeaderContext".GetLocalized();
+    [ObservableProperty] private string _headerContext = "JPYViewModel_HeaderContext".GetLocalizedString();
 
     public void OnNavigatedTo(object parameter)
     {

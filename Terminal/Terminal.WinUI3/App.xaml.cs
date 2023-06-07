@@ -1,6 +1,6 @@
-﻿using Windows.ApplicationModel.Activation;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Terminal.WinUI3.Activation;
 using Terminal.WinUI3.AI.Interfaces;
@@ -45,6 +45,7 @@ public partial class App
             services.AddSingleton<IProcessor, Processor>();
             services.AddSingleton<IDataService, DataService>();
             services.AddSingleton<IVisualService, VisualService>();
+            services.AddSingleton<IDispatcherService, DispatcherService>();
 
             // Views and ViewModels
             services.AddTransient<SettingsViewModel>();
@@ -135,11 +136,12 @@ public partial class App
             DebugSettings.BindingFailed += DebugSettings_BindingFailed;
         }
 
+        GetService<IDispatcherService>().Initialize(DispatcherQueue.GetForCurrentThread());
         GetService<IDashboardService>().InitializeAsync();
+        GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(false);
 
         //GetService<IAppNotificationService>().Initialize();
         //GetService<IAppNotificationService>().Show(string.Format("AppNotificationSamplePayload".GetLocalized(), AppContext.BaseDirectory));
-        GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(false);
     }
 
     private void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs e)

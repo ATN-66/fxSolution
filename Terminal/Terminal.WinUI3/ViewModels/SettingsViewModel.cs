@@ -3,6 +3,7 @@ using System.Windows.Input;
 using Windows.ApplicationModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Helpers;
@@ -56,6 +57,6 @@ public partial class SettingsViewModel : ObservableRecipient
         }
 
         return
-            $"{"AppDisplayName".GetLocalized()} - {version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
+            $"{"AppDisplayName".GetLocalizedString()} - {version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
     }
 }

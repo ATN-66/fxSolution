@@ -12,12 +12,15 @@ using Microsoft.UI.Xaml.Input;
 using Terminal.WinUI3.Helpers;
 using WinRT.Interop;
 using static Windows.Win32.PInvoke;
+using CommunityToolkit.WinUI;
 
 namespace Terminal.WinUI3;
 
 public sealed partial class MainWindow
 {
-    private readonly DispatcherQueue _dispatcherQueue;
+    public readonly DispatcherQueue DispatcherQueue;
+
+
     private readonly UISettings _settings;
     public static AppWindow MainAppWindow = null!;
     private const uint DOT_KEY = 0x1B; // VK_ESCAPE	0x1B ESC key
@@ -32,8 +35,8 @@ public sealed partial class MainWindow
 
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets/WindowIcon.ico"));
         Content = null;
-        Title = "AppDisplayName".GetLocalized();
-        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+        Title = "AppDisplayName".GetLocalizedString();
+        DispatcherQueue = DispatcherQueue.GetForCurrentThread();
         _settings = new UISettings();
         _settings.ColorValuesChanged += Settings_ColorValuesChanged; // cannot use FrameworkElement.ActualThemeChanged event
 
@@ -49,7 +52,7 @@ public sealed partial class MainWindow
         //origPrc = Marshal.GetDelegateForFunctionPointer<WNDPROC>(SetWindowLongPtr(hwnd, WINDOW_LONG_PTR_INDEX.GWL_WNDPROC, hotKeyPrcPointer));
     }
 
-    private void Settings_ColorValuesChanged(UISettings sender, object args) => _dispatcherQueue.TryEnqueue(TitleBarHelper.ApplySystemThemeToCaptionButtons);
+    private void Settings_ColorValuesChanged(UISettings sender, object args) => DispatcherQueue.TryEnqueue(TitleBarHelper.ApplySystemThemeToCaptionButtons);
     
     private LRESULT HotKeyPrc(HWND hwnd, uint uMsg, WPARAM wParam, LPARAM lParam)
     {

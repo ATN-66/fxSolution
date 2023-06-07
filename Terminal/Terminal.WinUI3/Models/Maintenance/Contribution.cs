@@ -1,18 +1,13 @@
 ﻿/*+------------------------------------------------------------------+
   |                               Terminal.WinUI3.Models.Maintenance |
-  |                                            YearlyContribution.cs |
+  |                                                  Contribution.cs |
   +------------------------------------------------------------------+*/
 
 namespace Terminal.WinUI3.Models.Maintenance;
 
-public class YearlyContribution
+public enum Contribution
 {
-    public int Year
-    {
-        get; set;
-    }
-    public List<MonthlyContribution> MonthlyContributions
-    {
-        get; set;
-    }
+    None,
+    Partial,
+    Full
 }
