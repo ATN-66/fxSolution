@@ -3,70 +3,50 @@
   |                                                   DataService.cs |
   +------------------------------------------------------------------+*/
 
-using System.Collections;
-using Common.Entities;
 using System.Data;
 using System.Data.SqlClient;
-using ABI.Windows.Networking.Sockets;
+using System.Globalization;
+using Windows.ApplicationModel.Resources.Core;
+using Common.Entities;
+using Microsoft.Extensions.Configuration;
 using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Models;
 using Terminal.WinUI3.Models.Maintenance;
 using Environment = Common.Entities.Environment;
-using Symbol = Common.Entities.Symbol;
-using System.Collections.ObjectModel;
-using CommunityToolkit.WinUI.UI.Controls.TextToolbarSymbols;
-
-// ReSharper disable StringLiteralTypo
+using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Terminal.WinUI3.Models.Dashboard;
+using Terminal.WinUI3.Services.Messenger.Messages;
 
 namespace Terminal.WinUI3.Services;
 
-public class DataService : IDataService
+public class DataService : ObservableRecipient, IDataService
 {
+    private readonly IConfiguration _configuration;
     private readonly IProcessor _processor;
-    private Queue<Quotation> _firstQuotations = null!;
-    private Queue<Quotation> _quotations = null!;
+    private readonly string _server;
+    private readonly string _solutionDatabase;
 
-    public DataService(IProcessor processor)
+    public DataService(IProcessor processor, IConfiguration configuration)
     {
-        _processor  = processor;
-    }
+        _processor = processor;
+        _configuration = configuration;
 
-    public async Task InitializeAsync()
-    {
-        const Environment environment = Environment.Testing;
-        const Modification inputModification = Modification.UnModified;
-        const int year = 2023;
-        const int week = 8;
-        const int day = 1;
-
-        var (firstQuotations, quotations) = await GetQuotationsForDayAsync(year, week, day, environment, inputModification).ConfigureAwait(false);
-        _firstQuotations = firstQuotations;
-        _quotations = quotations;
-    }
-
-    public async Task StartAsync()
-    {
-        var initializeTasks = _firstQuotations.Select(quotation => _processor.InitializeAsync(quotation)).ToArray();
-        await Task.WhenAll(initializeTasks).ConfigureAwait(false);
-        _firstQuotations.Clear();
-
-        while (_quotations.Any())
-        {
-            var quotation = _quotations.Dequeue();
-            await _processor.TickAsync(quotation).ConfigureAwait(false);
-        }
+        _server = _configuration.GetConnectionString("Server")!;
+        _solutionDatabase = _configuration.GetConnectionString("SolutionDatabase")!;
     }
 
     public async Task<List<HourlyContribution>> GetTicksContributionsAsync()
     {
         var result = new List<HourlyContribution>();
 
-        var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);//todo: from settings
+        var startDateString = _configuration.GetValue<string>("StartDate");
+        var startDate = DateTime.Parse(startDateString!, null, DateTimeStyles.RoundtripKind);
+
         var endDate = DateTime.Now;
-        
-        const string connectionString = $"Server=localhost\\SQLEXPRESS;Database=forex.solution;Trusted_Connection=True;";
-        await using var connection = new SqlConnection(connectionString);
+
+        await using var connection = new SqlConnection($"{_server};Database={_solutionDatabase};Trusted_Connection=True;");
         await connection.OpenAsync().ConfigureAwait(false);
         await using var cmd = new SqlCommand("GetTicksContributions", connection) { CommandType = CommandType.StoredProcedure };
         cmd.Parameters.Add(new SqlParameter("@StartDate", SqlDbType.DateTime) { Value = startDate });
@@ -84,12 +64,27 @@ public class DataService : IDataService
         return result;
     }
 
+    public async Task ContributeTicksAsync(CancellationToken cancellationToken)
+    {
+        do
+        {
+            // Do some work...
+            cancellationToken.ThrowIfCancellationRequested();
+            // Do some more work...
+
+            await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
+
+            Messenger.Send(new DataServiceMessage(), Party.Blanket);
+
+        } while (true);
+    }
+
     public async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForDayAsync(int year, int week, int day, Environment environment, Modification modification)
     {
         switch (day)
         {
             case 0: return await GetQuotationsForWeekAsync(year, week, environment, modification).ConfigureAwait(false);
-            case < 1 or > 7: throw new ArgumentOutOfRangeException(nameof(day), Windows.ApplicationModel.Resources.Core.ResourceManager.Current.MainResourceMap.GetValue("Resources/DataService_GetQuotationsForDayAsync_day_must_be_between_1_and_7_").ValueAsString);
+            case < 1 or > 7: throw new ArgumentOutOfRangeException(nameof(day), ResourceManager.Current.MainResourceMap.GetValue("Resources/DataService_GetQuotationsForDayAsync_day_must_be_between_1_and_7_").ValueAsString);
         }
 
         var firstQuotationsDict = new Dictionary<Symbol, Quotation>();
@@ -97,7 +92,7 @@ public class DataService : IDataService
         var quotations = new Queue<Quotation>();
 
         var databaseName = GetDatabaseName(year, week, environment, modification);
-        var connectionString = $"Server=localhost\\SQLEXPRESS;Database={databaseName};Trusted_Connection=True;";
+        var connectionString = $"{_server};Database={databaseName};Trusted_Connection=True;";
 
         await using (var connection = new SqlConnection(connectionString))
         {
@@ -138,7 +133,7 @@ public class DataService : IDataService
         var quotations = new Queue<Quotation>();
 
         var databaseName = GetDatabaseName(year, week, environment, modification);
-        var connectionString = $"Server=localhost\\SQLEXPRESS;Database={databaseName};Trusted_Connection=True;";
+        var connectionString = $"{_server};Database={databaseName};Trusted_Connection=True;";
 
         await using (var connection = new SqlConnection(connectionString))
         {
@@ -189,10 +184,8 @@ public class DataService : IDataService
         return quotationsByWeek;
     }
 
-    private static string GetDatabaseName(int yearNumber, int weekNumber, Environment environment, Modification modification)
-    {
-        return $"{environment.ToString().ToLower()}.{modification.ToString().ToLower()}.{yearNumber}.{GetQuarterNumber(weekNumber)}";
-    }
+    private static string GetDatabaseName(int yearNumber, int weekNumber, Environment environment, Modification modification) =>
+        $"{environment.ToString().ToLower()}.{modification.ToString().ToLower()}.{yearNumber}.{GetQuarterNumber(weekNumber)}";
 
     private static int GetQuarterNumber(int weekNumber)
     {
@@ -204,38 +197,69 @@ public class DataService : IDataService
             <= 26 => 2,
             <= 39 => 3,
             <= 52 => 4,
-            _ => throw new Exception(errorMessage),
+            _ => throw new Exception(errorMessage)
         };
     }
 
     public List<SampleDataObject> GetSampleDataObjects()
     {
-        var dummyTexts = new[] {
+        var dummyTexts = new[]
+        {
             @"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer id facilisis lectus. Cras nec convallis ante, quis pulvinar tellus. Integer dictum accumsan pulvinar. Pellentesque eget enim sodales sapien vestibulum consequat.",
-                @"Nullam eget mattis metus. Donec pharetra, tellus in mattis tincidunt, magna ipsum gravida nibh, vitae lobortis ante odio vel quam.",
-                @"Quisque accumsan pretium ligula in faucibus. Mauris sollicitudin augue vitae lorem cursus condimentum quis ac mauris. Pellentesque quis turpis non nunc pretium sagittis. Nulla facilisi. Maecenas eu lectus ante. Proin eleifend vel lectus non tincidunt. Fusce condimentum luctus nisi, in elementum ante tincidunt nec.",
-                @"Aenean in nisl at elit venenatis blandit ut vitae lectus. Praesent in sollicitudin nunc. Pellentesque justo augue, pretium at sem lacinia, scelerisque semper erat. Ut cursus tortor at metus lacinia dapibus.",
-                @"Ut consequat magna luctus justo egestas vehicula. Integer pharetra risus libero, et posuere justo mattis et.",
-                @"Proin malesuada, libero vitae aliquam venenatis, diam est faucibus felis, vitae efficitur erat nunc non mauris. Suspendisse at sodales erat.",
-                @"Aenean vulputate, turpis non tincidunt ornare, metus est sagittis erat, id lobortis orci odio eget quam. Suspendisse ex purus, lobortis quis suscipit a, volutpat vitae turpis.",
-                @"Duis facilisis, quam ut laoreet commodo, elit ex aliquet massa, non varius tellus lectus et nunc. Donec vitae risus ut ante pretium semper. Phasellus consectetur volutpat orci, eu dapibus turpis. Fusce varius sapien eu mattis pharetra.",
-            };
+            @"Nullam eget mattis metus. Donec pharetra, tellus in mattis tincidunt, magna ipsum gravida nibh, vitae lobortis ante odio vel quam.",
+            @"Quisque accumsan pretium ligula in faucibus. Mauris sollicitudin augue vitae lorem cursus condimentum quis ac mauris. Pellentesque quis turpis non nunc pretium sagittis. Nulla facilisi. Maecenas eu lectus ante. Proin eleifend vel lectus non tincidunt. Fusce condimentum luctus nisi, in elementum ante tincidunt nec.",
+            @"Aenean in nisl at elit venenatis blandit ut vitae lectus. Praesent in sollicitudin nunc. Pellentesque justo augue, pretium at sem lacinia, scelerisque semper erat. Ut cursus tortor at metus lacinia dapibus.",
+            @"Ut consequat magna luctus justo egestas vehicula. Integer pharetra risus libero, et posuere justo mattis et.",
+            @"Proin malesuada, libero vitae aliquam venenatis, diam est faucibus felis, vitae efficitur erat nunc non mauris. Suspendisse at sodales erat.",
+            @"Aenean vulputate, turpis non tincidunt ornare, metus est sagittis erat, id lobortis orci odio eget quam. Suspendisse ex purus, lobortis quis suscipit a, volutpat vitae turpis.",
+            @"Duis facilisis, quam ut laoreet commodo, elit ex aliquet massa, non varius tellus lectus et nunc. Donec vitae risus ut ante pretium semper. Phasellus consectetur volutpat orci, eu dapibus turpis. Fusce varius sapien eu mattis pharetra."
+        };
 
         var rand = new Random();
         const int numberOfLocations = 8;
         var objects = new List<SampleDataObject>();
         for (var i = 0; i < numberOfLocations; i++)
         {
-            objects.Add(new SampleDataObject()
+            objects.Add(new SampleDataObject
             {
                 Title = $"Item {i + 1}",
                 ImageLocation = $"/Assets/SampleMedia/LandscapeImage{i + 1}.jpg",
                 Views = rand.Next(100, 999).ToString(),
                 Likes = rand.Next(10, 99).ToString(),
-                Description = dummyTexts[i % dummyTexts.Length],
+                Description = dummyTexts[i % dummyTexts.Length]
             });
         }
 
         return objects;
     }
 }
+
+
+//private Queue<Quotation> _firstQuotations = null!;
+//private Queue<Quotation> _quotations = null!;
+
+//public async Task StartAsync()
+//{
+//    var initializeTasks = _firstQuotations.Select(quotation => _processor.InitializeAsync(quotation)).ToArray();
+//    await Task.WhenAll(initializeTasks).ConfigureAwait(false);
+//    _firstQuotations.Clear();
+
+//    while (_quotations.Any())
+//    {
+//        var quotation = _quotations.Dequeue();
+//        await _processor.TickAsync(quotation).ConfigureAwait(false);
+//    }
+//}
+
+//public async Task InitializeAsync()
+//{
+//    const Environment environment = Environment.Testing;
+//    const Modification inputModification = Modification.UnModified;
+//    const int year = 2023;
+//    const int week = 8;
+//    const int day = 1;
+
+//    var (firstQuotations, quotations) = await GetQuotationsForDayAsync(year, week, day, environment, inputModification).ConfigureAwait(false);
+//    _firstQuotations = firstQuotations;
+//    _quotations = quotations;
+//}

@@ -24,9 +24,9 @@
                     Opening="CommandBar_Opening"
                     HorizontalAlignment="Left"
                     Style="{StaticResource CommandBarStyle}">
-                    <CommandBar.Content>
+                    <!--<CommandBar.Content>
                         <TextBlock Text="{x:Bind HeaderContext, Mode=OneWay}" />
-                    </CommandBar.Content>
+                    </CommandBar.Content>-->
                     <AppBarElementContainer>
                         <SplitButton Content="Insert" ToolTipService.ToolTip="Insert">
                             <SplitButton.Flyout>

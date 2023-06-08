@@ -4,28 +4,53 @@
   +------------------------------------------------------------------+*/
 
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
 using Terminal.WinUI3.Models.Maintenance;
+using Terminal.WinUI3.Services.Messenger.Messages;
 
 namespace Terminal.WinUI3.ViewModels;
 
 public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAware
 {
     private readonly IDataService _dataService;
-    //private readonly IDispatcherService _dispatcherService;
     [ObservableProperty] private ObservableCollection<YearlyContribution> _groups = new();
+    [ObservableProperty] private string _headerContext = "Ticks Overview";
+    private CancellationTokenSource _cts = null!;
 
-    public TicksOverviewViewModel(IDataService dataService, IDispatcherService dispatcherService)
+    public TicksOverviewViewModel(IDataService dataService)
     {
         _dataService = dataService;
-        //_dispatcherService = dispatcherService;
+        ContributeTicksCommand = new AsyncRelayCommand(ContributeTicksAsync);
+    }
+
+    public IAsyncRelayCommand ContributeTicksCommand
+    {
+        get;
     }
 
     public async void OnNavigatedTo(object parameter)
     {
         var contributions = await _dataService.GetTicksContributionsAsync().ConfigureAwait(true);
+        UpdateGroups(contributions);
+        Messenger.Register<TicksOverviewViewModel, DataServiceMessage, Party>(this, Party.Blanket, (_, m) => //todo: party
+        {
+            OnDataServiceMessageReceived(m);
+        });
+    }
+
+    public void OnNavigatedFrom()
+    {
+        _cts.Cancel();
+        Messenger.Unregister<DataServiceMessage, Party>(this, Party.Blanket);//todo: party
+    }
+
+    private void UpdateGroups(IEnumerable<HourlyContribution> contributions)
+    {
+        Groups.Clear();
 
         // Group contributions by year, then month, then day
         var groupedByYear = contributions
@@ -43,8 +68,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         // Iterate over each year
         foreach (var yearGroup in groupedByYear)
         {
-            var yearlyContribution = new YearlyContribution()
-
+            var yearlyContribution = new YearlyContribution
             {
                 Year = yearGroup.Year,
                 MonthlyContributions = new List<MonthlyContribution>()
@@ -53,7 +77,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
             // Iterate over each month in the year
             foreach (var monthGroup in yearGroup.Months)
             {
-                var monthlyContribution = new MonthlyContribution()
+                var monthlyContribution = new MonthlyContribution
                 {
                     Month = monthGroup.Month,
                     DailyContributions = new List<DailyContribution>()
@@ -94,16 +118,27 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         }
     }
 
-    public void OnNavigatedFrom()
+
+    private async Task ContributeTicksAsync()
     {
+        using (_cts = new CancellationTokenSource())
+        {
+            try
+            {
+                await _dataService.ContributeTicksAsync(_cts.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException e)
+            {
+                Debug.WriteLine(e.Message);
+                // Handle cancellation here.
+                // For example, if you have a status label in the UI, you might do something like:
+                // this.StatusLabel.Text = "Operation cancelled";
+            }
+        }
+    }
+
+    private void OnDataServiceMessageReceived(DataServiceMessage dataServiceMessage)
+    {
+        Debug.WriteLine(dataServiceMessage.ToString());
     }
 }
-
-//await _dispatcherService.ExecuteOnUIThreadAsync(() =>
-//    {
-//        //foreach (var contribution in contributions)
-//        //{
-//        //    Groups.Add(contribution);
-//        //}
-//    }
-//).ConfigureAwait(false);

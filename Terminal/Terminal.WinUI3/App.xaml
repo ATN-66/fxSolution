@@ -16,7 +16,7 @@
                 <ResourceDictionary Source="/Controls/TickChartControl.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <ResourceDictionary.ThemeDictionaries>
+            <!--<ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
                     <SolidColorBrush x:Key="HomePageBackgroundBrush" Color="Transparent" />
                     <StaticResource x:Key="ControlExampleDisplayBrush" ResourceKey="SolidBackgroundFillColorBaseBrush" />
@@ -41,7 +41,7 @@
                     <Thickness x:Key="ControlExampleDisplayBorderThickness">1</Thickness>
                     <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="Transparent" />
                 </ResourceDictionary>
-            </ResourceDictionary.ThemeDictionaries>
+            </ResourceDictionary.ThemeDictionaries>-->
 
             <!--  Application-specific resources  -->
             <!--<NullableBooleanToBooleanConverter x:Key="nullableBooleanToBooleanConverter" />

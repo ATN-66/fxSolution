@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
@@ -21,8 +22,21 @@ public partial class App
     public App()
     {
         InitializeComponent();
+
+        Environment.SetEnvironmentVariable("Terminal.WinUI3.ENVIRONMENT", "Development"); //appsettings.development
+        //Environment.SetEnvironmentVariable("Terminal.WinUI3.ENVIRONMENT", "Production"); //appsettings.production
+        var environment = Environment.GetEnvironmentVariable("Terminal.WinUI3.ENVIRONMENT")!.ToLower();
+        var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        var directoryPath = Path.GetDirectoryName(assemblyLocation);
+        var builder = new ConfigurationBuilder().SetBasePath(directoryPath!)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            //.AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true);
+        IConfiguration configuration = builder.Build();
+
         Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder().UseContentRoot(AppContext.BaseDirectory).ConfigureServices((context, services) =>
         {
+            services.AddSingleton(configuration);
+
             // Default Activation Handler
             services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
 

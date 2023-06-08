@@ -9,7 +9,6 @@ namespace Terminal.WinUI3.Contracts.Services;
 
 public interface IDataService
 {    
-    Task InitializeAsync();
-    Task StartAsync();
     Task<List<HourlyContribution>> GetTicksContributionsAsync();
+    Task ContributeTicksAsync(CancellationToken cancellationToken);
 }

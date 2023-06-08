@@ -18,9 +18,6 @@ namespace Terminal.WinUI3;
 
 public sealed partial class MainWindow
 {
-    public readonly DispatcherQueue DispatcherQueue;
-
-
     private readonly UISettings _settings;
     public static AppWindow MainAppWindow = null!;
     private const uint DOT_KEY = 0x1B; // VK_ESCAPE	0x1B ESC key
@@ -36,7 +33,6 @@ public sealed partial class MainWindow
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets/WindowIcon.ico"));
         Content = null;
         Title = "AppDisplayName".GetLocalizedString();
-        DispatcherQueue = DispatcherQueue.GetForCurrentThread();
         _settings = new UISettings();
         _settings.ColorValuesChanged += Settings_ColorValuesChanged; // cannot use FrameworkElement.ActualThemeChanged event
 

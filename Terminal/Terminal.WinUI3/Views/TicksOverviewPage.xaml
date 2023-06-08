@@ -7,9 +7,59 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:maintenance="using:Terminal.WinUI3.Models.Maintenance"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:viewModels="using:Terminal.WinUI3.ViewModels"
     mc:Ignorable="d">
 
-    <behaviors:NavigationViewHeaderBehavior.HeaderMode>Never</behaviors:NavigationViewHeaderBehavior.HeaderMode>
+    <behaviors:NavigationViewHeaderBehavior.HeaderMode>Always</behaviors:NavigationViewHeaderBehavior.HeaderMode>
+    <behaviors:NavigationViewHeaderBehavior.HeaderTemplate>
+        <DataTemplate x:DataType="viewModels:TicksOverviewViewModel">
+            <StackPanel Background="Transparent" BorderBrush="White" BorderThickness="1" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Center">
+                <CommandBar BorderBrush="White" BorderThickness="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    x:Name="PageCommandBar"
+                    ClosedDisplayMode="Compact"
+                    DefaultLabelPosition="Right"
+                    Style="{StaticResource CommandBarStyle}">
+                    <CommandBar.Content>
+                        <TextBlock Text="{x:Bind HeaderContext, Mode=OneWay}" />
+                    </CommandBar.Content>
+                    <AppBarToggleButton x:Name="ContributeTicks" Command="{x:Bind Path=ContributeTicksCommand}" Label="Contribute Ticks" ToolTipService.ToolTip="Contribute Ticks">
+                        <AppBarToggleButton.Icon>
+                            <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x31;" />
+                        </AppBarToggleButton.Icon>
+                    </AppBarToggleButton>
+                    <!--<AppBarToggleButton Click="AppBarButton_Click" Label="Digit Two">
+                        <AppBarToggleButton.Icon>
+                            <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x32;" />
+                        </AppBarToggleButton.Icon>
+                    </AppBarToggleButton>-->
+                    <AppBarSeparator />
+                    <!--<AppBarButton Click="AppBarButton_Click" Label="Digit Three">
+                        <AppBarButton.Icon>
+                            <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x33;" />
+                        </AppBarButton.Icon>
+                    </AppBarButton>
+                    <AppBarButton Click="AppBarButton_Click" Label="Digit Four">
+                        <AppBarButton.Icon>
+                            <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x34;" />
+                        </AppBarButton.Icon>
+                    </AppBarButton>
+                    <CommandBar.SecondaryCommands>
+                        <AppBarButton Click="AppBarButton_Click" Label="Digit Five">
+                            <AppBarButton.Icon>
+                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x35;" />
+                            </AppBarButton.Icon>
+                        </AppBarButton>
+                        <AppBarSeparator />
+                        <AppBarButton Click="AppBarButton_Click" Label="Digit Six">
+                            <AppBarButton.Icon>
+                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x36;" />
+                            </AppBarButton.Icon>
+                        </AppBarButton>
+                    </CommandBar.SecondaryCommands>-->
+                </CommandBar>
+            </StackPanel>
+        </DataTemplate>
+    </behaviors:NavigationViewHeaderBehavior.HeaderTemplate>
 
     <Page.Resources>
         <converters:ContributionToColorConverter x:Key="ContributionToColorConverter" />
