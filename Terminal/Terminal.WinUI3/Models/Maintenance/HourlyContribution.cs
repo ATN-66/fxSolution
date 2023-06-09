@@ -3,29 +3,37 @@
   |                                            HourlyContribution.cs |
   +------------------------------------------------------------------+*/
 
+using System.Globalization;
+
 namespace Terminal.WinUI3.Models.Maintenance;
 
-public class HourlyContribution
+public record struct HourlyContribution
 {
-    public HourlyContribution(long hour, DateTime dateTime, bool hasContribution)
+    public int Year => DateTime.Year;
+
+    public int Month => DateTime.Month;
+
+    public int Week => CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(DateTime, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+
+    public int Day => DateTime.Day;
+
+    public long Hour //from db
     {
-        Hour = hour;
-        DateTime = dateTime;
-        HasContribution = hasContribution;
+        get; init;
     }
 
-    public long Hour
+    public DateTime DateTime // from db
     {
-        get; private set;
-    }
-
-    public DateTime DateTime
-    {
-        get; private set;
+        get; init;
     }
 
     public bool HasContribution
     {
-        get; private set;
+        get; init;
+    }
+
+    public override string ToString()
+    {
+        return $"y:{Year}, m:{Month}, w:{Week}, d:{Day}, , h:{Hour}, c:{HasContribution}";
     }
 }

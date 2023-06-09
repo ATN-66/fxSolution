@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using CommunityToolkit.WinUI.UI.Controls;
 
 namespace Terminal.WinUI3.Models.Dashboard;
 

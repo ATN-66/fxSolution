@@ -13,51 +13,34 @@
     <behaviors:NavigationViewHeaderBehavior.HeaderMode>Always</behaviors:NavigationViewHeaderBehavior.HeaderMode>
     <behaviors:NavigationViewHeaderBehavior.HeaderTemplate>
         <DataTemplate x:DataType="viewModels:TicksOverviewViewModel">
-            <StackPanel Background="Transparent" BorderBrush="White" BorderThickness="1" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Center">
-                <CommandBar BorderBrush="White" BorderThickness="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                    x:Name="PageCommandBar"
-                    ClosedDisplayMode="Compact"
-                    DefaultLabelPosition="Right"
-                    Style="{StaticResource CommandBarStyle}">
-                    <CommandBar.Content>
-                        <TextBlock Text="{x:Bind HeaderContext, Mode=OneWay}" />
-                    </CommandBar.Content>
-                    <AppBarToggleButton x:Name="ContributeTicks" Command="{x:Bind Path=ContributeTicksCommand}" Label="Contribute Ticks" ToolTipService.ToolTip="Contribute Ticks">
-                        <AppBarToggleButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x31;" />
-                        </AppBarToggleButton.Icon>
-                    </AppBarToggleButton>
-                    <!--<AppBarToggleButton Click="AppBarButton_Click" Label="Digit Two">
-                        <AppBarToggleButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x32;" />
-                        </AppBarToggleButton.Icon>
-                    </AppBarToggleButton>-->
-                    <AppBarSeparator />
-                    <!--<AppBarButton Click="AppBarButton_Click" Label="Digit Three">
-                        <AppBarButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x33;" />
-                        </AppBarButton.Icon>
-                    </AppBarButton>
-                    <AppBarButton Click="AppBarButton_Click" Label="Digit Four">
-                        <AppBarButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x34;" />
-                        </AppBarButton.Icon>
-                    </AppBarButton>
-                    <CommandBar.SecondaryCommands>
-                        <AppBarButton Click="AppBarButton_Click" Label="Digit Five">
-                            <AppBarButton.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x35;" />
-                            </AppBarButton.Icon>
-                        </AppBarButton>
-                        <AppBarSeparator />
-                        <AppBarButton Click="AppBarButton_Click" Label="Digit Six">
-                            <AppBarButton.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x36;" />
-                            </AppBarButton.Icon>
-                        </AppBarButton>
-                    </CommandBar.SecondaryCommands>-->
-                </CommandBar>
-            </StackPanel>
+            <CommandBar
+                x:Name="PageCommandBar"
+                HorizontalContentAlignment="Center"
+                VerticalContentAlignment="Center"
+                ClosedDisplayMode="Compact"
+                DefaultLabelPosition="Right"
+                Style="{StaticResource CommandBarStyle}">
+                <CommandBar.Content>
+                    <TextBlock Style="{StaticResource PageTitleStyle}" Text="{x:Bind HeaderContext, Mode=OneWay}" />
+                </CommandBar.Content>
+                <AppBarButton
+                    Command="{x:Bind Path=UpdateTicksContributionsCommand}"
+                    Label="Update"
+                    ToolTipService.ToolTip="Update Contributions of Ticks">
+                    <AppBarButton.Icon>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#9617;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton
+                    Command="{x:Bind Path=ImportTicksCommand}"
+                    Label="Import"
+                    ToolTipService.ToolTip="Import missed Ticks">
+                    <AppBarButton.Icon>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#9617;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarSeparator />
+            </CommandBar>
         </DataTemplate>
     </behaviors:NavigationViewHeaderBehavior.HeaderTemplate>
 
@@ -83,7 +66,7 @@
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="Black"
-                        Text="{x:Bind FormatDate(DateTime)}"
+                        Text="{x:Bind Day}"
                         TextAlignment="Center" />
                 </Border>
             </Grid>

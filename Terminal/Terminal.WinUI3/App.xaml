@@ -8,12 +8,14 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <controls:DashboardItemTemplate />
+                <ResourceDictionary Source="/Controls/TickChartControl.xaml" />
+
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
-                <ResourceDictionary Source="/Styles/FontSizes.xaml" />
                 <ResourceDictionary Source="/Styles/Thickness.xaml" />
+                <ResourceDictionary Source="/Styles/FontSizes.xaml" />
                 <ResourceDictionary Source="/Styles/TextBlock.xaml" />
                 <ResourceDictionary Source="/Styles/CommandBar.xaml" />
-                <ResourceDictionary Source="/Controls/TickChartControl.xaml" />
+
             </ResourceDictionary.MergedDictionaries>
 
             <!--<ResourceDictionary.ThemeDictionaries>
@@ -56,7 +58,7 @@
             <Thickness x:Key="NavigationViewContentMargin">0,48,0,0</Thickness>
             <Thickness x:Key="ControlElementScreenshotModePadding">67</Thickness>
 
-            <SolidColorBrush x:Key="GridViewHeaderItemDividerStroke" Color="Transparent" />
+            <SolidColorBrush x:Key="GridViewHeaderItemDividerStroke" Color="White" />
 
             <x:String x:Key="ControlsName">All samples</x:String>
             <x:String x:Key="AppTitleName">WinUI 3 Gallery</x:String>

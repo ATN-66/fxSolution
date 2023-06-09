@@ -18,8 +18,9 @@ public class ContributionToColorConverter : IValueConverter
         return contribution switch
         {
             Contribution.None => new SolidColorBrush(Colors.LightGray),
-            Contribution.Partial => new SolidColorBrush(Colors.PaleTurquoise),
+            Contribution.Partial => new SolidColorBrush(Colors.PaleGoldenrod),
             Contribution.Full => new SolidColorBrush(Colors.PaleGreen),
+            Contribution.Excluded => new SolidColorBrush(Colors.PaleTurquoise),
             _ => throw new ArgumentOutOfRangeException(nameof(value))
         };
     }

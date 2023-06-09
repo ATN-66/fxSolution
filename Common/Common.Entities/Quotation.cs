@@ -50,4 +50,9 @@ public readonly record struct Quotation() : IComparable
             default: throw new Exception(nameof(Symbol));
         }
     }
+
+    //public override string ToString()
+    //{
+    //    return $"{DateTime:D}, {Symbol}";
+    //}
 }

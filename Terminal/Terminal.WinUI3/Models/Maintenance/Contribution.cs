@@ -9,5 +9,6 @@ public enum Contribution
 {
     None,
     Partial,
-    Full
+    Full,
+    Excluded
 }

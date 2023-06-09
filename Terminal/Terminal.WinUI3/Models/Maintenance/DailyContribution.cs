@@ -3,38 +3,63 @@
   |                                             DailyContribution.cs |
   +------------------------------------------------------------------+*/
 
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
 namespace Terminal.WinUI3.Models.Maintenance;
 
-public class DailyContribution
+public sealed class DailyContribution : INotifyPropertyChanged
 {
-    public DailyContribution(DateTime dateTime, Contribution contribution)
+    public int Year
     {
-        DateTime = dateTime;
-        Contribution = contribution;
+        get; init;
     }
 
-    public DateTime DateTime
+    public int Month
     {
-        get; private set;
+        get; init;
     }
 
-    public Contribution Contribution
+    public int Week
     {
-        get; set;
+        get; init;
+    }
+
+    public int Day
+    {
+        get; init;
+    }
+
+    private Contribution? _contribution;
+    public Contribution? Contribution
+    {
+        get => _contribution;
+        set
+        {
+            if (_contribution == value)
+            {
+                return;
+            }
+
+            _contribution = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
     public List<HourlyContribution> HourlyContributions
     {
-        get; set;
-    }
-
-    public string FormatDate(DateTime date)
-    {
-        return date.Day.ToString("00");
-    }
+        get; init;
+    } = null!;
 
     public override string ToString()
     {
-        return $"{DateTime:D}, {Contribution}";
+        return $"year:{Year}, month:{Month}, week:{Week}, day:{Day}, contribution:{Contribution}";
     }
 }

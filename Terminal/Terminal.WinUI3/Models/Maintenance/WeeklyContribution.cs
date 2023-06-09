@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                               Terminal.WinUI3.Models.Maintenance |
-  |                                           MonthlyContribution.cs |
+  |                                            WeeklyContribution.cs |
   +------------------------------------------------------------------+*/
 
 using System.Collections.ObjectModel;
@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 
 namespace Terminal.WinUI3.Models.Maintenance;
 
-public sealed class MonthlyContribution : INotifyPropertyChanged
+public sealed class WeeklyContribution : INotifyPropertyChanged
 {
     private readonly ObservableCollection<DailyContribution> _dailyContributions = null!;
 
@@ -18,7 +18,7 @@ public sealed class MonthlyContribution : INotifyPropertyChanged
         get; init;
     }
 
-    public int Month
+    public int Week
     {
         get; init;
     }

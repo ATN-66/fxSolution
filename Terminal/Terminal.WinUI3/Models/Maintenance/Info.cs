@@ -1,9 +1,9 @@
 ﻿namespace Terminal.WinUI3.Models.Maintenance;
 
-public sealed class Party : IEquatable<Party>
+public sealed class Info : IEquatable<Info>
 {
-    public static readonly Party Pillow = new Party(1, nameof(Pillow));
-    public static readonly Party Blanket = new Party(2, nameof(Blanket));
+    public static readonly Info Ticks = new Info(1, nameof(Ticks));
+    public static readonly Info Candlesticks = new Info(2, nameof(Candlesticks));
 
     public string Name
     {
@@ -15,13 +15,13 @@ public sealed class Party : IEquatable<Party>
         get; private set;
     }
 
-    private Party(int id, string name)
+    private Info(int id, string name)
     {
         Id = id;
         Name = name;
     }
 
-    public bool Equals(Party other)
+    public bool Equals(Info other)
     {
         return Id == other.Id;
     }

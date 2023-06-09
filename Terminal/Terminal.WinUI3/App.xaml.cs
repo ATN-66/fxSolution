@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Serilog;
 using Terminal.WinUI3.Activation;
 using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.AI.Services;
@@ -28,14 +30,20 @@ public partial class App
         var environment = Environment.GetEnvironmentVariable("Terminal.WinUI3.ENVIRONMENT")!.ToLower();
         var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
         var directoryPath = Path.GetDirectoryName(assemblyLocation);
-        var builder = new ConfigurationBuilder().SetBasePath(directoryPath!)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-            //.AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true);
+        var builder = new ConfigurationBuilder().SetBasePath(directoryPath!).
+            AddJsonFile("appsettings.json", optional: false, reloadOnChange: true).
+            AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true);
         IConfiguration configuration = builder.Build();
+
+        var logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
 
         Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder().UseContentRoot(AppContext.BaseDirectory).ConfigureServices((context, services) =>
         {
             services.AddSingleton(configuration);
+            services.AddLogging(loggingBuilder =>
+            {
+                loggingBuilder.AddSerilog(logger, dispose: true);
+            });
 
             // Default Activation Handler
             services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
@@ -53,13 +61,16 @@ public partial class App
             services.AddSingleton<IActivationService, ActivationService>();
             services.AddSingleton<IPageService, PageService>();
             services.AddSingleton<INavigationService, NavigationService>();
+            services.AddSingleton<IDispatcherService, DispatcherService>();
+            services.AddSingleton<IWindowService, WindowService>();
+            services.AddSingleton<IDialogService, DialogService>();
+
             services.AddSingleton<IDashboardService, DashboardService>();
 
             // Business Services
             services.AddSingleton<IProcessor, Processor>();
             services.AddSingleton<IDataService, DataService>();
             services.AddSingleton<IVisualService, VisualService>();
-            services.AddSingleton<IDispatcherService, DispatcherService>();
 
             // Views and ViewModels
             services.AddTransient<SettingsViewModel>();
@@ -154,8 +165,8 @@ public partial class App
         GetService<IDashboardService>().InitializeAsync();
         GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(false);
 
-        //GetService<IAppNotificationService>().Initialize();
-        //GetService<IAppNotificationService>().Show(string.Format("AppNotificationSamplePayload".GetLocalized(), AppContext.BaseDirectory));
+        GetService<IAppNotificationService>().Initialize();
+        
     }
 
     private void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs e)
