@@ -24,9 +24,9 @@
                     <TextBlock Style="{StaticResource PageTitleStyle}" Text="{x:Bind HeaderContext, Mode=OneWay}" />
                 </CommandBar.Content>
                 <AppBarButton
-                    Command="{x:Bind Path=UpdateTicksContributionsCommand}"
-                    Label="Update"
-                    ToolTipService.ToolTip="Update Contributions of Ticks">
+                    Command="{x:Bind Path=RecalculateTicksContributionsCommand}"
+                    Label="Recalculate"
+                    ToolTipService.ToolTip="Recalculate Contributions of Ticks">
                     <AppBarButton.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#9617;" />
                     </AppBarButton.Icon>

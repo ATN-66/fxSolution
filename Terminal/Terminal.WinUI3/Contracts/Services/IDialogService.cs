@@ -4,10 +4,11 @@
   +------------------------------------------------------------------+*/
 
 using Microsoft.UI.Xaml.Controls;
+using Terminal.WinUI3.ViewModels;
 
 namespace Terminal.WinUI3.Contracts.Services;
 
 public interface IDialogService
 {
-    Task<ContentDialogResult> ShowDialogAsync(string title, string content, string primaryButtonText, string secondaryButtonText, string closeButtonText);
+    ContentDialog CreateDialog(DialogViewModel viewModel, string title, string primaryButtonText, string? secondaryButtonText, string? closeButtonText);
 }

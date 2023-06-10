@@ -25,42 +25,43 @@ using Microsoft.WindowsAppSDK.Runtime;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System;
 using System.Collections.ObjectModel;
+using System.Reflection;
 
 namespace Terminal.WinUI3.Services;
 
 public class DataService : ObservableRecipient, IDataService
 {
-    private readonly IAppNotificationService _notificationService;
-    private readonly IConfiguration _configuration;
-    private readonly ILogger<DataService> _logger;
     private readonly IProcessor _processor;
+    private readonly IAppNotificationService _notificationService;
+    private readonly ILogger<DataService> _logger;
     private IDispatcherService _dispatcherService;//todo
 
     private readonly string _server;
     private readonly string _solutionDatabase;
     private readonly string _inputDirectoryPath;
     private readonly string[] _formats;
-    private readonly DateTime _epochStartDateTimeUtc = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private readonly DateTime _epochStartDateTimeUtc = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private readonly HashSet<DateTime> _excludedDates;
     private const Entity TicksEntity = Entity.Ticks;
 
     public DataService(IProcessor processor, IConfiguration configuration, IAppNotificationService notificationService, ILogger<DataService> logger, IDispatcherService dispatcherService)//todo
     {
-       _dispatcherService = dispatcherService;//todo
-
         _processor = processor;
-        _configuration = configuration;
         _notificationService = notificationService;
         _logger = logger;
+        _dispatcherService = dispatcherService;//todo
 
-        _server = _configuration.GetConnectionString("Server")!;
-        _solutionDatabase = _configuration.GetConnectionString("SolutionDatabase")!;
-        _inputDirectoryPath = _configuration.GetValue<string>("InputDirectoryPath")!;
-        _formats = new[] { _configuration.GetValue<string>("DucascopyTickstoryDateTimeFormat")! };
+        _server = configuration.GetConnectionString("Server")!;
+        _solutionDatabase = configuration.GetConnectionString("SolutionDatabase")!;
+        _inputDirectoryPath = configuration.GetValue<string>("InputDirectoryPath")!;
+        _formats = new[] { configuration.GetValue<string>("DucascopyTickstoryDateTimeFormat")! };
+
+        _excludedDates = new HashSet<DateTime>(configuration.GetSection("ExcludedDates").Get<List<DateTime>>()!);
     }
 
-    public async Task<List<HourlyContribution>> GetAllTicksContributionsAsync()
+    public async Task<ObservableCollection<YearlyContribution>> GetAllTicksContributionsAsync()
     {
-        var result = new List<HourlyContribution>();
+        var list = new List<HourlyContribution>();
         await using var connection = new SqlConnection($"{_server};Database={_solutionDatabase};Trusted_Connection=True;");
         await connection.OpenAsync().ConfigureAwait(false);
         await using var cmd = new SqlCommand("GetAllTicksContributions", connection) { CommandType = CommandType.StoredProcedure };
@@ -71,7 +72,7 @@ public class DataService : ObservableRecipient, IDataService
             var hour = reader.GetInt64(0);
             var dateTime = reader.GetDateTime(1);
             var hasContribution = reader.GetBoolean(2);
-            result.Add(new HourlyContribution
+            list.Add(new HourlyContribution
             {
                 Hour = hour,
                 DateTime = dateTime,
@@ -79,38 +80,17 @@ public class DataService : ObservableRecipient, IDataService
             });
         }
 
+        var result = CreateGroups(list);
         return result;
     }
 
-    private async Task<List<HourlyContribution>> GetMissedTicksContributionsAsync()
+    public async Task RecalculateTicksContributionsAsync(CancellationToken ctsToken)
     {
-        var result = new List<HourlyContribution>();
-        await using var connection = new SqlConnection($"{_server};Database={_solutionDatabase};Trusted_Connection=True;");
-        await connection.OpenAsync().ConfigureAwait(false);
-        await using var cmd = new SqlCommand("GetMissedTicksContributions", connection);
-        cmd.CommandType = CommandType.StoredProcedure;
-        cmd.Parameters.Add(new SqlParameter("@EndDate", SqlDbType.DateTime) { Value = DateTime.Now });
-        await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-        while (await reader.ReadAsync().ConfigureAwait(false))
-        {
-            var hour = reader.GetInt64(0);
-            var dateTime = reader.GetDateTime(1);
-            var hasContribution = reader.GetBoolean(2);
-            result.Add(new HourlyContribution
-            {
-                Hour = hour,
-                DateTime = dateTime,
-                HasContribution = hasContribution
-            });
-        }
-
-        return result;
-    }
-
-    public async Task UpdateTicksContributionsAsync(CancellationToken ctsToken)
-    {
-        var missedContributions = await GetMissedTicksContributionsAsync().ConfigureAwait(true);
-        var missedContributionsYearly = missedContributions
+        //await ResetTicksStatusAsync().ConfigureAwait(true);//todo
+        var processedItems = 0;
+        var originalMissedContributions = await GetMissedTicksContributionsAsync().ConfigureAwait(true);
+        var totalItems = originalMissedContributions.Count;
+        var missedContributionsYearly = originalMissedContributions
             .GroupBy(hc => hc.Year)
             .Select(yearGroup => new YearlyContribution
             {
@@ -137,41 +117,60 @@ public class DataService : ObservableRecipient, IDataService
             })
             .ToList();
 
+        ctsToken.ThrowIfCancellationRequested();
 
         foreach (var myc in missedContributionsYearly)
         {
             foreach (var mwc in myc.WeeklyContributions!)
             {
-                var dateTimes = mwc.DailyContributions.SelectMany(dc => dc.HourlyContributions).Select(hc => hc.DateTime);
+                ctsToken.ThrowIfCancellationRequested();
+
+                var dateTimes = mwc.DailyContributions.SelectMany(dc => dc.HourlyContributions).Select(hc => hc.DateTime).ToList();
+
+                processedItems += dateTimes.Count;
+                var progressPercentage = (processedItems * 100) / totalItems;
+                Messenger.Send(new ProgressReportMessage(progressPercentage), DataServiceToken.Progress);
+
                 var sampleTicks = await GetSampleTicksAsync(dateTimes, mwc.Year, mwc.Week).ConfigureAwait(true);
                 var sampleTicksHourly = sampleTicks.GroupBy(q => new DateTime(q.DateTime.Year, q.DateTime.Month, q.DateTime.Day, q.DateTime.Hour, 0, 0)).ToList();
                 var countOfSymbols = Enum.GetValues(typeof(Symbol)).Length;
                 var completedHourNumbers = (from @group in sampleTicksHourly let distinctSymbolsInGroup = @group.Select(q => q.Symbol).Distinct().Count() where distinctSymbolsInGroup == countOfSymbols select (long)(@group.Key - _epochStartDateTimeUtc).TotalHours).ToList();
+                if (completedHourNumbers.Count == 0)
+                {
+                    continue;
+                }
+
                 await UpdateTicksContributionsAsync(completedHourNumbers).ConfigureAwait(true);
 
                 var completedHoursSet = new HashSet<long>(completedHourNumbers);
                 foreach (var dailyContribution in mwc.DailyContributions)
                 {
-                    if (dailyContribution.HourlyContributions.Any(hc => completedHoursSet.Contains(hc.Hour)))
+                    if (!dailyContribution.HourlyContributions.Any(hc => completedHoursSet.Contains(hc.Hour)))
                     {
-                        for (var i = 0; i < dailyContribution.HourlyContributions.Count; i++)
+                        continue;
+                    }
+
+                    for (var i = 0; i < dailyContribution.HourlyContributions.Count; i++)
+                    {
+                        var hourlyContribution = dailyContribution.HourlyContributions[i];
+                        if (!completedHoursSet.Contains(hourlyContribution.Hour))
                         {
-                            var hourlyContribution = dailyContribution.HourlyContributions[i];
-                            if (completedHoursSet.Contains(hourlyContribution.Hour))
-                            {
-                                var updatedHourlyContribution = hourlyContribution with { HasContribution = true };
-                                dailyContribution.HourlyContributions[i] = updatedHourlyContribution;
-                            }
+                            continue;
                         }
 
-                        Messenger.Send(new DataChangedMessage(dailyContribution), Info.Ticks);
+                        var updatedHourlyContribution = hourlyContribution with { HasContribution = true };
+                        dailyContribution.HourlyContributions[i] = updatedHourlyContribution;
                     }
+
+                    dailyContribution.Contribution = DetermineContributionStatus(dailyContribution.HourlyContributions);
+                    Messenger.Send(new DailyContributionChangedMessage(dailyContribution), DataServiceToken.DataToUpdate);
+                    ctsToken.ThrowIfCancellationRequested();
                 }
             }
         }
     }
    
-    public async Task ImportTicksAsync(List<YearlyContribution> missedContributions, CancellationToken cancellationToken)
+    public async Task ImportTicksAsync(CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
 
@@ -195,7 +194,7 @@ public class DataService : ObservableRecipient, IDataService
         //            _logger.LogInformation($"ImportTicksAsync --> year: {yearNumber}, week{weekNumber}");
         //            await SavesTicksAsync(quotationsToSave, yearNumber, weekNumber).ConfigureAwait(false);
         //            throw new NotImplementedException();
-        //            //Messenger.Send(new DataServiceMessage(), Info.Ticks);
+        //            //Messenger.Send(new DataServiceMessage(), DataServiceToken.Ticks);
 
         //        }).ToList();
 
@@ -315,7 +314,126 @@ public class DataService : ObservableRecipient, IDataService
 
         //return quotationsByWeek;
     }
-    
+
+    private async Task ResetTicksStatusAsync()
+    {
+        await using var connection = new SqlConnection($"{_server};Database={_solutionDatabase};Trusted_Connection=True;");
+        await connection.OpenAsync().ConfigureAwait(false);
+        await using var cmd = new SqlCommand("ResetTicksStatus", connection) { CommandType = CommandType.StoredProcedure };
+        await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+    }
+
+    private ObservableCollection<YearlyContribution> CreateGroups(IEnumerable<HourlyContribution> contributions)
+    {
+        var result = new ObservableCollection<YearlyContribution>();
+        var groupedByYear = contributions
+            .GroupBy(c => c.DateTime.Year)
+            .Select(g => new
+            {
+                Year = g.Key,
+                Months = g.GroupBy(c => c.DateTime.Month)
+                    .Select(m => new
+                    {
+                        Month = m.Key,
+                        Days = m.GroupBy(c => c.DateTime.Day)
+                    })
+            });
+
+        foreach (var yearGroup in groupedByYear)
+        {
+            var yearlyContribution = new YearlyContribution
+            {
+                Year = yearGroup.Year,
+                MonthlyContributions = new ObservableCollection<MonthlyContribution>()
+            };
+
+            foreach (var monthGroup in yearGroup.Months)
+            {
+                var monthlyContribution = new MonthlyContribution
+                {
+                    Year = yearGroup.Year,
+                    Month = monthGroup.Month,
+                    DailyContributions = new ObservableCollection<DailyContribution>()
+                };
+
+                foreach (var dayGroup in monthGroup.Days)
+                {
+                    var hourlyContributions = dayGroup.ToList();
+                    var dailyContribution = new DailyContribution
+                    {
+                        Year = yearGroup.Year,
+                        Month = monthGroup.Month,
+                        Day = hourlyContributions[0].Day,
+                        Contribution = DetermineContributionStatus(hourlyContributions),
+                        HourlyContributions = hourlyContributions
+                    };
+
+                    monthlyContribution.DailyContributions.Add(dailyContribution);
+                }
+
+                yearlyContribution.MonthlyContributions.Add(monthlyContribution);
+            }
+
+            result.Add(yearlyContribution);
+        }
+
+        return result;
+    }
+
+    private Contribution DetermineContributionStatus(IReadOnlyList<HourlyContribution> hourlyContributions)
+    {
+        if (_excludedDates.Contains(hourlyContributions[0].DateTime.Date) || hourlyContributions[0].DateTime.DayOfWeek == DayOfWeek.Saturday)
+        {
+            return Contribution.Excluded;
+        }
+
+        switch (hourlyContributions[0].DateTime.DayOfWeek)
+        {
+            case DayOfWeek.Friday when hourlyContributions.SkipLast(2).All(c => c.HasContribution):
+            case DayOfWeek.Sunday when hourlyContributions.TakeLast(2).All(c => c.HasContribution):
+                return Contribution.Full;
+            case DayOfWeek.Monday:
+            case DayOfWeek.Tuesday:
+            case DayOfWeek.Wednesday:
+            case DayOfWeek.Thursday:
+            case DayOfWeek.Saturday:
+            default:
+            {
+                if (hourlyContributions.All(c => c.HasContribution))
+                {
+                    return Contribution.Full;
+                }
+
+                return hourlyContributions.Any(c => c.HasContribution) ? Contribution.Partial : Contribution.None;
+            }
+        }
+    }
+
+    private async Task<List<HourlyContribution>> GetMissedTicksContributionsAsync()
+    {
+        var result = new List<HourlyContribution>();
+        await using var connection = new SqlConnection($"{_server};Database={_solutionDatabase};Trusted_Connection=True;");
+        await connection.OpenAsync().ConfigureAwait(false);
+        await using var cmd = new SqlCommand("GetMissedTicksContributions", connection);
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.Parameters.Add(new SqlParameter("@EndDate", SqlDbType.DateTime) { Value = DateTime.Now });
+        await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+        while (await reader.ReadAsync().ConfigureAwait(false))
+        {
+            var hour = reader.GetInt64(0);
+            var dateTime = reader.GetDateTime(1);
+            var hasContribution = reader.GetBoolean(2);
+            result.Add(new HourlyContribution
+            {
+                Hour = hour,
+                DateTime = dateTime,
+                HasContribution = hasContribution
+            });
+        }
+
+        return result;
+    }
+
     private async Task<IEnumerable<Quotation>> GetSampleTicksAsync(IEnumerable<DateTime> dateTimes, int yearNumber, int weekNumber)
     {
         var result = new List<Quotation>();

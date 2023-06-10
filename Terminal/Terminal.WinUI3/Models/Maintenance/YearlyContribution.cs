@@ -11,15 +11,15 @@ namespace Terminal.WinUI3.Models.Maintenance;
 
 public sealed class YearlyContribution : INotifyPropertyChanged
 {
-    private readonly ObservableCollection<MonthlyContribution> _monthlyContributions = null!;
-    private readonly ObservableCollection<WeeklyContribution> _weeklyContributions = null!;
+    private readonly ObservableCollection<MonthlyContribution>? _monthlyContributions;
+    private readonly ObservableCollection<WeeklyContribution>? _weeklyContributions;
 
     public int Year
     {
         get; init;
     }
 
-    public ObservableCollection<MonthlyContribution> MonthlyContributions
+    public ObservableCollection<MonthlyContribution>? MonthlyContributions
     {
         get => _monthlyContributions;
         init
@@ -34,7 +34,7 @@ public sealed class YearlyContribution : INotifyPropertyChanged
         }
     }
 
-    public ObservableCollection<WeeklyContribution> WeeklyContributions
+    public ObservableCollection<WeeklyContribution>? WeeklyContributions
     {
         get => _weeklyContributions;
         init
