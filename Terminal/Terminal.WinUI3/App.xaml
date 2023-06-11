@@ -2,8 +2,7 @@
     x:Class="Terminal.WinUI3.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="using:Terminal.WinUI3.Controls"
-    xmlns:winUi3="using:Terminal.WinUI3">
+    xmlns:controls="using:Terminal.WinUI3.Controls">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>

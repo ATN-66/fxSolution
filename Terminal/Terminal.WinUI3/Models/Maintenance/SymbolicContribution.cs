@@ -1,15 +1,21 @@
 ﻿/*+------------------------------------------------------------------+
   |                               Terminal.WinUI3.Models.Maintenance |
-  |                                             DailyContribution.cs |
+  |                                          SymbolicContribution.cs |
   +------------------------------------------------------------------+*/
 
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Common.Entities;
 
 namespace Terminal.WinUI3.Models.Maintenance;
 
-public sealed class DailyContribution : INotifyPropertyChanged
+public sealed class SymbolicContribution : INotifyPropertyChanged
 {
+    public Symbol Symbol
+    {
+        get; init;
+    }
+
     public int Year
     {
         get; init;
@@ -60,6 +66,6 @@ public sealed class DailyContribution : INotifyPropertyChanged
 
     public override string ToString()
     {
-        return $"year:{Year}, month:{Month}, week:{Week}, day:{Day}, contribution:{Contribution}";
+        return $"symbol:{Symbol}, year:{Year}, month:{Month}, week:{Week}, day:{Day}, contribution:{Contribution}";
     }
 }

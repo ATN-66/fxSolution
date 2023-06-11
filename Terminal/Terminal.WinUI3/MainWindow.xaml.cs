@@ -1,5 +1,8 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
+using Windows.Foundation;
+using Windows.Storage;
 using Windows.UI.ViewManagement;
 using Windows.Win32;
 using Windows.Win32.Foundation;
@@ -13,6 +16,8 @@ using Terminal.WinUI3.Helpers;
 using WinRT.Interop;
 using static Windows.Win32.PInvoke;
 using CommunityToolkit.WinUI;
+using Microsoft.UI.Xaml;
+using Terminal.WinUI3.ViewModels;
 
 namespace Terminal.WinUI3;
 
@@ -36,20 +41,17 @@ public sealed partial class MainWindow
         _settings = new UISettings();
         _settings.ColorValuesChanged += Settings_ColorValuesChanged; // cannot use FrameworkElement.ActualThemeChanged event
 
-        //HWND hwnd = (HWND)WindowNative.GetWindowHandle(this);
-        //SetWindowSize(hwnd, 1050, 800);//todo: check
-        //PlacementCenterWindowInMonitorWin32(hwnd);
+        Closed += MainWindowClosed;
+    }
 
-        //hwnd = new HWND(WindowNative.GetWindowHandle(this).ToInt32());
-        //var success = RegisterHotKey(hwnd, 0, HOT_KEY_MODIFIERS.MOD_WIN | HOT_KEY_MODIFIERS.MOD_CONTROL, DOT_KEY);
-
-        //hotKeyPrc = HotKeyPrc;
-        //var hotKeyPrcPointer = Marshal.GetFunctionPointerForDelegate(hotKeyPrc);
-        //origPrc = Marshal.GetDelegateForFunctionPointer<WNDPROC>(SetWindowLongPtr(hwnd, WINDOW_LONG_PTR_INDEX.GWL_WNDPROC, hotKeyPrcPointer));
+    private void MainWindowClosed(object sender, WindowEventArgs args)
+    {
+        ApplicationData.Current.LocalSettings.Values["MainWindowWidth"] = App.MainWindow.Width.ToString(CultureInfo.InvariantCulture);
+        ApplicationData.Current.LocalSettings.Values["MainWindowHeight"] = App.MainWindow.Height.ToString(CultureInfo.InvariantCulture);
     }
 
     private void Settings_ColorValuesChanged(UISettings sender, object args) => DispatcherQueue.TryEnqueue(TitleBarHelper.ApplySystemThemeToCaptionButtons);
-    
+
     private LRESULT HotKeyPrc(HWND hwnd, uint uMsg, WPARAM wParam, LPARAM lParam)
     {
         if (uMsg == WM_HOTKEY)
@@ -118,3 +120,13 @@ public sealed partial class MainWindow
         Close();
     }
 }
+//HWND hwnd = (HWND)WindowNative.GetWindowHandle(this);
+//SetWindowSize(hwnd, 1050, 800);//todo: check
+//PlacementCenterWindowInMonitorWin32(hwnd);
+
+//hwnd = new HWND(WindowNative.GetWindowHandle(this).ToInt32());
+//var success = RegisterHotKey(hwnd, 0, HOT_KEY_MODIFIERS.MOD_WIN | HOT_KEY_MODIFIERS.MOD_CONTROL, DOT_KEY);
+
+//hotKeyPrc = HotKeyPrc;
+//var hotKeyPrcPointer = Marshal.GetFunctionPointerForDelegate(hotKeyPrc);
+//origPrc = Marshal.GetDelegateForFunctionPointer<WNDPROC>(SetWindowLongPtr(hwnd, WINDOW_LONG_PTR_INDEX.GWL_WNDPROC, hotKeyPrcPointer));

@@ -35,6 +35,7 @@
     <None Remove="Views\EURGBPPage.xaml" />
     <None Remove="Views\EURJPYPage.xaml" />
     <None Remove="Views\EURPage.xaml" />
+    <None Remove="Views\FileSourcePage.xaml" />
     <None Remove="Views\GBPEURPage.xaml" />
     <None Remove="Views\GBPJPYPage.xaml" />
     <None Remove="Views\GBPPage.xaml" />
@@ -124,6 +125,10 @@
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
     </Page>
     <Page Update="Views\JPYGBPPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\FileSourcePage.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>

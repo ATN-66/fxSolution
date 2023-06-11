@@ -30,5 +30,5 @@ public class DispatcherService : IDispatcherService
         }
     }
 
-    public bool IsDispatcherQueueHasThreadAccess => _dispatcherQueue.HasThreadAccess;
+    public bool HasThreadAccess => _dispatcherQueue.HasThreadAccess;
 }
