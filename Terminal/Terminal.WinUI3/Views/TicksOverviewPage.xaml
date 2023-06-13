@@ -5,10 +5,10 @@
     xmlns:behaviors="using:Terminal.WinUI3.Behaviors"
     xmlns:converters="using:Terminal.WinUI3.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:entities="using:Common.Entities"
     xmlns:maintenance="using:Terminal.WinUI3.Models.Maintenance"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:system="using:System"
-    xmlns:ui="using:CommunityToolkit.WinUI.UI"
     xmlns:viewModels="using:Terminal.WinUI3.ViewModels"
     mc:Ignorable="d">
 
@@ -26,37 +26,83 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <CalendarDatePicker
+                    <TextBlock
                         Grid.Row="0"
                         Grid.Column="0"
                         Margin="8,0,0,0"
-                        Date="{x:Bind SelectedDate, Mode=TwoWay}"
-                        Foreground="White" />
+                        Text="{x:Bind Path=HeaderContext}" />
 
-                    <Button
+                    <CalendarDatePicker
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        Margin="8,0,0,0"
+                        Background="Black"
+                        Date="{x:Bind Path=SelectedDate, Mode=TwoWay}"
+                        FontSize="16" />
+
+                    <TimePicker
                         Grid.Row="0"
                         Grid.Column="2"
                         Margin="8,0,0,0"
-                        Background="DarkGray"
-                        Command="{x:Bind Path=SubmitCommand}"
-                        Content="Submit"
-                        Foreground="White" />
+                        Background="Black"
+                        ClockIdentifier="24HourClock"
+                        FontSize="16"
+                        MinuteIncrement="30"
+                        Time="{x:Bind Path=SelectedTime, Mode=TwoWay}" />
 
-                    <Button
+                    <ComboBox
                         Grid.Row="0"
                         Grid.Column="3"
-                        Margin="8,0,0,0"
-                        Background="DarkGray"
-                        Command="{x:Bind Path=RecalculateTicksContributionsCommand}"
-                        Content="Recalculate"
-                        Foreground="White"
-                        ToolTipService.ToolTip="Recalculate Contributions of Ticks" />
+                        Margin="0,4,0,0"
+                        ItemsSource="{x:Bind Path=Symbols}"
+                        SelectedIndex="0"
+                        SelectedItem="{x:Bind Path=SelectedSymbol, Mode=TwoWay}" />
 
                     <Button
                         Grid.Row="0"
                         Grid.Column="4"
+                        Margin="8,0,0,0"
+                        Background="DarkGray"
+                        Command="{x:Bind Path=HourlyContributionsCommand}"
+                        Content="Hourly Contributions"
+                        ToolTipService.ToolTip="Ticks contributions hourly" />
+
+                    <Button
+                        Grid.Row="0"
+                        Grid.Column="5"
+                        Margin="8,0,0,0"
+                        Background="DarkGray"
+                        Command="{x:Bind Path=ResetDateTimeCommand}"
+                        Content="Reset Date/Time"
+                        ToolTipService.ToolTip="Recalculate Contributions of Ticks" />
+
+                    <Button
+                        Grid.Row="0"
+                        Grid.Column="6"
+                        Margin="8,0,0,0"
+                        Background="DarkGray"
+                        Command="{x:Bind Path=RecalculateTicksContributionsSelectedDayCommand}"
+                        Content="Recalculate Selected Day"
+                        ToolTipService.ToolTip="Recalculate Contributions of Ticks" />
+
+                    <Button
+                        Grid.Row="0"
+                        Grid.Column="7"
+                        Margin="8,0,0,0"
+                        Background="DarkGray"
+                        Command="{x:Bind Path=RecalculateTicksContributionsAllCommand}"
+                        Content="Recalculate All"
+                        ToolTipService.ToolTip="Recalculate Contributions of Ticks" />
+
+                    <Button
+                        Grid.Row="0"
+                        Grid.Column="8"
                         Margin="8,0,0,0"
                         Background="DarkGray"
                         Command="{x:Bind Path=ImportTicksCommand}"
@@ -69,10 +115,17 @@
     </behaviors:NavigationViewHeaderBehavior.HeaderTemplate>
 
     <Page.Resources>
+        <Style x:Key="TextBlockStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+
         <converters:ContributionToColorConverter x:Key="ContributionToColorConverter" />
         <converters:HasContributionToColorConverter x:Key="HasContributionToColorConverter" />
         <converters:MonthNumberToNameConverter x:Key="MonthNumberToNameConverter" />
         <converters:DateTimeToDateStringConverter x:Key="DateTimeToDateStringConverter" />
+        <converters:DateTimeToTimeStringConverter x:Key="DateTimeToTimeStringConverter" />
+        <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 
         <DataTemplate x:Key="DailyTemplate" x:DataType="maintenance:DailyContribution">
             <Grid>
@@ -110,7 +163,7 @@
                 <StackPanel
                     x:Name="MonthPanel"
                     Grid.Column="0"
-                    Width="120">
+                    Width="100">
                     <TextBlock
                         Margin="0,0,5,0"
                         HorizontalAlignment="Right"
@@ -153,132 +206,326 @@
             </Grid>
         </DataTemplate>
     </Page.Resources>
-
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition x:Name="Row0Definition" Height="Auto" />
-            <RowDefinition Height="10" />
-            <RowDefinition />
-        </Grid.RowDefinitions>
-        <ProgressRing
-            Grid.Row="0"
-            Grid.Column="0"
-            Width="150"
-            Height="150"
-            Background="White"
-            IsActive="{x:Bind Path=ViewModel.IsLoading, Mode=OneWay}" />
-        <ScrollViewer
-            Grid.Row="0"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            Margin="10, 10, 10, 10"
-            HorizontalScrollBarVisibility="Visible"
-            VerticalScrollBarVisibility="Visible">
-            <ItemsRepeater ItemsSource="{x:Bind ViewModel.YearlyContributions}">
-                <ItemsRepeater.ItemTemplate>
-                    <StaticResource ResourceKey="YearlyTemplate" />
-                </ItemsRepeater.ItemTemplate>
-            </ItemsRepeater>
-        </ScrollViewer>
-        <Grid x:Name="GridSplitter"
-            Grid.Row="1"
-            Width="200"
-            Height="10"
-            ui:FrameworkElementExtensions.Cursor="SizeWestEast"
-            PointerMoved="GridSplitter_PointerMoved"
-            PointerPressed="GridSplitter_PointerPressed"
-            PointerReleased="GridSplitter_PointerReleased">
-
-            <Rectangle Stretch="Fill">
-                <Rectangle.Fill>
-                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                        <GradientStop Offset="0" Color="DarkGray" />
-                        <GradientStop Offset="1" Color="LightGray" />
-                    </LinearGradientBrush>
-                </Rectangle.Fill>
-            </Rectangle>
-
-            <ItemsRepeater ItemsSource="{x:Bind DotsCollection}">
-                <ItemsRepeater.Layout>
-                    <UniformGridLayout
-                        ItemsJustification="Center"
-                        MinColumnSpacing="20"
-                        MinItemHeight="{Binding ElementName=GridSplitter, Path=ActualHeight}"
-                        MinItemWidth="20" />
-                </ItemsRepeater.Layout>
-                <ItemsRepeater.ItemTemplate>
-                    <DataTemplate x:DataType="system:Int32">
-                        <Ellipse
-                            Width="8"
-                            Height="8"
-                            Margin="0"
-                            Fill="Black" />
-                    </DataTemplate>
-                </ItemsRepeater.ItemTemplate>
-            </ItemsRepeater>
-
-            <Line
-                Stroke="Black"
-                StrokeThickness="2"
-                X1="0"
-                X2="{Binding ElementName=GridSplitter, Path=ActualWidth}"
-                Y1="5"
-                Y2="5" />
-
-        </Grid>
-       
-        <Grid Grid.Row="2">
+    <Border
+        Padding="3"
+        BorderBrush="White"
+        BorderThickness="1"
+        CornerRadius="5">
+        <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*"/>
+                <RowDefinition x:Name="FirstRowDefinition" Height="Auto" />
+                <RowDefinition Height="10" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
-                <TextBlock Text="{x:Bind Path=ViewModel.SelectedDate, Converter={StaticResource DateTimeToDateStringConverter}}" Margin="5"/>
-            </StackPanel>
-            <ScrollViewer
-                Grid.Row="1"
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="FirstColumnDefinition" Width="Auto" />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border
+                Grid.Row="0"
+                Grid.Column="0"
+                BorderBrush="White"
+                BorderThickness="1"
+                CornerRadius="3" />
+            <Border
+                Grid.Row="2"
+                Grid.Column="0"
+                BorderBrush="White"
+                BorderThickness="1"
+                CornerRadius="3" />
+            <Border
+                Grid.Row="0"
+                Grid.RowSpan="3"
+                Grid.Column="2"
+                BorderBrush="White"
+                BorderThickness="1"
+                CornerRadius="3" />
+
+            <ProgressRing
+                Grid.Row="0"
+                Grid.Column="0"
+                Width="150"
+                Height="150"
+                Background="White"
+                IsActive="{x:Bind Path=ViewModel.YearlyContributionsIsLoading, Mode=OneWay}" />
+            <TextBlock
+                Grid.Row="2"
+                Grid.Column="0"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Margin="10, 10, 10, 10"
+                Text="No items available"
+                Visibility="{x:Bind ViewModel.YearlyContributionsCount, Converter={StaticResource CountToVisibilityConverter}, Mode=OneWay}" />
+            <ProgressRing
+                Grid.Row="2"
+                Grid.Column="0"
+                Width="150"
+                Height="150"
+                Background="White"
+                IsActive="{x:Bind Path=ViewModel.HourlyContributionsIsLoading, Mode=OneWay}" />
+            <TextBlock
+                Grid.Row="2"
+                Grid.Column="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Text="No items available"
+                Visibility="{x:Bind ViewModel.HourlyContributionsCount, Converter={StaticResource CountToVisibilityConverter}, Mode=OneWay}" />
+            <ProgressRing
+                Grid.Row="0"
+                Grid.RowSpan="3"
+                Grid.Column="2"
+                Width="150"
+                Height="150"
+                Background="White"
+                IsActive="{x:Bind Path=ViewModel.QuotationsIsLoading, Mode=OneWay}" />
+            <TextBlock
+                Grid.Row="0"
+                Grid.RowSpan="3"
+                Grid.Column="2"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Text="No items available"
+                Visibility="{x:Bind ViewModel.QuotationsCount, Converter={StaticResource CountToVisibilityConverter}, Mode=OneWay}" />
+
+            <ScrollViewer
+                Grid.Row="0"
+                Grid.Column="0"
+                Margin="0,0,10,10"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
                 HorizontalScrollBarVisibility="Visible"
                 VerticalScrollBarVisibility="Visible">
-                <ItemsRepeater ItemsSource="{x:Bind ViewModel.SymbolicContributions}">
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.YearlyContributions}">
                     <ItemsRepeater.ItemTemplate>
-                        <DataTemplate x:DataType="maintenance:SymbolicContribution">
-                            <StackPanel>
-                                <TextBlock Text="{x:Bind Path=Symbol}"/>
-                                <ItemsRepeater ItemsSource="{x:Bind HourlyContributions}">
-                                    <ItemsRepeater.Layout>
-                                        <StackLayout Orientation="Horizontal" />
-                                    </ItemsRepeater.Layout>
-                                    <ItemsRepeater.ItemTemplate>
-                                        <DataTemplate x:DataType="maintenance:HourlyContribution">
-                                            <Grid>
-                                                <Rectangle Width="30" Height="30" Margin="1" Fill="{x:Bind Path=HasContribution, Converter={StaticResource HasContributionToColorConverter}}"/>
-                                                <Border
-                                                    Width="30"
-                                                    Height="30"
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center">
-                                                    <TextBlock
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center"
-                                                        FontSize="16"
-                                                        FontWeight="Bold"
-                                                        Foreground="Black"
-                                                        Text="{x:Bind Path=Hour}"
-                                                        TextAlignment="Center" />
-                                                </Border>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsRepeater.ItemTemplate>
-                                </ItemsRepeater>
+                        <StaticResource ResourceKey="YearlyTemplate" />
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </ScrollViewer>
+            <Grid
+                x:Name="GridSplitterHorizontal"
+                Grid.Row="1"
+                Grid.Column="0"
+                Width="200"
+                Height="10"
+                HorizontalAlignment="Center"
+                PointerMoved="GridSplitterHorizontal_PointerMoved"
+                PointerPressed="GridSplitterHorizontal_PointerPressed"
+                PointerReleased="GridSplitter_PointerReleased">
+
+                <Rectangle Stretch="Fill">
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                            <GradientStop Offset="0" Color="DarkGray" />
+                            <GradientStop Offset="1" Color="LightGray" />
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+
+                <ItemsRepeater ItemsSource="{x:Bind DotsCollection}">
+                    <ItemsRepeater.Layout>
+                        <UniformGridLayout
+                            ItemsJustification="Center"
+                            MinColumnSpacing="20"
+                            MinItemHeight="{Binding ElementName=GridSplitterHorizontal, Path=ActualHeight}"
+                            MinItemWidth="20" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="system:Int32">
+                            <Ellipse
+                                Width="8"
+                                Height="8"
+                                Margin="0"
+                                Fill="Black" />
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+
+                <Line
+                    Stroke="Black"
+                    StrokeThickness="2"
+                    X1="0"
+                    X2="{Binding ElementName=GridSplitterHorizontal, Path=ActualWidth}"
+                    Y1="5"
+                    Y2="5" />
+
+            </Grid>
+            <Grid Grid.Row="2" Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <StackPanel
+                    Grid.Row="0"
+                    HorizontalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock Margin="5" Text="{x:Bind Path=ViewModel.SelectedDate, Converter={StaticResource DateTimeToDateStringConverter}, Mode=OneWay}" />
+                </StackPanel>
+                <ScrollViewer
+                    Grid.Row="1"
+                    Margin="10,10,10,10"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    HorizontalScrollBarVisibility="Visible"
+                    VerticalScrollBarVisibility="Visible">
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.HourlyContributions}">
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="maintenance:SymbolicContribution">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel
+                                        Grid.Column="0"
+                                        Padding="0,0,10,0"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center">
+                                        <TextBlock
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Text="{x:Bind Path=Symbol}" />
+                                    </StackPanel>
+                                    <Grid Grid.Column="1">
+                                        <ItemsRepeater ItemsSource="{x:Bind HourlyContributions}">
+                                            <ItemsRepeater.Layout>
+                                                <UniformGridLayout MinItemHeight="30" MinItemWidth="30" />
+                                            </ItemsRepeater.Layout>
+                                            <ItemsRepeater.ItemTemplate>
+                                                <DataTemplate x:DataType="maintenance:HourlyContribution">
+                                                    <Grid Width="30" Height="30">
+                                                        <Rectangle Margin="1" Fill="{x:Bind Path=HasContribution, Converter={StaticResource HasContributionToColorConverter}}" />
+                                                        <Border HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                            <TextBlock
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                FontSize="16"
+                                                                FontWeight="Bold"
+                                                                Foreground="Black"
+                                                                Text="{x:Bind Path=Hour}"
+                                                                TextAlignment="Center" />
+                                                        </Border>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsRepeater.ItemTemplate>
+                                        </ItemsRepeater>
+                                    </Grid>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </ScrollViewer>
+            </Grid>
+            <Grid
+                x:Name="GridSplitterVertical"
+                Grid.Row="0"
+                Grid.RowSpan="3"
+                Grid.Column="1"
+                Width="10"
+                Height="200"
+                VerticalAlignment="Center"
+                PointerMoved="GridSplitterVertical_PointerMoved"
+                PointerPressed="GridSplitterVertical_PointerPressed"
+                PointerReleased="GridSplitter_PointerReleased">
+
+                <Rectangle Stretch="Fill">
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                            <GradientStop Offset="0" Color="DarkGray" />
+                            <GradientStop Offset="1" Color="LightGray" />
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+
+                <ItemsRepeater VerticalAlignment="Center" ItemsSource="{x:Bind DotsCollection}">
+                    <ItemsRepeater.Layout>
+                        <UniformGridLayout
+                            MinItemHeight="20"
+                            MinItemWidth="{Binding ElementName=GridSplitterVertical, Path=ActualWidth}"
+                            MinRowSpacing="20" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="system:Int32">
+                            <StackPanel Orientation="Vertical">
+                                <Ellipse
+                                    Width="8"
+                                    Height="8"
+                                    Margin="0"
+                                    Fill="Black" />
                             </StackPanel>
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
-            </ScrollViewer>
-        </Grid>
 
-    </Grid>
+                <Line
+                    Stroke="Black"
+                    StrokeThickness="2"
+                    X1="5"
+                    X2="5"
+                    Y1="0"
+                    Y2="{Binding ElementName=GridSplitterVertical, Path=ActualHeight}" />
+
+            </Grid>
+            <Grid
+                Grid.Row="0"
+                Grid.RowSpan="3"
+                Grid.Column="2">
+                <ScrollViewer
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    HorizontalScrollBarVisibility="Visible"
+                    VerticalScrollBarVisibility="Visible">
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.Quotations}" Visibility="{x:Bind Path=ViewModel.QuotationsIsLoading, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="entities:Quotation">
+                                <Grid Margin="0,0,0,0" Padding="0,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="5,0,15,0"
+                                        Padding="0,0,0,0"
+                                        Style="{StaticResource TextBlockStyle}"
+                                        Text="{x:Bind Symbol}" />
+
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        Margin="5,0,15,0"
+                                        Padding="0,0,0,0"
+                                        Style="{StaticResource TextBlockStyle}"
+                                        Text="{x:Bind DateTime, Converter={StaticResource DateTimeToDateStringConverter}}" />
+
+                                    <TextBlock
+                                        Grid.Column="2"
+                                        Margin="5,0,15,0"
+                                        Padding="0,0,0,0"
+                                        Style="{StaticResource TextBlockStyle}"
+                                        Text="{x:Bind DateTime, Converter={StaticResource DateTimeToTimeStringConverter}}" />
+
+                                    <TextBlock
+                                        Grid.Column="3"
+                                        Margin="5,0,15,0"
+                                        Padding="0,0,0,0"
+                                        Style="{StaticResource TextBlockStyle}"
+                                        Text="{x:Bind FormattedAsk}" />
+
+                                    <TextBlock
+                                        Grid.Column="4"
+                                        Margin="5,0,15,0"
+                                        Padding="0,0,0,0"
+                                        Style="{StaticResource TextBlockStyle}"
+                                        Text="{x:Bind FormattedBid}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+    </Border>
 </Page>

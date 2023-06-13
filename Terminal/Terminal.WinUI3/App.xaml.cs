@@ -82,8 +82,6 @@ public partial class App
             services.AddTransient<ShellViewModel>();
 
             //DatabaseMaintenance
-            services.AddTransient<FileSourceViewModel>();
-            services.AddTransient<FileSourcePage>();
             services.AddTransient<TicksOverviewViewModel>();
             services.AddTransient<TicksOverviewPage>();
             

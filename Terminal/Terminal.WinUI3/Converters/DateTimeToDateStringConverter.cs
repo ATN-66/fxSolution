@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml.Data;
+﻿using Common.ExtensionsAndHelpers;
+using Microsoft.UI.Xaml.Data;
 
 namespace Terminal.WinUI3.Converters;
 
@@ -8,13 +9,12 @@ public class DateTimeToDateStringConverter : IValueConverter
     {
         if (value is DateTime dateTime)
         {
-            return $"{dateTime:D}";
+            return $"{dateTime:dddd, yyyy MMMM dd}, (week:{dateTime.Week()})";
         }
         if (value is DateTimeOffset dateTimeOffset)
         {
-            return $"{dateTimeOffset:D}";
+            return $"{dateTimeOffset:dddd, yyyy MMMM dd}, (week:{dateTimeOffset.DateTime.Week()})";
         }
-
         return null;
     }
 

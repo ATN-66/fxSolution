@@ -1,13 +1,123 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
+using System.Reflection;
 using System.Text;
+using Common.Entities;
+using Common.ExtensionsAndHelpers;
+using Microsoft.Extensions.Configuration;
+using Microsoft.SqlServer.Server;
 using Newtonsoft.Json;
 using Terminal.WinUI3.Contracts.Services;
 using Windows.Storage;
+using Environment = System.Environment;
 
 namespace Terminal.WinUI3.Services;
 
 public class FileService : IFileService
 {
+    private readonly string[] _formats;
+    private readonly string _inputDirectoryPath;
+    private readonly Dictionary<string, List<Quotation>> _ticksCache = new();
+
+    public FileService(IConfiguration configuration)
+    {
+        _inputDirectoryPath = configuration.GetValue<string>("InputDirectoryPath")!;
+        _formats = new[] { configuration.GetValue<string>("DateTimeFormat")! };
+    }
+
+    public async Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTime, DateTime endDateTime)
+    {
+        var result = new List<Quotation>();
+        var start = startDateTime.Date.AddHours(startDateTime.Hour);
+        var end = endDateTime.Date.AddHours(endDateTime.Hour);
+        var timeDifference = end - start;
+
+        if (timeDifference.TotalHours <= 24)
+        {
+            for (var index = start; index <= end; index = index.Add(new TimeSpan(1, 0, 0)))
+            {
+                var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
+
+                if (!_ticksCache.ContainsKey(key))
+                {
+                    await LoadTicksToCacheAsync(index).ConfigureAwait(false);
+                }
+
+                result.AddRange(_ticksCache[key]);
+            }
+        }
+        else
+        {
+            var loadTasks = new List<Task>();
+            for (var index = start; index <= end; index = index.Add(new TimeSpan(1, 0, 0)))
+            {
+                var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
+
+                if (!_ticksCache.ContainsKey(key))
+                {
+                    loadTasks.Add(LoadTicksToCacheAsync(index));
+                }
+            }
+            await Task.WhenAll(loadTasks).ConfigureAwait(false);
+
+            for (var index = start; index <= end; index = index.Add(new TimeSpan(1, 0, 0)))
+            {
+                var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
+                result.AddRange(_ticksCache[key]);
+            }
+        }
+
+        return result;
+    }
+
+    private async Task LoadTicksToCacheAsync(DateTime dateTime)
+    {
+        var symbolsDict = Enum.GetValues<Symbol>().ToDictionary(e => e.ToString(), e => e);
+        var year = dateTime.Year.ToString();
+        var month = dateTime.Month.ToString("D2");
+        var week = dateTime.Week().ToString("D2");
+        var quarter = DateTimeExtensionsAndHelpers.Quarter(dateTime.Week()).ToString();
+        var day = dateTime.Day.ToString("D2");
+        var hour = dateTime.Hour.ToString("D2");
+
+        var directoryPath = Path.Combine(_inputDirectoryPath, year, quarter, week, day);
+        var filePath = Path.Combine(directoryPath, $"{year}.{month}.{day}.{hour}.csv");
+        if (!File.Exists(filePath))
+        {
+            _ticksCache[$"{year}.{month}.{day}.{hour}"] = new List<Quotation>();
+            return;
+        }
+
+        var lines = await File.ReadAllLinesAsync(filePath).ConfigureAwait(true);
+        var quotations = lines//.AsParallel()//todo
+            .Select(line => line.Split('|').Select(str => str.Trim()).ToArray())
+            .Select((items, index) =>
+            {
+                try
+                {
+                    var quotationId = index + 1;
+                    var symbolResult = symbolsDict[items[0]];
+                    var datetimeString = $"{items[1].Trim()}|{items[2].Trim()}|{items[3].Trim()}";
+                    var dateTimeResult = DateTime.ParseExact(datetimeString, _formats, new CultureInfo("en-US"), DateTimeStyles.AssumeUniversal).ToUniversalTime();
+                    var askResult = double.Parse(items[4]);
+                    var bidResult = double.Parse(items[5]);
+                    return new Quotation(quotationId, symbolResult, dateTimeResult, askResult, bidResult);
+                }
+                catch (FormatException ex)
+                {
+                    Debug.WriteLine($@"Failed to parse datetime string: {items[1]}, {items[2]}, {items[3]}, {items[4]}");
+                    throw; // re-throw the exception
+                }
+            })
+            .OrderBy(quotation => quotation.DateTime)
+            .ToList();
+
+        _ticksCache[$"{year}.{month}.{day}.{hour}"] = quotations;
+    }
+    
     public T? Read<T>(string folderPath, string fileName)
     {
         var path = Path.Combine(folderPath, fileName);
@@ -45,9 +155,9 @@ public class FileService : IFileService
         //var sourceUri = new Uri("ms-appx:///" + relativeFilePath);
         //var file = await StorageFile.GetFileFromApplicationUriAsync(sourceUri); 
         //return await FileIO.ReadTextAsync(file);
-            var sourcePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location)!, relativeFilePath));
-            var file = await StorageFile.GetFileFromPathAsync(sourcePath);
-            return await FileIO.ReadTextAsync(file);
+        var sourcePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location)!, relativeFilePath));
+        var file = await StorageFile.GetFileFromPathAsync(sourcePath);
+        return await FileIO.ReadTextAsync(file);
     }
 
     public async Task<IList<string>> LoadLinesAsync(string relativeFilePath)

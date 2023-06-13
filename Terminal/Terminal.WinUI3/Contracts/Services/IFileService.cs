@@ -1,7 +1,11 @@
-﻿namespace Terminal.WinUI3.Contracts.Services;
+﻿using Common.Entities;
+
+namespace Terminal.WinUI3.Contracts.Services;
 
 public interface IFileService
 {
+    Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTime, DateTime endDateTime);
+
     T? Read<T>(string folderPath, string fileName);
     void Save<T>(string folderPath, string fileName, T content);
     void Delete(string folderPath, string? fileName);

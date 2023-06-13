@@ -35,7 +35,6 @@
     <None Remove="Views\EURGBPPage.xaml" />
     <None Remove="Views\EURJPYPage.xaml" />
     <None Remove="Views\EURPage.xaml" />
-    <None Remove="Views\FileSourcePage.xaml" />
     <None Remove="Views\GBPEURPage.xaml" />
     <None Remove="Views\GBPJPYPage.xaml" />
     <None Remove="Views\GBPPage.xaml" />
@@ -89,6 +88,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Common.Entities\Common.Entities.csproj" />
+    <ProjectReference Include="..\..\Common\Common.ExtensionsAndHelpers\Common.ExtensionsAndHelpers.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="appsettings.production.json">
@@ -117,7 +117,6 @@
 
   <ItemGroup>
     <Folder Include="AI\Models\" />
-    <Folder Include="Common\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -125,10 +124,6 @@
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
     </Page>
     <Page Update="Views\JPYGBPPage.xaml">
-      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="Views\FileSourcePage.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>

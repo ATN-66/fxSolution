@@ -102,7 +102,7 @@ public sealed class DateTimeExtensionsAndHelpersTests
         var jan1Of2022 = new DateTime(2022, 1, 1, 0, 0, 0);
         const int expected = 52;
         // Act
-        var actual = jan1Of2022.WeekOfYear();
+        var actual = jan1Of2022.Week();
 
         // Assert 
         Assert.Equal(expected, actual);
@@ -116,7 +116,7 @@ public sealed class DateTimeExtensionsAndHelpersTests
         const int expected = 44;
 
         // Act
-        var actual = nov6Of2022.WeekOfYear();
+        var actual = nov6Of2022.Week();
 
         // Assert 
         Assert.Equal(expected, actual);
@@ -130,7 +130,7 @@ public sealed class DateTimeExtensionsAndHelpersTests
         const int expected = 52;
 
         // Act
-        var actual = dec316Of2022.WeekOfYear();
+        var actual = dec316Of2022.Week();
 
         // Assert 
         Assert.Equal(expected, actual);

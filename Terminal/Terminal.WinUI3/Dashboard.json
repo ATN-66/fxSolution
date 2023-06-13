@@ -52,13 +52,6 @@
           "IsEnabled": true,
           "NavigationItems": [
             {
-              "Content": "File Source",
-              "Tag": "FileSourceViewModel",
-              "Glyph": "\uF244",
-              "NavigateTo": "FileSourceViewModel",
-              "IsMain": false
-            },
-            {
               "Content": "Overview",
               "Tag": "Ticks overview",
               "Glyph": "\uF245",

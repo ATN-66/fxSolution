@@ -39,7 +39,6 @@ public class PageService : IPageService
         Configure<GBPJPYViewModel, GBPJPYPage>();
         Configure<JPYGBPViewModel, JPYGBPPage>();
 
-        Configure<FileSourceViewModel, FileSourcePage>();
         Configure<TicksOverviewViewModel, TicksOverviewPage>();
         Configure<SettingsViewModel, SettingsPage>();
     }

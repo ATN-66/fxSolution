@@ -8,7 +8,7 @@ public class DateTimeToTimeStringConverter : IValueConverter
     {
         if (value is DateTime dateTime)
         {
-            return $"{dateTime:t}";
+            return $"{dateTime:HH:mm:ss zz}";
         }
         return null;
     }

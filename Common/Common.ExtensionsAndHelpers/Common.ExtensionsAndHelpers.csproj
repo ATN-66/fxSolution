@@ -8,4 +8,8 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Common.Entities\Common.Entities.csproj" />
+  </ItemGroup>
+
 </Project>
