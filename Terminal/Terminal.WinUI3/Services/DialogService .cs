@@ -5,6 +5,7 @@
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.ViewModels;
@@ -24,6 +25,15 @@ public class DialogService : IDialogService
     {
         var content = new StackPanel();
 
+        var cautionMessage = new TextBlock();
+        cautionMessage.SetBinding(TextBlock.TextProperty, new Binding
+        {
+            Source = viewModel,
+            Path = new PropertyPath("CautionMessage"),
+            Mode = BindingMode.OneWay
+        });
+        content.Children.Add(cautionMessage);
+
         var infoMessage = new TextBlock();
         infoMessage.SetBinding(TextBlock.TextProperty, new Binding
         {
@@ -33,15 +43,6 @@ public class DialogService : IDialogService
         });
         content.Children.Add(infoMessage);
 
-        //var progressMessage = new TextBlock();
-        //progressMessage.SetBinding(TextBlock.TextProperty, new Binding
-        //{
-        //    Source = viewModel,
-        //    Path = new PropertyPath("ProgressMessage"),
-        //    Mode = BindingMode.OneWay
-        //});
-        //content.Children.Add(progressMessage);
-
         var progressBar = new ProgressBar
         {
             Minimum = 0,
@@ -50,7 +51,7 @@ public class DialogService : IDialogService
 
             Margin = new Thickness(0, 10, 0, 0)
         };
-        progressBar.SetBinding(ProgressBar.ValueProperty, new Binding
+        progressBar.SetBinding(RangeBase.ValueProperty, new Binding
         {
             Source = viewModel,
             Path = new PropertyPath("ProgressPercentage"),

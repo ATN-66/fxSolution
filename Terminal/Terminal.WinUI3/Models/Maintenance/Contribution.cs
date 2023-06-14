@@ -10,5 +10,5 @@ public enum Contribution
     None,
     Partial,
     Full,
-    Excluded
+    Excluded,
 }

@@ -4,6 +4,7 @@ public sealed class DataServiceToken : IEquatable<DataServiceToken>
 {
     public static readonly DataServiceToken DataToUpdate = new DataServiceToken(1, nameof(DataToUpdate));
     public static readonly DataServiceToken Progress = new DataServiceToken(2, nameof(Progress));
+    public static readonly DataServiceToken Info = new DataServiceToken(2, nameof(Info));
 
     public string Name
     {

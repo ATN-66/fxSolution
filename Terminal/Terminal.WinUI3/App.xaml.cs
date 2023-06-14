@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Serilog;
+using Serilog.Events;
 using Terminal.WinUI3.Activation;
 using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.AI.Services;
@@ -16,6 +17,8 @@ using Terminal.WinUI3.Views;
 using LaunchActivatedEventArgs = Microsoft.UI.Xaml.LaunchActivatedEventArgs;
 using UnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
 using Terminal.WinUI3.Models.Settings;
+using Microsoft.Extensions.Logging;
+using Serilog.Core;
 
 namespace Terminal.WinUI3;
 
@@ -36,6 +39,7 @@ public partial class App
         IConfiguration configuration = builder.Build();
 
         var logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
+        Log.Logger = logger;
 
         Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder().UseContentRoot(AppContext.BaseDirectory).ConfigureServices((context, services) =>
         {
@@ -44,6 +48,9 @@ public partial class App
             {
                 loggingBuilder.AddSerilog(logger, dispose: true);
             });
+
+            // Configuration
+            services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
 
             // Default Activation Handler
             services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
@@ -119,9 +126,9 @@ public partial class App
             services.AddTransient<JPYUSDViewModel>();
             services.AddTransient<JPYUSDPage>();
 
-            // Configuration
-            services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
-        }).Build();
+           
+        }).UseSerilog().Build();
+        
         UnhandledException += App_UnhandledException;
     }
 
@@ -151,7 +158,18 @@ public partial class App
         return service;
     }
 
-    private static void App_UnhandledException(object sender, UnhandledExceptionEventArgs e) => throw new NotImplementedException();
+    private static void App_UnhandledException(object sender, UnhandledExceptionEventArgs exception)
+    {
+        if (exception.Exception is { } ex)//todo
+        {
+            Log.Fatal(ex, "Host terminated unexpectedly");
+        }
+        else
+        {
+            Log.Fatal("Host terminated unexpectedly due to an unknown exception");
+        }
+        Log.CloseAndFlush();
+    }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
@@ -164,9 +182,8 @@ public partial class App
         GetService<IDispatcherService>().Initialize(DispatcherQueue.GetForCurrentThread());
         GetService<IDashboardService>().InitializeAsync();
         GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(false);
-
         GetService<IAppNotificationService>().Initialize();
-        
+        GetService<ILogger<App>>().LogInformation("This is an information message: Launched");
     }
 
     private void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs e)

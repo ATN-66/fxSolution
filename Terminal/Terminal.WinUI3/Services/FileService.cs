@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Microsoft.Extensions.Configuration;
-using Microsoft.SqlServer.Server;
 using Newtonsoft.Json;
 using Terminal.WinUI3.Contracts.Services;
 using Windows.Storage;
@@ -21,6 +17,8 @@ public class FileService : IFileService
     private readonly string[] _formats;
     private readonly string _inputDirectoryPath;
     private readonly Dictionary<string, List<Quotation>> _ticksCache = new();
+    private readonly Queue<string> _keys = new();
+    private const int MaxItems = 10_000;
 
     public FileService(IConfiguration configuration)
     {
@@ -37,7 +35,7 @@ public class FileService : IFileService
 
         if (timeDifference.TotalHours <= 24)
         {
-            for (var index = start; index <= end; index = index.Add(new TimeSpan(1, 0, 0)))
+            for (var index = start; index < end; index = index.Add(new TimeSpan(1, 0, 0)))
             {
                 var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
 
@@ -46,28 +44,29 @@ public class FileService : IFileService
                     await LoadTicksToCacheAsync(index).ConfigureAwait(false);
                 }
 
-                result.AddRange(_ticksCache[key]);
+                result.AddRange(GetQuotations(key));
             }
         }
         else
         {
-            var loadTasks = new List<Task>();
-            for (var index = start; index <= end; index = index.Add(new TimeSpan(1, 0, 0)))
-            {
-                var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
+            throw new NotImplementedException();//never wea debugged. check how it works
+            //var loadTasks = new List<Task>();
+            //for (var index = start; index <= end; index = index.Add(new TimeSpan(1, 0, 0)))
+            //{
+            //    var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
 
-                if (!_ticksCache.ContainsKey(key))
-                {
-                    loadTasks.Add(LoadTicksToCacheAsync(index));
-                }
-            }
-            await Task.WhenAll(loadTasks).ConfigureAwait(false);
+            //    if (!_ticksCache.ContainsKey(key))
+            //    {
+            //        loadTasks.Add(LoadTicksToCacheAsync(index));
+            //    }
+            //}
+            //await Task.WhenAll(loadTasks).ConfigureAwait(false);
 
-            for (var index = start; index <= end; index = index.Add(new TimeSpan(1, 0, 0)))
-            {
-                var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
-                result.AddRange(_ticksCache[key]);
-            }
+            //for (var index = start; index <= end; index = index.Add(new TimeSpan(1, 0, 0)))
+            //{
+            //    var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
+            //    result.AddRange(GetQuotations(key));
+            //}
         }
 
         return result;
@@ -82,17 +81,18 @@ public class FileService : IFileService
         var quarter = DateTimeExtensionsAndHelpers.Quarter(dateTime.Week()).ToString();
         var day = dateTime.Day.ToString("D2");
         var hour = dateTime.Hour.ToString("D2");
+        var key = $"{year}.{month}.{day}.{hour}";
 
         var directoryPath = Path.Combine(_inputDirectoryPath, year, quarter, week, day);
-        var filePath = Path.Combine(directoryPath, $"{year}.{month}.{day}.{hour}.csv");
+        var filePath = Path.Combine(directoryPath, $"{key}.csv");
         if (!File.Exists(filePath))
         {
-            _ticksCache[$"{year}.{month}.{day}.{hour}"] = new List<Quotation>();
+            SetQuotations(key, new List<Quotation>());
             return;
         }
 
         var lines = await File.ReadAllLinesAsync(filePath).ConfigureAwait(true);
-        var quotations = lines//.AsParallel()//todo
+        var quotations = lines.AsParallel()
             .Select(line => line.Split('|').Select(str => str.Trim()).ToArray())
             .Select((items, index) =>
             {
@@ -108,16 +108,40 @@ public class FileService : IFileService
                 }
                 catch (FormatException ex)
                 {
-                    Debug.WriteLine($@"Failed to parse datetime string: {items[1]}, {items[2]}, {items[3]}, {items[4]}");
-                    throw; // re-throw the exception
+                    Debug.WriteLine(ex.Message);
+                    Debug.WriteLine($@"Failed to parse datetime string: {items[1]}, {items[2]}, {items[3]}");
+                    throw;
                 }
             })
             .OrderBy(quotation => quotation.DateTime)
             .ToList();
-
-        _ticksCache[$"{year}.{month}.{day}.{hour}"] = quotations;
+        
+        SetQuotations(key, quotations);
     }
-    
+
+    private void AddQuotation(string key, List<Quotation> quotationList)
+    {
+        if (_ticksCache.Count >= MaxItems)
+        {
+            var oldestKey = _keys.Dequeue();
+            _ticksCache.Remove(oldestKey);
+        }
+
+        _ticksCache[key] = quotationList;
+        _keys.Enqueue(key);
+    }
+
+    private void SetQuotations(string key, List<Quotation> quotations)
+    {
+        AddQuotation(key, quotations);
+    }
+
+    private IEnumerable<Quotation> GetQuotations(string key)
+    {
+        _ticksCache.TryGetValue(key, out var quotations);
+        return quotations!;
+    }
+
     public T? Read<T>(string folderPath, string fileName)
     {
         var path = Path.Combine(folderPath, fileName);

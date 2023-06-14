@@ -12,11 +12,14 @@ public interface IDataService
 {    
     Task<IEnumerable<YearlyContribution>> GetYearlyContributionsAsync();
     Task<IEnumerable<SymbolicContribution>> GetSymbolicContributionsAsync(DateTimeOffset selectedDate);
-    Task RecalculateTicksContributionsSelectedDayAsync(DateTime dateTime, CancellationToken cancellationToken);
-    Task RecalculateTicksContributionsAllAsync(CancellationToken cancellationToken);
+    Task<IEnumerable<Quotation>> GetImportTicksAsync(Symbol symbol, DateTime startDateTime, DateTime endDateTime);
     Task ImportTicksAsync(CancellationToken cancellationToken);
+    
+    //Task RecalculateTicksContributionsSelectedDayAsync(DateTime dateTime, CancellationToken cancellationToken);
+    //Task RecalculateTicksContributionsAllAsync(CancellationToken cancellationToken);
+
+
     Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForDayAsync(int year, int week, int day);
     Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForWeekAsync(int year, int week);
     Task<Dictionary<int, (Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)>> GetQuotationsForYearWeeklyAsync(int year);
-    Task<IEnumerable<Quotation>> GetImportTicksAsync(Symbol symbol, DateTime startDateTime, DateTime endDateTime);
 }

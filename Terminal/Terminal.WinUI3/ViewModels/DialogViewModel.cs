@@ -5,6 +5,22 @@ namespace Terminal.WinUI3.ViewModels;
 
 public sealed class DialogViewModel : INotifyPropertyChanged
 {
+    private string _cautionMessage = null!;
+    public string CautionMessage
+    {
+        get => _cautionMessage;
+        set
+        {
+            if (_cautionMessage == value)
+            {
+                return;
+            }
+
+            _cautionMessage = value;
+            OnPropertyChanged();
+        }
+    }
+
     private string _infoMessage = null!;
     public string InfoMessage
     {
@@ -20,22 +36,6 @@ public sealed class DialogViewModel : INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
-
-    //private string _progressMessage = null!;
-    //public string ProgressMessage
-    //{
-    //    get => _progressMessage;
-    //    set
-    //    {
-    //        if (_progressMessage == value)
-    //        {
-    //            return;
-    //        }
-
-    //        _progressMessage = value;
-    //        OnPropertyChanged();
-    //    }
-    //}
 
     private int _progressPercentage;
     public int ProgressPercentage

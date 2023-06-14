@@ -156,25 +156,25 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
     [RelayCommand(CanExecute = nameof(CanExecuteReset))]
     private async Task RecalculateTicksContributionsSelectedDayAsync()
     {
-        _dialogViewModel = new DialogViewModel
-        {
-            InfoMessage = "Recalculating Selected Date... Please wait."
-        };
-        var dialog = _dialogService.CreateDialog(_dialogViewModel, "Ticks Contributions", "Cancel", null, null);
-        var dialogTask = dialog.ShowAsync().AsTask();
-        var updateTask = PerformRecalculateTicksContributionsSelectedDayAsync(SelectedDate.Date);
-        var completedTask = await Task.WhenAny(dialogTask, updateTask).ConfigureAwait(true);
-        if (completedTask == dialogTask && await dialogTask.ConfigureAwait(true) == ContentDialogResult.Primary)
-        {
-            _cts?.Cancel();
-        }
+        //_dialogViewModel = new DialogViewModel
+        //{
+        //    InfoMessage = "Recalculating Selected Date... Please wait."
+        //};
+        //var dialog = _dialogService.CreateDialog(_dialogViewModel, "Ticks Contributions", "Cancel", null, null);
+        //var dialogTask = dialog.ShowAsync().AsTask();
+        //var updateTask = PerformRecalculateTicksContributionsSelectedDayAsync(SelectedDate.Date);
+        //var completedTask = await Task.WhenAny(dialogTask, updateTask).ConfigureAwait(true);
+        //if (completedTask == dialogTask && await dialogTask.ConfigureAwait(true) == ContentDialogResult.Primary)
+        //{
+        //    _cts?.Cancel();
+        //}
 
-        if (completedTask == updateTask)
-        {
-            dialog.Hide();
-        }
+        //if (completedTask == updateTask)
+        //{
+        //    dialog.Hide();
+        //}
 
-        _ = RefreshContributionsAsync().ConfigureAwait(true);
+        //_ = RefreshContributionsAsync().ConfigureAwait(true);
     }
 
     private async Task PerformRecalculateTicksContributionsSelectedDayAsync(DateTime dateTime)
@@ -189,86 +189,88 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         //    OnProgressReported(m.Value);
         //});
 
-        using (_cts = new CancellationTokenSource())
-        {
-            try
-            {
-                await _dataService.RecalculateTicksContributionsSelectedDayAsync(dateTime, _cts.Token).ConfigureAwait(true);
-            }
-            catch (OperationCanceledException e)
-            {
-                _notificationService.Show($"Operation cancelled:{e.Message}");
-            }
-            finally
-            {
-                //Messenger.Unregister<DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate);
-                //Messenger.Unregister<ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress);
-            }
-        }
+        //using (_cts = new CancellationTokenSource())
+        //{
+        //    try
+        //    {
+        //        await _dataService.RecalculateTicksContributionsSelectedDayAsync(dateTime, _cts.Token).ConfigureAwait(true);
+        //    }
+        //    catch (OperationCanceledException e)
+        //    {
+        //        _notificationService.Show($"Operation cancelled:{e.Message}");
+        //    }
+        //    finally
+        //    {
+        //        //Messenger.Unregister<DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate);
+        //        //Messenger.Unregister<ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress);
+        //    }
+        //}
     }
 
     [RelayCommand]
     private async Task RecalculateTicksContributionsAllAsync()
     {
-        _dialogViewModel = new DialogViewModel
-        {
-            InfoMessage = "Recalculating All... Please wait."
-        };
-        var dialog = _dialogService.CreateDialog(_dialogViewModel, "Ticks Contributions", "Cancel", null, null);
-        var dialogTask = dialog.ShowAsync().AsTask();
-        var recalculateTask = PerformRecalculateTicksContributionsAllAsync();
-        var completedTask = await Task.WhenAny(dialogTask, recalculateTask).ConfigureAwait(true);
-        if (completedTask == dialogTask && await dialogTask.ConfigureAwait(true) == ContentDialogResult.Primary)
-        {
-            _cts?.Cancel();
-        }
+        //_dialogViewModel = new DialogViewModel
+        //{
+        //    InfoMessage = "Recalculating All... Please wait."
+        //};
+        //var dialog = _dialogService.CreateDialog(_dialogViewModel, "Ticks Contributions", "Cancel", null, null);
+        //var dialogTask = dialog.ShowAsync().AsTask();
+        //var recalculateTask = PerformRecalculateTicksContributionsAllAsync();
+        //var completedTask = await Task.WhenAny(dialogTask, recalculateTask).ConfigureAwait(true);
+        //if (completedTask == dialogTask && await dialogTask.ConfigureAwait(true) == ContentDialogResult.Primary)
+        //{
+        //    _cts?.Cancel();
+        //}
 
-        if (completedTask == recalculateTask)
-        {
-            dialog.Hide();
-        }
+        //if (completedTask == recalculateTask)
+        //{
+        //    dialog.Hide();
+        //}
 
-        _ = RefreshContributionsAsync().ConfigureAwait(true);
+        //_ = RefreshContributionsAsync().ConfigureAwait(true);
     }
 
     private async Task PerformRecalculateTicksContributionsAllAsync()
     {
-        throw new NotImplementedException();
+        //throw new NotImplementedException();
 
-        Messenger.Register<TicksOverviewViewModel, DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate, (_, m) =>
-        {
-            OnDailyContributionChanged(m.Value);
-        });
+        //Messenger.Register<TicksOverviewViewModel, DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate, (_, m) =>
+        //{
+        //    OnDailyContributionChanged(m.Value);
+        //});
 
-        Messenger.Register<TicksOverviewViewModel, ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress, (_, m) =>
-        {
-            OnProgressReported(m.Value);
-        });
+        //Messenger.Register<TicksOverviewViewModel, ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress, (_, m) =>
+        //{
+        //    OnProgressReported(m.Value);
+        //});
 
-        using (_cts = new CancellationTokenSource())
-        {
-            try
-            {
-                await _dataService.RecalculateTicksContributionsAllAsync(_cts.Token).ConfigureAwait(true);
-            }
-            catch (OperationCanceledException e)
-            {
-                _notificationService.Show($"Operation cancelled:{e.Message}");
-            }
-            finally
-            {
-                Messenger.Unregister<DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate);
-                Messenger.Unregister<ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress);
-            }
-        }
+        //using (_cts = new CancellationTokenSource())
+        //{
+        //    try
+        //    {
+        //        await _dataService.RecalculateTicksContributionsAllAsync(_cts.Token).ConfigureAwait(true);
+        //    }
+        //    catch (OperationCanceledException e)
+        //    {
+        //        _notificationService.Show($"Operation cancelled:{e.Message}");
+        //    }
+        //    finally
+        //    {
+        //        Messenger.Unregister<DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate);
+        //        Messenger.Unregister<ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress);
+        //    }
+        //}
     }
 
     [RelayCommand]
     private async Task ImportTicksAsync()
     {
+        ResetDateTime();
+
         _dialogViewModel = new DialogViewModel
         {
-            InfoMessage = "Importing... Please wait."
+            CautionMessage = "Importing... Please wait."
         };
         var dialog = _dialogService.CreateDialog(_dialogViewModel, "Ticks Import", "Cancel", null, null);
         var dialogTask = dialog.ShowAsync().AsTask();
@@ -297,6 +299,11 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         Messenger.Register<TicksOverviewViewModel, ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress, (_, m) =>
         {
             OnProgressReported(m.Value);
+        });
+
+        Messenger.Register<TicksOverviewViewModel, InfoMessage, DataServiceToken>(this, DataServiceToken.Info, (_, m) =>
+        {
+            OnInfoReported(m.Value);
         });
 
         using (_cts = new CancellationTokenSource())
@@ -330,5 +337,10 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
     private void OnProgressReported(int progressPercentage)
     {
         _dialogViewModel.ProgressPercentage = progressPercentage;
+    }
+
+    private void OnInfoReported(string info)
+    {
+        _dialogViewModel.InfoMessage = info;
     }
 }

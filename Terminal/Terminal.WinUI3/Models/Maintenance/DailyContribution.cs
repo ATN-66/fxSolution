@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 
 namespace Terminal.WinUI3.Models.Maintenance;
 
-public sealed class DailyContribution : INotifyPropertyChanged
+public class DailyContribution : INotifyPropertyChanged
 {
     public int Year
     {
@@ -48,7 +48,7 @@ public sealed class DailyContribution : INotifyPropertyChanged
 
     public List<HourlyContribution> HourlyContributions
     {
-        get; init;
+        get; set;
     } = null!;
 
     public event PropertyChangedEventHandler? PropertyChanged;
