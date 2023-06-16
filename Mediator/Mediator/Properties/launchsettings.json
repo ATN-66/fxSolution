@@ -1,0 +1,10 @@
+﻿{
+    "profiles": {
+      "Mediator (Package)": {
+        "commandName": "MsixPackage"
+      },
+      "Mediator (Unpackaged)": {
+        "commandName": "Project"
+      }
+    }
+}
