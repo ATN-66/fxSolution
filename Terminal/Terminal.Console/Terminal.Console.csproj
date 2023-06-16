@@ -10,13 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.23.2" />
+    <PackageReference Include="Google.Protobuf" Version="3.23.3" />
     <PackageReference Include="Grpc" Version="2.46.6" />
-    <PackageReference Include="Grpc.Core.Api" Version="2.54.0-pre1" />
-    <PackageReference Include="Grpc.Net.Client" Version="2.54.0-pre1" />
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0-preview.4.23259.5" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0-preview.4.23259.5" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0-preview.4.23259.5" />
+    <PackageReference Include="Grpc.Core.Api" Version="2.54.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.54.0" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0-preview.5.23280.8" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0-preview.5.23280.8" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0-preview.5.23280.8" />
   </ItemGroup>
 
   <ItemGroup>
