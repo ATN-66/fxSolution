@@ -1,7 +1,6 @@
 ﻿using Mediator.Activation;
 using Mediator.Contracts.Services;
 using Mediator.Views;
-
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -11,7 +10,7 @@ public class ActivationService : IActivationService
 {
     private readonly ActivationHandler<LaunchActivatedEventArgs> _defaultHandler;
     private readonly IEnumerable<IActivationHandler> _activationHandlers;
-    private UIElement? _shell = null;
+    private UIElement? _main;
 
     public ActivationService(ActivationHandler<LaunchActivatedEventArgs> defaultHandler, IEnumerable<IActivationHandler> activationHandlers)
     {
@@ -21,24 +20,19 @@ public class ActivationService : IActivationService
 
     public async Task ActivateAsync(object activationArgs)
     {
-        // Execute tasks before activation.
-        await InitializeAsync();
+        //await InitializeAsync().ConfigureAwait(false);
 
-        // Set the MainWindow Content.
         if (App.MainWindow.Content == null)
         {
-            _shell = App.GetService<ShellPage>();
-            App.MainWindow.Content = _shell ?? new Frame();
+            _main = App.GetService<MainPage>();
+            App.MainWindow.Content = _main ?? new Frame();
         }
 
-        // Handle activation via ActivationHandlers.
-        await HandleActivationAsync(activationArgs);
+        await HandleActivationAsync(activationArgs).ConfigureAwait(false);
 
-        // Activate the MainWindow.
         App.MainWindow.Activate();
 
-        // Execute tasks after activation.
-        await StartupAsync();
+        //await StartupAsync().ConfigureAwait(false);
     }
 
     private async Task HandleActivationAsync(object activationArgs)
@@ -47,22 +41,22 @@ public class ActivationService : IActivationService
 
         if (activationHandler != null)
         {
-            await activationHandler.HandleAsync(activationArgs);
+            await activationHandler.HandleAsync(activationArgs).ConfigureAwait(false);
         }
 
         if (_defaultHandler.CanHandle(activationArgs))
         {
-            await _defaultHandler.HandleAsync(activationArgs);
+            await _defaultHandler.HandleAsync(activationArgs).ConfigureAwait(false);
         }
     }
 
-    private async Task InitializeAsync()
-    {
-        await Task.CompletedTask;
-    }
+    //private async Task InitializeAsync()
+    //{
+    //    await Task.CompletedTask.ConfigureAwait(false);
+    //}
 
-    private async Task StartupAsync()
-    {
-        await Task.CompletedTask;
-    }
+    //private async Task StartupAsync()
+    //{
+    //    await Task.CompletedTask.ConfigureAwait(false);
+    //}
 }

@@ -1,44 +1,43 @@
 ﻿/*+------------------------------------------------------------------+
-  |                            Mediator.Server.Indicator.To.Mediator |
-  |                                           QuotationsMessenger.cs |
+  |                                Mediator.Services.PipeMethodCalls |
+  |                                  IndicatorToMediatorMessenger.cs |
   +------------------------------------------------------------------+*/
 
 //The lifetime of this class is very short. It is instantiated by the Server and promptly discarded.
-
 using Common.MetaQuotes.Mediator;
-using Mediator.Processors;
+using Mediator.Contracts.Services;
 
-namespace Mediator.Service.Indicator.To.Mediator;
+namespace Mediator.Services.PipeMethodCalls;
 
-public class QuotationsMessenger : ITicksMessenger//, IDisposable
+public class IndicatorToMediatorMessenger : ITicksMessenger//, IDisposable
 {
     //private static int _instanceCount;
     //private static int _lastInstanceId;
     //private static int _instanceId;
 
-    private readonly QuotationsProcessor _quotationsProcessor;
+    private readonly ITicksProcessor _ticksProcessor;
 
-    public QuotationsMessenger(QuotationsProcessor quotationsProcessor)
+    public IndicatorToMediatorMessenger(ITicksProcessor ticksProcessor)
     {
-        _quotationsProcessor = quotationsProcessor;
         //_instanceId = ++_lastInstanceId;
         //Interlocked.Increment(ref _instanceCount);
-        //Console.WriteLine($"QuotationsMessenger instance {_instanceId} created. Total instances: {_instanceCount}");
+        //Debug.WriteLine($"QuotationsMessenger instance {_instanceId} created. Total instances: {_instanceCount}");
+        _ticksProcessor = ticksProcessor;
     }
 
     public void DeInit(int reason)
     {
-         _quotationsProcessor.DeInit(reason);
+        _ticksProcessor.DeInitAsync(reason);
     }
 
-    public string Init(int id, int symbol, string datetime, double ask, double bid, int environment)
+    public Task<string> InitAsync(int id, int symbol, string datetime, double ask, double bid, int environment)
     {
-        return _quotationsProcessor.Init(id, symbol, datetime, ask, bid, environment);
+        return _ticksProcessor.InitAsync(id, symbol, datetime, ask, bid, environment);
     }
 
     public string Tick(int id, int symbol, string datetime, double ask, double bid)
     {
-        return _quotationsProcessor.Tick(id, symbol, datetime, ask, bid);
+        return _ticksProcessor.Tick(id, symbol, datetime, ask, bid);
     }
 
     //~QuotationsMessenger()

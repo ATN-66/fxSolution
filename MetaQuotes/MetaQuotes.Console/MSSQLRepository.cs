@@ -6,7 +6,6 @@
 using System.Data;
 using System.Data.SqlClient;
 using Common.Entities;
-using Environment = Common.Entities.Environment;
 
 namespace MetaQuotes.Console;
 
@@ -25,7 +24,7 @@ public class MSSQLRepository
         }
     }
 
-    public async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForDayAsync(int year, int week, int day, Environment environment, Modification modification)
+    public async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForDayAsync(int year, int week, int day, Workplace environment, Modification modification)
     {
         switch (day)
         {
@@ -72,14 +71,14 @@ public class MSSQLRepository
         lock (ConsoleLock)
         {
             System.Console.ForegroundColor = ConsoleColor.Green;
-            System.Console.WriteLine($"Week:{week:00}, Day:{day:00} -> {quotations.Count:##,##0} quotations.");
+            System.Console.WriteLine($"Week:{week:00}, Day:{day:00} -> {quotations.Count + Enum.GetValues(typeof(Symbol)).Length:##,##0} quotations.");
             System.Console.ForegroundColor = ConsoleColor.White;
         }
 
         return (firstQuotations, quotations);
     }
 
-    private async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForWeekAsync(int year, int week, Environment environment, Modification modification)
+    private async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForWeekAsync(int year, int week, Workplace environment, Modification modification)
     {
         var firstQuotationsDict = new Dictionary<Symbol, Quotation>();
         var firstQuotations = new Queue<Quotation>();
@@ -126,7 +125,7 @@ public class MSSQLRepository
         return (firstQuotations, quotations);
     }
     
-    public async Task<Dictionary<int, (Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)>> GetQuotationsForYearWeeklyAsync(int year, Environment environment, Modification modification)
+    public async Task<Dictionary<int, (Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)>> GetQuotationsForYearWeeklyAsync(int year, Workplace environment, Modification modification)
     {
         var totalQuotations = 0;
         var quotationsByWeek = new Dictionary<int, (Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)>();
@@ -154,7 +153,7 @@ public class MSSQLRepository
         return quotationsByWeek;
     }
 
-    private static string GetDatabaseName(int yearNumber, int weekNumber, Environment environment, Modification modification)
+    private static string GetDatabaseName(int yearNumber, int weekNumber, Workplace environment, Modification modification)
     {
         return $"{environment.ToString().ToLower()}.{modification.ToString().ToLower()}.{yearNumber}.{GetQuarterNumber(weekNumber)}";
     }

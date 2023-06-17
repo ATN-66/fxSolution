@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                   MetaQuotes.Prototype.Indicator.PipeMethodCalls |
-  |                                    Mediator.cs |
+  |                                                      Mediator.cs |
   +------------------------------------------------------------------+*/
 
 using System;
@@ -32,6 +32,7 @@ public static class Mediator
     public static void DeInit(int reason)
     {
         client.DeInit(reason);
+        client.Dispose();
     }
 
     public static string Init(int id, int symbol, string datetime, double ask, double bid, int environment)

@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                            Mediator.Server.Indicator.To.Mediator |
-  |                                     Service.cs |
+  |                                                       Service.cs |
   +------------------------------------------------------------------+*/
 
 using System.Diagnostics;
@@ -32,9 +32,10 @@ public class Service : IServiceIndicatorToMediator
         var PipeName = $"Indicator.To.Mediator_{(int)symbol}";
 
         while (!cancellationToken.IsCancellationRequested)
+        {
             try
             {
-                using var pipeServer = new PipeServer<IQuotationsMessenger>(_pipeSerializer, PipeName,() => new QuotationsMessenger(_quotationsProcessor));
+                using var pipeServer = new PipeServer<ITicksMessenger>(_pipeSerializer, PipeName,() => new QuotationsMessenger(_quotationsProcessor));
                 await pipeServer.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
                 Console.WriteLine($"I->M Service is ON for {symbol}({_guid})");
                 if (cancellationToken.IsCancellationRequested) break;
@@ -54,5 +55,6 @@ public class Service : IServiceIndicatorToMediator
                 Console.WriteLine($"{GetType().Name}: {ex.Message}");
                 break;
             }
+        }
     }
 }

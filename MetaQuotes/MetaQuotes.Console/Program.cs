@@ -3,16 +3,14 @@
   |                                                       Program.cs |
   +------------------------------------------------------------------+*/
 
-using System.Diagnostics;
 using Common.Entities;
 using MetaQuotes.Client.Indicator.To.Mediator;
 using MetaQuotes.Console;
 using NAudio.Wave;
-using Environment = Common.Entities.Environment;
 
 var config = new Configuration()
 {
-    Environment = Environment.Testing,
+    Workplace = Workplace.Testing,
     InputModification = Modification.UnModified,
     Year = 2023,
     Week = 8,
@@ -25,20 +23,20 @@ const string audioFilePath = "alert2.wav";
 var audioPlayer = new AudioPlayer(audioFilePath);
 
 Console.WriteLine("MetaQuotes.MT5 platform simulator...");
-Console.WriteLine($"Environment: {config.Environment}.");
+Console.WriteLine($"Workplace: {config.Workplace}.");
 Console.WriteLine($"Input Ticks: {config.InputModification}.");
 Console.WriteLine($"Year: {config.Year}.");
 Console.WriteLine($"Week: {config.Week?.ToString("00") ?? "null"}.");
 Console.WriteLine($"Day: {config.Day?.ToString("00") ?? "null"}.");
 
-var (firstQuotations, quotations) = await MSSQLRepository.Instance.GetQuotationsForDayAsync(config.Year, config.Week!.Value, config.Day!.Value, config.Environment, config.InputModification).ConfigureAwait(false);
+var (firstQuotations, quotations) = await MSSQLRepository.Instance.GetQuotationsForDayAsync(config.Year, config.Week!.Value, config.Day!.Value, config.Workplace, config.InputModification).ConfigureAwait(false);
 
 CancellationTokenSource cts = new();
 var consoleServiceTask = Task.Run(() => ConsoleService(cts));
 
 try
 {
-    await InitializeIndicators(firstQuotations, config.Environment, cts.Token).ConfigureAwait(false);
+    await InitializeIndicators(firstQuotations, config.Workplace, cts.Token).ConfigureAwait(false);
     Console.WriteLine("Initialization done...");
     await ProcessQuotations(quotations, cts.Token).ConfigureAwait(false);
     Console.WriteLine("Quotations done...");
@@ -61,17 +59,19 @@ return 1;
 static Task DeInitializeIndicators()
 {
     Mediator.DeInit((int)DeInitReason.Terminal_closed);
+
     return Task.CompletedTask;
 }
 
-static Task InitializeIndicators(Queue<Quotation> firstQuotations, Environment environment, CancellationToken ct)
+static Task InitializeIndicators(Queue<Quotation> firstQuotations, Workplace space, CancellationToken ct)
 {
     int id = default;
     while (firstQuotations.Count > 0)
     {
         if (ct.IsCancellationRequested) break;
         var quotation = firstQuotations.Dequeue();
-        var output = Mediator.Init(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.Ask, quotation.Bid, (int)environment).Split(':');
+
+        var output = Mediator.Init(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.Ask, quotation.Bid, (int)space).Split(':');
         var symbol = (Symbol)Convert.ToInt32(output[0]);
         var guid = Guid.Parse(output[1]);
         var result = output[2];
@@ -88,6 +88,7 @@ static Task ProcessQuotations(Queue<Quotation> quotations, CancellationToken ct)
     {
         if (ct.IsCancellationRequested) break;
         var quotation = quotations.Dequeue();
+
         var result = Mediator.Tick(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.Ask, quotation.Bid);
         if (ok != result) throw new Exception(result);
     }
@@ -129,7 +130,7 @@ static async Task ConsoleService(CancellationTokenSource cts)
 void EmergencyExit(Exception exception)
 {
     audioPlayer.Play();
-    Debug.WriteLine(exception.Message);
+    //Debug.WriteLine(exception.Message);
     Console.WriteLine(exception.Message);
     Console.WriteLine("Server is OFF. Press any key to exit...");
     Console.ReadKey();
@@ -137,7 +138,7 @@ void EmergencyExit(Exception exception)
 
 internal readonly struct Configuration
 {
-    public Environment Environment { get; init; }
+    public Workplace Workplace { get; init; }
     public Modification InputModification { get; init; }
     public int Year { get; init; }
     public int? Week { get; init; }

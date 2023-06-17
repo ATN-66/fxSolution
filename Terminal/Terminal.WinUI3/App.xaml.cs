@@ -1,11 +1,9 @@
-﻿using System.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Serilog;
-using Serilog.Events;
 using Terminal.WinUI3.Activation;
 using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.AI.Services;
@@ -18,7 +16,6 @@ using LaunchActivatedEventArgs = Microsoft.UI.Xaml.LaunchActivatedEventArgs;
 using UnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
 using Terminal.WinUI3.Models.Settings;
 using Microsoft.Extensions.Logging;
-using Serilog.Core;
 
 namespace Terminal.WinUI3;
 
@@ -171,6 +168,12 @@ public partial class App
         Log.CloseAndFlush();
     }
 
+    private void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs exception)
+    {
+        Log.Fatal(exception.Message, "DebugSettings_BindingFailed");
+        throw new NotImplementedException("DebugSettings_BindingFailed");
+    }
+
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
@@ -181,15 +184,12 @@ public partial class App
 
         GetService<IDispatcherService>().Initialize(DispatcherQueue.GetForCurrentThread());
         GetService<IDashboardService>().InitializeAsync();
-        GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(false);
+        GetService<IActivationService>().ActivateAsync(args);
         GetService<IAppNotificationService>().Initialize();
         GetService<ILogger<App>>().LogInformation("This is an information message: Launched");
     }
 
-    private void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs e)
-    {
-        throw new NotImplementedException();
-    }
+   
 }
 
 

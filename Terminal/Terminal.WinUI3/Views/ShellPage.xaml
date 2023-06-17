@@ -131,10 +131,9 @@
                     Content="Account"
                     Icon="Contact"
                     Tag="SamplePage4" />
-                <NavigationViewItem
-                    Content="Your Cart"
                     Icon="Shop"
                     Tag="SamplePage5" />
+
                 <NavigationViewItem
                     Content="Help"
                     Icon="Help"

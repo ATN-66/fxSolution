@@ -25,28 +25,26 @@ using Terminal.WinUI3.Services.Messenger.Messages;
 
 namespace Terminal.WinUI3.Services;
 
-public class DataService : ObservableRecipient, IDataService
+public class DataService : ObservableRecipient, IDataService // ObservableRecipient???????
 {
     private readonly IProcessor _processor;
     private readonly IFileService _fileService;
     private readonly IAppNotificationService _notificationService;
     private readonly ILogger<DataService> _logger;
-    private IDispatcherService _dispatcherService; //todo
 
-    private const Entity TicksEntity = Entity.Ticks;
+    private const Entity Entity = Common.Entities.Entity.Ticks;
     private readonly HashSet<DateTime> _excludedDates;
     private readonly HashSet<DateTime> _excludedHours;
     private readonly string _server;
     private readonly string _solutionDatabase;
     private readonly DateTime _startDateTimeUtc;
     
-    public DataService(IProcessor processor, IFileService fileService, IConfiguration configuration, IAppNotificationService notificationService, ILogger<DataService> logger, IDispatcherService dispatcherService) //todo
+    public DataService(IProcessor processor, IFileService fileService, IConfiguration configuration, IAppNotificationService notificationService, ILogger<DataService> logger) 
     {
         _processor = processor;
         _fileService = fileService;
         _notificationService = notificationService;
         _logger = logger;
-        _dispatcherService = dispatcherService; //todo
 
         _server = configuration.GetConnectionString("Server")!;
         _solutionDatabase = configuration.GetConnectionString("SolutionDatabase")!;
@@ -353,7 +351,7 @@ public class DataService : ObservableRecipient, IDataService
             dataTable.Rows.Add(hourlyContribution.DateTime);
         }
 
-        var databaseName = GetDatabaseName(yearNumber, weekNumber, TicksEntity);
+        var databaseName = GetDatabaseName(yearNumber, weekNumber, Entity);
         await using var connection = new SqlConnection($"{_server};Database={databaseName};Trusted_Connection=True;");
         await connection.OpenAsync().ConfigureAwait(false);
         await using var command = new SqlCommand("GetSampleTicks", connection) { CommandType = CommandType.StoredProcedure };
@@ -389,7 +387,7 @@ public class DataService : ObservableRecipient, IDataService
             dataTable.Rows.Add((int)quotation.Symbol, quotation.DateTime, quotation.Ask, quotation.Bid);
         }
 
-        var databaseName = GetDatabaseName(yearNumber, weekNumber, TicksEntity);
+        var databaseName = GetDatabaseName(yearNumber, weekNumber, Entity);
         var connectionString = $"{_server};Database={databaseName};Trusted_Connection=True;";
 
         await using var connection = new SqlConnection(connectionString);
@@ -439,7 +437,7 @@ public class DataService : ObservableRecipient, IDataService
             dataTable.Rows.Add((int)quotation.Symbol, quotation.DateTime, quotation.Ask, quotation.Bid);
         }
 
-        var databaseName = GetDatabaseName(yearNumber, weekNumber, TicksEntity);
+        var databaseName = GetDatabaseName(yearNumber, weekNumber, Entity);
         var connectionString = $"{_server};Database={databaseName};Trusted_Connection=True;";
 
         await using var connection = new SqlConnection(connectionString);
@@ -507,7 +505,7 @@ public class DataService : ObservableRecipient, IDataService
             dataTable.Rows.Add(hourlyContribution.DateTime);
         }
 
-        var databaseName = GetDatabaseName(yearNumber, weekNumber, TicksEntity);
+        var databaseName = GetDatabaseName(yearNumber, weekNumber, Entity);
         await using var connection = new SqlConnection($"{_server};Database={databaseName};Trusted_Connection=True;");
         await connection.OpenAsync().ConfigureAwait(false);
         await using var command = new SqlCommand("DeleteSampleTicks", connection) { CommandType = CommandType.StoredProcedure };

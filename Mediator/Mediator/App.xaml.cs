@@ -1,34 +1,93 @@
-﻿using Mediator.Activation;
+﻿/*+------------------------------------------------------------------+
+  |                                                          Mediator|
+  |                                                           App.cs |
+  +------------------------------------------------------------------+*/
+
+using Mediator.Activation;
 using Mediator.Contracts.Services;
 using Mediator.Core.Services;
-using Mediator.Helpers;
 using Mediator.Services;
 using Mediator.ViewModels;
 using Mediator.Views;
-
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Serilog;
+using Environment = System.Environment;
+using Symbol = Common.Entities.Symbol;
+using UnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
 
 namespace Mediator;
 
-// To learn more about WinUI 3, see https://docs.microsoft.com/windows/apps/winui/winui3/.
-public partial class App : Application
+public partial class App
 {
-    // The .NET Generic Host provides dependency injection, configuration, logging, and other services.
-    // https://docs.microsoft.com/dotnet/core/extensions/generic-host
-    // https://docs.microsoft.com/dotnet/core/extensions/dependency-injection
-    // https://docs.microsoft.com/dotnet/core/extensions/configuration
-    // https://docs.microsoft.com/dotnet/core/extensions/logging
-    public IHost Host
+    private readonly CancellationTokenSource _cts;
+
+    public App()
+    {
+        InitializeComponent();
+
+        Environment.SetEnvironmentVariable("Mediator.ENVIRONMENT", "Development"); //appsettings.development
+        //Environment.SetEnvironmentVariable("Mediator.ENVIRONMENT", "Production"); //appsettings.production
+        var environment = Environment.GetEnvironmentVariable("Mediator.ENVIRONMENT")!.ToLower();
+        var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        var directoryPath = Path.GetDirectoryName(assemblyLocation);
+        var builder = new ConfigurationBuilder().SetBasePath(directoryPath!).
+            AddJsonFile("appsettings.json", optional: false, reloadOnChange: true).
+            AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true);
+        IConfiguration configuration = builder.Build();
+
+        var logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
+        Log.Logger = logger;
+
+        Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder().UseContentRoot(AppContext.BaseDirectory).ConfigureServices((_, services) =>
+        {
+            services.AddSingleton(configuration);
+            services.AddLogging(loggingBuilder =>
+            {
+                loggingBuilder.AddSerilog(logger, dispose: true);
+            });
+
+            services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
+
+            services.AddSingleton<IActivationService, ActivationService>();
+            services.AddSingleton<IPageService, PageService>();
+            services.AddSingleton<INavigationService, NavigationService>();
+
+            services.AddSingleton<IFileService, FileService>();
+            services.AddSingleton<IDataService, DataService>();
+            services.AddSingleton<IDispatcherService, DispatcherService>();
+
+            services.AddSingleton<CancellationTokenSource>();
+            services.AddTransient<IIndicatorToMediatorService, IndicatorToMediatorService>();
+            services.AddSingleton<ITicksProcessor, TicksProcessor>();
+            services.AddSingleton<IAudioService, AudioService>();
+
+            services.AddSingleton<MainViewModel>();
+            services.AddTransient<MainPage>();
+
+        }).UseSerilog().Build();
+
+        UnhandledException += App_UnhandledException;
+        _cts = Host.Services.GetRequiredService<CancellationTokenSource>();
+    }
+
+    private IHost Host
     {
         get;
     }
 
+    public static WindowEx MainWindow
+    {
+        get;
+    } = new MainWindow();
+
     public static T GetService<T>()
         where T : class
     {
-        if ((App.Current as App)!.Host.Services.GetService(typeof(T)) is not T service)
+        if ((Current as App)!.Host.Services.GetService(typeof(T)) is not T service)
         {
             throw new ArgumentException($"{typeof(T)} needs to be registered in ConfigureServices within App.xaml.cs.");
         }
@@ -36,55 +95,49 @@ public partial class App : Application
         return service;
     }
 
-    public static WindowEx MainWindow { get; } = new MainWindow();
-
-    public static UIElement? AppTitlebar { get; set; }
-
-    public App()
+    private static void App_UnhandledException(object sender, UnhandledExceptionEventArgs exception)
     {
-        InitializeComponent();
-
-        Host = Microsoft.Extensions.Hosting.Host.
-        CreateDefaultBuilder().
-        UseContentRoot(AppContext.BaseDirectory).
-        ConfigureServices((context, services) =>
+        if (exception.Exception is { } ex)//todo
         {
-            // Default Activation Handler
-            services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
-
-            // Other Activation Handlers
-
-            // Services
-            services.AddSingleton<IActivationService, ActivationService>();
-            services.AddSingleton<IPageService, PageService>();
-            services.AddSingleton<INavigationService, NavigationService>();
-
-            // Core Services
-            services.AddSingleton<IFileService, FileService>();
-
-            // Views and ViewModels
-            services.AddTransient<MainViewModel>();
-            services.AddTransient<MainPage>();
-            services.AddTransient<ShellPage>();
-            services.AddTransient<ShellViewModel>();
-
-            // Configuration
-        }).
-        Build();
-
-        UnhandledException += App_UnhandledException;
+            Log.Fatal(ex, "Host terminated unexpectedly");
+        }
+        else
+        {
+            Log.Fatal("Host terminated unexpectedly due to an unknown exception");
+        }
+        Log.CloseAndFlush();
     }
 
-    private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
+    private void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs exception)
     {
-        // TODO: Log and handle exceptions as appropriate.
-        // https://docs.microsoft.com/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.application.unhandledexception.
+        Log.Fatal(exception.Message, "DebugSettings_BindingFailed");
+        throw new NotImplementedException("DebugSettings_BindingFailed");
     }
 
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
+        if (System.Diagnostics.Debugger.IsAttached)
+        {
+            DebugSettings.BindingFailed += DebugSettings_BindingFailed;
+        }
 
-        await App.GetService<IActivationService>().ActivateAsync(args);
+        GetService<IDispatcherService>().Initialize(DispatcherQueue.GetForCurrentThread());
+        await GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(false);
+
+        using var scope = Host.Services.CreateScope();
+        var indicatorToMediatorTasks = (from Symbol symbol in Enum.GetValues(typeof(Symbol))
+            let serviceIndicatorToMediator = scope.ServiceProvider.GetService<IIndicatorToMediatorService>()
+            select Task.Run(() => serviceIndicatorToMediator.StartAsync(symbol, _cts.Token), _cts.Token)).ToList();
+        
+        await Task.WhenAny(Task.WhenAll(indicatorToMediatorTasks)).ConfigureAwait(false);
     }
 }
+
+//var terminalToMediatorServer = scope.ServiceProvider.GetRequiredService<TerminalToMediatorService>();
+//var terminalToMediatorServerTask = terminalToMediatorServer.StartAsync(cts.Token);
+//var mediatorToTerminalClient = scope.ServiceProvider.GetRequiredService<Client>();
+//var administrator = scope.ServiceProvider.GetRequiredService<Settings>();
+//administrator.TerminalConnectedChanged += async (_, _) => { await mediatorToTerminalClient.StartAsync(cts.Token).ConfigureAwait(false); };
+//administrator.TerminalConnectedChanged += async (_, _) => { await mediatorToTerminalClient.ProcessAsync(cts.Token).ConfigureAwait(false); };
+//cts.Cancel();

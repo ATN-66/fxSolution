@@ -1,7 +1,8 @@
 ﻿namespace Common.Entities;
 
-public enum Environment
+public enum Workplace
 {
+    None = 0,
     Development = 1,
     Testing = 2,
     Staging = 3,

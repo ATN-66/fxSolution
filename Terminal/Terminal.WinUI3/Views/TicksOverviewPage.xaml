@@ -8,8 +8,8 @@
     xmlns:entities="using:Common.Entities"
     xmlns:maintenance="using:Terminal.WinUI3.Models.Maintenance"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:system="using:System"
     xmlns:viewModels="using:Terminal.WinUI3.ViewModels"
+    xmlns:system="using:System"
     mc:Ignorable="d">
 
     <behaviors:NavigationViewHeaderBehavior.HeaderMode>Always</behaviors:NavigationViewHeaderBehavior.HeaderMode>

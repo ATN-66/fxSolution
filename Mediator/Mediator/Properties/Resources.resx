@@ -72,7 +72,7 @@
               <xsd:attribute name="name" use="required" type="xsd:string" />
               <xsd:attribute name="type" type="xsd:string" />
               <xsd:attribute name="mimetype" type="xsd:string" />
-              <xsd:attribute ref="xml:space" />
+              <xsd:attribute ref="xml:workplace" />
             </xsd:complexType>
           </xsd:element>
           <xsd:element name="assembly">
@@ -90,7 +90,7 @@
               <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
               <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
               <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
-              <xsd:attribute ref="xml:space" />
+              <xsd:attribute ref="xml:workplace" />
             </xsd:complexType>
           </xsd:element>
           <xsd:element name="resheader">
@@ -117,10 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AppDescription" xml:space="preserve">
+  <data name="AppDescription" xml:workplace="preserve">
     <value>AppDescription</value>
   </data>
-  <data name="AppDisplayName" xml:space="preserve">
+  <data name="AppDisplayName" xml:workplace="preserve">
     <value>AppDisplayName</value>
   </data>
 </root>

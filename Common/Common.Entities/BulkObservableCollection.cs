@@ -1,8 +1,13 @@
-﻿using System.Collections.ObjectModel;
+﻿/*+------------------------------------------------------------------+
+  |                                                  Common.Entities |
+  |                                      BulkObservableCollection.cs |
+  +------------------------------------------------------------------+*/
+
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 
-namespace Terminal.WinUI3.Models;
+namespace Common.Entities;
 
 public class BulkObservableCollection<T> : ObservableCollection<T>
 {

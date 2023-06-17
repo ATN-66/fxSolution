@@ -8,4 +8,8 @@
     <Platforms>x64</Platforms>
   </PropertyGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy &quot;$(TargetDir)Common.Entities.dll&quot; &quot;C:\MT5\Libraries\&quot; /Y /R" />
+  </Target>
+
 </Project>

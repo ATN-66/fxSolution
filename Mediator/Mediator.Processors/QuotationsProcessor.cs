@@ -13,7 +13,6 @@ using Google.Protobuf.WellKnownTypes;
 using Mediator.Client.Mediator.To.Terminal;
 using Mediator.Repository;
 using Enum = System.Enum;
-using Environment = Common.Entities.Environment;
 using Timer = System.Timers.Timer;
 
 namespace Mediator.Processors;

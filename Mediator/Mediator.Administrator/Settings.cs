@@ -5,7 +5,6 @@
 
 using System.Dynamic;
 using Common.Entities;
-using Environment = Common.Entities.Environment;
 
 namespace Mediator.Administrator;
 
@@ -30,13 +29,13 @@ public class Settings
     public const string MultipleConnections = "Indicator cannot be connected more that one time.";
     public readonly int TotalIndicators = Enum.GetValues(typeof(Symbol)).Length;
     public readonly bool[] ConnectedIndicators;
-    public readonly Environment?[] Environments;
+    public readonly Space?[] Environments;
     public readonly DeInitReason?[] DeInitReasons;
     
     public Settings()
     {
         ConnectedIndicators = new bool[TotalIndicators];
-        Environments = new Environment?[TotalIndicators];
+        Environments = new Space?[TotalIndicators];
         DeInitReasons = new DeInitReason?[TotalIndicators];
     }
 
@@ -56,7 +55,7 @@ public class Settings
         }
     }
 
-    public Environment? Environment
+    public Space? Environment
     {
         get
         {

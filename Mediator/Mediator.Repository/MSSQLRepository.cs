@@ -6,7 +6,6 @@
 using System.Data;
 using System.Data.SqlClient;
 using Common.Entities;
-using Environment = Common.Entities.Environment;
 
 namespace Mediator.Repository;
 
