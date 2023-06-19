@@ -13,7 +13,7 @@ namespace MetaQuotes.Client.Indicator.To.Mediator;
 //This class is called by Indicator.mq5 or console simulator
 public static class Mediator
 {
-    private const string mt5lib = @"C:\MT5\Libraries";
+    private const string mt5lib = @"C:\forex.mt5\libraries";
     private static Client client;
 
     static Mediator()

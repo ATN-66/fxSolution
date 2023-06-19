@@ -19,7 +19,6 @@ public class MainViewModel : ObservableRecipient
     private readonly Guid _guid = Guid.NewGuid();
     private readonly CancellationTokenSource _cts;
     private readonly IDispatcherService _dispatcherService;
-    private readonly IAudioService _audioService;
     private readonly ILogger<MainViewModel> _logger;
     
     private DeInitReason _reason;
@@ -28,11 +27,10 @@ public class MainViewModel : ObservableRecipient
 
     public event Action InitializationComplete = null!;
 
-    public MainViewModel(IConfiguration configuration, IDispatcherService dispatcherService, CancellationTokenSource cts, IAudioService audioService, ILogger<MainViewModel> logger)
+    public MainViewModel(IConfiguration configuration, IDispatcherService dispatcherService, CancellationTokenSource cts, ILogger<MainViewModel> logger)
     {
         _cts = cts;
         _dispatcherService = dispatcherService;
-        _audioService = audioService;
         _logger = logger;
 
         foreach (var indicatorStatus in IndicatorStatuses)
@@ -135,7 +133,7 @@ public class MainViewModel : ObservableRecipient
 
         InitializationComplete.Invoke();
 
-        _logger.Log(LogLevel.Trace, $"{GetType().Name}.{_guid}: Indicators connected.");
+        _logger.Log(LogLevel.Trace, "{TypeName}.{Guid}: Indicators connected.", GetType().Name, _guid);
     }
 
     public async Task IndicatorDisconnectedAsync(DeInitReason reason, int ticksSaved)
@@ -155,17 +153,15 @@ public class MainViewModel : ObservableRecipient
             OnPropertyChanged(nameof(IndicatorsConnected));
         }).ConfigureAwait(true);
 
-        _logger.Log(LogLevel.Trace, $"{GetType().Name}.{_guid}: Indicators disconnected. Reason:{_reason}. Ticks saved: {_ticksSaved}.");
-        _audioService.Alert();
+        _logger.Log(LogLevel.Trace, "Indicators disconnected. Reason:{reason}. Ticks to be saved: {ticksSaved}.", _reason, _ticksSaved);
     }
 
     public void CloseApp(string message)
     {
         _dispatcherService.ExecuteOnUIThreadAsync(() =>
         {
-            _logger.Log(LogLevel.Critical, message);
+            _logger.Log(LogLevel.Critical, "{message}", message);
             _cts.Cancel();
-            _audioService.Alert();
             Task.Delay(2000);
             Environment.Exit(0);
         }).ConfigureAwait(true);

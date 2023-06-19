@@ -1,0 +1,33 @@
+﻿syntax = "proto3";
+package ticksdata;
+import "timestamp.proto";
+
+message Quotation {
+    int32 id = 1;
+    Symbol symbol = 2;
+    google.protobuf.Timestamp datetime = 3;
+    double ask = 4;
+    double bid = 5;
+}
+
+enum Symbol {
+    EURUSD = 0;
+    EURGBP = 1;
+    GBPUSD = 2;
+    USDJPY = 3;
+    EURJPY = 4;
+    GBPJPY = 5;
+}
+
+message GetTicksRequest {
+    google.protobuf.Timestamp startDateTime = 1;
+    google.protobuf.Timestamp endDateTime = 2;
+}
+
+message GetTicksResponse {
+    repeated Quotation quotations = 1;
+}
+
+service TicksDataProvider {
+    rpc GetTicksAsync (GetTicksRequest) returns (GetTicksResponse);
+}

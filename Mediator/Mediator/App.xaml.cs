@@ -63,7 +63,7 @@ public partial class App
             services.AddSingleton<CancellationTokenSource>();
             services.AddTransient<IIndicatorToMediatorService, IndicatorToMediatorService>();
             services.AddSingleton<ITicksProcessor, TicksProcessor>();
-            services.AddSingleton<IAudioService, AudioService>();
+            services.AddSingleton<ITicksDataProviderService, TicksDataProviderService>();
 
             services.AddSingleton<MainViewModel>();
             services.AddTransient<MainPage>();
@@ -129,13 +129,16 @@ public partial class App
         var indicatorToMediatorTasks = (from Symbol symbol in Enum.GetValues(typeof(Symbol))
             let serviceIndicatorToMediator = scope.ServiceProvider.GetService<IIndicatorToMediatorService>()
             select Task.Run(() => serviceIndicatorToMediator.StartAsync(symbol, _cts.Token), _cts.Token)).ToList();
-        
-        await Task.WhenAny(Task.WhenAll(indicatorToMediatorTasks)).ConfigureAwait(false);
+
+        var ticksDataProviderService = scope.ServiceProvider.GetRequiredService<ITicksDataProviderService>();
+        var ticksDataProviderServiceTask = ticksDataProviderService.StartAsync();
+
+        await Task.WhenAny(Task.WhenAll(indicatorToMediatorTasks), ticksDataProviderServiceTask).ConfigureAwait(false);
     }
 }
 
-//var terminalToMediatorServer = scope.ServiceProvider.GetRequiredService<TerminalToMediatorService>();
-//var terminalToMediatorServerTask = terminalToMediatorServer.StartAsync(cts.Token);
+
+
 //var mediatorToTerminalClient = scope.ServiceProvider.GetRequiredService<Client>();
 //var administrator = scope.ServiceProvider.GetRequiredService<Settings>();
 //administrator.TerminalConnectedChanged += async (_, _) => { await mediatorToTerminalClient.StartAsync(cts.Token).ConfigureAwait(false); };

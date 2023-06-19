@@ -12,10 +12,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.UI.Xaml.Controls;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
-using Terminal.WinUI3.Models;
 using Terminal.WinUI3.Models.Maintenance;
 using Terminal.WinUI3.Services.Messenger.Messages;
-using Windows.System;
 
 namespace Terminal.WinUI3.ViewModels;
 
@@ -42,10 +40,18 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
     [ObservableProperty] private bool _hourlyContributionsIsLoading;
     [ObservableProperty] private int _hourlyContributionsCount;
     
-    [ObservableProperty] private BulkObservableCollection<Quotation> _quotations = new();
-    [ObservableProperty] private bool _quotationsIsLoading;
-    [ObservableProperty] private int _quotationsCount;
-    
+    [ObservableProperty] private BulkObservableCollection<Quotation> _fileServiceQuotations = new();
+    [ObservableProperty] private bool _fileServiceQuotationsIsLoading;
+    [ObservableProperty] private int _fileServiceQuotationsCount;
+
+    [ObservableProperty] private BulkObservableCollection<Quotation> _terminalQuotations = new();
+    [ObservableProperty] private bool _terminalQuotationsIsLoading;
+    [ObservableProperty] private int _terminalQuotationsCount;
+
+    [ObservableProperty] private BulkObservableCollection<Quotation> _mediatorQuotations = new();
+    [ObservableProperty] private bool _mediatorQuotationsIsLoading;
+    [ObservableProperty] private int _mediatorQuotationsCount;
+
     private CancellationTokenSource? _cts;
     private DialogViewModel _dialogViewModel = null!;
     private readonly DateTimeOffset _startDateTimeOffset;
@@ -64,13 +70,17 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
     partial void OnSelectedDateChanged(DateTimeOffset oldValue, DateTimeOffset newValue)
     {
         SelectedTime = TimeSpan.Zero;
-        RecalculateTicksContributionsSelectedDayCommand.NotifyCanExecuteChanged();
-        ResetDateTimeCommand.NotifyCanExecuteChanged();
+        ResetCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnSelectedTimeChanged(TimeSpan value)
+    {
+        ResetCommand.NotifyCanExecuteChanged();
     }
 
     private bool CanExecuteReset()
     {
-        return SelectedDate.DateTime.Date != _startDateTimeOffset.DateTime.Date;
+        return SelectedDate.DateTime.Date != _startDateTimeOffset.DateTime.Date || SelectedTime != TimeSpan.Zero;
     }
 
     public void OnNavigatedTo(object parameter)
@@ -96,26 +106,22 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
     }
 
     [RelayCommand]
-    private Task HourlyContributionsAsync()
+    private Task ContributionsAsync()
     {
         var hoursTask = GetHoursAsync();
-        var ticksTask = GetImportTicksAsync();
+        var ticksTask = GetTicksAsync();
 
         return Task.WhenAll(hoursTask, ticksTask);
     }
 
-    private async Task GetHoursAsync()
+    private async Task GetHoursAsync(bool inforce = false)
     {
-        if (_currentDate == SelectedDate.DateTime.Date)
-        {
-            return;
-        }
-
+        if (_currentDate == SelectedDate.DateTime.Date && inforce == false) return;
         HourlyContributionsIsLoading = true;
         HourlyContributionsCount = 0;
         HourlyContributions.Clear();
 
-        var contributions = await _dataService.GetSymbolicContributionsAsync(SelectedDate).ConfigureAwait(true);
+        var contributions = await _dataService.GetDayContributionAsync(SelectedDate).ConfigureAwait(true);
         Debug.Assert(_dispatcherService.HasThreadAccess);
         HourlyContributions.AddRange(contributions);
 
@@ -124,149 +130,64 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         HourlyContributionsIsLoading = false;
     }
 
-    private async Task GetImportTicksAsync()
+    private async Task GetTicksAsync()
     {
-        QuotationsIsLoading = true;
-        QuotationsCount = 0;
-        Quotations.Clear();
-
         var startDateTime = SelectedDate.Date.AddHours(SelectedTime.Hours);
         var endDateTime = startDateTime.AddHours(1);
 
-        var input = await _dataService.GetImportTicksAsync(SelectedSymbol, startDateTime, endDateTime).ConfigureAwait(true);
-        Debug.Assert(_dispatcherService.HasThreadAccess);
-        Quotations.AddRange(input.ToList());
+        var fileServiceTask = _dataService.GetTicksAsync(SelectedSymbol, startDateTime, endDateTime, Provider.FileService);
+        var mediatorTask = _dataService.GetTicksAsync(SelectedSymbol, startDateTime, endDateTime, Provider.Mediator);
+        var terminalTask = _dataService.GetTicksAsync(SelectedSymbol, startDateTime, endDateTime);
 
-        QuotationsCount = Quotations.Count;
-        QuotationsIsLoading = false;
+        FileServiceQuotationsIsLoading = true;
+        MediatorQuotationsIsLoading = true;
+        TerminalQuotationsIsLoading = true;
+        FileServiceQuotationsCount = 0;
+        MediatorQuotationsCount = 0;
+        TerminalQuotationsCount = 0;
+
+        await Task.WhenAll(fileServiceTask, mediatorTask, terminalTask).ConfigureAwait(true);
+
+        var fileServiceResult = await fileServiceTask.ConfigureAwait(true);
+        FileServiceQuotations.AddRange(fileServiceResult.ToList());
+        FileServiceQuotationsCount = FileServiceQuotations.Count;
+        FileServiceQuotationsIsLoading = false;
+
+        var mediatorResult = await mediatorTask.ConfigureAwait(true);
+        MediatorQuotations.AddRange(mediatorResult.ToList());
+        MediatorQuotationsCount = MediatorQuotations.Count;
+        MediatorQuotationsIsLoading = false;
+
+        var terminalResult = await terminalTask.ConfigureAwait(true);
+        TerminalQuotations.AddRange(terminalResult.ToList());
+        TerminalQuotationsCount = TerminalQuotations.Count;
+        TerminalQuotationsIsLoading = false;
     }
 
     [RelayCommand(CanExecute = nameof(CanExecuteReset))]
-    private void ResetDateTime()
+    private void Reset()
     {
-        SelectedSymbol = Symbols[0];
         SelectedDate = _startDateTimeOffset;
         SelectedTime = TimeSpan.Zero;
+        SelectedSymbol = Symbols[0];
+
         HourlyContributions.Clear();
         HourlyContributionsCount = HourlyContributions.Count;
-        Quotations.Clear();
-        QuotationsCount = Quotations.Count;
-    }
 
-    [RelayCommand(CanExecute = nameof(CanExecuteReset))]
-    private async Task RecalculateTicksContributionsSelectedDayAsync()
-    {
-        //_dialogViewModel = new DialogViewModel
-        //{
-        //    InfoMessage = "Recalculating Selected Date... Please wait."
-        //};
-        //var dialog = _dialogService.CreateDialog(_dialogViewModel, "Ticks Contributions", "Cancel", null, null);
-        //var dialogTask = dialog.ShowAsync().AsTask();
-        //var updateTask = PerformRecalculateTicksContributionsSelectedDayAsync(SelectedDate.Date);
-        //var completedTask = await Task.WhenAny(dialogTask, updateTask).ConfigureAwait(true);
-        //if (completedTask == dialogTask && await dialogTask.ConfigureAwait(true) == ContentDialogResult.Primary)
-        //{
-        //    _cts?.Cancel();
-        //}
+        FileServiceQuotations.Clear();
+        FileServiceQuotationsCount = FileServiceQuotations.Count;
 
-        //if (completedTask == updateTask)
-        //{
-        //    dialog.Hide();
-        //}
+        MediatorQuotations.Clear();
+        MediatorQuotationsCount = FileServiceQuotations.Count;
 
-        //_ = RefreshContributionsAsync().ConfigureAwait(true);
-    }
-
-    private async Task PerformRecalculateTicksContributionsSelectedDayAsync(DateTime dateTime)
-    {
-        //Messenger.Register<TicksOverviewViewModel, DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate, (_, m) =>
-        //{
-        //    OnDailyContributionChanged(m.Value);
-        //});
-
-        //Messenger.Register<TicksOverviewViewModel, ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress, (_, m) =>
-        //{
-        //    OnProgressReported(m.Value);
-        //});
-
-        //using (_cts = new CancellationTokenSource())
-        //{
-        //    try
-        //    {
-        //        await _dataService.RecalculateTicksContributionsSelectedDayAsync(dateTime, _cts.Token).ConfigureAwait(true);
-        //    }
-        //    catch (OperationCanceledException e)
-        //    {
-        //        _notificationService.Show($"Operation cancelled:{e.Message}");
-        //    }
-        //    finally
-        //    {
-        //        //Messenger.Unregister<DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate);
-        //        //Messenger.Unregister<ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress);
-        //    }
-        //}
+        TerminalQuotations.Clear();
+        TerminalQuotationsCount = FileServiceQuotations.Count;
     }
 
     [RelayCommand]
-    private async Task RecalculateTicksContributionsAllAsync()
+    private async Task ImportAsync()
     {
-        //_dialogViewModel = new DialogViewModel
-        //{
-        //    InfoMessage = "Recalculating All... Please wait."
-        //};
-        //var dialog = _dialogService.CreateDialog(_dialogViewModel, "Ticks Contributions", "Cancel", null, null);
-        //var dialogTask = dialog.ShowAsync().AsTask();
-        //var recalculateTask = PerformRecalculateTicksContributionsAllAsync();
-        //var completedTask = await Task.WhenAny(dialogTask, recalculateTask).ConfigureAwait(true);
-        //if (completedTask == dialogTask && await dialogTask.ConfigureAwait(true) == ContentDialogResult.Primary)
-        //{
-        //    _cts?.Cancel();
-        //}
-
-        //if (completedTask == recalculateTask)
-        //{
-        //    dialog.Hide();
-        //}
-
-        //_ = RefreshContributionsAsync().ConfigureAwait(true);
-    }
-
-    private async Task PerformRecalculateTicksContributionsAllAsync()
-    {
-        //throw new NotImplementedException();
-
-        //Messenger.Register<TicksOverviewViewModel, DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate, (_, m) =>
-        //{
-        //    OnDailyContributionChanged(m.Value);
-        //});
-
-        //Messenger.Register<TicksOverviewViewModel, ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress, (_, m) =>
-        //{
-        //    OnProgressReported(m.Value);
-        //});
-
-        //using (_cts = new CancellationTokenSource())
-        //{
-        //    try
-        //    {
-        //        await _dataService.RecalculateTicksContributionsAllAsync(_cts.Token).ConfigureAwait(true);
-        //    }
-        //    catch (OperationCanceledException e)
-        //    {
-        //        _notificationService.Show($"Operation cancelled:{e.Message}");
-        //    }
-        //    finally
-        //    {
-        //        Messenger.Unregister<DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate);
-        //        Messenger.Unregister<ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress);
-        //    }
-        //}
-    }
-
-    [RelayCommand]
-    private async Task ImportTicksAsync()
-    {
-        ResetDateTime();
+        Reset();
 
         _dialogViewModel = new DialogViewModel
         {
@@ -274,7 +195,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         };
         var dialog = _dialogService.CreateDialog(_dialogViewModel, "Ticks Import", "Cancel", null, null);
         var dialogTask = dialog.ShowAsync().AsTask();
-        var updateTask = PerformImportTicksAsync();
+        var updateTask = PerformImportAsync();
         var completedTask = await Task.WhenAny(dialogTask, updateTask).ConfigureAwait(true);
         if (completedTask == dialogTask && await dialogTask.ConfigureAwait(true) == ContentDialogResult.Primary)
         {
@@ -289,28 +210,120 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         _ = RefreshContributionsAsync().ConfigureAwait(true);
     }
 
-    private async Task PerformImportTicksAsync()
+    private async Task PerformImportAsync()
     {
-        Messenger.Register<TicksOverviewViewModel, DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate, (_, m) =>
+        if (!Messenger.IsRegistered<DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate))
         {
-            OnDailyContributionChanged(m.Value);
-        });
+            Messenger.Register<TicksOverviewViewModel, DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate, (_, m) =>
+            {
+                OnDailyContributionChanged(m.Value);
+            });
+        }
 
-        Messenger.Register<TicksOverviewViewModel, ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress, (_, m) =>
+        if (!Messenger.IsRegistered<ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress))
         {
-            OnProgressReported(m.Value);
-        });
+            Messenger.Register<TicksOverviewViewModel, ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress, (_, m) =>
+            {
+                OnProgressReported(m.Value);
+            });
+        }
 
-        Messenger.Register<TicksOverviewViewModel, InfoMessage, DataServiceToken>(this, DataServiceToken.Info, (_, m) =>
+        if (!Messenger.IsRegistered<InfoMessage, DataServiceToken>(this, DataServiceToken.Info))
         {
-            OnInfoReported(m.Value);
-        });
+            Messenger.Register<TicksOverviewViewModel, InfoMessage, DataServiceToken>(this, DataServiceToken.Info, (_, m) =>
+            {
+                OnInfoReported(m.Value);
+            });
+        }
 
         using (_cts = new CancellationTokenSource())
         {
             try
             {
-                await _dataService.ImportTicksAsync(_cts.Token).ConfigureAwait(true);
+                await _dataService.ImportAsync(_cts.Token).ConfigureAwait(true);
+            }
+            catch (OperationCanceledException e)
+            {
+                _notificationService.Show($"Operation cancelled:{e.Message}");
+            }
+            finally
+            {
+                Messenger.Unregister<DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate);
+                Messenger.Unregister<ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress);
+            }
+        }
+    }
+
+    [RelayCommand]
+    private async Task ReImportSelectedAsync()
+    {
+        HourlyContributionsIsLoading = true;
+        HourlyContributionsCount = 0;
+        HourlyContributions.Clear();
+
+        var result = await _dataService.ReImportSelectedAsync(SelectedDate.DateTime.Date).ConfigureAwait(true);
+        Debug.WriteLine(result);//todo: notify
+        _ = RefreshContributionsAsync().ConfigureAwait(true);
+        _ = GetHoursAsync(true).ConfigureAwait(true);
+    }
+
+    [RelayCommand]
+    private async Task RecalculateAllContributionsAsync()
+    {
+        Reset();
+
+        _dialogViewModel = new DialogViewModel
+        {
+            CautionMessage = "Recalculating all... Please wait."
+        };
+        var dialog = _dialogService.CreateDialog(_dialogViewModel, "Contributions Recalculating", "Cancel", null, null);
+        var dialogTask = dialog.ShowAsync().AsTask();
+        var updateTask = PerformRecalculatingAllContributionsAsync();
+        var completedTask = await Task.WhenAny(dialogTask, updateTask).ConfigureAwait(true);
+        if (completedTask == dialogTask && await dialogTask.ConfigureAwait(true) == ContentDialogResult.Primary)
+        {
+            _cts?.Cancel();
+        }
+
+        if (completedTask == updateTask)
+        {
+            dialog.Hide();
+        }
+
+        _ = RefreshContributionsAsync().ConfigureAwait(true);
+    }
+
+    private async Task PerformRecalculatingAllContributionsAsync()
+    {
+        if (!Messenger.IsRegistered<DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate))
+        {
+            Messenger.Register<TicksOverviewViewModel, DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate, (_, m) =>
+            {
+                OnDailyContributionChanged(m.Value);
+            });
+        }
+
+        if (!Messenger.IsRegistered<ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress))
+        {
+            Messenger.Register<TicksOverviewViewModel, ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress, (_, m) =>
+            {
+                OnProgressReported(m.Value);
+            });
+        }
+
+        if (!Messenger.IsRegistered<InfoMessage, DataServiceToken>(this, DataServiceToken.Info))
+        {
+            Messenger.Register<TicksOverviewViewModel, InfoMessage, DataServiceToken>(this, DataServiceToken.Info, (_, m) =>
+            {
+                OnInfoReported(m.Value);
+            });
+        }
+
+        using (_cts = new CancellationTokenSource())
+        {
+            try
+            {
+                await _dataService.RecalculateAllContributionsAsync(_cts.Token).ConfigureAwait(true);
             }
             catch (OperationCanceledException e)
             {
@@ -327,11 +340,23 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
     private void OnDailyContributionChanged(DailyContribution dailyContribution)
     {
         Debug.Assert(_dispatcherService.HasThreadAccess);
-        var yearlyContribution = YearlyContributions.FirstOrDefault(y => y.Year == dailyContribution.Year);
-        var monthlyContribution = yearlyContribution!.MonthlyContributions!.FirstOrDefault(m => m.Month == dailyContribution.Month);
-        var existingDailyContribution = monthlyContribution!.DailyContributions.FirstOrDefault(d => d.Day == dailyContribution.Day);
-        var index = monthlyContribution.DailyContributions.IndexOf(existingDailyContribution!);
-        monthlyContribution.DailyContributions[index] = dailyContribution;
+        _dispatcherService.ExecuteOnUIThreadAsync(() =>
+        {
+            try
+            {
+                var yearlyContribution = YearlyContributions.FirstOrDefault(y => y.Year == dailyContribution.Year);
+                var monthlyContribution = yearlyContribution!.MonthlyContributions!.FirstOrDefault(m => m.Month == dailyContribution.Month);
+                var existingDailyContribution = monthlyContribution!.DailyContributions.FirstOrDefault(d => d.Day == dailyContribution.Day);
+                var index = monthlyContribution.DailyContributions.IndexOf(existingDailyContribution!);
+                monthlyContribution.DailyContributions[index] = dailyContribution;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+            
+        });
     }
 
     private void OnProgressReported(int progressPercentage)

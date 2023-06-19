@@ -97,11 +97,12 @@
                             <TextBlock
                                 Grid.Row="3"
                                 Grid.Column="0"
+                                Grid.ColumnSpan="2"
                                 Foreground="Black"
                                 Text="{Binding Path=Workplace}" />
                             <TextBlock
                                 Grid.Row="3"
-                                Grid.Column="1"
+                                Grid.Column="2"
                                 Foreground="Black"
                                 Text="{Binding Path=Counter}" />
                         </Grid>

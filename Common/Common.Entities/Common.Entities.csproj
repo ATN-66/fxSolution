@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy &quot;$(TargetDir)Common.Entities.dll&quot; &quot;C:\MT5\Libraries\&quot; /Y /R" />
+    <Exec Command="xcopy &quot;$(TargetDir)Common.Entities.dll&quot; &quot;C:\forex.mt5\libraries\&quot; /Y /R" />
   </Target>
 
 </Project>

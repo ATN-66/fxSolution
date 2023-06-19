@@ -42,6 +42,13 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.0" />
     <PackageReference Include="CommunityToolkit.WinUI" Version="7.1.2" />
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.Primitives" Version="7.1.2" />
+    <PackageReference Include="Google.Protobuf" Version="3.23.3" />
+    <PackageReference Include="Grpc.Core" Version="2.46.6" />
+    <PackageReference Include="Grpc.Core.Api" Version="2.54.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.54.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0-preview.5.23280.8" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0-preview.5.23280.8" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.4.230518007-experimental1" />
@@ -62,6 +69,7 @@
     <ProjectReference Include="..\..\Common\Common.Entities\Common.Entities.csproj" />
     <ProjectReference Include="..\..\Common\Common.ExtensionsAndHelpers\Common.ExtensionsAndHelpers.csproj" />
     <ProjectReference Include="..\..\Common\Common.MetaQuotes.Mediator\Common.MetaQuotes.Mediator.csproj" />
+    <ProjectReference Include="..\..\Common\Common.Protos\Common.Protos.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -92,6 +100,10 @@
     <None Update="Assets\alert2.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Services\grpc\" />
   </ItemGroup>
   
   <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">

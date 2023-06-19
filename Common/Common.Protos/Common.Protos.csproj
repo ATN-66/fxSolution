@@ -11,6 +11,7 @@
   <ItemGroup>
     <None Remove="grpcquotation.proto" />
     <None Remove="mediator.to.terminal.proto" />
+    <None Remove="ticksDataProvider.proto" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +30,9 @@
       <GrpcServices>Both</GrpcServices>
     </Protobuf>
     <Protobuf Include="mediator.to.terminal.proto">
+      <GrpcServices>Both</GrpcServices>
+    </Protobuf>
+    <Protobuf Include="ticksDataProvider.proto">
       <GrpcServices>Both</GrpcServices>
     </Protobuf>
     <Protobuf Include="terminal.to.mediator.proto" GrpcServices="Both" />

@@ -3,6 +3,8 @@
   |                                                     Quotation.cs |
   +------------------------------------------------------------------+*/
 
+using System.Globalization;
+
 namespace Common.Entities;
 
 public readonly record struct Quotation() : IComparable
@@ -24,6 +26,24 @@ public readonly record struct Quotation() : IComparable
     public double Bid { get; }
 
     public static Quotation Empty => new(default, default, default, default, default);
+
+    public int Week => CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(DateTime, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+
+    public int Quarter
+    {
+        get
+        {
+            return Week switch
+            {
+                <= 0 => throw new InvalidOperationException(nameof(Week)),
+                <= 13 => 1,
+                <= 26 => 2,
+                <= 39 => 3,
+                <= 52 => 4,
+                _ => throw new InvalidOperationException(nameof(Week))
+            };
+        }
+    }
 
     public int CompareTo(object? obj)
     {

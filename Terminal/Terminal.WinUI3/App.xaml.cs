@@ -73,6 +73,8 @@ public partial class App
 
             // Business Services
             services.AddSingleton<IProcessor, Processor>();
+            services.AddSingleton<IExternalDataSource, ExternalDataSource>();
+            services.AddSingleton<IMediator, Mediator>();
             services.AddSingleton<IDataService, DataService>();
             services.AddSingleton<IVisualService, VisualService>();
 
@@ -188,8 +190,6 @@ public partial class App
         GetService<IAppNotificationService>().Initialize();
         GetService<ILogger<App>>().LogInformation("This is an information message: Launched");
     }
-
-   
 }
 
 

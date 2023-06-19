@@ -18,7 +18,7 @@ public class FileService : IFileService
     private readonly string _inputDirectoryPath;
     private readonly Dictionary<string, List<Quotation>> _ticksCache = new();
     private readonly Queue<string> _keys = new();
-    private const int MaxItems = 10_000;
+    private const int MaxItems = 4_032;
 
     public FileService(IConfiguration configuration)
     {
@@ -31,44 +31,24 @@ public class FileService : IFileService
         var result = new List<Quotation>();
         var start = startDateTime.Date.AddHours(startDateTime.Hour);
         var end = endDateTime.Date.AddHours(endDateTime.Hour);
-        var timeDifference = end - start;
 
-        if (timeDifference.TotalHours <= 24)
+        var index = start;
+        do
         {
-            for (var index = start; index < end; index = index.Add(new TimeSpan(1, 0, 0)))
+            var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
+            if (!_ticksCache.ContainsKey(key))
             {
-                var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
+                await LoadTicksToCacheAsync(index).ConfigureAwait(false);
+            }
 
-                if (!_ticksCache.ContainsKey(key))
-                {
-                    await LoadTicksToCacheAsync(index).ConfigureAwait(false);
-                }
-
+            if (_ticksCache.ContainsKey(key))
+            {
                 result.AddRange(GetQuotations(key));
             }
+
+            index = index.Add(new TimeSpan(1, 0, 0));
         }
-        else
-        {
-            throw new NotImplementedException();//never wea debugged. check how it works
-            //var loadTasks = new List<Task>();
-            //for (var index = start; index <= end; index = index.Add(new TimeSpan(1, 0, 0)))
-            //{
-            //    var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
-
-            //    if (!_ticksCache.ContainsKey(key))
-            //    {
-            //        loadTasks.Add(LoadTicksToCacheAsync(index));
-            //    }
-            //}
-            //await Task.WhenAll(loadTasks).ConfigureAwait(false);
-
-            //for (var index = start; index <= end; index = index.Add(new TimeSpan(1, 0, 0)))
-            //{
-            //    var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
-            //    result.AddRange(GetQuotations(key));
-            //}
-        }
-
+        while (index < end);
         return result;
     }
 
