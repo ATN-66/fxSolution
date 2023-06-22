@@ -36,7 +36,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
     [ObservableProperty] private bool _yearlyContributionsIsLoading;
     [ObservableProperty] private int _yearlyContributionsCount;
 
-    [ObservableProperty] private BulkObservableCollection<SymbolicContribution> _hourlyContributions = new();
+    [ObservableProperty] private BulkObservableCollection<DailyBySymbolContribution> _hourlyContributions = new();
     [ObservableProperty] private bool _hourlyContributionsIsLoading;
     [ObservableProperty] private int _hourlyContributionsCount;
     
@@ -121,7 +121,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         HourlyContributionsCount = 0;
         HourlyContributions.Clear();
 
-        var contributions = await _dataService.GetDayContributionAsync(SelectedDate).ConfigureAwait(true);
+        var contributions = await _dataService.GetDayContributionAsync(SelectedDate.DateTime.Date).ConfigureAwait(true);
         Debug.Assert(_dispatcherService.HasThreadAccess);
         HourlyContributions.AddRange(contributions);
 

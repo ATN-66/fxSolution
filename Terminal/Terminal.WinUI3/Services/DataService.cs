@@ -8,6 +8,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Globalization;
+using System.Net;
 using System.Threading;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
@@ -22,8 +23,9 @@ using DateTime = System.DateTime;
 
 namespace Terminal.WinUI3.Services;
 
-public class DataService : ObservableRecipient, IDataService // ObservableRecipient???????
+public class DataService : ObservableRecipient, IDataService // ObservableRecipient???????//todo:ObservableRecipient
 {
+    private const Provider Provider = Common.Entities.Provider.Terminal;
     private readonly int _countOfSymbols = Enum.GetValues(typeof(Symbol)).Length;
     private readonly IProcessor _processor;
     private readonly IExternalDataSource _externalDataSource;
@@ -116,7 +118,6 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
         {
             var yearlyContribution = new YearlyContribution
             {
-                Year = yearGroup.Year,
                 MonthlyContributions = new ObservableCollection<MonthlyContribution>()
             };
 
@@ -124,8 +125,6 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
             {
                 var monthlyContribution = new MonthlyContribution
                 {
-                    Year = yearGroup.Year,
-                    Month = monthGroup.Month,
                     DailyContributions = new ObservableCollection<DailyContribution>()
                 };
 
@@ -134,9 +133,6 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
                     var hourlyContributions = dayGroup.ToList();
                     var dailyContribution = new DailyContribution
                     {
-                        Year = yearGroup.Year,
-                        Month = monthGroup.Month,
-                        Day = hourlyContributions[0].Day,
                         HourlyContributions = hourlyContributions
                     };
                     dailyContribution.Contribution = DetermineContributionStatus(dailyContribution);
@@ -185,28 +181,24 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
             }
         }
     }
-    public async Task<IEnumerable<SymbolicContribution>> GetDayContributionAsync(DateTimeOffset dateTimeOffset)
+    public async Task<IEnumerable<DailyBySymbolContribution>> GetDayContributionAsync(DateTime date)
     {
-        var dateTime = dateTimeOffset.DateTime.Date;
-        var year = dateTime.Year;
-        var week = dateTime.Week();
-        var contributions = await GetTicksContributionsAsync(dateTime, dateTime.AddDays(1)).ConfigureAwait(true);
+        Debug.Assert(date is { Hour: 0, Minute: 0 });
+        var year = date.Year;
+        var week = date.Week();
+        var contributions = await GetTicksContributionsAsync(date, date.AddDays(1)).ConfigureAwait(true);
 
         IList<HourlyContribution> dateTimes = contributions;
         var sampleTicks = await GetSampleTicksAsync(dateTimes, year, week).ConfigureAwait(true);
 
-        var symbolicContributions = new List<SymbolicContribution>();
+        var symbolicContributions = new List<DailyBySymbolContribution>();
 
         // Construct the basic structure of SymbolicContributions for all symbols and hours
         foreach (Symbol symbol in Enum.GetValues(typeof(Symbol)))
         {
-            var symbolicContribution = new SymbolicContribution
+            var symbolicContribution = new DailyBySymbolContribution
             {
                 Symbol = symbol,
-                Year = year,
-                Month = dateTime.Month,
-                Week = week,
-                Day = dateTime.Day,
                 HourlyContributions = new List<HourlyContribution>()
             };
 
@@ -214,7 +206,7 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
             {
                 var hourlyContribution = new HourlyContribution
                 {
-                    DateTime = new DateTime(year, dateTime.Month, dateTime.Day, hour, 0, 0),
+                    DateTime = new DateTime(year, date.Month, date.Day, hour, 0, 0),
                     Hour = hour,
                     HasContribution = false
                 };
@@ -233,7 +225,7 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
             hourlyContribution.HasContribution = true;
         }
 
-        // Determine the overall Contribution status for each SymbolicContribution
+        // Determine the overall Contribution status for each DailyBySymbolContribution
         foreach (var symbolicContribution in symbolicContributions)
         {
             symbolicContribution.Contribution = DetermineContributionStatus(symbolicContribution);
@@ -279,7 +271,6 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
         while (index < end);
         return result;
     }
-
     public async Task<int> ReImportSelectedAsync(DateTime dateTime)
     {
         var year = dateTime.Year;
@@ -364,7 +355,7 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
                             }
                             var start = hourlyContribution.DateTime;
                             var end = start.AddHours(1);
-                            var q = await _externalDataSource.GetTicksAsync(start, end).ConfigureAwait(true);//todo:
+                            var q = await _externalDataSource.GetTicksAsync(start, end).ConfigureAwait(true);
                             var quotations = q.ToList();
                             if (quotations.Count == 0)
                             {
@@ -393,28 +384,14 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
                                 var samples = s.ToList();
                                 if (samples.Count != 0)
                                 {
-                                    if (samples[0].DateTime < hourlyContribution.DateTime)
-                                    {
-                                        await ShiftQuotationsTimeAsync(samples, hourlyContribution.Year, hourlyContribution.Week).ConfigureAwait(true);
-                                        s = await GetSampleTicksAsync(new List<HourlyContribution>() { hourlyContribution }, hourlyContribution.Year, hourlyContribution.Week).ConfigureAwait(true);
-                                        samples = s.ToList();
-                                        if (samples.Count != 0)
-                                        {
-                                            _logger.LogError($"{nameof(samples)}.Count must be 0. Fail to adjust Ticks.");
-                                            return;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        _logger.LogError($"{nameof(samples)}.Count must be 0. Unwanted Ticks in this hour.");
-                                        return;
-                                    }
+                                    _logger.LogError("{samples}. Count must be 0. Unwanted Ticks in this hour. {date}", nameof(samples), hourlyContribution.DateTime);
+                                    return;
                                 }
 
                                 var quotationsHourly = quotations.GroupBy(q => new DateTime(q.DateTime.Year, q.DateTime.Month, q.DateTime.Day, q.DateTime.Hour, 0, 0)).ToList();
                                 if (quotationsHourly.Count != 1)
                                 {
-                                    _logger.LogError($"{nameof(quotationsHourly)}.Count must be 1.");
+                                    _logger.LogError("{quotationsHourly}. Count must be 1.", nameof(quotationsHourly));
                                     return;
                                 }
                                
@@ -425,13 +402,14 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
 
                                 if (hourNumbers.Count != 1)
                                 {
-                                    _logger.LogError($"{nameof(hourNumbers)}.Count must be 1. All symbols must be present.");
+                                    _logger.LogError("{hourNumbers}. Count must be 1. All symbols must be present.", nameof(hourNumbers));
                                     return;
                                 }
 
                                 await SavesTicksAsync(quotations, hourlyContribution.Year, hourlyContribution.Week).ConfigureAwait(true);
                                 await UpdateContributionsAsync(hourNumbers, true).ConfigureAwait(true);
-
+                                Debug.Assert(hourNumbers[0] == hourlyContribution.Hour);
+                                hourlyContribution.HasContribution = true;
                                 UpdateStatus(dailyContribution);
                                 cancellationToken.ThrowIfCancellationRequested();
                             }
@@ -442,11 +420,10 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
         }
         catch (Exception exception)
         {
-            _logger.LogError($"DataService.ImportAsync:{exception.Message}");
+            _logger.LogError("DataService.ImportAsync:{Message}", exception.Message);
             throw;
         }
     }
-    
     private async Task<IEnumerable<Quotation>> GetSampleTicksAsync(IEnumerable<HourlyContribution> hourlyContributions, int yearNumber, int weekNumber)
     {
         var result = new List<Quotation>();
@@ -457,7 +434,7 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
             dataTable.Rows.Add(hourlyContribution.DateTime);
         }
 
-        var databaseName = GetDatabaseName(yearNumber, weekNumber, Provider.Terminal);
+        var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(yearNumber, weekNumber, Provider);
         await using var connection = new SqlConnection($"{_server};Database={databaseName};Trusted_Connection=True;");
         await connection.OpenAsync().ConfigureAwait(false);
         await using var command = new SqlCommand("GetSampleTicks", connection) { CommandType = CommandType.StoredProcedure };
@@ -481,7 +458,7 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
     private async Task<int> SavesTicksAsync(IList<Quotation> quotations, int yearNumber, int weekNumber)
     {
         int result;
-        var tableName = GetTableName(weekNumber);
+        var tableName = DatabaseExtensionsAndHelpers.GetTableName(weekNumber);
         DateTimeExtensionsAndHelpers.Check_ISO_8601(yearNumber, weekNumber, quotations);
 
         var dataTable = new DataTable();
@@ -494,7 +471,7 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
             dataTable.Rows.Add((int)quotation.Symbol, quotation.DateTime, quotation.Ask, quotation.Bid);
         }
 
-        var databaseName = GetDatabaseName(yearNumber, weekNumber, Provider.Terminal);
+        var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(yearNumber, weekNumber, Provider);
         var connectionString = $"{_server};Database={databaseName};Trusted_Connection=True;";
 
         await using var connection = new SqlConnection(connectionString);
@@ -531,53 +508,6 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
         }
 
         return result;
-    }
-    private async Task ShiftQuotationsTimeAsync(IList<Quotation> quotations, int yearNumber, int weekNumber)
-    {
-        var tableName = GetTableName(weekNumber);
-        var dataTable = new DataTable();
-        dataTable.Columns.Add("Symbol", typeof(int));
-        dataTable.Columns.Add("DateTime", typeof(DateTime));
-        dataTable.Columns.Add("Ask", typeof(double));
-        dataTable.Columns.Add("Bid", typeof(double));
-        foreach (var quotation in quotations)
-        {
-            dataTable.Rows.Add((int)quotation.Symbol, quotation.DateTime, quotation.Ask, quotation.Bid);
-        }
-
-        var databaseName = GetDatabaseName(yearNumber, weekNumber, Provider.Terminal);
-        var connectionString = $"{_server};Database={databaseName};Trusted_Connection=True;";
-
-        await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync().ConfigureAwait(false);
-        await using var transaction = connection.BeginTransaction($"week:{weekNumber:00}");
-        await using var command = new SqlCommand("ShiftQuotationsTime", connection, transaction) { CommandType = CommandType.StoredProcedure };
-        command.Parameters.Add(new SqlParameter("@TableName", SqlDbType.NVarChar, 128) { Value = tableName });
-        command.Parameters.Add(new SqlParameter("@Quotations", SqlDbType.Structured) { TypeName = "dbo.QuotationTableType", Value = dataTable });
-        command.CommandTimeout = 0;
-
-        try
-        {
-            await command.ExecuteNonQueryAsync().ConfigureAwait(false);
-            transaction.Commit();
-        }
-        catch (Exception exception)
-        {
-            _logger.LogError(exception.Message);
-            _logger.LogError(exception.InnerException?.Message);
-            try
-            {
-                transaction.Rollback();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                Debug.WriteLine(ex.Message);
-                throw;
-            }
-
-            throw;
-        }
     }
     private async Task<int> UpdateContributionsAsync(IEnumerable<long> hourNumbers, bool status)
     {
@@ -620,7 +550,7 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
             dataTable.Rows.Add(dateTime);
         }
 
-        var databaseName = GetDatabaseName(yearNumber, weekNumber, Provider.Terminal);
+        var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(yearNumber, weekNumber, Provider);
 
         try
         {
@@ -659,7 +589,7 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
         var yearNumber = dateTime.Year;
         var weekNumber = dateTime.Week();
 
-        var databaseName = GetDatabaseName(yearNumber, weekNumber, Provider.Terminal);
+        var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(yearNumber, weekNumber, Provider);
         await using var connection = new SqlConnection($"{_server};Database={databaseName};Trusted_Connection=True;");
         await connection.OpenAsync().ConfigureAwait(false);
         await using var command = new SqlCommand("GetQuotationsByWeek", connection) { CommandType = CommandType.StoredProcedure, CommandTimeout = 0 };
@@ -712,9 +642,6 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
         return quotations!;
     }
     #endregion YearlyContributions
-
-
-
     #region RecalculateAllContributionsAsync
     private int _recalculateProcessedItems;
     public async Task RecalculateAllContributionsAsync(CancellationToken cancellationToken)
@@ -916,17 +843,9 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
     //}
     //return (firstQuotations, quotations);
     
-    
-
-   
-
-   
-
-    private static string GetTableName(int weekNumber) => $"week{weekNumber:00}";
-    private static string GetDatabaseName(int yearNumber, int weekNumber, Provider provider) => $"{yearNumber}.{DateTimeExtensionsAndHelpers.Quarter(weekNumber)}.{provider.ToString().ToLower()}";
 }
 
-internal readonly struct QuotationKey
+internal readonly struct QuotationKey //todo:
 {
     public int Year
     {

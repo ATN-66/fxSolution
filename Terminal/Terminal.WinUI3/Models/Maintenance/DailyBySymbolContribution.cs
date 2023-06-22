@@ -1,13 +1,13 @@
 ﻿/*+------------------------------------------------------------------+
   |                               Terminal.WinUI3.Models.Maintenance |
-  |                                          SymbolicContribution.cs |
+  |                                     DailyBySymbolContribution.cs |
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
 
 namespace Terminal.WinUI3.Models.Maintenance;
 
-public sealed class SymbolicContribution : DailyContribution
+public sealed class DailyBySymbolContribution : DailyContribution
 {
     public Symbol Symbol
     {

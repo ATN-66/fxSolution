@@ -375,7 +375,7 @@
                     VerticalScrollBarVisibility="Visible">
                     <ItemsRepeater ItemsSource="{x:Bind ViewModel.HourlyContributions}">
                         <ItemsRepeater.ItemTemplate>
-                            <DataTemplate x:DataType="maintenance:SymbolicContribution">
+                            <DataTemplate x:DataType="maintenance:DailyBySymbolContribution">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="80" />

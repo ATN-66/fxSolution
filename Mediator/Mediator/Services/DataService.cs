@@ -16,10 +16,10 @@ using Quotation = Common.Entities.Quotation;
 
 namespace Mediator.Services;
 
-public class DataService : ObservableRecipient, IDataService
+public class DataService : ObservableRecipient, IDataService //todo: ObservableRecipient???
 {
     private readonly Guid _guid = Guid.NewGuid();
-    private const Entity Entity = Common.Entities.Entity.Mediator;
+    private const Provider Provider = Common.Entities.Provider.Mediator;
     private readonly IConfiguration _configuration;
     private readonly MainViewModel _mainViewModel;
     private readonly ILogger<IDataService> _logger;
@@ -67,7 +67,7 @@ public class DataService : ObservableRecipient, IDataService
             }
 
             var server = GetConnectionString(_mainViewModel.Workplace);
-            var databaseName = GetDatabaseName(yearNumber, weekNumber, Entity);
+            var databaseName = GetDatabaseName(yearNumber, weekNumber, Provider);
             var connectionString = $"{server};Database={databaseName};Trusted_Connection=True;";
 
             try
@@ -156,7 +156,7 @@ public class DataService : ObservableRecipient, IDataService
         var key = $"{year}.{month}.{day}.{hour}";
 
         var server = GetConnectionString(_mainViewModel.Workplace);
-        var databaseName = GetDatabaseName(dateTime.Year, dateTime.Week(), Entity);
+        var databaseName = GetDatabaseName(dateTime.Year, dateTime.Week(), Provider);
         var connectionString = $"{server};Database={databaseName};Trusted_Connection=True;";
         //var databaseName = GetDatabaseName(year, week, environment, modification);
         //var connectionString = $"{_server};Database={databaseName};Trusted_Connection=True;";
@@ -216,7 +216,7 @@ public class DataService : ObservableRecipient, IDataService
     }
 
     private static string GetTableName(int weekNumber) => $"week{weekNumber:00}";
-    private static string GetDatabaseName(int yearNumber, int weekNumber, Entity entity) => $"{yearNumber}.{DateTimeExtensionsAndHelpers.Quarter(weekNumber)}.{entity.ToString().ToLower()}";
+    private static string GetDatabaseName(int yearNumber, int weekNumber, Provider provider) => $"{yearNumber}.{DateTimeExtensionsAndHelpers.Quarter(weekNumber)}.{provider.ToString().ToLower()}";
     private string GetConnectionString(Workplace workplace)
     {
         return workplace switch

@@ -11,7 +11,7 @@ namespace Terminal.WinUI3.Contracts.Services;
 public interface IDataService
 {    
     Task<IEnumerable<YearlyContribution>> GetYearlyContributionsAsync();
-    Task<IEnumerable<SymbolicContribution>> GetDayContributionAsync(DateTimeOffset selectedDate);
+    Task<IEnumerable<DailyBySymbolContribution>> GetDayContributionAsync(DateTime selectedDate);
     Task<IEnumerable<Quotation>> GetTicksAsync(Symbol symbol, DateTime startDateTime, DateTime endDateTime, Provider provider = Provider.Terminal);
 
     Task<int> ReImportSelectedAsync(DateTime dateTime);

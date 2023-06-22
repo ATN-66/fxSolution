@@ -14,10 +14,7 @@ public sealed class YearlyContribution : INotifyPropertyChanged
     private readonly ObservableCollection<MonthlyContribution>? _monthlyContributions;
     private readonly ObservableCollection<WeeklyContribution>? _weeklyContributions;
 
-    public int Year
-    {
-        get; init;
-    }
+    public int Year => MonthlyContributions![0].Year;
 
     public ObservableCollection<MonthlyContribution>? MonthlyContributions
     {

@@ -13,16 +13,10 @@ public sealed class MonthlyContribution : INotifyPropertyChanged
 {
     private readonly ObservableCollection<DailyContribution> _dailyContributions = null!;
 
-    public int Year
-    {
-        get; init;
-    }
+    public int Year => DailyContributions[0].Year;
 
-    public int Month
-    {
-        get; init;
-    }
-    
+    public int Month => DailyContributions[0].Month;
+
     public ObservableCollection<DailyContribution> DailyContributions
     {
         get => _dailyContributions;

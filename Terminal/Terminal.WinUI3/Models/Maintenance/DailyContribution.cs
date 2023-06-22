@@ -10,25 +10,13 @@ namespace Terminal.WinUI3.Models.Maintenance;
 
 public class DailyContribution : INotifyPropertyChanged
 {
-    public int Year
-    {
-        get; init;
-    }
+    public int Year => HourlyContributions[0].Year;
 
-    public int Month
-    {
-        get; init;
-    }
+    public int Month => HourlyContributions[0].Month;
 
-    public int Week
-    {
-        get; init;
-    }
+    public int Week => HourlyContributions[0].Week;
 
-    public int Day
-    {
-        get; init;
-    }
+    public int Day => HourlyContributions[0].Day;
 
     private Contribution? _contribution;
     public Contribution? Contribution
@@ -48,7 +36,7 @@ public class DailyContribution : INotifyPropertyChanged
 
     public List<HourlyContribution> HourlyContributions
     {
-        get; set;
+        get; init;
     } = null!;
 
     public event PropertyChangedEventHandler? PropertyChanged;

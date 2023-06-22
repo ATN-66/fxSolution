@@ -6,11 +6,13 @@
 using System.Data;
 using System.Data.SqlClient;
 using Common.Entities;
+using Common.ExtensionsAndHelpers;
 
 namespace MetaQuotes.Console;
 
 public class MSSQLRepository
 {
+    private const Provider Provider = Common.Entities.Provider.Terminal;
     private static readonly object ConsoleLock = new();
     private static readonly object SyncRoot = new();
     private static volatile MSSQLRepository? _instance;
@@ -24,7 +26,7 @@ public class MSSQLRepository
         }
     }
 
-    public async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForDayAsync(int year, int week, int day, Workplace environment, Modification modification)
+    public async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForDayAsync(int year, int week, int day)
     {
         switch (day)
         {
@@ -77,8 +79,7 @@ public class MSSQLRepository
 
         return (firstQuotations, quotations);
     }
-
-    private async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForWeekAsync(int year, int week, Workplace environment, Modification modification)
+    private async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForWeekAsync(int year, int week)
     {
         var firstQuotationsDict = new Dictionary<Symbol, Quotation>();
         var firstQuotations = new Queue<Quotation>();
@@ -123,52 +124,5 @@ public class MSSQLRepository
         }
 
         return (firstQuotations, quotations);
-    }
-    
-    public async Task<Dictionary<int, (Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)>> GetQuotationsForYearWeeklyAsync(int year, Workplace environment, Modification modification)
-    {
-        var totalQuotations = 0;
-        var quotationsByWeek = new Dictionary<int, (Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)>();
-
-        var tasks = Enumerable.Range(1, 52).Select(async week =>
-        {
-            var (firstQuotations, quotations) = await GetQuotationsForWeekAsync(year, week, environment, modification).ConfigureAwait(false);
-            return (week, firstQuotations, quotations);
-        });
-
-        foreach (var (weekNumber, firstQuotations, quotations) in await Task.WhenAll(tasks).ConfigureAwait(false))
-        {
-            totalQuotations += firstQuotations.Count;
-            totalQuotations += quotations.Count;
-            quotationsByWeek[weekNumber] = (firstQuotations, quotations);
-        }
-
-        lock (ConsoleLock)
-        {
-            System.Console.ForegroundColor = ConsoleColor.Green;
-            System.Console.WriteLine($"Year:{year:00} -> {totalQuotations:##,###} quotations.");
-            System.Console.ForegroundColor = ConsoleColor.White;
-        }
-
-        return quotationsByWeek;
-    }
-
-    private static string GetDatabaseName(int yearNumber, int weekNumber, Workplace environment, Modification modification)
-    {
-        return $"{environment.ToString().ToLower()}.{modification.ToString().ToLower()}.{yearNumber}.{GetQuarterNumber(weekNumber)}";
-    }
-
-    private static int GetQuarterNumber(int weekNumber)
-    {
-        const string errorMessage = $"{nameof(weekNumber)} is out of range.";
-        return weekNumber switch
-        {
-            <= 0 => throw new Exception(errorMessage),
-            <= 13 => 1,
-            <= 26 => 2,
-            <= 39 => 3,
-            <= 52 => 4,
-            _ => throw new Exception(errorMessage),
-        };
     }
 }
