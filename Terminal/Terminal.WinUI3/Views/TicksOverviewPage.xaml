@@ -16,7 +16,7 @@
     <behaviors:NavigationViewHeaderBehavior.HeaderTemplate>
         <DataTemplate x:DataType="viewModels:TicksOverviewViewModel">
             <Border
-                Margin="1"
+                Margin="1,1,1,3"
                 BorderBrush="White"
                 BorderThickness="1"
                 CornerRadius="3">

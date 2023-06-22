@@ -53,7 +53,7 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
             var weekNumber = grouping.Key.Week;
             var quotationsWeekly = grouping.OrderBy(q => q.DateTime).ToList();
             
-            var tableName = GetTableName(weekNumber);
+            var tableName = DatabaseExtensionsAndHelpers.GetTableName(weekNumber);
             DateTimeExtensionsAndHelpers.Check_ISO_8601(yearNumber, weekNumber, quotations);
 
             var dataTable = new DataTable();
@@ -67,7 +67,7 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
             }
 
             var server = GetConnectionString(_mainViewModel.Workplace);
-            var databaseName = GetDatabaseName(yearNumber, weekNumber, Provider);
+            var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(yearNumber, weekNumber, Provider);
             var connectionString = $"{server};Database={databaseName};Trusted_Connection=True;";
 
             try
@@ -156,7 +156,7 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
         var key = $"{year}.{month}.{day}.{hour}";
 
         var server = GetConnectionString(_mainViewModel.Workplace);
-        var databaseName = GetDatabaseName(dateTime.Year, dateTime.Week(), Provider);
+        var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(dateTime.Year, dateTime.Week(), Provider);
         var connectionString = $"{server};Database={databaseName};Trusted_Connection=True;";
         //var databaseName = GetDatabaseName(year, week, environment, modification);
         //var connectionString = $"{_server};Database={databaseName};Trusted_Connection=True;";
@@ -215,8 +215,6 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
         return quotations!;
     }
 
-    private static string GetTableName(int weekNumber) => $"week{weekNumber:00}";
-    private static string GetDatabaseName(int yearNumber, int weekNumber, Provider provider) => $"{yearNumber}.{DateTimeExtensionsAndHelpers.Quarter(weekNumber)}.{provider.ToString().ToLower()}";
     private string GetConnectionString(Workplace workplace)
     {
         return workplace switch

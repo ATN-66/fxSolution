@@ -30,7 +30,7 @@ public class MSSQLRepository
     {
         switch (day)
         {
-            case 0: return await GetQuotationsForWeekAsync(year, week, environment, modification).ConfigureAwait(false);
+            case 0: return await GetQuotationsForWeekAsync(year, week).ConfigureAwait(false);
             case < 1 or > 7: throw new ArgumentOutOfRangeException(nameof(day), "day must be between 1 and 7.");
         }
 
@@ -38,7 +38,7 @@ public class MSSQLRepository
         var firstQuotations = new Queue<Quotation>();
         var quotations = new Queue<Quotation>();
 
-        var databaseName = GetDatabaseName(year, week, environment, modification);
+        var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(year, week, Provider);
         var connectionString = $"Server=localhost\\SQLEXPRESS;Database={databaseName};Trusted_Connection=True;";
 
         await using (var connection = new SqlConnection(connectionString))
@@ -85,7 +85,7 @@ public class MSSQLRepository
         var firstQuotations = new Queue<Quotation>();
         var quotations = new Queue<Quotation>();
 
-        var databaseName = GetDatabaseName(year, week, environment, modification);
+        var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(year, week, Provider);
         var connectionString = $"Server=localhost\\SQLEXPRESS;Database={databaseName};Trusted_Connection=True;";
 
         await using (var connection = new SqlConnection(connectionString))

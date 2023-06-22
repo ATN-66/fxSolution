@@ -12,9 +12,9 @@ public interface IDataService
 {    
     Task<IEnumerable<YearlyContribution>> GetYearlyContributionsAsync();
     Task<IEnumerable<DailyBySymbolContribution>> GetDayContributionAsync(DateTime selectedDate);
-    Task<IEnumerable<Quotation>> GetTicksAsync(Symbol symbol, DateTime startDateTime, DateTime endDateTime, Provider provider = Provider.Terminal);
+    Task<IEnumerable<Quotation>> GetTicksAsync(Symbol symbol, DateTime startDateTime, DateTime endDateTime, Provider provider = Provider.Terminal, bool exactly = false);
 
-    Task<int> ReImportSelectedAsync(DateTime dateTime);
+    Task<Contribution> ReImportSelectedAsync(DateTime dateTime);
     Task ImportAsync(CancellationToken cancellationToken);
     
     Task RecalculateAllContributionsAsync(CancellationToken ctsToken);

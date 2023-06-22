@@ -8,8 +8,6 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Globalization;
-using System.Net;
-using System.Threading;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -27,6 +25,8 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
 {
     private const Provider Provider = Common.Entities.Provider.Terminal;
     private readonly int _countOfSymbols = Enum.GetValues(typeof(Symbol)).Length;
+    private readonly IList<Symbol> _allSymbols = Enum.GetValues<Symbol>().ToList();
+
     private readonly IProcessor _processor;
     private readonly IExternalDataSource _externalDataSource;
     private readonly IAppNotificationService _notificationService;
@@ -41,6 +41,7 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
     private readonly Dictionary<string, List<Quotation>> _ticksCache = new();
     private readonly Queue<string> _keys = new();
     private const int MaxItems = 4_032;
+    private const string Format = "dddd, MMMM d, yyyy";
 
     public DataService(IProcessor processor, IExternalDataSource externalDataSource, IConfiguration configuration, IAppNotificationService notificationService, ILogger<DataService> logger) 
     {
@@ -233,12 +234,12 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
 
         return symbolicContributions;
     }
-    public async Task<IEnumerable<Quotation>> GetTicksAsync(Symbol symbol, DateTime startDateTime, DateTime endDateTime, Provider provider)
+    public async Task<IEnumerable<Quotation>> GetTicksAsync(Symbol symbol, DateTime startDateTime, DateTime endDateTime, Provider provider, bool exactly)
     {
         var quotations = provider switch
         {
-            Provider.FileService => await _externalDataSource.GetTicksAsync(startDateTime, endDateTime, Provider.FileService).ConfigureAwait(true),
-            Provider.Mediator => await _externalDataSource.GetTicksAsync(startDateTime, endDateTime).ConfigureAwait(true),
+            Provider.FileService => await _externalDataSource.GetTicksAsync(startDateTime, endDateTime, provider, exactly).ConfigureAwait(true),
+            Provider.Mediator => await _externalDataSource.GetTicksAsync(startDateTime, endDateTime, provider, exactly).ConfigureAwait(true),
             Provider.Terminal => await GetTicksAsync(startDateTime, endDateTime).ConfigureAwait(true),
             _ => throw new ArgumentOutOfRangeException(nameof(provider), provider, null)
         };
@@ -246,7 +247,7 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
         var filteredQuotations = quotations.Where(quotation => quotation.Symbol == symbol);
         return filteredQuotations;
     }
-    public async Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTime, DateTime endDateTime)
+    private async Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTime, DateTime endDateTime)
     {
         var result = new List<Quotation>();
         var start = startDateTime.Date.AddHours(startDateTime.Hour);
@@ -271,157 +272,154 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
         while (index < end);
         return result;
     }
-    public async Task<int> ReImportSelectedAsync(DateTime dateTime)
+    public async Task<Contribution> ReImportSelectedAsync(DateTime dateTime)
     {
         var year = dateTime.Year;
         var month = dateTime.Month;
         var day = dateTime.Day;
 
-        foreach (var yearlyContribution in _yearlyContributionsCache!)
+        for (var y = 0; y < _yearlyContributionsCache!.Count; y++)
         {
+            var yearlyContribution = _yearlyContributionsCache[y];
             for (var m = 0; m < yearlyContribution.MonthlyContributions!.Count; m++)
             {
                 var monthlyContribution = yearlyContribution.MonthlyContributions[m];
                 for (var d = 0; d < monthlyContribution.DailyContributions.Count; d++)
                 {
                     var dailyContribution = monthlyContribution.DailyContributions[d];
-                    if (year == dailyContribution.Year && month == dailyContribution.Month && day == dailyContribution.Day)
+                    if (year != dailyContribution.Year || month != dailyContribution.Month || day != dailyContribution.Day)
                     {
-                        var hourNumbers = new List<long>();
-                        var dateTimes = new List<DateTime>();
-                        for (var h = 0; h < dailyContribution.HourlyContributions.Count; h++)
-                        {
-                            var hourlyContribution = dailyContribution.HourlyContributions[h];
-                            hourlyContribution.HasContribution = false;
-                            hourNumbers.Add(hourlyContribution.Hour);
-                            dateTimes.Add(hourlyContribution.DateTime);
-                        }
-                        var updateContributionsResult = await UpdateContributionsAsync(hourNumbers, false).ConfigureAwait(true);
-                        Debug.Assert(updateContributionsResult == 24);
-                        var deleteTicksResult = await DeleteTicksAsync(dateTimes, dailyContribution.Year, dailyContribution.HourlyContributions[0].DateTime.Week()).ConfigureAwait(true);
-                        _logger.Log(LogLevel.Information, "ReImport:{count} ticks deleted.", deleteTicksResult);
-                        var quotations = await _externalDataSource.GetTicksAsync(dateTimes[0], dateTimes[^1].AddHours(1)).ConfigureAwait(true);
-                        var insertTicksResult = await SavesTicksAsync(quotations.ToList(), dailyContribution.Year, dailyContribution.HourlyContributions[0].DateTime.Week()).ConfigureAwait(true);
-                        _logger.Log(LogLevel.Information, "ReImport:{count} ticks saved.", insertTicksResult);
-                        var sampleTicksResult = await GetSampleTicksAsync(dailyContribution.HourlyContributions, dailyContribution.Year, dailyContribution.HourlyContributions[0].DateTime.Week()).ConfigureAwait(true);
-                        var sampleTicks = sampleTicksResult.ToList();
-                        var ticksHourly = sampleTicks.GroupBy(q => new DateTime(q.DateTime.Year, q.DateTime.Month, q.DateTime.Day, q.DateTime.Hour, 0, 0)).ToList();
-                        var hNs = (from @group in ticksHourly
-                            let distinctSymbolsInGroup = @group.Select(q => q.Symbol).Distinct().Count()
-                            where distinctSymbolsInGroup == _countOfSymbols
-                            select (long)(@group.Key - DateTimeExtensionsAndHelpers.EpochStartDateTimeUtc).TotalHours).ToList();
-                        var result = await UpdateContributionsAsync(hNs, true).ConfigureAwait(true);
-                        foreach (var hourlyContribution in dailyContribution.HourlyContributions.Where(hourlyContribution => hNs.Contains(hourlyContribution.Hour)))
-                        {
-                            hourlyContribution.HasContribution = true;
-                        }
-                        dailyContribution.Contribution = DetermineContributionStatus(dailyContribution);
-                        return result;
+                        continue;
                     }
-                }
-            }
-        }
 
-        return 0;
-    }
-    public async Task ImportAsync(CancellationToken cancellationToken)
-    {
-        var countOfSymbols = Enum.GetValues(typeof(Symbol)).Length;
-        var processedItems = 0;
-        try
-        {
-            var totalItems = _yearlyContributionsCache!.SelectMany(y => y.MonthlyContributions!.SelectMany(m => m.DailyContributions.SelectMany(d => d.HourlyContributions))).Count();
-            for (var y = 0; y < _yearlyContributionsCache!.Count; y++)
-            {
-                var yearlyContribution = _yearlyContributionsCache[y];
-                for (var m = 0; m < yearlyContribution.MonthlyContributions!.Count; m++)
-                {
-                    var monthlyContribution = yearlyContribution.MonthlyContributions[m];
-                    for (var d = 0; d < monthlyContribution.DailyContributions.Count; d++)
+                    var hourNumbers = new List<long>();
+                    var dateTimes = new List<DateTime>();
+                    for (var h = 0; h < dailyContribution.HourlyContributions.Count; h++)
                     {
-                        var dailyContribution = monthlyContribution.DailyContributions[d];
-                        processedItems = ReportProgressReport(processedItems, dailyContribution, totalItems);
-                        if (dailyContribution.Contribution is Contribution.Excluded or Contribution.Full)
+                        var hourlyContribution = dailyContribution.HourlyContributions[h];
+                        hourlyContribution.HasContribution = false;
+                        hourNumbers.Add(hourlyContribution.Hour);
+                        dateTimes.Add(hourlyContribution.DateTime);
+                    }
+                    var updateContributionsResult = await UpdateContributionsAsync(hourNumbers, false).ConfigureAwait(true);
+                    Debug.Assert(updateContributionsResult == 24);
+                    var deleteTicksResult = await DeleteTicksAsync(dateTimes, dailyContribution.Year, dailyContribution.HourlyContributions[0].DateTime.Week()).ConfigureAwait(true);
+                    _logger.Log(LogLevel.Information, "ReImport:{count} ticks deleted.", deleteTicksResult);
+
+                    var input = await _externalDataSource.GetTicksAsync(dateTimes[0], dateTimes[^1].AddHours(1)).ConfigureAwait(true);
+                    var quotations = input.ToList();
+                    var groupedQuotations = quotations.GroupBy(q => new QuotationKey { Symbol = q.Symbol, Hour = q.DateTime.Hour, });
+                    var sortedGroups = groupedQuotations.OrderBy(g => g.Key.Hour).ThenBy(g => g.Key.Symbol);
+                    var groupsGroupedByHour = sortedGroups.GroupBy(g => g.Key.Hour);
+                    var counter = 0;
+                    foreach (var hourGroup in groupsGroupedByHour)
+                    {
+                        var hour = hourGroup.Key;
+                        var symbolsInHour = hourGroup.Count();
+                        var quotationsForThisHour = hourGroup.SelectMany(group => group).OrderBy(q => q.DateTime).ToList();
+                        var insertTicksResult = await SavesTicksAsync(quotationsForThisHour, dailyContribution.Year, dailyContribution.Week).ConfigureAwait(true);
+                        counter += insertTicksResult;
+
+                        if (_countOfSymbols != symbolsInHour)
                         {
                             continue;
                         }
-                        for (var h = 0; h < dailyContribution.HourlyContributions.Count; h++)
-                        {
-                            var hourlyContribution = dailyContribution.HourlyContributions[h];
-                            Messenger.Send(new InfoMessage(hourlyContribution.DateTime.ToString("F")), DataServiceToken.Info);
-                            if (hourlyContribution.HasContribution)
-                            {
-                                continue;
-                            }
-                            var start = hourlyContribution.DateTime;
-                            var end = start.AddHours(1);
-                            var q = await _externalDataSource.GetTicksAsync(start, end).ConfigureAwait(true);
-                            var quotations = q.ToList();
-                            if (quotations.Count == 0)
-                            {
-                                switch (hourlyContribution.DateTime)
-                                {
-                                    case { DayOfWeek: DayOfWeek.Friday, Hour: 22 or 23 }:
-                                    case { DayOfWeek: DayOfWeek.Sunday, Hour: not 22 and not 23 }:
-                                        UpdateStatus(dailyContribution);
-                                        break;
-                                    default:
-                                        if (_excludedHours.Contains(hourlyContribution.DateTime))
-                                        {
-                                            UpdateStatus(dailyContribution);
-                                        }
-                                        else
-                                        {
-                                            _logger.LogError($"{nameof(dailyContribution)}. Excluded Hours have to be adjusted for day:{dailyContribution}");
-                                            return;
-                                        }
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                var s = await GetSampleTicksAsync(new List<HourlyContribution>() { hourlyContribution }, hourlyContribution.Year, hourlyContribution.Week).ConfigureAwait(true);
-                                var samples = s.ToList();
-                                if (samples.Count != 0)
-                                {
-                                    _logger.LogError("{samples}. Count must be 0. Unwanted Ticks in this hour. {date}", nameof(samples), hourlyContribution.DateTime);
-                                    return;
-                                }
 
-                                var quotationsHourly = quotations.GroupBy(q => new DateTime(q.DateTime.Year, q.DateTime.Month, q.DateTime.Day, q.DateTime.Hour, 0, 0)).ToList();
-                                if (quotationsHourly.Count != 1)
-                                {
-                                    _logger.LogError("{quotationsHourly}. Count must be 1.", nameof(quotationsHourly));
-                                    return;
-                                }
-                               
-                                var hourNumbers = (from @group in quotationsHourly
-                                                   let distinctSymbolsInGroup = @group.Select(q => q.Symbol).Distinct().Count()
-                                                   where distinctSymbolsInGroup == countOfSymbols
-                                                   select (long)(@group.Key - DateTimeExtensionsAndHelpers.EpochStartDateTimeUtc).TotalHours).ToList();
-
-                                if (hourNumbers.Count != 1)
-                                {
-                                    _logger.LogError("{hourNumbers}. Count must be 1. All symbols must be present.", nameof(hourNumbers));
-                                    return;
-                                }
-
-                                await SavesTicksAsync(quotations, hourlyContribution.Year, hourlyContribution.Week).ConfigureAwait(true);
-                                await UpdateContributionsAsync(hourNumbers, true).ConfigureAwait(true);
-                                Debug.Assert(hourNumbers[0] == hourlyContribution.Hour);
-                                hourlyContribution.HasContribution = true;
-                                UpdateStatus(dailyContribution);
-                                cancellationToken.ThrowIfCancellationRequested();
-                            }
-                        }
+                        updateContributionsResult = await UpdateContributionsAsync(new[] { dailyContribution.HourlyContributions[hour].Hour }, true).ConfigureAwait(true);
+                        Debug.Assert(updateContributionsResult == 1);
+                        dailyContribution.HourlyContributions[hour].HasContribution = true;
                     }
+                    Debug.Assert(quotations.Count == counter);
+                    monthlyContribution.DailyContributions[d].Contribution = DetermineContributionStatus(dailyContribution);
+                    _logger.LogInformation("{date} was updated. {count} were saved.", dailyContribution.HourlyContributions[0].DateTime, counter);
+                    return 0;
                 }
             }
         }
-        catch (Exception exception)
+        throw new InvalidOperationException("Never should be here.");
+    }
+    public async Task ImportAsync(CancellationToken cancellationToken)
+    {
+        var processedItems = 0;
+        var totalItems = _yearlyContributionsCache!.SelectMany(y => y.MonthlyContributions!.SelectMany(m => m.DailyContributions.SelectMany(d => d.HourlyContributions))).Count();
+        
+        for (var y = 0; y < _yearlyContributionsCache!.Count; y++)
         {
-            _logger.LogError("DataService.ImportAsync:{Message}", exception.Message);
-            throw;
+            var yearlyContribution = _yearlyContributionsCache[y];
+            var year = yearlyContribution.Year;
+
+            for (var m = 0; m < yearlyContribution.MonthlyContributions!.Count; m++)
+            {
+                var monthlyContribution = yearlyContribution.MonthlyContributions[m];
+                var month = monthlyContribution.Month;
+
+                for (var d = 0; d < monthlyContribution.DailyContributions.Count; d++)
+                {
+                    var dailyContribution = monthlyContribution.DailyContributions[d];
+                    var day = dailyContribution.Day;
+
+                    processedItems = ReportProgressReport(totalItems, processedItems, dailyContribution);
+                    Messenger.Send(new InfoMessage(dailyContribution.HourlyContributions[0].DateTime.ToString(Format)), DataServiceToken.Info);
+
+                    if (dailyContribution.Contribution is Contribution.Excluded or Contribution.Full)
+                    {
+                        continue;
+                    }
+
+                    var hourNumbers = new List<long>();
+                    var dateTimes = new List<DateTime>();
+                    for (var h = 0; h < dailyContribution.HourlyContributions.Count; h++)
+                    {
+                        var hourlyContribution = dailyContribution.HourlyContributions[h];
+                        hourlyContribution.HasContribution = false;
+                        hourNumbers.Add(hourlyContribution.Hour);
+                        dateTimes.Add(hourlyContribution.DateTime);
+                    }
+
+                    Debug.Assert(year == dateTimes[0].Year);
+                    Debug.Assert(month == dateTimes[0].Month);
+                    Debug.Assert(day == dateTimes[0].Day);
+
+                    var updateContributionsResult = await UpdateContributionsAsync(hourNumbers, false).ConfigureAwait(true);
+                    Debug.Assert(updateContributionsResult == 24);
+                    var deleteTicksResult = await DeleteTicksAsync(dateTimes, dailyContribution.Year, dailyContribution.HourlyContributions[0].DateTime.Week()).ConfigureAwait(true);
+                    _logger.Log(LogLevel.Information, "Import:{count} ticks deleted.", deleteTicksResult);
+
+                    var input = await _externalDataSource.GetTicksAsync(dateTimes[0], dateTimes[^1].AddHours(1)).ConfigureAwait(true);
+                    var quotations = input.ToList();
+
+                    Debug.Assert(year == quotations[0].DateTime.Year);
+                    Debug.Assert(month == quotations[0].DateTime.Month);
+                    Debug.Assert(day == quotations[0].DateTime.Day);
+
+                    var groupedQuotations = quotations.GroupBy(q => new QuotationKey { Symbol = q.Symbol, Hour = q.DateTime.Hour, });
+                    var sortedGroups = groupedQuotations.OrderBy(g => g.Key.Hour).ThenBy(g => g.Key.Symbol);
+                    var groupsGroupedByHour = sortedGroups.GroupBy(g => g.Key.Hour);
+                    var counter = 0;
+                    foreach (var hourGroup in groupsGroupedByHour)
+                    {
+                        var hour = hourGroup.Key;
+                        var symbolsInHour = hourGroup.Count();
+                        var quotationsForThisHour = hourGroup.SelectMany(group => group).OrderBy(q => q.DateTime).ToList();
+                        var insertTicksResult = await SavesTicksAsync(quotationsForThisHour, dailyContribution.Year, dailyContribution.Week).ConfigureAwait(true);
+                        counter += insertTicksResult;
+
+                        if (_countOfSymbols != symbolsInHour)
+                        {
+                            continue;
+                        }
+
+                        updateContributionsResult = await UpdateContributionsAsync(new[] { dailyContribution.HourlyContributions[hour].Hour }, true).ConfigureAwait(true);
+                        Debug.Assert(updateContributionsResult == 1);
+                        dailyContribution.HourlyContributions[hour].HasContribution = true;
+                        UpdateStatus(dailyContribution);
+                        
+                    }
+                    Debug.Assert(quotations.Count == counter);
+                    _logger.LogInformation("Import: {date} was updated. {count} were saved.", dailyContribution.HourlyContributions[0].DateTime.ToString(Format), counter);
+                    if (cancellationToken.IsCancellationRequested) { return; }
+                }
+            }
         }
     }
     private async Task<IEnumerable<Quotation>> GetSampleTicksAsync(IEnumerable<HourlyContribution> hourlyContributions, int yearNumber, int weekNumber)
@@ -541,6 +539,8 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
             throw;
         }
     }
+    
+    //todo: make it from to
     private async Task<int> DeleteTicksAsync(IEnumerable<DateTime> dateTimes, int yearNumber, int weekNumber)
     {
         var dataTable = new DataTable();
@@ -570,7 +570,7 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
             throw;
         }
     }
-    private int ReportProgressReport(int processedItems, DailyContribution dailyContribution, int totalItems)
+    private int ReportProgressReport(int totalItems, int processedItems, DailyContribution dailyContribution)
     {
         processedItems += dailyContribution.HourlyContributions.Count;
         var progressPercentage = processedItems * 100 / totalItems;
@@ -656,7 +656,7 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
 
             foreach (var yearlyContribution in _yearlyContributionsCache!)
             {
-                await ProcessYearlyContributionAsync(yearlyContribution, cancellationToken, totalItems).ConfigureAwait(true);
+                await ProcessYearlyContributionAsync(yearlyContribution, totalItems, cancellationToken).ConfigureAwait(true);
             }
         }
         catch (Exception exception)
@@ -678,7 +678,7 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
                 for (var d = 0; d < monthlyContribution.DailyContributions.Count; d++)
                 {
                     var dailyContribution = monthlyContribution.DailyContributions[d];
-                    processedItems = ReportProgressReport(processedItems, dailyContribution, totalItems);
+                    processedItems = ReportProgressReport(totalItems, processedItems, dailyContribution);
                     var list = new List<long>();
                     for (var h = 0; h < dailyContribution.HourlyContributions.Count; h++)
                     {
@@ -695,15 +695,15 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
             }
         }
     }
-    private async Task ProcessYearlyContributionAsync(YearlyContribution yearlyContribution, CancellationToken cancellationToken, int totalItems)
+    private async Task ProcessYearlyContributionAsync(YearlyContribution yearlyContribution, int totalItems, CancellationToken cancellationToken)
     {
         for (var m = 0; m < yearlyContribution.MonthlyContributions!.Count; m++)
         {
             var monthlyContribution = yearlyContribution.MonthlyContributions[m];
-            await ProcessMonthlyContributionAsync(monthlyContribution, cancellationToken, totalItems).ConfigureAwait(true);
+            await ProcessMonthlyContributionAsync(monthlyContribution, totalItems, cancellationToken).ConfigureAwait(true);
         }
     }
-    private async Task ProcessMonthlyContributionAsync(MonthlyContribution monthlyContribution, CancellationToken cancellationToken, int totalItems)
+    private async Task ProcessMonthlyContributionAsync(MonthlyContribution monthlyContribution, int totalItems, CancellationToken cancellationToken)
     {
         for (var d = 0; d < monthlyContribution.DailyContributions.Count; d++)
         {
@@ -748,24 +748,6 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
         }
     }
     #endregion RecalculateAllContributionsAsync
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     public async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForDayAsync(int year, int week, int day) => throw new NotImplementedException();
@@ -843,37 +825,4 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
     //}
     //return (firstQuotations, quotations);
     
-}
-
-internal readonly struct QuotationKey //todo:
-{
-    public int Year
-    {
-        get; init;
-    }
-    public int Quarter
-    {
-        get; init;
-    }
-    public int Week
-    {
-        get; init;
-    }
-    public int Day
-    {
-        get; init;
-    }
-    public int Hour
-    {
-        get; init;
-    }
-    public int Month
-    {
-        get; init;
-    }
-
-    public override string ToString()
-    {
-        return $"{Year:0000}|{Month:00}|{Week:00}|{Day:00}|{Hour:00}";
-    }
 }

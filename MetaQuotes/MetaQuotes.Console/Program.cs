@@ -10,8 +10,7 @@ using NAudio.Wave;
 
 var config = new Configuration()
 {
-    Workplace = Workplace.Testing,
-    InputModification = Modification.UnModified,
+    Workplace = Workplace.Development,
     Year = 2023,
     Week = 8,
     Day = 7
@@ -24,12 +23,11 @@ var audioPlayer = new AudioPlayer(audioFilePath);
 
 Console.WriteLine("MetaQuotes.MT5 platform simulator...");
 Console.WriteLine($"Workplace: {config.Workplace}.");
-Console.WriteLine($"Input Ticks: {config.InputModification}.");
 Console.WriteLine($"Year: {config.Year}.");
 Console.WriteLine($"Week: {config.Week?.ToString("00") ?? "null"}.");
 Console.WriteLine($"Day: {config.Day?.ToString("00") ?? "null"}.");
 
-var (firstQuotations, quotations) = await MSSQLRepository.Instance.GetQuotationsForDayAsync(config.Year, config.Week!.Value, config.Day!.Value, config.Workplace, config.InputModification).ConfigureAwait(false);
+var (firstQuotations, quotations) = await MSSQLRepository.Instance.GetQuotationsForDayAsync(config.Year, config.Week!.Value, config.Day!.Value).ConfigureAwait(false);
 
 CancellationTokenSource cts = new();
 var consoleServiceTask = Task.Run(() => ConsoleService(cts));
@@ -139,7 +137,6 @@ void EmergencyExit(Exception exception)
 internal readonly struct Configuration
 {
     public Workplace Workplace { get; init; }
-    public Modification InputModification { get; init; }
     public int Year { get; init; }
     public int? Week { get; init; }
     public int? Day { get; init; }

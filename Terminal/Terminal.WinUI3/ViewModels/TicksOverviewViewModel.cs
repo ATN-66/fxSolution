@@ -100,6 +100,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         YearlyContributionsCount = 0;
         YearlyContributions.Clear();
         var yearlyContributions = await _dataService.GetYearlyContributionsAsync().ConfigureAwait(true);
+        Debug.Assert(_dispatcherService.HasThreadAccess);
         YearlyContributions.AddRange(yearlyContributions);
         YearlyContributionsCount = YearlyContributions.Count;
         YearlyContributionsIsLoading = false;
@@ -135,9 +136,9 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         var startDateTime = SelectedDate.Date.AddHours(SelectedTime.Hours);
         var endDateTime = startDateTime.AddHours(1);
 
-        var fileServiceTask = _dataService.GetTicksAsync(SelectedSymbol, startDateTime, endDateTime, Provider.FileService);
-        var mediatorTask = _dataService.GetTicksAsync(SelectedSymbol, startDateTime, endDateTime, Provider.Mediator);
-        var terminalTask = _dataService.GetTicksAsync(SelectedSymbol, startDateTime, endDateTime);
+        var fileServiceTask = _dataService.GetTicksAsync(SelectedSymbol, startDateTime, endDateTime, Provider.FileService, true);
+        var mediatorTask = _dataService.GetTicksAsync(SelectedSymbol, startDateTime, endDateTime, Provider.Mediator, true);
+        var terminalTask = _dataService.GetTicksAsync(SelectedSymbol, startDateTime, endDateTime, Provider.Terminal, true);
 
         FileServiceQuotationsIsLoading = true;
         MediatorQuotationsIsLoading = true;
@@ -262,7 +263,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         HourlyContributions.Clear();
 
         var result = await _dataService.ReImportSelectedAsync(SelectedDate.DateTime.Date).ConfigureAwait(true);
-        Debug.WriteLine(result);//todo: notify
+        Debug.WriteLine(result);//todo: notify Contribution
         _ = RefreshContributionsAsync().ConfigureAwait(true);
         _ = GetHoursAsync(true).ConfigureAwait(true);
     }
