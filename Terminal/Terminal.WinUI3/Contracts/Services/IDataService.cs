@@ -21,4 +21,6 @@ public interface IDataService
 
     Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForDayAsync(int year, int week, int day);
     Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForWeekAsync(int year, int week);
+    Task<int> BackupAsync();
+    Task<int> RestoreAsync();
 }

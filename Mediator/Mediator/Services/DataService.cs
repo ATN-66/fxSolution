@@ -3,6 +3,7 @@
   |                                                   DataService.cs |
   +------------------------------------------------------------------+*/
 
+using System;
 using System.Data;
 using System.Data.SqlClient;
 using Common.Entities;
@@ -145,52 +146,47 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
 
     private async Task LoadTicksToCacheAsync(DateTime dateTime)
     {
+        var yearNumber = dateTime.Year;
+        var weekNumber = dateTime.Week();
         var quotations = new List<Quotation>();
-
-        var year = dateTime.Year.ToString();
-        var month = dateTime.Month.ToString("D2");
-        var week = dateTime.Week().ToString("D2");
-        var quarter = DateTimeExtensionsAndHelpers.Quarter(dateTime.Week()).ToString();
-        var day = dateTime.Day.ToString("D2");
-        var hour = dateTime.Hour.ToString("D2");
-        var key = $"{year}.{month}.{day}.{hour}";
-
+        
         var server = GetConnectionString(_mainViewModel.Workplace);
         var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(dateTime.Year, dateTime.Week(), Provider);
-        var connectionString = $"{server};Database={databaseName};Trusted_Connection=True;";
-        //var databaseName = GetDatabaseName(year, week, environment, modification);
-        //var connectionString = $"{_server};Database={databaseName};Trusted_Connection=True;";
-        //await using (var connection = new SqlConnection(connectionString))
-        //{
-        //    await connection.OpenAsync().ConfigureAwait(false);
-        //    await using var command = new SqlCommand("GetQuotationsByWeekAndDay", connection) { CommandTimeout = 0 };
-        //    command.CommandType = CommandType.StoredProcedure;
-        //    command.Parameters.AddWithValue("@Week", week);
-        //    command.Parameters.AddWithValue("@DayOfWeek", day);
-        //    int id = default;
-        //    await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
-        //    while (await reader.ReadAsync().ConfigureAwait(false))
-        //    {
-        //        var resultSymbol = (Symbol)reader.GetInt32(0);
-        //        var resultDateTime = reader.GetDateTime(1).ToUniversalTime();
-        //        var resultAsk = reader.GetDouble(2);
-        //        var resultBid = reader.GetDouble(3);
-        //        var quotation = new Quotation(id++, resultSymbol, resultDateTime, resultAsk, resultBid);
-        //        if (!firstQuotationsDict.ContainsKey(quotation.Symbol))
-        //        {
-        //            firstQuotationsDict[quotation.Symbol] = quotation;
-        //            firstQuotations.Enqueue(quotation);
-        //        }
-        //        else
-        //        {
-        //            quotations.Enqueue(quotation);
-        //        }
-        //    }
-        //}
-        //return (firstQuotations, quotations);
+        await using(var connection = new SqlConnection($"{server};Database={databaseName};Trusted_Connection=True;"))
+        {
+            await connection.OpenAsync().ConfigureAwait(false);
+            await using var command = new SqlCommand("GetQuotationsByWeek", connection) { CommandTimeout = 0 };
+            command.CommandType = CommandType.StoredProcedure;
+            command.Parameters.AddWithValue("@Week", weekNumber);
+            await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
+            
+            int id = default;
+            while (await reader.ReadAsync().ConfigureAwait(false))
+            {
+                var resultSymbol = (Symbol)reader.GetInt32(0);
+                var resultDateTime = reader.GetDateTime(1).ToUniversalTime();
+                var resultAsk = reader.GetDouble(2);
+                var resultBid = reader.GetDouble(3);
+                var quotation = new Quotation(id++, resultSymbol, resultDateTime, resultAsk, resultBid);
+                quotations.Add(quotation);
+            }
+        }
 
-        SetQuotations(key, quotations);
+
+
+        
     }
+
+    //var year = dateTime.Year.ToString();
+    //var month = dateTime.Month.ToString("D2");
+    //var week = dateTime.Week().ToString("D2");
+    //var quarter = DateTimeExtensionsAndHelpers.Quarter(dateTime.Week()).ToString();
+    //var day = dateTime.Day.ToString("D2");
+    //var hour = dateTime.Hour.ToString("D2");
+    //var key = $"{year}.{month}.{day}.{hour}";
+    //var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
+
+    //SetQuotations(key, quotations);
 
     private void AddQuotation(string key, List<Quotation> quotationList)
     {
@@ -222,7 +218,7 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
             Workplace.Development => _configuration.GetConnectionString(Development) ?? Default,
             Workplace.Testing => _configuration.GetConnectionString(Testing) ?? Default,
             Workplace.Production => _configuration.GetConnectionString(Production) ?? Default,
-            _ => throw new ArgumentOutOfRangeException(nameof(workplace), workplace, null)
+            _ => _configuration.GetConnectionString(Development) ?? Default,
         };
     }
 }

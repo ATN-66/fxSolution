@@ -8,6 +8,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Globalization;
+using System.Reflection.Metadata.Ecma335;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -42,6 +43,10 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
     private readonly Queue<string> _keys = new();
     private const int MaxItems = 4_032;
     private const string Format = "dddd, MMMM d, yyyy";
+    private const int QuartersInYear = 4;
+    private readonly string _dbBackupDrive;
+    private readonly string _dbProviderBackupFolder;
+    private readonly string _dbSolutionBackupFolder;
 
     public DataService(IProcessor processor, IExternalDataSource externalDataSource, IConfiguration configuration, IAppNotificationService notificationService, ILogger<DataService> logger) 
     {
@@ -53,7 +58,11 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
         _server = configuration.GetConnectionString("Server")!;
         _solutionDatabase = configuration.GetConnectionString("SolutionDatabase")!;
 
-        var formats = new[] { configuration.GetValue<string>("DucascopyTickstoryDateTimeFormat")! };//todo
+        _dbBackupDrive = configuration.GetValue<string>("dbBackupDrive")!;
+        _dbProviderBackupFolder = configuration.GetValue<string>("dbProviderBackupFolder")!;
+        _dbSolutionBackupFolder = configuration.GetValue<string>("dbSolutionBackupFolder")!;
+
+        var formats = new[] { configuration.GetValue<string>("DucascopyTickstoryDateTimeFormat")! };
         _startDateTimeUtc = DateTime.ParseExact(configuration.GetValue<string>("StartDate")!, formats, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
         _excludedDates = new HashSet<DateTime>(configuration.GetSection("ExcludedDates").Get<List<DateTime>>()!);
         _excludedHours = new HashSet<DateTime>(configuration.GetSection("ExcludedHours").Get<List<DateTime>>()!);
@@ -749,6 +758,89 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
     }
     #endregion RecalculateAllContributionsAsync
 
+    public async Task<int> BackupAsync()
+    {
+        var startYear = _startDateTimeUtc.Year;
+        var endYear = DateTime.UtcNow.Year;
+        var anyFailures = false;
+
+        try
+        {
+            int result;
+            for (var yearToBackup = startYear; yearToBackup <= endYear; yearToBackup++)
+            {
+                for (var quarter = 1; quarter <= QuartersInYear; quarter++)
+                {
+                    result = await BackupProviderDatabase(yearToBackup, quarter).ConfigureAwait(false);
+                    if (result == -1)
+                    {
+                        anyFailures = true;
+                    }
+                }
+            }
+
+            result = await BackupSolutionDatabase().ConfigureAwait(false);
+            if (result == -1)
+            {
+                anyFailures = true;
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError("{Message}", exception.Message);
+            _logger.LogError("{Message}", exception.InnerException?.Message);
+            throw;
+        }
+
+        return anyFailures ? -1 : 1;
+
+        async Task<int> BackupProviderDatabase(int yearNumber, int quarterNumber)
+        {
+            await using var connection = new SqlConnection($"{_server};Database={_solutionDatabase};Trusted_Connection=True;");
+            await connection.OpenAsync().ConfigureAwait(false);
+            await using var cmd = new SqlCommand("BackupProviderDatabase", connection) { CommandType = CommandType.StoredProcedure };
+
+            cmd.Parameters.Add(new SqlParameter("@Drive", _dbBackupDrive)); //"D:"
+            cmd.Parameters.Add(new SqlParameter("@Folder", _dbProviderBackupFolder)); //"forex.ms-sql-db.terminal.backup"
+            cmd.Parameters.Add(new SqlParameter("@Year", yearNumber));
+            cmd.Parameters.Add(new SqlParameter("@Quarter", quarterNumber));
+            cmd.Parameters.Add(new SqlParameter("@Provider", Provider.ToString().ToLower()));
+
+            var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
+            returnParameter.Direction = ParameterDirection.ReturnValue;
+
+            await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+            var result = (int)returnParameter.Value;
+            return result;
+        }
+
+        async Task<int> BackupSolutionDatabase()
+        {
+            await using var connection = new SqlConnection($"{_server};Database={_solutionDatabase};Trusted_Connection=True;");
+            await connection.OpenAsync().ConfigureAwait(false);
+            await using var cmd = new SqlCommand("BackupSolutionDatabase", connection) { CommandType = CommandType.StoredProcedure };
+
+            cmd.Parameters.Add(new SqlParameter("@Drive", _dbBackupDrive)); //"D:"
+            cmd.Parameters.Add(new SqlParameter("@Folder", _dbSolutionBackupFolder)); //"forex.ms-sql-db.solution.backup"
+
+            var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
+            returnParameter.Direction = ParameterDirection.ReturnValue;
+
+            await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+            var result = (int)returnParameter.Value;
+            return result;
+        }
+    }
+    public Task<int> RestoreAsync()
+    {
+        return Task.FromResult(0);
+    }
+
+
+
+
+
+
 
     public async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForDayAsync(int year, int week, int day) => throw new NotImplementedException();
 
@@ -791,6 +883,9 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
     //}
     //return (firstQuotations, quotations);
     public async Task<(Queue<Quotation> FirstQuotations, Queue<Quotation> Quotations)> GetQuotationsForWeekAsync(int year, int week) => throw new NotImplementedException();
+
+    
+    
 
     //var firstQuotationsDict = new Dictionary<Symbol, Quotation>();
     //var firstQuotations = new Queue<Quotation>();

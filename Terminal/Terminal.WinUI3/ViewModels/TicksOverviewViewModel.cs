@@ -338,6 +338,20 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         }
     }
 
+    [RelayCommand]
+    private async Task BackupAsync()
+    {
+        var result = await _dataService.BackupAsync().ConfigureAwait(true);
+        Debug.WriteLine(result);//todo: notify Contribution
+    }
+
+    [RelayCommand]
+    private async Task RestoreAsync()
+    {
+        var result = await _dataService.RestoreAsync().ConfigureAwait(true);
+        Debug.WriteLine(result);//todo: notify Contribution
+    }
+
     private void OnDailyContributionChanged(DailyContribution dailyContribution)
     {
         Debug.Assert(_dispatcherService.HasThreadAccess);

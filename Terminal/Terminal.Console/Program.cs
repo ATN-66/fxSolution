@@ -39,9 +39,9 @@ catch (Exception e)
 {
     Console.WriteLine(e.Message);
     Console.WriteLine("----------------------");
-    Console.WriteLine(e.InnerException.Message);
-    Console.WriteLine("----------------------");
-    Console.WriteLine(e.InnerException.InnerException.Message);
+    //Console.WriteLine(e.InnerException.Message);
+    //Console.WriteLine("----------------------");
+    //Console.WriteLine(e.InnerException.InnerException.Message);
 }
 
 Console.WriteLine("End of the program. Press any key to exit ...");
