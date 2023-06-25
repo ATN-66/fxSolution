@@ -506,8 +506,8 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
-                Debug.WriteLine(ex.Message);
+                _logger.LogError(exception.Message);
+                _logger.LogError(exception.InnerException?.Message);
                 throw;
             }
 

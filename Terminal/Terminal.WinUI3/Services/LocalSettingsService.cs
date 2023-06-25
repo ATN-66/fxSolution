@@ -8,7 +8,7 @@ namespace Terminal.WinUI3.Services;
 
 public class LocalSettingsService : ILocalSettingsService
 {
-    private const string _defaultApplicationDataFolder = "WinUI3TemplateStudio/ApplicationData";//todo
+    private const string _defaultApplicationDataFolder = "Terminal.WinUI3/ApplicationData";//todo
     private const string _defaultLocalSettingsFile = "LocalSettings.json";//todo
 
     private readonly IFileService _fileService;
@@ -69,7 +69,8 @@ public class LocalSettingsService : ILocalSettingsService
     {
         if (RuntimeHelper.IsMSIX)
         {
-            ApplicationData.Current.LocalSettings.Values[key] = await Json.StringifyAsync(value);
+            var tmp = await Json.StringifyAsync(value);
+            ApplicationData.Current.LocalSettings.Values[key] = tmp;
         }
         else
         {

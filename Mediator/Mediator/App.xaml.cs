@@ -5,7 +5,7 @@
 
 using Mediator.Activation;
 using Mediator.Contracts.Services;
-using Mediator.Core.Services;
+using Mediator.Models;
 using Mediator.Services;
 using Mediator.ViewModels;
 using Mediator.Views;
@@ -42,7 +42,7 @@ public partial class App
         var logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
         Log.Logger = logger;
 
-        Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder().UseContentRoot(AppContext.BaseDirectory).ConfigureServices((_, services) =>
+        Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder().UseContentRoot(AppContext.BaseDirectory).ConfigureServices((context, services) =>
         {
             services.AddSingleton(configuration);
             services.AddLogging(loggingBuilder =>
@@ -51,8 +51,10 @@ public partial class App
             });
 
             services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
-
+            services.AddSingleton<ILocalSettingsService, LocalSettingsService>();
             services.AddSingleton<IActivationService, ActivationService>();
+            services.AddSingleton<IAppNotificationService, AppNotificationService>();
+            services.AddSingleton<IWindowingService, WindowingService>();
             services.AddSingleton<IPageService, PageService>();
             services.AddSingleton<INavigationService, NavigationService>();
 
@@ -68,9 +70,14 @@ public partial class App
             services.AddSingleton<MainViewModel>();
             services.AddTransient<MainPage>();
 
+            services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
         }).UseSerilog().Build();
 
+        DebugSettings.BindingFailed += DebugSettings_BindingFailed;
+        DebugSettings.XamlResourceReferenceFailed += DebugSettings_XamlResourceReferenceFailed;
         UnhandledException += App_UnhandledException;
+
+        App.GetService<IAppNotificationService>().Initialize();
         _cts = Host.Services.GetRequiredService<CancellationTokenSource>();
     }
 
@@ -112,6 +119,11 @@ public partial class App
     {
         Log.Fatal(exception.Message, "DebugSettings_BindingFailed");
         throw new NotImplementedException("DebugSettings_BindingFailed");
+    }
+
+    private void DebugSettings_XamlResourceReferenceFailed(DebugSettings sender, XamlResourceReferenceFailedEventArgs args)
+    {
+        throw new NotImplementedException();
     }
 
     protected async override void OnLaunched(LaunchActivatedEventArgs args)

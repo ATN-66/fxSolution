@@ -96,17 +96,17 @@ public readonly record struct Quotation() : IComparable
 
     public override string ToString()
     {
-        //return $"{Symbol}, {DateTime:D}, {DateTime:T}";
-        return Symbol switch
-        {
-            Symbol.EURUSD => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.00000}, {Bid:##0.00000}",
-            Symbol.EURGBP => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.00000}, {Bid:##0.00000}",
-            Symbol.GBPUSD => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.00000}, {Bid:##0.00000}",
-            Symbol.USDJPY => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.000}, {Bid:##0.000}",
-            Symbol.EURJPY => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.000}, {Bid:##0.000}",
-            Symbol.GBPJPY => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.000}, {Bid:##0.000}",
-            _ => throw new Exception(nameof(Symbol))
-        };
+        return $"{Symbol}, {DateTime:D}, {DateTime:T}";
+        //return Symbol switch
+        //{
+        //    Symbol.EURUSD => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.00000}, {Bid:##0.00000}",
+        //    Symbol.EURGBP => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.00000}, {Bid:##0.00000}",
+        //    Symbol.GBPUSD => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.00000}, {Bid:##0.00000}",
+        //    Symbol.USDJPY => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.000}, {Bid:##0.000}",
+        //    Symbol.EURJPY => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.000}, {Bid:##0.000}",
+        //    Symbol.GBPJPY => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.000}, {Bid:##0.000}",
+        //    _ => throw new Exception(nameof(Symbol))
+        //};
     }
 }
 

@@ -21,13 +21,12 @@ public partial class SettingsViewModel : ObservableRecipient
         _elementTheme = themeSelectorService1.Theme;
         _versionDescription = GetVersionDescription();
 
-        SwitchThemeCommand = new RelayCommand<ElementTheme>(
-            async param =>
+        SwitchThemeCommand = new RelayCommand<ElementTheme>(async param =>
             {
                 if (ElementTheme != param)
                 {
                     ElementTheme = param;
-                    await themeSelectorService1.SetThemeAsync(param);
+                    await themeSelectorService1.SetThemeAsync(param).ConfigureAwait(true);
                 }
             });
     }

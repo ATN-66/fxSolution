@@ -21,7 +21,6 @@ enum Symbol {
 
 message GetTicksRequest {
     google.protobuf.Timestamp startDateTime = 1;
-    google.protobuf.Timestamp endDateTime = 2;
 }
 
 message GetTicksResponse {
@@ -29,5 +28,5 @@ message GetTicksResponse {
 }
 
 service TicksDataProvider {
-    rpc GetTicksAsync (GetTicksRequest) returns (GetTicksResponse);
+    rpc GetTicksAsync (GetTicksRequest) returns (stream GetTicksResponse);
 }

@@ -125,7 +125,8 @@ public partial class App
             services.AddTransient<JPYUSDViewModel>();
             services.AddTransient<JPYUSDPage>();
 
-           
+            services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
+
         }).UseSerilog().Build();
         
         UnhandledException += App_UnhandledException;

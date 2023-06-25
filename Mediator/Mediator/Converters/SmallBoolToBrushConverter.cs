@@ -4,7 +4,7 @@ using Microsoft.UI;
 
 namespace Mediator.Converters;
 
-public class EachBoolToBrushConverter : IValueConverter
+public class SmallBoolToBrushConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
     {

@@ -10,18 +10,18 @@ public class ActivationService : IActivationService
 {
     private readonly ActivationHandler<LaunchActivatedEventArgs> _defaultHandler;
     private readonly IEnumerable<IActivationHandler> _activationHandlers;
+    private readonly IWindowingService _windowingService;
     private UIElement? _main;
 
-    public ActivationService(ActivationHandler<LaunchActivatedEventArgs> defaultHandler, IEnumerable<IActivationHandler> activationHandlers)
+    public ActivationService(ActivationHandler<LaunchActivatedEventArgs> defaultHandler, IEnumerable<IActivationHandler> activationHandlers, IWindowingService windowingService)
     {
         _defaultHandler = defaultHandler;
         _activationHandlers = activationHandlers;
+        _windowingService = windowingService;
     }
 
     public async Task ActivateAsync(object activationArgs)
     {
-        //await InitializeAsync().ConfigureAwait(false);
-
         if (App.MainWindow.Content == null)
         {
             _main = App.GetService<MainPage>();
@@ -32,6 +32,7 @@ public class ActivationService : IActivationService
 
         App.MainWindow.Activate();
 
+        await InitializeAsync().ConfigureAwait(false);
         //await StartupAsync().ConfigureAwait(false);
     }
 
@@ -50,10 +51,10 @@ public class ActivationService : IActivationService
         }
     }
 
-    //private async Task InitializeAsync()
-    //{
-    //    await Task.CompletedTask.ConfigureAwait(false);
-    //}
+    private Task InitializeAsync()
+    {
+        return _windowingService.InitializeAsync(App.MainWindow);
+    }
 
     //private async Task StartupAsync()
     //{

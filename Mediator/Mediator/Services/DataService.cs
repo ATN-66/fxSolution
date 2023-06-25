@@ -3,17 +3,19 @@
   |                                                   DataService.cs |
   +------------------------------------------------------------------+*/
 
-using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics.Metrics;
+using System.Diagnostics;
+using System.Globalization;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Mediator.Contracts.Services;
-using Mediator.ViewModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Quotation = Common.Entities.Quotation;
+using System;
 
 namespace Mediator.Services;
 
@@ -22,31 +24,61 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
     private readonly Guid _guid = Guid.NewGuid();
     private const Provider Provider = Common.Entities.Provider.Mediator;
     private readonly IConfiguration _configuration;
-    private readonly MainViewModel _mainViewModel;
     private readonly ILogger<IDataService> _logger;
-    private const string Development = "Development";
-    private const string Testing = "Testing";
-    private const string Production = "Production";
-    private const string Default = "Server=localhost\\SQLEXPRESS";
     private readonly Dictionary<string, List<Quotation>> _ticksCache = new();
     private readonly Queue<string> _keys = new();
     private const int MaxItems = 2_016;
+    private readonly DateTime _startDateTimeUtc;
+    private const int QuartersInYear = 4;
+    private string? _dbBackupDrive;
+    private readonly string _dbBackupFolder;
+    private string? _server;
+    private Workplace _workplace;
 
-    public DataService(IConfiguration configuration, MainViewModel mainViewModel, ILogger<IDataService> logger)
+    public DataService(IConfiguration configuration, ILogger<IDataService> logger)
     {
         _configuration = configuration;
-        _mainViewModel = mainViewModel;
         _logger = logger;
+        _startDateTimeUtc = DateTime.ParseExact(configuration.GetValue<string>("StartDate")!, "yyyy-MM-dd HH:mm:ss:fff", CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
+        _dbBackupFolder = _configuration.GetValue<string>($"{nameof(_dbBackupFolder)}")!;
         _logger.Log(LogLevel.Trace, "{TypeName}.{Guid} is ON.", GetType().Name, _guid);
+    }
+
+    public Workplace Workplace
+    {
+        get => _workplace;
+        set
+        {
+            if (value  == _workplace)
+            {
+                return;
+            }
+
+            _workplace = value;
+            switch (_workplace)
+            {
+                case Workplace.None:
+                case Workplace.Testing:
+                case Workplace.Staging:
+                case Workplace.DisasterRecovery:
+                case Workplace.ContinuousIntegration:
+                    _dbBackupDrive = _server = null;
+                    break;
+                case Workplace.Development:
+                    _dbBackupDrive = _configuration.GetValue<string>($"{nameof(_dbBackupDrive)}_Development")!;
+                    _server = _configuration.GetValue<string>($"{nameof(_server)}_Development")!;
+                    break;
+                case Workplace.Production:
+                    _dbBackupDrive = _configuration.GetValue<string>($"{nameof(_dbBackupDrive)}_Production")!;
+                    _server = _configuration.GetValue<string>($"{nameof(_server)}_Production")!;
+                    break;
+                default: throw new ArgumentOutOfRangeException($"{nameof(Workplace)}");
+            }
+        }
     }
 
     public async Task SaveQuotationsAsync(List<Quotation> quotations)
     {
-        if (_mainViewModel.Workplace is not (Workplace.Production or Workplace.Development))
-        {
-            return;
-        }
-
         var quotationsGrouped = quotations.GroupBy(q => new { q.DateTime.Year, Week = q.DateTime.Week() }).ToList();
         foreach (var grouping in quotationsGrouped)
         {
@@ -67,9 +99,8 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
                 dataTable.Rows.Add((int)quotation.Symbol, quotation.DateTime, quotation.Ask, quotation.Bid);
             }
 
-            var server = GetConnectionString(_mainViewModel.Workplace);
             var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(yearNumber, weekNumber, Provider);
-            var connectionString = $"{server};Database={databaseName};Trusted_Connection=True;";
+            var connectionString = $"{_server};Database={databaseName};Trusted_Connection=True;";
 
             try
             {
@@ -123,43 +154,127 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
         }
     }
 
-    public async Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTime, DateTime endDateTime)
+    public async Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTime)
     {
         var result = new List<Quotation>();
-        var start = startDateTime.Date.AddHours(startDateTime.Hour);
-        var end = endDateTime.Date.AddHours(endDateTime.Hour);
+        var start = startDateTime.Date;
+        var end = DateTime.Now.Date.AddDays(1);
 
         var index = start;
         do
         {
-            var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
+            var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}";
             if (!_ticksCache.ContainsKey(key))
             {
                 await LoadTicksToCacheAsync(index).ConfigureAwait(false);
             }
-            result.AddRange(GetQuotations(key));
-            index = index.Add(new TimeSpan(1, 0, 0));
+
+            if (_ticksCache.ContainsKey(key))
+            {
+                result.AddRange(GetQuotations(key));
+            }
+
+            index = index.Add(new TimeSpan(1,0, 0, 0));
         }
         while (index < end);
+
         return result;
+    }
+
+    public async Task<Dictionary<ActionResult, int>> BackupAsync()
+    {
+        var resultCounts = new Dictionary<ActionResult, int>
+        {
+            [ActionResult.ActionNotPossible] = 0,
+            [ActionResult.Failure] = 0,
+            [ActionResult.NoActionRequired] = 0,
+            [ActionResult.Success] = 0
+        };
+        var startYear = _startDateTimeUtc.Year;
+        var endYear = DateTime.UtcNow.Year;
+
+        if (Workplace is not (Workplace.Production or Workplace.Development))
+        {
+            for (var yearToBackup = startYear; yearToBackup <= endYear; yearToBackup++)
+            {
+                for (var quarter = 1; quarter <= QuartersInYear; quarter++)
+                {
+                    resultCounts[ActionResult.ActionNotPossible]++;
+                }
+            }
+            
+            return resultCounts;
+        }
+
+        try
+        {
+            for (var yearToBackup = startYear; yearToBackup <= endYear; yearToBackup++)
+            {
+                for (var quarter = 1; quarter <= QuartersInYear; quarter++)
+                {
+                    var result = await BackupProviderDatabase(yearToBackup, quarter).ConfigureAwait(false);
+                    switch (result)
+                    {
+                        case -1:
+                            resultCounts[ActionResult.Failure]++;
+                            break;
+                        case 0:
+                            resultCounts[ActionResult.NoActionRequired]++;
+                            break;
+                        case 1:
+                            resultCounts[ActionResult.Success]++;
+                            break;
+                    }
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError("{Message}", exception.Message);
+            _logger.LogError("{Message}", exception.InnerException?.Message);
+            throw;
+        }
+
+        return resultCounts;
+
+        async Task<int> BackupProviderDatabase(int yearNumber, int quarterNumber)
+        {
+            var databaseName = $"{yearNumber}.{quarterNumber}.{Provider.ToString().ToLower()}";
+            var connectionString = $"{_server};Database={databaseName};Trusted_Connection=True;";
+
+            await using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync().ConfigureAwait(false);
+            await using var cmd = new SqlCommand("BackupProviderDatabase", connection) { CommandType = CommandType.StoredProcedure };
+
+            cmd.Parameters.Add(new SqlParameter("@Drive", _dbBackupDrive));
+            cmd.Parameters.Add(new SqlParameter("@Folder", _dbBackupFolder));
+
+            var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
+            returnParameter.Direction = ParameterDirection.ReturnValue;
+
+            await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+            var result = (int)returnParameter.Value;
+            return result;
+        }
     }
 
     private async Task LoadTicksToCacheAsync(DateTime dateTime)
     {
         var yearNumber = dateTime.Year;
         var weekNumber = dateTime.Week();
+        var dayOfWeekNumber = ((int)dateTime.DayOfWeek + 6) % 7 + 1;
         var quotations = new List<Quotation>();
-        
-        var server = GetConnectionString(_mainViewModel.Workplace);
-        var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(dateTime.Year, dateTime.Week(), Provider);
-        await using(var connection = new SqlConnection($"{server};Database={databaseName};Trusted_Connection=True;"))
+
+        var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(yearNumber, weekNumber, Provider);
+        await using var connection = new SqlConnection($"{_server};Database={databaseName};Trusted_Connection=True;");
+        await connection.OpenAsync().ConfigureAwait(false);
+        await using var command = new SqlCommand("GetQuotationsByWeekAndDay", connection) { CommandTimeout = 0 };
+        command.CommandType = CommandType.StoredProcedure;
+        command.Parameters.AddWithValue("@Week", weekNumber);
+        command.Parameters.AddWithValue("@DayOfWeek", dayOfWeekNumber);
+        try
         {
-            await connection.OpenAsync().ConfigureAwait(false);
-            await using var command = new SqlCommand("GetQuotationsByWeek", connection) { CommandTimeout = 0 };
-            command.CommandType = CommandType.StoredProcedure;
-            command.Parameters.AddWithValue("@Week", weekNumber);
             await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
-            
             int id = default;
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
@@ -170,23 +285,42 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
                 var quotation = new Quotation(id++, resultSymbol, resultDateTime, resultAsk, resultBid);
                 quotations.Add(quotation);
             }
+
+            var yearsCounter = 0;
+            var monthsCounter = 0;
+            var daysCounter = 0;
+
+            var groupedByYear = quotations.GroupBy(q => new QuotationKey { Year = q.DateTime.Year });
+            foreach (var yearGroup in groupedByYear)
+            {
+                var year = yearGroup.Key.Year;
+                yearsCounter++;
+                var groupedByMonth = yearGroup.GroupBy(q => new QuotationKey { Month = q.DateTime.Month });
+                foreach (var monthGroup in groupedByMonth)
+                {
+                    var month = monthGroup.Key.Month;
+                    monthsCounter++;
+                    var groupedByDay = monthGroup.GroupBy(q => new QuotationKey { Day = q.DateTime.Day });
+                    foreach (var dayGroup in groupedByDay)
+                    {
+                        var day = dayGroup.Key.Day;
+                        daysCounter++;
+                        var key = $"{year}.{month:D2}.{day:D2}";
+                        SetQuotations(key, dayGroup.ToList());
+                        Debug.WriteLine(key);
+                    }
+                }
+            }
+
+            Debug.WriteLine($"year counter:{yearsCounter}, month counter:{monthsCounter:D2}, day counter:{daysCounter:D2}");
         }
-
-
-
-        
+        catch (Exception exception)
+        {
+            _logger.LogError("{message}", exception.Message);
+            _logger.LogError("{message}", exception.InnerException?.Message);
+            throw;
+        }
     }
-
-    //var year = dateTime.Year.ToString();
-    //var month = dateTime.Month.ToString("D2");
-    //var week = dateTime.Week().ToString("D2");
-    //var quarter = DateTimeExtensionsAndHelpers.Quarter(dateTime.Week()).ToString();
-    //var day = dateTime.Day.ToString("D2");
-    //var hour = dateTime.Hour.ToString("D2");
-    //var key = $"{year}.{month}.{day}.{hour}";
-    //var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
-
-    //SetQuotations(key, quotations);
 
     private void AddQuotation(string key, List<Quotation> quotationList)
     {
@@ -209,16 +343,5 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
     {
         _ticksCache.TryGetValue(key, out var quotations);
         return quotations!;
-    }
-
-    private string GetConnectionString(Workplace workplace)
-    {
-        return workplace switch
-        {
-            Workplace.Development => _configuration.GetConnectionString(Development) ?? Default,
-            Workplace.Testing => _configuration.GetConnectionString(Testing) ?? Default,
-            Workplace.Production => _configuration.GetConnectionString(Production) ?? Default,
-            _ => _configuration.GetConnectionString(Development) ?? Default,
-        };
     }
 }
