@@ -4,7 +4,7 @@ namespace Terminal.WinUI3.Contracts.Services;
 
 public interface IFileService
 {
-    Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTime, DateTime endDateTime);
+    Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive);
 
     T? Read<T>(string folderPath, string fileName);
     void Save<T>(string folderPath, string fileName, T content);

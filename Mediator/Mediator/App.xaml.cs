@@ -3,6 +3,7 @@
   |                                                           App.cs |
   +------------------------------------------------------------------+*/
 
+using Common.Entities;
 using Mediator.Activation;
 using Mediator.Contracts.Services;
 using Mediator.Models;
@@ -12,6 +13,7 @@ using Mediator.Views;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Serilog;
@@ -24,19 +26,25 @@ namespace Mediator;
 public partial class App
 {
     private readonly CancellationTokenSource _cts;
-
     public App()
     {
         InitializeComponent();
 
-        Environment.SetEnvironmentVariable("Mediator.ENVIRONMENT", "Development"); //appsettings.development
-        //Environment.SetEnvironmentVariable("Mediator.ENVIRONMENT", "Production"); //appsettings.production
-        var environment = Environment.GetEnvironmentVariable("Mediator.ENVIRONMENT")!.ToLower();
+        // To set an environment variable on your computer, you can use the following steps.Please note these steps are for Windows 10, so they may vary slightly depending on your version of Windows:
+        // 1) Right - click on the Computer icon on your desktop or in File Explorer, then choose Properties.
+        // 2) Click on Advanced system settings.
+        // 3) Click on Environment Variables.
+        // 4) In the System variables section, click on New....Enter "Terminal.WinUI3.ENVIRONMENT"(without quotes) as the variable name.
+        // 5) Enter the value you want in the variable value field.
+        // 6) Click OK in all dialog boxes.
+
+        const string environmentStr = "Mediator";
+        var environment = Environment.GetEnvironmentVariable(environmentStr)!;
         var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
         var directoryPath = Path.GetDirectoryName(assemblyLocation);
-        var builder = new ConfigurationBuilder().SetBasePath(directoryPath!).
-            AddJsonFile("appsettings.json", optional: false, reloadOnChange: true).
-            AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true);
+        var builder = new ConfigurationBuilder().SetBasePath(directoryPath!)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{environment.ToLower()}.json", optional: true, reloadOnChange: true);
         IConfiguration configuration = builder.Build();
 
         var logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
@@ -65,7 +73,7 @@ public partial class App
             services.AddSingleton<CancellationTokenSource>();
             services.AddTransient<IIndicatorToMediatorService, IndicatorToMediatorService>();
             services.AddSingleton<ITicksProcessor, TicksProcessor>();
-            services.AddSingleton<ITicksDataProviderService, TicksDataProviderService>();
+            services.AddSingleton<IDataProviderService, DataProviderService>();
 
             services.AddSingleton<MainViewModel>();
             services.AddTransient<MainPage>();
@@ -80,17 +88,14 @@ public partial class App
         App.GetService<IAppNotificationService>().Initialize();
         _cts = Host.Services.GetRequiredService<CancellationTokenSource>();
     }
-
     private IHost Host
     {
         get;
     }
-
     public static WindowEx MainWindow
     {
         get;
     } = new MainWindow();
-
     public static T GetService<T>()
         where T : class
     {
@@ -101,7 +106,6 @@ public partial class App
 
         return service;
     }
-
     private static void App_UnhandledException(object sender, UnhandledExceptionEventArgs exception)
     {
         if (exception.Exception is { } ex)//todo
@@ -114,18 +118,15 @@ public partial class App
         }
         Log.CloseAndFlush();
     }
-
     private void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs exception)
     {
         Log.Fatal(exception.Message, "DebugSettings_BindingFailed");
         throw new NotImplementedException("DebugSettings_BindingFailed");
     }
-
     private void DebugSettings_XamlResourceReferenceFailed(DebugSettings sender, XamlResourceReferenceFailedEventArgs args)
     {
         throw new NotImplementedException();
     }
-
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
@@ -133,7 +134,7 @@ public partial class App
         {
             DebugSettings.BindingFailed += DebugSettings_BindingFailed;
         }
-
+        GetService<ILogger<App>>().LogInformation("<--- Start --->");
         GetService<IDispatcherService>().Initialize(DispatcherQueue.GetForCurrentThread());
         await GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(false);
 
@@ -142,9 +143,8 @@ public partial class App
             let serviceIndicatorToMediator = scope.ServiceProvider.GetService<IIndicatorToMediatorService>()
             select Task.Run(() => serviceIndicatorToMediator.StartAsync(symbol, _cts.Token), _cts.Token)).ToList();
 
-        var ticksDataProviderService = scope.ServiceProvider.GetRequiredService<ITicksDataProviderService>();
+        var ticksDataProviderService = scope.ServiceProvider.GetRequiredService<IDataProviderService>();
         var ticksDataProviderServiceTask = ticksDataProviderService.StartAsync();
-
         await Task.WhenAny(Task.WhenAll(indicatorToMediatorTasks), ticksDataProviderServiceTask).ConfigureAwait(false);
     }
 }

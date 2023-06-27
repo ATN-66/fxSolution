@@ -19,14 +19,14 @@ enum Symbol {
     GBPJPY = 5;
 }
 
-message GetTicksRequest {
+message DataRequest {
     google.protobuf.Timestamp startDateTime = 1;
 }
 
-message GetTicksResponse {
+message DataResponse {
     repeated Quotation quotations = 1;
 }
 
-service TicksDataProvider {
-    rpc GetTicksAsync (GetTicksRequest) returns (stream GetTicksResponse);
+service DataProvider {
+    rpc GetSinceDateTimeHourTillNowAsync (DataRequest) returns (stream DataResponse);
 }

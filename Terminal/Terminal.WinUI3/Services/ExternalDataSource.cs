@@ -20,54 +20,63 @@ public class ExternalDataSource : IExternalDataSource
         _mediator = mediator;
     }
 
-    public async Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTime, DateTime endDateTime, Provider provider, bool exactly)
+    public async Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive, Provider provider, bool exactly)
     {
-        IEnumerable<Quotation> input;
-        List<Quotation> result;
-
         if (exactly)
         {
             switch (provider)
             {
                 case Provider.Mediator:
-                    input = await _mediator.GetTicksAsync(startDateTime, endDateTime).ConfigureAwait(false);
-                    result = input.ToList();
-                    break;
+                    var inputMediator = await _mediator.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
+                    var resultMediator = inputMediator.ToList();
+                    return resultMediator;
                 case Provider.FileService:
-                    input = await _fileService.GetTicksAsync(startDateTime, endDateTime).ConfigureAwait(false);
-                    result = input.ToList();
-                    break;
+                    var inputFileService = await _fileService.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
+                    var resultFileService = inputFileService.ToList();
+                    return resultFileService;
                 case Provider.Terminal:
-                default: throw new ArgumentOutOfRangeException(nameof(provider), provider, null);
+                default: throw new ArgumentOutOfRangeException(nameof(provider), provider, @"Mediator or FileService Providers accepted.");
             }
         }
         else
         {
-            switch (provider)
-            {
-                case Provider.Mediator:
-                    input = await _mediator.GetTicksAsync(startDateTime, endDateTime).ConfigureAwait(false);
-                    result = input.ToList();
-                    if (result.Count == 0)
-                    {
-                        input = await _fileService.GetTicksAsync(startDateTime, endDateTime).ConfigureAwait(false);
-                        result = input.ToList();
-                    }
-                    break;
-                case Provider.FileService:
-                    input = await _fileService.GetTicksAsync(startDateTime, endDateTime).ConfigureAwait(false);
-                    result = input.ToList();
-                    if (result.Count == 0)
-                    {
-                        input = await _mediator.GetTicksAsync(startDateTime, endDateTime).ConfigureAwait(false);
-                        result = input.ToList();
-                    }
-                    break;
-                case Provider.Terminal:
-                default: throw new ArgumentOutOfRangeException(nameof(provider), provider, null);
-            }
-        }
+            throw new NotImplementedException();
 
-        return result;
+            //var input_mediator = await _mediator.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
+            //var result_mediator = input_mediator.ToList();
+            //var input_fileService = await _fileService.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
+            //var result_fileService = input_fileService.ToList();
+
+
+            //sample var fileServiceTask = _dataService.GetTicksAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.FileService, true);
+            //await Task.WhenAll(fileServiceTask, mediatorTask, terminalTask).ConfigureAwait(true);
+
+
+
+
+
+            //switch (provider)
+            //{
+            //    //case Provider.Mediator:
+
+            //    //    if (result.Count == 0)
+            //    //    {
+            //    //        input = await _fileService.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
+            //    //        result = input.ToList();
+            //    //    }
+            //    //    break;
+            //    //case Provider.FileService:
+            //    //    input = await _fileService.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
+            //    //    result = input.ToList();
+            //    //    if (result.Count == 0)
+            //    //    {
+            //    //        input = await _mediator.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
+            //    //        result = input.ToList();
+            //    //    }
+            //    //    break;
+            //    //case Provider.Terminal:
+            //    //default: throw new ArgumentOutOfRangeException(nameof(provider), provider, null);
+            //}
+        }
     }
 }

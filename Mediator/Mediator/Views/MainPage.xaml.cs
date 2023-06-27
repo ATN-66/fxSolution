@@ -7,9 +7,8 @@ public sealed partial class MainPage
 {
     public MainPage()
     {
-        InitializeComponent();
         ViewModel = App.GetService<MainViewModel>();
-        DataContext = ViewModel;
+        InitializeComponent();
 
         App.MainWindow.ExtendsContentIntoTitleBar = false;
         App.MainWindow.Activated += MainWindow_Activated;

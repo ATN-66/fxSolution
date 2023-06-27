@@ -133,12 +133,12 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
 
     private async Task GetTicksAsync()
     {
-        var startDateTime = SelectedDate.Date.AddHours(SelectedTime.Hours);
-        var endDateTime = startDateTime.AddHours(1);
+        var dateTimeInclusive = SelectedDate.Date.AddHours(SelectedTime.Hours);
+        var endDateTimeInclusive = SelectedDate.Date.AddHours(SelectedTime.Hours);
 
-        var fileServiceTask = _dataService.GetTicksAsync(SelectedSymbol, startDateTime, endDateTime, Provider.FileService, true);
-        var mediatorTask = _dataService.GetTicksAsync(SelectedSymbol, startDateTime, endDateTime, Provider.Mediator, true);
-        var terminalTask = _dataService.GetTicksAsync(SelectedSymbol, startDateTime, endDateTime, Provider.Terminal, true);
+        var fileServiceTask = _dataService.GetTicksAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.FileService, true);
+        var mediatorTask = _dataService.GetTicksAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.Mediator, true);
+        var terminalTask = _dataService.GetTicksAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.Terminal, true);
 
         FileServiceQuotationsIsLoading = true;
         MediatorQuotationsIsLoading = true;
@@ -146,7 +146,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         FileServiceQuotationsCount = 0;
         MediatorQuotationsCount = 0;
         TerminalQuotationsCount = 0;
-
+        
         await Task.WhenAll(fileServiceTask, mediatorTask, terminalTask).ConfigureAwait(true);
 
         var fileServiceResult = await fileServiceTask.ConfigureAwait(true);

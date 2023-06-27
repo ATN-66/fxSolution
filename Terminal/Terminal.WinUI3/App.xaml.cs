@@ -1,4 +1,10 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿/*+------------------------------------------------------------------+
+  |                                                   Terminal.WinUI3|
+  |                                                           App.cs |
+  +------------------------------------------------------------------+*/
+
+using Common.Entities;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Dispatching;
@@ -21,18 +27,35 @@ namespace Terminal.WinUI3;
 
 public partial class App
 {
+    private readonly CancellationTokenSource _cts;
     public App()
     {
         InitializeComponent();
 
-        Environment.SetEnvironmentVariable("Terminal.WinUI3.ENVIRONMENT", "Development"); //appsettings.development
-        //Environment.SetEnvironmentVariable("Terminal.WinUI3.ENVIRONMENT", "Production"); //appsettings.production
-        var environment = Environment.GetEnvironmentVariable("Terminal.WinUI3.ENVIRONMENT")!.ToLower();
+        // To set an environment variable on your computer, you can use the following steps.Please note these steps are for Windows 10, so they may vary slightly depending on your version of Windows:
+        // 1) Right - click on the Computer icon on your desktop or in File Explorer, then choose Properties.
+        // 2) Click on Advanced system settings.
+        // 3) Click on Environment Variables.
+        // 4) In the System variables section, click on New....Enter "Terminal.WinUI3.ENVIRONMENT"(without quotes) as the variable name.
+        // 5) Enter the value you want in the variable value field.
+        // 6) Click OK in all dialog boxes.
+
+        const string environmentStr = "Terminal.WinUI3.ENVIRONMENT";
+        var environment = Environment.GetEnvironmentVariable(environmentStr)!;
+        if (Enum.TryParse<Workplace>(environment, out var workplace))
+        {
+            Workplace = workplace;
+        }
+        else
+        {
+            throw new InvalidOperationException($"{GetType()}: {environmentStr} is null.");
+        }
+
         var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
         var directoryPath = Path.GetDirectoryName(assemblyLocation);
-        var builder = new ConfigurationBuilder().SetBasePath(directoryPath!).
-            AddJsonFile("appsettings.json", optional: false, reloadOnChange: true).
-            AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true);
+        var builder = new ConfigurationBuilder().SetBasePath(directoryPath!)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{environment.ToLower()}.json", optional: true, reloadOnChange: true);
         IConfiguration configuration = builder.Build();
 
         var logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
@@ -68,7 +91,7 @@ public partial class App
             services.AddSingleton<IDispatcherService, DispatcherService>();
             services.AddSingleton<IWindowService, WindowService>();
             services.AddSingleton<IDialogService, DialogService>();
-
+            services.AddSingleton<CancellationTokenSource>();
             services.AddSingleton<IDashboardService, DashboardService>();
 
             // Business Services
@@ -128,26 +151,28 @@ public partial class App
             services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
 
         }).UseSerilog().Build();
-        
+
+        DebugSettings.BindingFailed += DebugSettings_BindingFailed;
+        DebugSettings.XamlResourceReferenceFailed += DebugSettings_XamlResourceReferenceFailed;
         UnhandledException += App_UnhandledException;
+
+        App.GetService<IAppNotificationService>().Initialize();
+        _cts = Host.Services.GetRequiredService<CancellationTokenSource>();
     }
 
-    private IHost Host
-    {
-        get;
-    }
-
-    public static WindowEx MainWindow
-    {
-        get;
-    } = new MainWindow();
-
-    public static UIElement? AppTitlebar
+    public Workplace Workplace
     {
         get;
         set;
     }
-
+    private IHost Host
+    {
+        get;
+    }
+    public static WindowEx MainWindow
+    {
+        get;
+    } = new MainWindow();
     public static T GetService<T>() where T : class
     {
         if ((Current as App)!.Host.Services.GetService(typeof(T)) is not T service)
@@ -157,7 +182,6 @@ public partial class App
 
         return service;
     }
-
     private static void App_UnhandledException(object sender, UnhandledExceptionEventArgs exception)
     {
         if (exception.Exception is { } ex)//todo
@@ -170,13 +194,15 @@ public partial class App
         }
         Log.CloseAndFlush();
     }
-
     private void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs exception)
     {
         Log.Fatal(exception.Message, "DebugSettings_BindingFailed");
         throw new NotImplementedException("DebugSettings_BindingFailed");
     }
-
+    private void DebugSettings_XamlResourceReferenceFailed(DebugSettings sender, XamlResourceReferenceFailedEventArgs args)
+    {
+        throw new NotImplementedException();
+    }
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
@@ -184,15 +210,12 @@ public partial class App
         {
             DebugSettings.BindingFailed += DebugSettings_BindingFailed;
         }
-
+        GetService<ILogger<App>>().LogInformation("<--- Start --->");
         GetService<IDispatcherService>().Initialize(DispatcherQueue.GetForCurrentThread());
         GetService<IDashboardService>().InitializeAsync();
         GetService<IActivationService>().ActivateAsync(args);
-        GetService<IAppNotificationService>().Initialize();
-        GetService<ILogger<App>>().LogInformation("This is an information message: Launched");
     }
 }
-
 
 //var dataServiceTask = GetService<IDataService>().InitializeAsync();
 //await dataServiceTask.ConfigureAwait(false);

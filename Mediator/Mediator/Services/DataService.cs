@@ -5,8 +5,6 @@
 
 using System.Data;
 using System.Data.SqlClient;
-using System.Diagnostics.Metrics;
-using System.Diagnostics;
 using System.Globalization;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
@@ -15,7 +13,7 @@ using Mediator.Contracts.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Quotation = Common.Entities.Quotation;
-using System;
+using Symbol = Common.Entities.Symbol;
 
 namespace Mediator.Services;
 
@@ -27,13 +25,14 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
     private readonly ILogger<IDataService> _logger;
     private readonly Dictionary<string, List<Quotation>> _ticksCache = new();
     private readonly Queue<string> _keys = new();
-    private const int MaxItems = 2_016;
+    private const int MaxItems = 744; //(24*31)
     private readonly DateTime _startDateTimeUtc;
     private const int QuartersInYear = 4;
     private string? _dbBackupDrive;
     private readonly string _dbBackupFolder;
     private string? _server;
     private Workplace _workplace;
+    private string _currentHoursKey = null!;
 
     public DataService(IConfiguration configuration, ILogger<IDataService> logger)
     {
@@ -154,19 +153,25 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
         }
     }
 
-    public async Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTime)
+    public async Task<IEnumerable<Quotation>> GetSinceDateTimeHourTillNowAsync(DateTime startDateTime)
     {
         var result = new List<Quotation>();
-        var start = startDateTime.Date;
-        var end = DateTime.Now.Date.AddDays(1);
+        var start = startDateTime.Date.AddHours(startDateTime.Hour);
+        var end = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
+        _currentHoursKey = $"{end.Year}.{end.Month:D2}.{end.Day:D2}.{end.Hour:D2}";
+        end = end.AddHours(1);
 
         var index = start;
         do
         {
-            var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}";
+            var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
             if (!_ticksCache.ContainsKey(key))
             {
                 await LoadTicksToCacheAsync(index).ConfigureAwait(false);
+                if (!_ticksCache.ContainsKey(key))
+                {
+                    SetQuotations(key, new List<Quotation>());
+                }
             }
 
             if (_ticksCache.ContainsKey(key))
@@ -174,7 +179,7 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
                 result.AddRange(GetQuotations(key));
             }
 
-            index = index.Add(new TimeSpan(1,0, 0, 0));
+            index = index.Add(new TimeSpan(1, 0, 0));
         }
         while (index < end);
 
@@ -263,15 +268,17 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
         var yearNumber = dateTime.Year;
         var weekNumber = dateTime.Week();
         var dayOfWeekNumber = ((int)dateTime.DayOfWeek + 6) % 7 + 1;
+        var hourNumber = dateTime.Hour;
         var quotations = new List<Quotation>();
 
         var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(yearNumber, weekNumber, Provider);
         await using var connection = new SqlConnection($"{_server};Database={databaseName};Trusted_Connection=True;");
         await connection.OpenAsync().ConfigureAwait(false);
-        await using var command = new SqlCommand("GetQuotationsByWeekAndDay", connection) { CommandTimeout = 0 };
+        await using var command = new SqlCommand("GetQuotationsByWeekAndDayAndHour", connection) { CommandTimeout = 0 };
         command.CommandType = CommandType.StoredProcedure;
         command.Parameters.AddWithValue("@Week", weekNumber);
         command.Parameters.AddWithValue("@DayOfWeek", dayOfWeekNumber);
+        command.Parameters.AddWithValue("@HourOfDay", hourNumber);
         try
         {
             await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
@@ -286,33 +293,40 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
                 quotations.Add(quotation);
             }
 
-            var yearsCounter = 0;
-            var monthsCounter = 0;
-            var daysCounter = 0;
+            //var yearsCounter = 0;
+            //var monthsCounter = 0;
+            //var daysCounter = 0;
+            //var hoursCounter = 0;
 
             var groupedByYear = quotations.GroupBy(q => new QuotationKey { Year = q.DateTime.Year });
             foreach (var yearGroup in groupedByYear)
             {
                 var year = yearGroup.Key.Year;
-                yearsCounter++;
+                //yearsCounter++;
                 var groupedByMonth = yearGroup.GroupBy(q => new QuotationKey { Month = q.DateTime.Month });
                 foreach (var monthGroup in groupedByMonth)
                 {
                     var month = monthGroup.Key.Month;
-                    monthsCounter++;
+                    //monthsCounter++;
                     var groupedByDay = monthGroup.GroupBy(q => new QuotationKey { Day = q.DateTime.Day });
                     foreach (var dayGroup in groupedByDay)
                     {
                         var day = dayGroup.Key.Day;
-                        daysCounter++;
-                        var key = $"{year}.{month:D2}.{day:D2}";
-                        SetQuotations(key, dayGroup.ToList());
-                        Debug.WriteLine(key);
+                        //daysCounter++;
+                        var groupedByHour = dayGroup.GroupBy(q => new QuotationKey { Hour = q.DateTime.Hour });
+                        foreach (var hourGroup in groupedByHour)
+                        {
+                            var hour = hourGroup.Key.Hour;
+                            //hoursCounter++;
+                            var key = $"{year}.{month:D2}.{day:D2}.{hour:D2}";
+                            SetQuotations(key, hourGroup.ToList());
+                            //Debug.WriteLine(key);
+                        }
                     }
                 }
             }
 
-            Debug.WriteLine($"year counter:{yearsCounter}, month counter:{monthsCounter:D2}, day counter:{daysCounter:D2}");
+            //Debug.WriteLine($"year counter:{yearsCounter}, month counter:{monthsCounter:D2}, day counter:{daysCounter:D2}, hour counter:{hoursCounter:D2}");
         }
         catch (Exception exception)
         {
@@ -328,6 +342,11 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
         {
             var oldestKey = _keys.Dequeue();
             _ticksCache.Remove(oldestKey);
+        }
+
+        if (string.Equals(_currentHoursKey, key))
+        {
+            return;
         }
 
         _ticksCache[key] = quotationList;

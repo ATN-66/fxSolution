@@ -103,20 +103,22 @@ internal class TitleBarHelper
 
     public static void ApplySystemThemeToCaptionButtons()
     {
-        var res = Application.Current.Resources;
-        var frame = App.AppTitlebar as FrameworkElement;
-        if (frame != null)
-        {
-            if (frame.ActualTheme == ElementTheme.Dark)
-            {
-                res["WindowCaptionForeground"] = Colors.White;
-            }
-            else
-            {
-                res["WindowCaptionForeground"] = Colors.Black;
-            }
+        throw new NotImplementedException();
 
-            UpdateTitleBar(frame.ActualTheme);
-        }
+        //var res = Application.Current.Resources;
+        //var frame = App.AppTitlebar as FrameworkElement;
+        //if (frame != null)
+        //{
+        //    if (frame.ActualTheme == ElementTheme.Dark)
+        //    {
+        //        res["WindowCaptionForeground"] = Colors.White;
+        //    }
+        //    else
+        //    {
+        //        res["WindowCaptionForeground"] = Colors.Black;
+        //    }
+
+        //    UpdateTitleBar(frame.ActualTheme);
+        //}
     }
 }

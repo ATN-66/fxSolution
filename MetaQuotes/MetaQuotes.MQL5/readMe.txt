@@ -34,12 +34,12 @@ rem ----------------------------------------------------------------------------
 xcopy "D:\forex\fxSolution\MetaQuotes\MetaQuotes.MQL5\InstallOnUnit1068.bat" "\\UNIT1068\forex.shared\" /Y /R
 xcopy "D:\forex\fxSolution\MetaQuotes\MetaQuotes.MQL5\readMe.txt" "\\UNIT1068\forex.shared\" /Y /R
 rem ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-xcopy "D:\forex\tickstory\tickstory.com.scripts\MS-SQL\MetaQuotes.MQL5\01_CREATE_DATABASE_AND_TABLES.sql"                 "\\UNIT1068\forex.shared\ms-sql" /Y /R
-xcopy "D:\forex\tickstory\tickstory.com.scripts\MS-SQL\MetaQuotes.MQL5\02_CREATE_TYPE_QuotationTableType.sql"             "\\UNIT1068\forex.shared\ms-sql" /Y /R
-xcopy "D:\forex\tickstory\tickstory.com.scripts\MS-SQL\MetaQuotes.MQL5\03_CREATE_PROCEDURE_InsertQuotations.sql"          "\\UNIT1068\forex.shared\ms-sql" /Y /R
-xcopy "D:\forex\tickstory\tickstory.com.scripts\MS-SQL\MetaQuotes.MQL5\04_CREATE_PROCEDURE_GetQuotationsByWeekAndDay.sql" "\\UNIT1068\forex.shared\ms-sql" /Y /R
-xcopy "D:\forex\tickstory\tickstory.com.scripts\MS-SQL\MetaQuotes.MQL5\05_CREATE_FUNCTION_GetLastBackupDate.sql"          "\\UNIT1068\forex.shared\ms-sql" /Y /R
-xcopy "D:\forex\tickstory\tickstory.com.scripts\MS-SQL\MetaQuotes.MQL5\06_CREATE_PROCEDURE_BackupProviderDatabase.sql"    "\\UNIT1068\forex.shared\ms-sql" /Y /R
+xcopy "D:\forex\tickstory\tickstory.com.scripts\MS-SQL\MetaQuotes.MQL5\01_CREATE_DATABASE_AND_TABLES.sql"                        "\\UNIT1068\forex.shared\ms-sql" /Y /R
+xcopy "D:\forex\tickstory\tickstory.com.scripts\MS-SQL\MetaQuotes.MQL5\02_CREATE_TYPE_QuotationTableType.sql"                    "\\UNIT1068\forex.shared\ms-sql" /Y /R
+xcopy "D:\forex\tickstory\tickstory.com.scripts\MS-SQL\MetaQuotes.MQL5\03_CREATE_PROCEDURE_InsertQuotations.sql"                 "\\UNIT1068\forex.shared\ms-sql" /Y /R
+xcopy "D:\forex\tickstory\tickstory.com.scripts\MS-SQL\MetaQuotes.MQL5\04_CREATE_PROCEDURE_GetQuotationsByWeekAndDayAndHour.sql" "\\UNIT1068\forex.shared\ms-sql" /Y /R
+xcopy "D:\forex\tickstory\tickstory.com.scripts\MS-SQL\MetaQuotes.MQL5\05_CREATE_FUNCTION_GetLastBackupDate.sql"                 "\\UNIT1068\forex.shared\ms-sql" /Y /R
+xcopy "D:\forex\tickstory\tickstory.com.scripts\MS-SQL\MetaQuotes.MQL5\06_CREATE_PROCEDURE_BackupProviderDatabase.sql"           "\\UNIT1068\forex.shared\ms-sql" /Y /R
 
 MAKE IT ON PRODUCTION COMPUTER:
 

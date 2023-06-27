@@ -47,6 +47,7 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
     private readonly string _dbBackupDrive;
     private readonly string _dbProviderBackupFolder;
     private readonly string _dbSolutionBackupFolder;
+    private string _currentHoursKey = null!;
 
     public DataService(IProcessor processor, IExternalDataSource externalDataSource, IConfiguration configuration, IAppNotificationService notificationService, ILogger<DataService> logger) 
     {
@@ -243,24 +244,26 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
 
         return symbolicContributions;
     }
-    public async Task<IEnumerable<Quotation>> GetTicksAsync(Symbol symbol, DateTime startDateTime, DateTime endDateTime, Provider provider, bool exactly)
+    public async Task<IEnumerable<Quotation>> GetTicksAsync(Symbol symbol, DateTime startDateTimeInclusive, DateTime endDateTimeInclusive, Provider provider, bool exactly)
     {
         var quotations = provider switch
         {
-            Provider.FileService => await _externalDataSource.GetTicksAsync(startDateTime, endDateTime, provider, exactly).ConfigureAwait(true),
-            Provider.Mediator => await _externalDataSource.GetTicksAsync(startDateTime, endDateTime, provider, exactly).ConfigureAwait(true),
-            Provider.Terminal => await GetTicksAsync(startDateTime, endDateTime).ConfigureAwait(true),
+            Provider.FileService => await _externalDataSource.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive, provider, exactly).ConfigureAwait(true),
+            Provider.Mediator => await _externalDataSource.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive, provider, exactly).ConfigureAwait(true),
+            Provider.Terminal => await GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(true),
             _ => throw new ArgumentOutOfRangeException(nameof(provider), provider, null)
         };
 
         var filteredQuotations = quotations.Where(quotation => quotation.Symbol == symbol);
         return filteredQuotations;
     }
-    private async Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTime, DateTime endDateTime)
+    private async Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
     {
-        var result = new List<Quotation>();
-        var start = startDateTime.Date.AddHours(startDateTime.Hour);
-        var end = endDateTime.Date.AddHours(endDateTime.Hour);
+        var quotations = new List<Quotation>();
+        var start = startDateTimeInclusive.Date.AddHours(startDateTimeInclusive.Hour);
+        var end = endDateTimeInclusive.Date.AddHours(endDateTimeInclusive.Hour);
+        _currentHoursKey = $"{end.Year}.{end.Month:D2}.{end.Day:D2}.{end.Hour:D2}";
+        end = end.AddHours(1);
 
         var index = start;
         do
@@ -268,18 +271,23 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
             var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
             if (!_ticksCache.ContainsKey(key))
             {
-                await LoadTicksToCacheAsync(index).ConfigureAwait(true);
+                await LoadTicksToCacheAsync(index).ConfigureAwait(false);
+                if (!_ticksCache.ContainsKey(key))
+                {
+                    SetQuotations(key, new List<Quotation>());
+                }
             }
 
             if (_ticksCache.ContainsKey(key))
             {
-                result.AddRange(GetQuotations(key));
+                quotations.AddRange(GetQuotations(key));
             }
-                
+
             index = index.Add(new TimeSpan(1, 0, 0));
         }
         while (index < end);
-        return result;
+
+        return quotations;
     }
     public async Task<Contribution> ReImportSelectedAsync(DateTime dateTime)
     {
@@ -636,6 +644,11 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
         {
             var oldestKey = _keys.Dequeue();
             _ticksCache.Remove(oldestKey);
+        }
+
+        if (string.Equals(_currentHoursKey, key))
+        {
+            return;
         }
 
         _ticksCache[key] = quotationList;

@@ -19,6 +19,7 @@ public class FileService : IFileService
     private readonly Dictionary<string, List<Quotation>> _ticksCache = new();
     private readonly Queue<string> _keys = new();
     private const int MaxItems = 4_032;
+    private string _currentHoursKey = null!;
 
     public FileService(IConfiguration configuration)
     {
@@ -26,11 +27,13 @@ public class FileService : IFileService
         _formats = new[] { configuration.GetValue<string>("DateTimeFormat")! };
     }
 
-    public async Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTime, DateTime endDateTime)
+    public async Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
     {
-        var result = new List<Quotation>();
-        var start = startDateTime.Date.AddHours(startDateTime.Hour);
-        var end = endDateTime.Date.AddHours(endDateTime.Hour);
+        var quotations = new List<Quotation>();
+        var start = startDateTimeInclusive.Date.AddHours(startDateTimeInclusive.Hour);
+        var end = endDateTimeInclusive.Date.AddHours(endDateTimeInclusive.Hour);
+        _currentHoursKey = $"{end.Year}.{end.Month:D2}.{end.Day:D2}.{end.Hour:D2}";
+        end = end.AddHours(1);
 
         var index = start;
         do
@@ -39,17 +42,22 @@ public class FileService : IFileService
             if (!_ticksCache.ContainsKey(key))
             {
                 await LoadTicksToCacheAsync(index).ConfigureAwait(false);
+                if (!_ticksCache.ContainsKey(key))
+                {
+                    SetQuotations(key, new List<Quotation>());
+                }
             }
 
             if (_ticksCache.ContainsKey(key))
             {
-                result.AddRange(GetQuotations(key));
+                quotations.AddRange(GetQuotations(key));
             }
 
             index = index.Add(new TimeSpan(1, 0, 0));
         }
         while (index < end);
-        return result;
+
+        return quotations;
     }
 
     private async Task LoadTicksToCacheAsync(DateTime dateTime)

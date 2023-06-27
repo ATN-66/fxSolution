@@ -40,7 +40,6 @@
                     Style="{StaticResource TitleTextBlockStyle}"
                     Text="{x:Bind Path=ViewModel.Workplace}" />
             </StackPanel>
-           
             <StackPanel
                 Grid.Row="0"
                 Grid.Column="2"
@@ -148,62 +147,68 @@
             </ItemsControl>
         </Grid>
         <Grid Grid.Row="2" Grid.Column="0">
-            <Rectangle
-                Grid.Row="0"
-                Height="110"
-                Fill="{x:Bind Path=ViewModel.IsTicksDataProviderServiceActivated, Mode=OneWay, Converter={StaticResource AllBoolToBrushConverter}}"
-                RadiusX="10"
-                RadiusY="10" />
-        </Grid>
-        <Grid Grid.Row="2" Grid.Column="0">
-            <Border Style="{StaticResource IndicatorBorderStyle}">
+            <Grid>
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Grid
+                    <Rectangle
                         Grid.Row="0"
                         Grid.Column="0"
-                        HorizontalAlignment="Stretch">
-                        <Border Background="Green"  CornerRadius="10">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontSize="18"
-                                FontWeight="Bold"
-                                Text="PLACE HOLDER" />
-                        </Border>
-                    </Grid>
-                    <Grid
+                        Height="110"
+                        Fill="{x:Bind Path=ViewModel.IsDataProviderActivated, Mode=OneWay, Converter={StaticResource AllBoolToBrushConverter}}"
+                        RadiusX="10"
+                        RadiusY="10" />
+                    <Rectangle
                         Grid.Row="0"
                         Grid.Column="1"
-                        HorizontalAlignment="Stretch">
-                        <Border Background="Red"  CornerRadius="10">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontSize="18"
-                                FontWeight="Bold"
-                                Text="PLACE HOLDER" />
-                        </Border>
-                    </Grid>
-                    <Grid
-                        Grid.Row="1"
-                        Grid.Column="0"
-                        HorizontalAlignment="Stretch">
-                        <Border Background="Transparent"  CornerRadius="10">
-                            <StackPanel VerticalAlignment="Center">
-                                <!--<ProgressBar Margin="0,0,0,0" Value="{x:Bind Path=ViewModel.ProgressPercentage}" />-->
-                            </StackPanel>
-                        </Border>
-                    </Grid>
+                        Height="110"
+                        Fill="DarkGray"
+                        RadiusX="10"
+                        RadiusY="10" />
                 </Grid>
-            </Border>
+            </Grid>
+        </Grid>
+        <Grid Grid.Row="2" Grid.Column="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    HorizontalAlignment="Stretch">
+                    <Border Background="{x:Bind Path=ViewModel.IsDataClientActivated, Mode=OneWay, Converter={StaticResource AllBoolToBrushConverter}}" Style="{StaticResource IndicatorBorderStyle}">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="18"
+                            FontWeight="Bold"
+                            Text="fxSolution.Terminal.WinUI3" />
+                    </Border>
+                </Grid>
+                <Grid
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    HorizontalAlignment="Stretch">
+                    <Border Background="LightGray" Style="{StaticResource IndicatorBorderStyle}">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="18"
+                            FontWeight="Bold"
+                            Text="Expert Advisor client" />
+                    </Border>
+                </Grid>
+            </Grid>
         </Grid>
     </Grid>
 </Page>

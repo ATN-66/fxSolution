@@ -12,6 +12,6 @@ public interface IDataService
 {
     Workplace Workplace { get; set; }
     Task SaveQuotationsAsync(List<Quotation> quotations);
-    Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTime);
+    Task<IEnumerable<Quotation>> GetSinceDateTimeHourTillNowAsync(DateTime startDateTime);
     Task<Dictionary<ActionResult, int>> BackupAsync();
 }

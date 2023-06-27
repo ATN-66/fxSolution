@@ -12,19 +12,18 @@ using Microsoft.Extensions.Logging;
 using Symbol = Common.Entities.Symbol;
 using Microsoft.Extensions.Configuration;
 using CommunityToolkit.Mvvm.Input;
-using Grpc.Core;
+using Enum = System.Enum;
 
 namespace Mediator.ViewModels;
 
 public partial class MainViewModel : ObservableRecipient
 {
     private readonly Guid _guid = Guid.NewGuid();
-    private readonly IConfiguration _configuration;
     private readonly IAppNotificationService _appNotificationService;
     private readonly IDataService _dataService;
     private readonly CancellationTokenSource _cts;
     private readonly IDispatcherService _dispatcherService;
-    private readonly ITicksDataProviderService _ticksDataProviderService;
+    private readonly IDataProviderService _dataProviderService;
     private readonly ILogger<MainViewModel> _logger;
     
     private DeInitReason _reason;
@@ -32,20 +31,18 @@ public partial class MainViewModel : ObservableRecipient
     private static readonly int TotalIndicators = Enum.GetValues(typeof(Symbol)).Length;
     private Workplace _workplace;
     public event Action InitializationComplete = null!;
+    
 
-    public MainViewModel(IConfiguration configuration, IAppNotificationService appNotificationService, IDataService dataService, ITicksDataProviderService ticksDataProviderService, IDispatcherService dispatcherService, CancellationTokenSource cts, ILogger<MainViewModel> logger)
+    public MainViewModel(IConfiguration configuration, IAppNotificationService appNotificationService, IDataService dataService, IDataProviderService dataProviderService, IDispatcherService dispatcherService, 
+        CancellationTokenSource cts, ILogger<MainViewModel> logger)
     {
-        _configuration = configuration;
         _dataService = dataService;
         _appNotificationService = appNotificationService;
         _cts = cts;
         _dispatcherService = dispatcherService;
-        _ticksDataProviderService = ticksDataProviderService;
-        //IsTicksDataProviderServiceActivated = _ticksDataProviderService.IsActivated;
-        _ticksDataProviderService.IsActivatedChanged += (s, e) =>
-        {
-            IsTicksDataProviderServiceActivated = e.IsActivated;
-        };
+        _dataProviderService = dataProviderService;
+        _dataProviderService.IsServiceActivatedChanged += DataProviderServiceOnIsServiceActivatedChanged;
+            _dataProviderService.IsClientActivatedChanged += (_, e) => { IsDataClientActivated = e.IsActivated; };
 
         _logger = logger;
 
@@ -68,33 +65,47 @@ public partial class MainViewModel : ObservableRecipient
         _logger.Log(LogLevel.Trace, "{TypeName}.{Guid} is ON.", GetType().Name, _guid);
     }
 
-    protected override void OnActivated()
+    private void DataProviderServiceOnIsServiceActivatedChanged(object? sender, ActivationChangedEventArgs e)
     {
-        base.OnActivated();
+        IsDataProviderActivated = e.IsActivated;
     }
 
-    protected override void OnDeactivated()
+    private bool _isDataProviderActivated;
+    public bool IsDataProviderActivated
     {
-        base.OnDeactivated();
-    }
-
-    private bool _isTicksDataProviderServiceActivated;
-    public bool IsTicksDataProviderServiceActivated
-    {
-        get => _isTicksDataProviderServiceActivated;
+        get => _isDataProviderActivated;
         private set
         {
-            if (value == _isTicksDataProviderServiceActivated)
+            if (value == _isDataProviderActivated)
             {
                 return;
             }
 
-            _isTicksDataProviderServiceActivated = value;
+            _isDataProviderActivated = value;
             _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
-                OnPropertyChanged(nameof(IsTicksDataProviderServiceActivated));
+                OnPropertyChanged(nameof(IsDataProviderActivated));
             }).ConfigureAwait(true);
 
+        }
+    }
+
+    private bool _isDataClientActivated;
+    public bool IsDataClientActivated
+    {
+        get => _isDataClientActivated;
+        private set
+        {
+            if (value == _isDataClientActivated)
+            {
+                return;
+            }
+
+            _isDataClientActivated = value;
+            _dispatcherService.ExecuteOnUIThreadAsync(() =>
+            {
+                OnPropertyChanged(nameof(IsDataClientActivated));
+            }).ConfigureAwait(true);
         }
     }
 
@@ -153,22 +164,14 @@ public partial class MainViewModel : ObservableRecipient
 
     private Workplace SetWorkplaceFromEnvironment()
     {
-        string computerDevelopment;
-        computerDevelopment = _configuration.GetValue<string>($"{nameof(computerDevelopment)}")!;
-        string computerProduction;
-        computerProduction = _configuration.GetValue<string>($"{nameof(computerProduction)}")!;
-
-        if (Environment.MachineName == computerDevelopment)
+        const string environmentStr = "Mediator";
+        var environment = Environment.GetEnvironmentVariable(environmentStr)!;
+        if (Enum.TryParse<Workplace>(environment, out var workplace))
         {
-            return Workplace.Development;
+            return workplace;
         }
 
-        if (Environment.MachineName == computerProduction)
-        {
-            return Workplace.Production;
-        }
-
-        throw new InvalidOperationException($"{nameof(Environment.MachineName)}");
+        throw new InvalidOperationException($"{GetType()}: {environmentStr} is null.");
     }
 
     public void SetIndicator(Symbol symbol, DateTime dateTime, double ask, double bid, int counter)
@@ -240,22 +243,6 @@ public partial class MainViewModel : ObservableRecipient
     {
         var result = await _dataService.BackupAsync().ConfigureAwait(true);
         _appNotificationService.ShowBackupResultToast(result);
-    }
-
-    private int _progressPercentage;
-    public int ProgressPercentage
-    {
-        get => _progressPercentage;
-        set
-        {
-            if (_progressPercentage == value)
-            {
-                return;
-            }
-
-            _progressPercentage = value;
-            OnPropertyChanged();
-        }
     }
 
     public void CloseApp(string message)

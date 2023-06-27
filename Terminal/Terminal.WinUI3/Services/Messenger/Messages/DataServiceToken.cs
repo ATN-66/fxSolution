@@ -1,4 +1,4 @@
-﻿namespace Terminal.WinUI3.Models.Maintenance;
+﻿namespace Terminal.WinUI3.Services.Messenger.Messages;
 
 public sealed class DataServiceToken : IEquatable<DataServiceToken>
 {

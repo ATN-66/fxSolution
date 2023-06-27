@@ -13,20 +13,21 @@ Console.WriteLine("Terminal simulator...");
 try
 {
     using var channel = GrpcChannel.ForAddress("http://localhost:50051");
-    var client = new TicksDataProvider.TicksDataProviderClient(channel);
+    var client = new DataProvider.DataProviderClient(channel);
     var callOptions = new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(60*5)));//todo sec
 
-    var request = new GetTicksRequest
+    var request = new DataRequest
     {
+        //StartDateTime = Timestamp.FromDateTime(DateTime.Now.ToUniversalTime()),
         StartDateTime = Timestamp.FromDateTime(new DateTime(2023, 6, 18).ToUniversalTime()),
     };
 
-    var call = client.GetTicksAsync(request, callOptions);
+    var call = client.GetSinceDateTimeHourTillNowAsync(request, callOptions);
     await foreach (var response in call.ResponseStream.ReadAllAsync())
     {
         foreach (var quotation in response.Quotations)
         {
-            Console.WriteLine(quotation);
+            
         }
     }
 }

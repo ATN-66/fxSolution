@@ -39,7 +39,7 @@ public sealed partial class MainWindow
         Content = null;
         Title = "AppDisplayName".GetLocalizedString();
         _settings = new UISettings();
-        _settings.ColorValuesChanged += Settings_ColorValuesChanged; // cannot use FrameworkElement.ActualThemeChanged event
+        //_settings.ColorValuesChanged += Settings_ColorValuesChanged; // cannot use FrameworkElement.ActualThemeChanged event
 
         Closed += MainWindowClosed;
     }
@@ -50,7 +50,7 @@ public sealed partial class MainWindow
         ApplicationData.Current.LocalSettings.Values["MainWindowHeight"] = App.MainWindow.Height.ToString(CultureInfo.InvariantCulture);
     }
 
-    private void Settings_ColorValuesChanged(UISettings sender, object args) => DispatcherQueue.TryEnqueue(TitleBarHelper.ApplySystemThemeToCaptionButtons);
+    //private void Settings_ColorValuesChanged(UISettings sender, object args) => DispatcherQueue.TryEnqueue(TitleBarHelper.ApplySystemThemeToCaptionButtons);
 
     private LRESULT HotKeyPrc(HWND hwnd, uint uMsg, WPARAM wParam, LPARAM lParam)
     {
