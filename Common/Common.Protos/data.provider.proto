@@ -1,6 +1,18 @@
 ﻿syntax = "proto3";
 package ticksdata;
 import "timestamp.proto";
+import "google/protobuf/any.proto";
+
+message DataResponseStatus {
+    enum StatusCode {
+        OK = 0;
+        END_OF_DATA = 1;
+        SERVER_ERROR = 2;
+    }
+
+    StatusCode code = 1;
+    string details = 2;
+}
 
 message Quotation {
     int32 id = 1;
@@ -25,8 +37,9 @@ message DataRequest {
 
 message DataResponse {
     repeated Quotation quotations = 1;
+    DataResponseStatus status = 2; 
 }
 
 service DataProvider {
-    rpc GetSinceDateTimeHourTillNowAsync (DataRequest) returns (stream DataResponse);
+    rpc GetSinceDateTimeHourTillNowAsync (stream DataRequest) returns (stream DataResponse);
 }

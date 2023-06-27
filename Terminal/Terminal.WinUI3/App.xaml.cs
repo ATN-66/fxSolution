@@ -182,9 +182,12 @@ public partial class App
 
         return service;
     }
-    private static void App_UnhandledException(object sender, UnhandledExceptionEventArgs exception)
+    private void App_UnhandledException(object sender, UnhandledExceptionEventArgs exception)
     {
-        if (exception.Exception is { } ex)//todo
+        //todo: save all quotations
+        _cts.Cancel();
+
+        if (exception.Exception is { } ex)
         {
             Log.Fatal(ex, "Host terminated unexpectedly");
         }
@@ -193,6 +196,7 @@ public partial class App
             Log.Fatal("Host terminated unexpectedly due to an unknown exception");
         }
         Log.CloseAndFlush();
+        Current.Exit();
     }
     private void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs exception)
     {

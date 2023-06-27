@@ -7,12 +7,16 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Mediator.Contracts.Services;
 using System.Collections.ObjectModel;
 using Common.Entities;
+using Common.ExtensionsAndHelpers;
 using Mediator.Models;
 using Microsoft.Extensions.Logging;
 using Symbol = Common.Entities.Symbol;
 using Microsoft.Extensions.Configuration;
 using CommunityToolkit.Mvvm.Input;
 using Enum = System.Enum;
+using Mediator.Helpers;
+using Microsoft.UI.Xaml;
+using Serilog;
 
 namespace Mediator.ViewModels;
 
@@ -26,27 +30,23 @@ public partial class MainViewModel : ObservableRecipient
     private readonly IDataProviderService _dataProviderService;
     private readonly ILogger<MainViewModel> _logger;
     
-    private DeInitReason _reason;
-    private int _ticksSaved;
     private static readonly int TotalIndicators = Enum.GetValues(typeof(Symbol)).Length;
     private Workplace _workplace;
     public event Action InitializationComplete = null!;
-    
 
-    public MainViewModel(IConfiguration configuration, IAppNotificationService appNotificationService, IDataService dataService, IDataProviderService dataProviderService, IDispatcherService dispatcherService, 
-        CancellationTokenSource cts, ILogger<MainViewModel> logger)
+    public MainViewModel(IConfiguration configuration, IAppNotificationService appNotificationService, IDataService dataService, IDataProviderService dataProviderService, IDispatcherService dispatcherService, CancellationTokenSource cts, ILogger<MainViewModel> logger)
     {
         _dataService = dataService;
         _appNotificationService = appNotificationService;
         _cts = cts;
         _dispatcherService = dispatcherService;
         _dataProviderService = dataProviderService;
-        _dataProviderService.IsServiceActivatedChanged += DataProviderServiceOnIsServiceActivatedChanged;
-            _dataProviderService.IsClientActivatedChanged += (_, e) => { IsDataClientActivated = e.IsActivated; };
+        _dataProviderService.IsServiceActivatedChanged += (_, e) => { IsDataProviderActivated = e.IsActivated; };
+        _dataProviderService.IsClientActivatedChanged += (_, e) => { IsDataClientActivated = e.IsActivated; };
 
         _logger = logger;
 
-        Workplace = SetWorkplaceFromEnvironment();
+        Workplace = EnvironmentHelper.SetWorkplaceFromEnvironment();
 
         foreach (var indicatorStatus in IndicatorStatuses)
         {
@@ -62,16 +62,11 @@ public partial class MainViewModel : ObservableRecipient
             }
         }
 
-        _logger.Log(LogLevel.Trace, "{TypeName}.{Guid} is ON.", GetType().Name, _guid);
+        _logger.LogTrace("({Guid}) is ON.", _guid);
     }
 
-    private void DataProviderServiceOnIsServiceActivatedChanged(object? sender, ActivationChangedEventArgs e)
-    {
-        IsDataProviderActivated = e.IsActivated;
-    }
-
-    private bool _isDataProviderActivated;
-    public bool IsDataProviderActivated
+    private bool? _isDataProviderActivated;
+    public bool? IsDataProviderActivated
     {
         get => _isDataProviderActivated;
         private set
@@ -143,35 +138,20 @@ public partial class MainViewModel : ObservableRecipient
             }
 
             _workplace = value;
-            _dataService.Workplace = Workplace;
             OnPropertyChanged();
         }
     }
 
-    private Workplace SetWorkplaceFromIndicators()
+    private void CheckIndicatorsWorkplaces()//todo
     {
-        var result = IndicatorStatuses[0].Workplace;
-        for (var index = 1; index < TotalIndicators; index++)
+        var result = Workplace;
+        for (var index = 0; index < TotalIndicators; index++)
         {
             if (result != IndicatorStatuses[index].Workplace)
             {
-                return Workplace.None;
+                throw new InvalidOperationException($"Indicators workplaces don't match {EnvironmentHelper.GetExecutingAssemblyName()} workplace.");
             }
         }
-
-        return result;
-    }
-
-    private Workplace SetWorkplaceFromEnvironment()
-    {
-        const string environmentStr = "Mediator";
-        var environment = Environment.GetEnvironmentVariable(environmentStr)!;
-        if (Enum.TryParse<Workplace>(environment, out var workplace))
-        {
-            return workplace;
-        }
-
-        throw new InvalidOperationException($"{GetType()}: {environmentStr} is null.");
     }
 
     public void SetIndicator(Symbol symbol, DateTime dateTime, double ask, double bid, int counter)
@@ -202,24 +182,22 @@ public partial class MainViewModel : ObservableRecipient
             return;
         }
 
+        CheckIndicatorsWorkplaces();
+
         await _dispatcherService.ExecuteOnUIThreadAsync(() =>
         {
             OnPropertyChanged(nameof(IndicatorsConnected));
         }).ConfigureAwait(true);
 
+        const string message = "Indicators connected.";
+        _appNotificationService.ShowMessage(message);
+        _logger.LogTrace(message);
 
-        Workplace = SetWorkplaceFromIndicators();
-        _appNotificationService.ShowMessage("Indicators connected");
-
-        _logger.Log(LogLevel.Trace, "{TypeName}.{Guid}: Indicators connected.", GetType().Name, _guid);
         InitializationComplete.Invoke();
     }
 
-    public async Task IndicatorDisconnectedAsync(DeInitReason reason, int ticksSaved)
+    public async Task IndicatorDisconnectedAsync(DeInitReason reason, int ticksToBeSaved)
     {
-        _reason = reason;
-        _ticksSaved = ticksSaved;
-
         await _dispatcherService.ExecuteOnUIThreadAsync(() =>
         {
             for (var index = 0; index < TotalIndicators; index++)
@@ -232,10 +210,10 @@ public partial class MainViewModel : ObservableRecipient
             OnPropertyChanged(nameof(IndicatorsConnected));
         }).ConfigureAwait(true);
 
-        Workplace = SetWorkplaceFromEnvironment(); 
-        _appNotificationService.ShowMessage($"Indicators disconnected. Ticks to be saved: {_ticksSaved}.");
+        Workplace = EnvironmentHelper.SetWorkplaceFromEnvironment(); 
 
-        _logger.Log(LogLevel.Trace, "Indicators disconnected. Reason:{reason}. Ticks to be saved: {ticksSaved}.", _reason, _ticksSaved);
+        _appNotificationService.ShowMessage($"Indicators disconnected. Reason:{reason}. Ticks to be saved: {ticksToBeSaved}.");
+        _logger.LogTrace("Indicators disconnected. Reason:{reason}. Ticks to be saved: {ticksToBeSaved}.", reason, ticksToBeSaved);
     }
 
     [RelayCommand]
@@ -245,14 +223,12 @@ public partial class MainViewModel : ObservableRecipient
         _appNotificationService.ShowBackupResultToast(result);
     }
 
-    public void CloseApp(string message)
+    private void CloseApplication()
     {
-        _dispatcherService.ExecuteOnUIThreadAsync(() =>
-        {
-            _logger.Log(LogLevel.Critical, "{message}", message);
-            _cts.Cancel();
-            Task.Delay(2000);
-            Environment.Exit(0);
-        }).ConfigureAwait(true);
+        throw new NotImplementedException();
+        //save all quotations and close all
+        _cts.Cancel();
+        Log.CloseAndFlush();
+        Application.Current.Exit();
     }
 }

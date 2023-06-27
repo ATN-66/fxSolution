@@ -6,6 +6,7 @@
 using Common.Entities;
 using Common.MetaQuotes.Mediator;
 using Mediator.Contracts.Services;
+using Mediator.Helpers;
 using Mediator.Services.PipeMethodCalls;
 using Microsoft.Extensions.Logging;
 using PipeMethodCalls;
@@ -36,7 +37,7 @@ internal class IndicatorToMediatorService : IIndicatorToMediatorService
             try
             {
                 using var pipeServer = new PipeServer<ITicksMessenger>(_pipeSerializer, _pipeName, () => new IndicatorToMediatorMessenger(_ticksProcessor));
-                _logger.Log(LogLevel.Trace, $"{_pipeName}.({_guid}) is ON.");
+                _logger.LogTrace("pipeName:({_pipeName}).({_guid}) is ON.", _pipeName, _guid);
                 await pipeServer.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
                 if (cancellationToken.IsCancellationRequested)
                 {
@@ -52,7 +53,7 @@ internal class IndicatorToMediatorService : IIndicatorToMediatorService
             }
             catch (Exception exception)
             {
-                _logger.Log(LogLevel.Trace, $"{_pipeName}.({_guid}) -> {exception.Message}");
+                LogExceptionHelper.LogException(_logger, exception, $"pipeName:({_pipeName}).({_guid})");
                 break;
             }
         }

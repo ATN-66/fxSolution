@@ -4,8 +4,10 @@
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
+using Common.ExtensionsAndHelpers;
 using Mediator.Activation;
 using Mediator.Contracts.Services;
+using Mediator.Helpers;
 using Mediator.Models;
 using Mediator.Services;
 using Mediator.ViewModels;
@@ -17,6 +19,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Serilog;
+using WinUIEx.Messaging;
 using Environment = System.Environment;
 using Symbol = Common.Entities.Symbol;
 using UnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
@@ -38,13 +41,12 @@ public partial class App
         // 5) Enter the value you want in the variable value field.
         // 6) Click OK in all dialog boxes.
 
-        const string environmentStr = "Mediator";
-        var environment = Environment.GetEnvironmentVariable(environmentStr)!;
+        var environment = Environment.GetEnvironmentVariable(EnvironmentHelper.GetExecutingAssemblyName())!;
         var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
         var directoryPath = Path.GetDirectoryName(assemblyLocation);
         var builder = new ConfigurationBuilder().SetBasePath(directoryPath!)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .AddJsonFile($"appsettings.{environment.ToLower()}.json", optional: true, reloadOnChange: true);
+            .AddJsonFile($"appsettings.{environment.ToLower()}.json", optional: false, reloadOnChange: true);
         IConfiguration configuration = builder.Build();
 
         var logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
@@ -79,6 +81,7 @@ public partial class App
             services.AddTransient<MainPage>();
 
             services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
+            services.Configure<DataProviderSettings>(context.Configuration.GetSection(nameof(DataProviderSettings)));
         }).UseSerilog().Build();
 
         DebugSettings.BindingFailed += DebugSettings_BindingFailed;
@@ -106,9 +109,13 @@ public partial class App
 
         return service;
     }
-    private static void App_UnhandledException(object sender, UnhandledExceptionEventArgs exception)
+
+    private void App_UnhandledException(object sender, UnhandledExceptionEventArgs exception)
     {
-        if (exception.Exception is { } ex)//todo
+        //todo: save all quotations
+        _cts.Cancel();
+
+        if (exception.Exception is { } ex)
         {
             Log.Fatal(ex, "Host terminated unexpectedly");
         }
@@ -117,7 +124,9 @@ public partial class App
             Log.Fatal("Host terminated unexpectedly due to an unknown exception");
         }
         Log.CloseAndFlush();
+        Current.Exit();
     }
+
     private void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs exception)
     {
         Log.Fatal(exception.Message, "DebugSettings_BindingFailed");

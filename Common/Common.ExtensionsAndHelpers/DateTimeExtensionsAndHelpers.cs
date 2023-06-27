@@ -52,8 +52,8 @@ public static class DateTimeExtensionsAndHelpers
 
     public static int Week(this DateTime dateTime)
     {
-        var weekNum = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(dateTime, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
-        return weekNum;
+        var weekNumber = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(dateTime, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+        return weekNumber;
     }
 
     public static DateTime GetDateTime(this int elapsedSeconds)

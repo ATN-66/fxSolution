@@ -8,12 +8,17 @@ public class BigBoolToBrushConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
     {
-        if (value is bool boolValue)
+        switch (value)
         {
-            return boolValue ? new SolidColorBrush(Colors.PaleGreen) : new SolidColorBrush(Colors.PaleVioletRed);
+            case bool boolValue when boolValue:
+                return new SolidColorBrush(Colors.PaleGreen); // ON state
+            case bool boolValue when !boolValue:
+                return new SolidColorBrush(Colors.PaleVioletRed); // OFF state
+            case null:
+                return new SolidColorBrush(Colors.Yellow); // FAULT state
+            default:
+                throw new InvalidOperationException("Must be a boolean or null value.");
         }
-
-        throw new InvalidOperationException("Must be a boolean value.");
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language)

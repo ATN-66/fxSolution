@@ -55,7 +55,7 @@ internal class TicksProcessor : ITicksProcessor
         void ProcessQuotationsAction() => Task.Run(() => ProcessAsync(cts.Token), cts.Token).ConfigureAwait(false);
         _mainViewModel.InitializationComplete += ProcessQuotationsAction;
 
-        logger.Log(LogLevel.Trace, $"{GetType().Name}.({_guid}) is ON.");
+        logger.LogTrace("({_guid}) is ON.", _guid);
     }
     
     public async Task DeInitAsync(int reason)
@@ -102,7 +102,9 @@ internal class TicksProcessor : ITicksProcessor
         {
             if (_mainViewModel.IndicatorsConnected)
             {
-                _mainViewModel.CloseApp("Unable to connect the indicator. Maximum capacity of indicators has been reached.");
+                throw new NotImplementedException();
+
+                //_mainViewModel.CloseApplicationOnException("Unable to connect the indicator. Maximum capacity of indicators has been reached.");
             }
 
             if (_lastKnownQuotations[symbol - 1] == Quotation.Empty)
@@ -117,7 +119,9 @@ internal class TicksProcessor : ITicksProcessor
             }
             else
             {
-                _mainViewModel.CloseApp("Connection failed. Each indicator can only be connected once.");
+                throw new NotImplementedException();
+
+                //_mainViewModel.CloseApplicationOnException("Connection failed. Each indicator can only be connected once.");
             }
         }
         finally

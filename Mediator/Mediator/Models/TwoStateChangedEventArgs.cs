@@ -1,15 +1,14 @@
 ﻿
-
 namespace Mediator.Models;
 
-public class ActivationChangedEventArgs : EventArgs
+public class TwoStateChangedEventArgs : EventArgs
 {
     public bool IsActivated
     {
         get;
     }
 
-    public ActivationChangedEventArgs(bool isActivated)
+    public TwoStateChangedEventArgs(bool isActivated)
     {
         IsActivated = isActivated;
     }
