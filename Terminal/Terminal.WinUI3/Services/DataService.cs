@@ -8,6 +8,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Globalization;
+using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
@@ -16,6 +17,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.Contracts.Services;
+using Terminal.WinUI3.Helpers;
 using Terminal.WinUI3.Models.Maintenance;
 using Terminal.WinUI3.Services.Messenger.Messages;
 using DateTime = System.DateTime;
@@ -470,60 +472,86 @@ public class DataService : ObservableRecipient, IDataService // ObservableRecipi
 
         return result;
     }
-    private async Task<int> SavesTicksAsync(IList<Quotation> quotations, int yearNumber, int weekNumber)
-    {
-        int result;
-        var tableName = DatabaseExtensionsAndHelpers.GetTableName(weekNumber);
-        DateTimeExtensionsAndHelpers.Check_ISO_8601(yearNumber, weekNumber, quotations);
 
+    #region SavesTicksAsync
+    private Task<int> SavesTicksAsync(IList<Quotation> quotations, int yearNumber, int weekNumber)
+    {
+        DateTimeExtensionsAndHelpers.Check_ISO_8601(yearNumber, weekNumber, quotations);
+        var dataTable = CreateTable(quotations);
+        var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(yearNumber, weekNumber, Provider);
+        var connectionString = $"{_server};Database={databaseName};Trusted_Connection=True;";
+        return ExecuteTransactionAsync(connectionString, weekNumber, dataTable);
+    }
+    private static DataTable CreateTable(IEnumerable<Quotation> quotations)
+    {
         var dataTable = new DataTable();
         dataTable.Columns.Add("Symbol", typeof(int));
         dataTable.Columns.Add("DateTime", typeof(DateTime));
         dataTable.Columns.Add("Ask", typeof(double));
         dataTable.Columns.Add("Bid", typeof(double));
+
         foreach (var quotation in quotations)
         {
             dataTable.Rows.Add((int)quotation.Symbol, quotation.DateTime, quotation.Ask, quotation.Bid);
         }
 
-        var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(yearNumber, weekNumber, Provider);
-        var connectionString = $"{_server};Database={databaseName};Trusted_Connection=True;";
-
-        await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync().ConfigureAwait(false);
-        await using var transaction = connection.BeginTransaction($"week:{weekNumber:00}");
-        await using var command = new SqlCommand("InsertQuotations", connection, transaction) { CommandType = CommandType.StoredProcedure };
-        command.Parameters.Add(new SqlParameter("@TableName", SqlDbType.NVarChar, 128) { Value = tableName });
-        command.Parameters.Add(new SqlParameter("@Quotations", SqlDbType.Structured) { TypeName = "dbo.QuotationTableType", Value = dataTable });
-        var rowCountParam = new SqlParameter("@RowCount", SqlDbType.Int) { Direction = ParameterDirection.Output };
-        command.Parameters.Add(rowCountParam);
-        command.CommandTimeout = 0;
+        return dataTable;
+    }
+    private async Task<int> ExecuteTransactionAsync(string connectionString, int weekNumber, DataTable dataTable)
+    {
+        var tableName = DatabaseExtensionsAndHelpers.GetTableName(weekNumber);
+        SqlTransaction? transaction = null;
 
         try
         {
+            await using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync().ConfigureAwait(false);
+            transaction = connection.BeginTransaction($"week:{weekNumber:00}");
+
+            await using var command = new SqlCommand("InsertQuotations", connection, transaction) { CommandType = CommandType.StoredProcedure };
+            command.Parameters.Add(new SqlParameter("@TableName", SqlDbType.NVarChar, 128) { Value = tableName });
+            command.Parameters.Add(new SqlParameter("@Quotations", SqlDbType.Structured) { TypeName = "dbo.QuotationTableType", Value = dataTable });
+            var rowCountParam = new SqlParameter("@RowCount", SqlDbType.Int) { Direction = ParameterDirection.Output };
+            command.Parameters.Add(rowCountParam);
+            command.CommandTimeout = 0;
+
             await command.ExecuteNonQueryAsync().ConfigureAwait(false);
-            result = (int)rowCountParam.Value;
             transaction.Commit();
+
+            return (int)rowCountParam.Value;
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception.InnerException?.Message);
-            try
+            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+            if (transaction != null)
             {
-                transaction.Rollback();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(exception.Message);
-                _logger.LogError(exception.InnerException?.Message);
-                throw;
+                await RollbackTransactionAsync(transaction).ConfigureAwait(false);
             }
 
             throw;
         }
-
-        return result;
     }
+    private Task RollbackTransactionAsync(IDbTransaction transaction)
+    {
+        try
+        {
+            transaction.Rollback();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            _logger.LogError(ex.InnerException?.Message);
+            throw;
+        }
+
+        return Task.CompletedTask;
+    }
+    #endregion SavesTicksAsync
+
+
+
+
+
     private async Task<int> UpdateContributionsAsync(IEnumerable<long> hourNumbers, bool status)
     {
         var hourNumbersTable = new DataTable();

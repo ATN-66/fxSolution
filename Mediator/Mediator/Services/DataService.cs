@@ -6,13 +6,16 @@
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
+using System.Reflection;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Mediator.Contracts.Services;
 using Mediator.Helpers;
+using Mediator.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Quotation = Common.Entities.Quotation;
 using Symbol = Common.Entities.Symbol;
 
@@ -22,24 +25,26 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
 {
     private readonly Guid _guid = Guid.NewGuid();
     private const Provider Provider = Common.Entities.Provider.Mediator;
-    private readonly IConfiguration _configuration;
     private readonly ILogger<IDataService> _logger;
     private readonly Dictionary<string, List<Quotation>> _ticksCache = new();
     private readonly Queue<string> _keys = new();
     private const int MaxItems = 744; //(24*31)
     private readonly DateTime _startDateTimeUtc;
     private const int QuartersInYear = 4;
-   
+    private readonly BackupSettings _backupSettings;
+
     private readonly string? _server;
     private string _currentHoursKey = null!;
 
-    public DataService(IConfiguration configuration, ILogger<IDataService> logger)
+    public DataService(IConfiguration configuration, IOptions<BackupSettings> backupSettings, ILogger<IDataService> logger)
     {
-        _configuration = configuration;
         _logger = logger;
+
         Workplace = EnvironmentHelper.SetWorkplaceFromEnvironment();
         _server = DatabaseExtensionsAndHelpers.GetServerName();
+        _backupSettings = backupSettings.Value;
         _startDateTimeUtc = DateTime.ParseExact(configuration.GetValue<string>("StartDate")!, "yyyy-MM-dd HH:mm:ss:fff", CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
+
         _logger.LogTrace("({Guid}) is ON.", _guid);
     }
 
@@ -76,7 +81,7 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
             }
             catch (Exception exception)
             {
-                LogExceptionHelper.LogException(_logger, exception);
+                LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
                 throw;
             }
 
@@ -122,7 +127,7 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
         }
         catch (Exception exception)
         {
-            LogExceptionHelper.LogException(_logger, exception);
+            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
 
             if (transaction == null)
             {
@@ -135,7 +140,7 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
             }
             catch (Exception exRollback)
             {
-                LogExceptionHelper.LogException(_logger, exRollback, "Error during transaction rollback.");
+                LogExceptionHelper.LogException(_logger, exRollback, MethodBase.GetCurrentMethod()!.Name, "Error during transaction rollback.");
                 throw;
             }
 
@@ -165,7 +170,7 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
                 }
                 catch (Exception exception)
                 {
-                    LogExceptionHelper.LogException(_logger, exception);
+                    LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
                     throw;
                 }
                 
@@ -253,7 +258,7 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
         }
         catch (Exception exception)
         {
-            LogExceptionHelper.LogException(_logger, exception);
+            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
             throw;
         }
     }
@@ -341,9 +346,6 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
 
         async Task<int> BackupProviderDatabase(int yearNumber, int quarterNumber)
         {
-            string dbBackupDrive = _configuration.GetValue<string>($"{nameof(dbBackupDrive)}")!;
-            string dbBackupFolder = _configuration.GetValue<string>($"{nameof(dbBackupFolder)}")!;
-
             var databaseName = $"{yearNumber}.{quarterNumber}.{Provider.ToString().ToLower()}";
             var connectionString = $"{_server};Database={databaseName};Trusted_Connection=True;";
 
@@ -351,8 +353,8 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
             await connection.OpenAsync().ConfigureAwait(false);
             await using var cmd = new SqlCommand("BackupProviderDatabase", connection) { CommandType = CommandType.StoredProcedure };
 
-            cmd.Parameters.Add(new SqlParameter("@Drive", dbBackupDrive));
-            cmd.Parameters.Add(new SqlParameter("@Folder", dbBackupFolder));
+            cmd.Parameters.Add(new SqlParameter("@Drive", _backupSettings.Drive));
+            cmd.Parameters.Add(new SqlParameter("@Folder", _backupSettings.Folder));
 
             var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
             returnParameter.Direction = ParameterDirection.ReturnValue;

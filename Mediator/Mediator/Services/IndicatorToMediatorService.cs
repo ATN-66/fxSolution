@@ -3,7 +3,9 @@
   |                                    IndicatorToMediatorService.cs |
   +------------------------------------------------------------------+*/
 
+using System.Reflection;
 using Common.Entities;
+using Common.ExtensionsAndHelpers;
 using Common.MetaQuotes.Mediator;
 using Mediator.Contracts.Services;
 using Mediator.Helpers;
@@ -53,7 +55,7 @@ internal class IndicatorToMediatorService : IIndicatorToMediatorService
             }
             catch (Exception exception)
             {
-                LogExceptionHelper.LogException(_logger, exception, $"pipeName:({_pipeName}).({_guid})");
+                LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, $"pipeName:({_pipeName}).({_guid})");
                 break;
             }
         }

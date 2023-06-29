@@ -9,6 +9,7 @@
     <Platforms>x86;x64;arm64</Platforms>
     <RuntimeIdentifiers>win10-x86;win10-x64;win10-arm64</RuntimeIdentifiers>
     <PublishProfile>Properties\PublishProfiles\win10-$(Platform).pubxml</PublishProfile>
+    <SupportedCultures>en-US</SupportedCultures>
 	<ImplicitUsings>enable</ImplicitUsings>
 	<Nullable>enable</Nullable>
 	<UseWinUI>true</UseWinUI>
@@ -26,6 +27,7 @@
     <AppInstallerUri>\\UNIT065\SharedFolder\</AppInstallerUri>
     <AppxBundlePlatforms>x64</AppxBundlePlatforms>
     <SignAssembly>False</SignAssembly>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
   </PropertyGroup>
   <ItemGroup>
     <Content Remove="Assets\alert2.wav" />
@@ -96,14 +98,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="appsettings.development.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="appsettings.production.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Assets\alert2.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

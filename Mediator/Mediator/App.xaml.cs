@@ -41,12 +41,10 @@ public partial class App
         // 5) Enter the value you want in the variable value field.
         // 6) Click OK in all dialog boxes.
 
-        var environment = Environment.GetEnvironmentVariable(EnvironmentHelper.GetExecutingAssemblyName())!;
         var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
         var directoryPath = Path.GetDirectoryName(assemblyLocation);
         var builder = new ConfigurationBuilder().SetBasePath(directoryPath!)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .AddJsonFile($"appsettings.{environment.ToLower()}.json", optional: false, reloadOnChange: true);
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
         IConfiguration configuration = builder.Build();
 
         var logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
@@ -67,7 +65,6 @@ public partial class App
             services.AddSingleton<IWindowingService, WindowingService>();
             services.AddSingleton<IPageService, PageService>();
             services.AddSingleton<INavigationService, NavigationService>();
-
             services.AddSingleton<IFileService, FileService>();
             services.AddSingleton<IDataService, DataService>();
             services.AddSingleton<IDispatcherService, DispatcherService>();
@@ -82,6 +79,7 @@ public partial class App
 
             services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
             services.Configure<DataProviderSettings>(context.Configuration.GetSection(nameof(DataProviderSettings)));
+            services.Configure<BackupSettings>(context.Configuration.GetSection(nameof(BackupSettings)));
         }).UseSerilog().Build();
 
         DebugSettings.BindingFailed += DebugSettings_BindingFailed;

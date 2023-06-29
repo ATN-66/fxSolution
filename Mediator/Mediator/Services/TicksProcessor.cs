@@ -12,6 +12,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Timer = System.Timers.Timer;
 using Mediator.ViewModels;
+using System.Reflection;
+using Common.ExtensionsAndHelpers;
 
 namespace Mediator.Services;
 
@@ -19,7 +21,8 @@ internal class TicksProcessor : ITicksProcessor
 {
     private readonly Guid _guid = Guid.NewGuid();
     private readonly MainViewModel _mainViewModel;
-    private readonly IDataService _dataService;
+    private readonly IDataProviderService _dataProviderService;
+    private readonly ILogger<TicksProcessor> _logger;
 
     private readonly SemaphoreSlim _mutex = new(1);
     private readonly ReaderWriterLockSlim _queueLock = new();
@@ -39,10 +42,11 @@ internal class TicksProcessor : ITicksProcessor
     private static readonly int TotalIndicators = Enum.GetValues(typeof(Symbol)).Length;
     //private readonly Client.Mediator.To.Terminal.Client _client;
 
-    public TicksProcessor(IConfiguration configuration, MainViewModel mainViewModel, CancellationTokenSource cts, IDataService dataService, ILogger<TicksProcessor> logger)
+    public TicksProcessor(IConfiguration configuration, MainViewModel mainViewModel, CancellationTokenSource cts, IDataProviderService dataProviderService, ILogger<TicksProcessor> logger)
     {
         _mainViewModel = mainViewModel;
-        _dataService = dataService;
+        _dataProviderService = dataProviderService;
+        _logger = logger;
         //this._client = client;
 
         _format = configuration.GetValue<string>("MT5DateTimeFormat")!;
@@ -89,6 +93,11 @@ internal class TicksProcessor : ITicksProcessor
             _quotations = new();
             _counter = new int[TotalIndicators];
         }
+        catch (Exception exception)
+        {
+            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+            throw;
+        }
         finally
         {
             _mutex.Release();
@@ -97,14 +106,21 @@ internal class TicksProcessor : ITicksProcessor
 
     public async Task<string> InitAsync(int id, int symbol, string datetime, double ask, double bid, int workplace)
     {
+        const int maxRetries = 5;
+        var retryCount = 0;
+
         await _mutex.WaitAsync().ConfigureAwait(false);
         try
         {
-            if (_mainViewModel.IndicatorsConnected)
+            while (_mainViewModel.IndicatorsConnected && retryCount < maxRetries)
             {
-                throw new NotImplementedException();
+                await Task.Delay(2000).ConfigureAwait(false);
+                retryCount++;
+            }
 
-                //_mainViewModel.CloseApplicationOnException("Unable to connect the indicator. Maximum capacity of indicators has been reached.");
+            if (retryCount == maxRetries)
+            {
+                throw new TimeoutException("The operation timed out.");
             }
 
             if (_lastKnownQuotations[symbol - 1] == Quotation.Empty)
@@ -119,10 +135,13 @@ internal class TicksProcessor : ITicksProcessor
             }
             else
             {
-                throw new NotImplementedException();
-
-                //_mainViewModel.CloseApplicationOnException("Connection failed. Each indicator can only be connected once.");
+                throw new InvalidOperationException("An indicator is eligible for a single connection only.");
             }
+        }
+        catch (Exception exception)
+        {
+            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+            throw;
         }
         finally
         {
@@ -140,45 +159,61 @@ internal class TicksProcessor : ITicksProcessor
 
     private async Task ProcessAsync(CancellationToken ct)
     {
-        await foreach (var (id, symbol, datetime, ask, bid) in _quotations.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
+        try
         {
-            if (ct.IsCancellationRequested)
+            await foreach (var (id, symbol, datetime, ask, bid) in _quotations.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
             {
-                break;
+                if (ct.IsCancellationRequested)
+                {
+                    break;
+                }
+                Process(id, symbol, datetime, ask, bid);
             }
-            Process(id, symbol, datetime, ask, bid);
+        }
+        catch (Exception exception)
+        {
+            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+            throw;
         }
     }
 
     private void Process(int id, int symbol, string datetime, double ask, double bid)
     {
-        var resultSymbol = (Symbol)symbol;
-        var resultDateTime = DateTime.ParseExact(datetime, _format, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
-        while (_lastKnownQuotations[symbol - 1].DateTime >= resultDateTime)
-        {
-            resultDateTime = resultDateTime.AddMilliseconds(1);
-        }
-        _counter[symbol - 1] += 1;
-        //_client.Tick(quotation); //todo: 
-        var quotation = new Quotation(id, resultSymbol, resultDateTime, ask, bid);
-        _mainViewModel.SetIndicator(resultSymbol, resultDateTime, ask, bid, _counter[symbol - 1]);
-        
-        bool shouldSave;
-        _queueLock.EnterWriteLock();
         try
         {
-            _lastKnownQuotations[symbol - 1] = quotation;
-            _quotationsToSave.Enqueue(quotation);
-            shouldSave = _quotationsToSave.Count >= BatchSize;
-        }
-        finally
-        {
-            _queueLock.ExitWriteLock();
-        }
+            var resultSymbol = (Symbol)symbol;
+            var resultDateTime = DateTime.ParseExact(datetime, _format, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
+            while (_lastKnownQuotations[symbol - 1].DateTime >= resultDateTime)
+            {
+                resultDateTime = resultDateTime.AddMilliseconds(1);
+            }
+            _counter[symbol - 1] += 1;
+            //_client.Tick(quotation); //todo: 
+            var quotation = new Quotation(id, resultSymbol, resultDateTime, ask, bid);
+            _mainViewModel.SetIndicator(resultSymbol, resultDateTime, ask, bid, _counter[symbol - 1]);
 
-        if (shouldSave)
+            bool shouldSave;
+            _queueLock.EnterWriteLock();
+            try
+            {
+                _lastKnownQuotations[symbol - 1] = quotation;
+                _quotationsToSave.Enqueue(quotation);
+                shouldSave = _quotationsToSave.Count >= BatchSize;
+            }
+            finally
+            {
+                _queueLock.ExitWriteLock();
+            }
+
+            if (shouldSave)
+            {
+                SaveQuotationsAsync().ConfigureAwait(false);
+            }
+        }
+        catch (Exception exception)
         {
-            SaveQuotationsAsync().ConfigureAwait(false);
+            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+            throw;
         }
     }
 
@@ -209,6 +244,6 @@ internal class TicksProcessor : ITicksProcessor
             return;
         }
 
-        await _dataService.SaveQuotationsAsync(quotationsToSave).ConfigureAwait(false);
+        await _dataProviderService.SaveQuotationsAsync(quotationsToSave).ConfigureAwait(false);
     }
 }

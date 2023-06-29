@@ -7,7 +7,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Mediator.Contracts.Services;
 using System.Collections.ObjectModel;
 using Common.Entities;
-using Common.ExtensionsAndHelpers;
 using Mediator.Models;
 using Microsoft.Extensions.Logging;
 using Symbol = Common.Entities.Symbol;
@@ -142,7 +141,7 @@ public partial class MainViewModel : ObservableRecipient
         }
     }
 
-    private void CheckIndicatorsWorkplaces()//todo
+    private void CheckIndicatorsWorkplaces()
     {
         var result = Workplace;
         for (var index = 0; index < TotalIndicators; index++)

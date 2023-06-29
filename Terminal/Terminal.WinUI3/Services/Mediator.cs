@@ -4,7 +4,9 @@
   +------------------------------------------------------------------+*/
 
 using System.Net.Sockets;
+using System.Reflection;
 using Common.Entities;
+using Common.ExtensionsAndHelpers;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Grpc.Net.Client;
@@ -84,19 +86,19 @@ public class Mediator : IMediator
         catch (RpcException rpcException)
         {
             // "Unavailable", "Error connecting to subchannel."
-            LogExceptionHelper.LogException(_logger, rpcException);
+            LogExceptionHelper.LogException(_logger, rpcException, MethodBase.GetCurrentMethod()!.Name, "");
             throw;
         }
         catch (SocketException socketException)
         {
             // "System.Net.Sockets.SocketException: No connection could be made because the target machine actively refused it."
-            LogExceptionHelper.LogException(_logger, socketException);
+            LogExceptionHelper.LogException(_logger, socketException, MethodBase.GetCurrentMethod()!.Name, "");
             throw;
         }
 
         catch (Exception exception)
         {
-            LogExceptionHelper.LogException(_logger, exception);
+            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
             throw;
         }
     }

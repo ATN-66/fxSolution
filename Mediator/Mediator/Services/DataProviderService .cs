@@ -3,10 +3,11 @@
   |                                           DataProviderService.cs |
   +------------------------------------------------------------------+*/
 
+using System.Reflection;
+using Common.ExtensionsAndHelpers;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Mediator.Contracts.Services;
-using Mediator.Helpers;
 using Mediator.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -112,12 +113,12 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             }
             catch (IOException ioException)
             {
-                LogExceptionHelper.LogException(_logger, ioException);
+                LogExceptionHelper.LogException(_logger, ioException, MethodBase.GetCurrentMethod()!.Name, "");
                 retryCount++;
             }
             catch (Exception exception)
             {
-                LogExceptionHelper.LogException(_logger, exception);
+                LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
                 retryCount++;
             }
             finally
@@ -135,6 +136,11 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                 await Task.Delay(TimeSpan.FromSeconds(Backoff * retryCount)).ConfigureAwait(false);
             }
         }
+    }
+
+    public Task SaveQuotationsAsync(IEnumerable<Common.Entities.Quotation> quotations)
+    {
+        return _dataService.SaveQuotationsAsync(quotations);
     }
 
     public async override Task GetSinceDateTimeHourTillNowAsync(IAsyncStreamReader<DataRequest> requestStream, IServerStreamWriter<DataResponse> responseStream, ServerCallContext context)
@@ -191,7 +197,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             }
         };
         await responseStream.WriteAsync(exceptionResponse).ConfigureAwait(false);
-        LogExceptionHelper.LogException(_logger, exception, "Error during getting data from database or communication error.");
+        LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "Error during getting data from database or communication error.");
     }
 
     private static Task SendEndOfDataResponseAsync(IAsyncStreamWriter<DataResponse> responseStream)
