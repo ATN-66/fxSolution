@@ -3,15 +3,17 @@ package ticksdata;
 import "timestamp.proto";
 import "google/protobuf/any.proto";
 
-message DataResponseStatus {
-    enum StatusCode {
-        OK = 0;
-        END_OF_DATA = 1;
-        SERVER_ERROR = 2;
-    }
+message TerminalID {
+    int32 id = 1;
+}
 
-    StatusCode code = 1;
-    string details = 2;
+enum Symbol {
+    EUR_USD = 0;
+    EUR_GBP = 1;
+    GBP_USD = 2;
+    USD_JPY = 3;
+    EUR_JPY = 4;
+    GBP_JPY = 5;
 }
 
 message Quotation {
@@ -22,17 +24,27 @@ message Quotation {
     double bid = 5;
 }
 
-enum Symbol {
-    EURUSD = 0;
-    EURGBP = 1;
-    GBPUSD = 2;
-    USDJPY = 3;
-    EURJPY = 4;
-    GBPJPY = 5;
+message DataRequest {
+    enum StatusCode {
+        HISTORICAL_DATA = 0;
+        LIVE_DATA = 1;
+        STOP_DATA = 2;
+    }
+
+    google.protobuf.Timestamp startDateTime = 1;
+    google.protobuf.Timestamp endDateTime = 2;
+    StatusCode code = 3;
 }
 
-message DataRequest {
-    google.protobuf.Timestamp startDateTime = 1;
+message DataResponseStatus {
+    enum StatusCode {
+        OK = 0;
+        NO_DATA = 1;
+        SERVER_ERROR = 2;
+    }
+
+    StatusCode code = 1;
+    string details = 2;
 }
 
 message DataResponse {
@@ -41,5 +53,5 @@ message DataResponse {
 }
 
 service DataProvider {
-    rpc GetSinceDateTimeHourTillNowAsync (stream DataRequest) returns (stream DataResponse);
+    rpc GetDataAsync (stream DataRequest) returns (stream DataResponse);
 }

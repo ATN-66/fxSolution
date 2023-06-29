@@ -14,7 +14,6 @@ using Terminal.WinUI3.Activation;
 using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.AI.Services;
 using Terminal.WinUI3.Contracts.Services;
-using Terminal.WinUI3.Notifications;
 using Terminal.WinUI3.Services;
 using Terminal.WinUI3.ViewModels;
 using Terminal.WinUI3.Views;
@@ -54,8 +53,8 @@ public partial class App
         var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
         var directoryPath = Path.GetDirectoryName(assemblyLocation);
         var builder = new ConfigurationBuilder().SetBasePath(directoryPath!)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .AddJsonFile($"appsettings.{environment.ToLower()}.json", optional: true, reloadOnChange: true);
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+            .AddJsonFile($"appsettings.{environment.ToLower()}.json", optional: false, reloadOnChange: false);
         IConfiguration configuration = builder.Build();
 
         var logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
@@ -155,8 +154,8 @@ public partial class App
         DebugSettings.BindingFailed += DebugSettings_BindingFailed;
         DebugSettings.XamlResourceReferenceFailed += DebugSettings_XamlResourceReferenceFailed;
         UnhandledException += App_UnhandledException;
-
-        App.GetService<IAppNotificationService>().Initialize();
+        
+        GetService<IAppNotificationService>().Initialize();
         _cts = Host.Services.GetRequiredService<CancellationTokenSource>();
     }
 

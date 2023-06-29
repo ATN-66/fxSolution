@@ -21,11 +21,6 @@ public sealed class IndicatorStatus : INotifyPropertyChanged
         get => _isConnected;
         set
         {
-            if (_isConnected == value)
-            {
-                return;
-            }
-
             _isConnected = value;
             OnPropertyChanged();
         }
@@ -37,11 +32,6 @@ public sealed class IndicatorStatus : INotifyPropertyChanged
         get => _workplace;
         set
         {
-            if (_workplace == value)
-            {
-                return;
-            }
-
             _workplace = value;
             OnPropertyChanged();
         }
@@ -53,11 +43,6 @@ public sealed class IndicatorStatus : INotifyPropertyChanged
         get => _dateTime;
         set
         {
-            if (_dateTime.Equals(value))
-            {
-                return;
-            }
-
             _dateTime = value;
             OnPropertyChanged();
         }
@@ -69,14 +54,9 @@ public sealed class IndicatorStatus : INotifyPropertyChanged
         get => _ask;
         set
         {
-            if (_ask.Equals(value))
-            {
-                return;
-            }
-
             _ask = value;
             OnPropertyChanged();
-            OnPropertyChanged("SpreadInPips");
+            OnPropertyChanged(nameof(SpreadInPips));
         }
     }
 
@@ -86,14 +66,9 @@ public sealed class IndicatorStatus : INotifyPropertyChanged
         get => _bid;
         set
         {
-            if (_bid.Equals(value))
-            {
-                return;
-            }
-
             _bid = value;
             OnPropertyChanged();
-            OnPropertyChanged("SpreadInPips");
+            OnPropertyChanged(nameof(SpreadInPips));
         }
     }
 
@@ -112,13 +87,19 @@ public sealed class IndicatorStatus : INotifyPropertyChanged
         get => _counter;
         set
         {
-            if (_counter.Equals(value))
-            {
-                return;
-            }
-
             _counter = value;
             OnPropertyChanged();
+        }
+    }
+
+    private bool _pulse;
+    public bool Pulse
+    {
+        get => _pulse;
+        set
+        {
+            _pulse = value;
+            OnPropertyChanged(nameof(Pulse));
         }
     }
 

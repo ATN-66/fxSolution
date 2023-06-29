@@ -13,75 +13,107 @@ using Grpc.Net.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Terminal.WinUI3.Contracts.Services;
-using Terminal.WinUI3.Helpers;
 using Ticksdata;
 using Quotation = Common.Entities.Quotation;
+using Symbol = Common.Entities.Symbol;
 
 namespace Terminal.WinUI3.Services;
 
 public class Mediator : IMediator
 {
-    private readonly ILogger<DataService> _logger;
-    private readonly Dictionary<string, List<Quotation>> _ticksCache = new();
-    private readonly Queue<string> _keys = new();
-    private const int MaxItems = 744; //(24*31)
-    private string _currentHoursKey = null!;
-    private readonly string _grpcChannelAddress;
-    private readonly int _deadline;
+    private readonly ILogger<Mediator> _logger;
+    
+    private readonly Dictionary<DateTime, List<Quotation>> _hoursCache = new();
+    private readonly Queue<DateTime> _hoursKeys = new();
 
-    public Mediator(IConfiguration configuration, ILogger<DataService> logger)
+    private readonly int _maxHoursInCache;
+    private readonly int _deadline;
+    private int _sessionCounter;
+    private readonly int _maxSendMessageSize;
+    private readonly int _maxReceiveMessageSize;
+
+    private readonly string _grpcChannelAddress;
+
+    private static readonly Dictionary<Ticksdata.Symbol, Symbol> SymbolMapping = new()
+    {
+        { Ticksdata.Symbol.EurGbp, Symbol.EURGBP },
+        { Ticksdata.Symbol.EurJpy , Symbol.EURJPY },
+        { Ticksdata.Symbol.EurUsd , Symbol.EURUSD },
+        { Ticksdata.Symbol.GbpJpy , Symbol.GBPJPY },
+        { Ticksdata.Symbol.GbpUsd , Symbol.GBPUSD },
+        { Ticksdata.Symbol.UsdJpy , Symbol.USDJPY }
+    };
+
+    public Mediator(IConfiguration configuration, ILogger<Mediator> logger)
     {
         _logger = logger;
 
         _grpcChannelAddress = configuration.GetValue<string>($"{nameof(_grpcChannelAddress)}")!;
-        _deadline = configuration.GetValue<int>($"{nameof(_deadline)}")!;
-    }
+        _maxHoursInCache = configuration.GetValue<int>($"{nameof(_maxHoursInCache)}");
+        _deadline = configuration.GetValue<int>($"{nameof(_deadline)}");
 
-    public async Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
+        _maxSendMessageSize = 50 * 1024 * 1024; //e.g. 50 MB //todo:
+        _maxReceiveMessageSize = 50 * 1024 * 1024; //e.g. 50 MB //todo:
+
+        //todo:log
+}
+
+    public async Task<IEnumerable<Quotation>> GetHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
     {
-        try
+        var difference = Math.Ceiling((endDateTimeInclusive - startDateTimeInclusive).TotalHours);
+        if (difference > _maxHoursInCache)
         {
-            var quotations = new List<Quotation>();
-            var start = startDateTimeInclusive.Date.AddHours(startDateTimeInclusive.Hour);
-            var end = endDateTimeInclusive.Date.AddHours(endDateTimeInclusive.Hour).AddHours(1);
+            throw new InvalidOperationException($"Requested hours exceed maximum cache size of {_maxHoursInCache} hours.");
+        }
+        if (difference < 0)
+        {
+            throw new InvalidOperationException("Start date cannot be later than end date.");
+        }
 
-            var index = start;
-            do
+        _sessionCounter = 0;
+        var quotations = new List<Quotation>();
+        var start = startDateTimeInclusive.Date.AddHours(startDateTimeInclusive.Hour);
+        var end = endDateTimeInclusive.Date.AddHours(endDateTimeInclusive.Hour).AddHours(1);
+        var currentHoursKey = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
+        var key = start;
+        do
+        {
+            if (!_hoursCache.ContainsKey(key) || currentHoursKey.Equals(key))
             {
-                var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
-                if (!_ticksCache.ContainsKey(key))
+                try
                 {
-                    await LoadSinceDateTimeHourTillNowAsync(index).ConfigureAwait(false);
-                    if (!_ticksCache.ContainsKey(key))
-                    {
-                        SetQuotations(key, new List<Quotation>());
-                    }
+                    await LoadHistoricalDataAsync(key, end.AddHours(-1)).ConfigureAwait(false);
                 }
-
-                if (_ticksCache.ContainsKey(key))
+                catch (Exception exception)
                 {
-                    quotations.AddRange(GetQuotations(key));
+                    LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+                    throw;
                 }
-
-                index = index.Add(new TimeSpan(1, 0, 0));
             }
-            while (index < end);
 
-            return quotations;
+            if (_hoursCache.ContainsKey(key))
+            {
+                quotations.AddRange(GetData(key));
+            }
+            else
+            {
+                throw new InvalidOperationException("keyed data is absent.");
+            }
+
+            key = key.Add(new TimeSpan(1, 0, 0));
         }
-        catch (Exception exception)
-        {
-            _logger.LogError("{Message}", exception.Message);
-            _logger.LogError("{Message}", exception.InnerException?.Message);
-            throw;
-        }
+        while (key < end);
+        
+        _logger.LogInformation("{quotationsCount} out of {sessionCounter} received.", quotations.Count.ToString(), _sessionCounter.ToString());
+
+        return quotations;
     }
-    private async Task LoadSinceDateTimeHourTillNowAsync(DateTime startDateTimeInclusive)
+    private async Task LoadHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
     {
         try
         {
-            var quotations = await GetAsync(startDateTimeInclusive).ConfigureAwait(false);
-            ProcessQuotations(quotations);
+            var quotations = await GetDataAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
+            ProcessData(quotations);
         }
         catch (RpcException rpcException)
         {
@@ -102,117 +134,116 @@ public class Mediator : IMediator
             throw;
         }
     }
-    private async Task<IList<Quotation>> GetAsync(DateTime startDateTimeInclusive)
+    private async Task<IList<Quotation>> GetDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
     {
-        using var channel = GrpcChannel.ForAddress(_grpcChannelAddress);
-        var client = new DataProvider.DataProviderClient(channel);
-        var callOptions = new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(60 * 3)));
-        var request = new DataRequest { StartDateTime = Timestamp.FromDateTime(startDateTimeInclusive.ToUniversalTime()) };
-        var call = client.GetSinceDateTimeHourTillNowAsync(callOptions);
-        await call.RequestStream.WriteAsync(request).ConfigureAwait(false);
-        await call.RequestStream.CompleteAsync().ConfigureAwait(false);
-
-        int counter = default;
-        IList<Quotation> quotations = new List<Quotation>();
-
-        await foreach (var response in call.ResponseStream.ReadAllAsync())
+        var channelOptions = new GrpcChannelOptions
         {
-            switch (response.Status.Code)
+            MaxSendMessageSize = _maxSendMessageSize,
+            MaxReceiveMessageSize = _maxReceiveMessageSize
+        };
+
+        using var channel = GrpcChannel.ForAddress(_grpcChannelAddress, channelOptions);
+        var client = new DataProvider.DataProviderClient(channel);
+        var callOptions = new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(_deadline)));
+        var request = new DataRequest 
+        { 
+           StartDateTime = Timestamp.FromDateTime(startDateTimeInclusive.ToUniversalTime()),
+           EndDateTime = Timestamp.FromDateTime(endDateTimeInclusive.ToUniversalTime()),
+           Code = DataRequest.Types.StatusCode.HistoricalData 
+        };
+
+        try
+        {
+            var call = client.GetDataAsync(callOptions);
+            await call.RequestStream.WriteAsync(request).ConfigureAwait(false);
+            await call.RequestStream.CompleteAsync().ConfigureAwait(false);
+
+            int counter = default;
+            IList<Quotation> quotations = new List<Quotation>();
+
+            await foreach (var response in call.ResponseStream.ReadAllAsync())
             {
-                case DataResponseStatus.Types.StatusCode.Ok:
-                    foreach (var item in response.Quotations)
-                    {
-                        var quotation = new Quotation(counter++, ToEntitiesSymbol(item.Symbol), item.Datetime.ToDateTime().ToUniversalTime(), item.Ask, item.Bid);
-                        quotations.Add(quotation);
-                    }
-                    break;
-                case DataResponseStatus.Types.StatusCode.EndOfData:
-                    break;
-                case DataResponseStatus.Types.StatusCode.ServerError:
-                    throw new Exception($"Server error: {response.Status.Details}");
-                default:
-                    throw new Exception($"Unknown status code: {response.Status.Code}");
+                switch (response.Status.Code)
+                {
+                    case DataResponseStatus.Types.StatusCode.Ok:
+                        foreach (var item in response.Quotations)
+                        {
+                            var quotation = new Quotation(counter++, ToEntitiesSymbol(item.Symbol), item.Datetime.ToDateTime().ToUniversalTime(), item.Ask, item.Bid);
+                            quotations.Add(quotation);
+                        }
+                        break;
+                    case DataResponseStatus.Types.StatusCode.NoData:
+                        break;
+                    case DataResponseStatus.Types.StatusCode.ServerError:
+                        throw new Exception($"Server error: {response.Status.Details}");
+                    default:
+                        throw new Exception($"Unknown status code: {response.Status.Code}");
+                }
             }
+
+            return quotations;
         }
-
-        return quotations;
+        catch (RpcException rpcException)
+        {
+            LogExceptionHelper.LogException(_logger, rpcException, MethodBase.GetCurrentMethod()!.Name, "");
+            throw;
+        }
     }
-    private void ProcessQuotations(IList<Quotation> quotations)
+    private void ProcessData(IEnumerable<Quotation> quotations)
     {
-        var end = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
-        _currentHoursKey = $"{end.Year}.{end.Month:D2}.{end.Day:D2}.{end.Hour:D2}";
-
-        var yearsCounter = 0;
-        var monthsCounter = 0;
-        var daysCounter = 0;
-        var hoursCounter = 0;
-
         var groupedByYear = quotations.GroupBy(q => new QuotationKey { Year = q.DateTime.Year });
         foreach (var yearGroup in groupedByYear)
         {
             var year = yearGroup.Key.Year;
-            yearsCounter++;
             var groupedByMonth = yearGroup.GroupBy(q => new QuotationKey { Month = q.DateTime.Month });
             foreach (var monthGroup in groupedByMonth)
             {
                 var month = monthGroup.Key.Month;
-                monthsCounter++;
                 var groupedByDay = monthGroup.GroupBy(q => new QuotationKey { Day = q.DateTime.Day });
                 foreach (var dayGroup in groupedByDay)
                 {
                     var day = dayGroup.Key.Day;
-                    daysCounter++;
                     var groupedByHour = dayGroup.GroupBy(q => new QuotationKey { Hour = q.DateTime.Hour });
                     foreach (var hourGroup in groupedByHour)
                     {
                         var hour = hourGroup.Key.Hour;
-                        hoursCounter++;
-                        var key = $"{year}.{month:D2}.{day:D2}.{hour:D2}";
-                        SetQuotations(key, hourGroup.ToList());
-                        _logger.LogTrace("{key}", key);
+                        var key = new DateTime(year, month, day, hour, 0, 0);
+                        var quotationsToSave = hourGroup.ToList();
+                        SetData(key, quotationsToSave);
+                        _sessionCounter += quotationsToSave.Count;
+                        _logger.LogTrace("year:{year}, month:{month:D2}, day:{day:D2}, hour:{hour:D2}. Count:{quotationsToSaveCount}", year.ToString(), month.ToString(), day.ToString(), hour.ToString(), quotationsToSave.Count.ToString());
                     }
                 }
             }
         }
-
-        _logger.LogTrace("year counter:{yearsCounter}, month counter:{monthsCounter:D2}, day counter:{daysCounter:D2}, hour counter:{hoursCounter:D2}", yearsCounter, monthsCounter, daysCounter, hoursCounter);
     }
-    private void AddQuotation(string key, List<Quotation> quotationList)
+    private void AddData(DateTime key, List<Quotation> quotations)
     {
-        if (_ticksCache.Count >= MaxItems)
+        if (_hoursCache.Count >= _maxHoursInCache)
         {
-            var oldestKey = _keys.Dequeue();
-            _ticksCache.Remove(oldestKey);
+            var oldestKey = _hoursKeys.Dequeue();
+            _hoursCache.Remove(oldestKey);
         }
 
-        if (string.Equals(_currentHoursKey, key))
-        {
-            return;
-        }
-
-        _ticksCache[key] = quotationList;
-        _keys.Enqueue(key);
+        _hoursCache[key] = quotations;
+        _hoursKeys.Enqueue(key);
     }
-    private void SetQuotations(string key, List<Quotation> quotations)
+    private void SetData(DateTime key, List<Quotation> quotations)
     {
-        AddQuotation(key, quotations);
+        AddData(key, quotations);
     }
-    private IEnumerable<Quotation> GetQuotations(string key)
+    private IEnumerable<Quotation> GetData(DateTime key)
     {
-        _ticksCache.TryGetValue(key, out var quotations);
+        _hoursCache.TryGetValue(key, out var quotations);
         return quotations!;
     }
-    private static Common.Entities.Symbol ToEntitiesSymbol(Ticksdata.Symbol symbol)
+    private static Symbol ToEntitiesSymbol(Ticksdata.Symbol protoSymbol)
     {
-        return symbol switch
+        if (!SymbolMapping.TryGetValue(protoSymbol, out var symbol))
         {
-            Ticksdata.Symbol.Eurgbp => Common.Entities.Symbol.EURGBP,
-            Ticksdata.Symbol.Eurusd => Common.Entities.Symbol.EURUSD,
-            Ticksdata.Symbol.Gbpusd => Common.Entities.Symbol.GBPUSD,
-            Ticksdata.Symbol.Usdjpy => Common.Entities.Symbol.USDJPY,
-            Ticksdata.Symbol.Eurjpy => Common.Entities.Symbol.EURJPY,
-            Ticksdata.Symbol.Gbpjpy => Common.Entities.Symbol.GBPJPY,
-            _ => throw new ArgumentOutOfRangeException(nameof(symbol), symbol, null)
-        };
+            throw new ArgumentOutOfRangeException(nameof(protoSymbol), protoSymbol, null);
+        }
+
+        return symbol;
     }
 }

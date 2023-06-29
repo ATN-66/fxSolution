@@ -3,7 +3,7 @@ using System.Web;
 using Microsoft.Windows.AppNotifications;
 using Terminal.WinUI3.Contracts.Services;
 
-namespace Terminal.WinUI3.Notifications;
+namespace Terminal.WinUI3.Services;
 
 public class AppNotificationService : IAppNotificationService
 {

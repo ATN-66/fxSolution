@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml;
+﻿using System.Diagnostics;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Terminal.WinUI3.Activation;
 using Terminal.WinUI3.Contracts.Services;
@@ -22,16 +23,24 @@ public class ActivationService : IActivationService
 
     public async Task ActivateAsync(object activationArgs)
     {
-        await InitializeAsync().ConfigureAwait(true);
-        if (App.MainWindow.Content == null)
+        try
         {
-            _shell = App.GetService<ShellPage>();
-            App.MainWindow.Content = _shell ?? new Frame();
-        }
+            await InitializeAsync().ConfigureAwait(true);
+            if (App.MainWindow.Content == null)
+            {
+                _shell = App.GetService<ShellPage>();
+                App.MainWindow.Content = _shell ?? new Frame();
+            }
 
-        await HandleActivationAsync(activationArgs).ConfigureAwait(true);
-        App.MainWindow.Activate();
-        await StartupAsync().ConfigureAwait(true);
+            await HandleActivationAsync(activationArgs).ConfigureAwait(true);
+            App.MainWindow.Activate();
+            await StartupAsync().ConfigureAwait(true);
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e);
+            throw;
+        }
     }
 
     private async Task HandleActivationAsync(object activationArgs)

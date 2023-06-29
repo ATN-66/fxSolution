@@ -11,9 +11,9 @@ public static class LogExceptionHelper
             logger.LogError("{Message}", message);
         }
 
-        logger.LogError("{methodName}", methodName);
-        logger.LogError("{exception.Message}", exception.Message);
-        logger.LogError("{exception.Message}", exception.InnerException?.Message);
-        logger.LogError("{ExceptionType}: {exception.Message}\n{StackTrace}", exception.GetType(), exception.Message, exception.StackTrace);
+        logger.LogError("Method Name: {methodName}", methodName);
+        logger.LogError("Exception (1st level): {exception.Message}", exception.Message);
+        logger.LogError("Exception (2nd level):{exception.Message}", exception.InnerException?.Message);
+        logger.LogError("{ExceptionType}: {exception.Message}\n{StackTrace}", exception.GetType(), exception.Message, exception.StackTrace);//todo
     }
 }

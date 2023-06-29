@@ -4,17 +4,16 @@
   +------------------------------------------------------------------+*/
 
 using Grpc.Core;
-using Mediator.Models;
 using Ticksdata;
-using Quotation = Common.Entities.Quotation;
 
 namespace Mediator.Contracts.Services;
 
 public interface IDataProviderService
 {
-    event EventHandler<ThreeStateChangedEventArgs> IsServiceActivatedChanged;
-    event EventHandler<TwoStateChangedEventArgs> IsClientActivatedChanged;
+    Task DeInitAsync(int reason);
+    Task<string> InitAsync(int id, int symbol, string datetime, double ask, double bid, int workplace);
+    string Tick(int id, int symbol, string datetime, double ask, double bid);
+
     Task StartAsync();
-    Task SaveQuotationsAsync(IEnumerable<Quotation> quotations);
-    Task GetSinceDateTimeHourTillNowAsync(IAsyncStreamReader<DataRequest> requestStream, IServerStreamWriter<DataResponse> responseStream, ServerCallContext context);
+    Task GetDataAsync(IAsyncStreamReader<DataRequest> requestStream, IServerStreamWriter<DataResponse> responseStream, ServerCallContext context);
 }

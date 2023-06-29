@@ -3,6 +3,7 @@
   |                                                   DataService.cs |
   +------------------------------------------------------------------+*/
 
+using System.Collections.Concurrent;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
@@ -24,17 +25,17 @@ namespace Mediator.Services;
 public class DataService : ObservableRecipient, IDataService //todo: ObservableRecipient???
 {
     private readonly Guid _guid = Guid.NewGuid();
-    private const Provider Provider = Common.Entities.Provider.Mediator;
-    private readonly ILogger<IDataService> _logger;
-    private readonly Dictionary<string, List<Quotation>> _ticksCache = new();
-    private readonly Queue<string> _keys = new();
-    private const int MaxItems = 744; //(24*31)
-    private readonly DateTime _startDateTimeUtc;
     private const int QuartersInYear = 4;
-    private readonly BackupSettings _backupSettings;
+    private const Provider Provider = Common.Entities.Provider.Mediator;
 
+    private readonly ILogger<IDataService> _logger;
+    private readonly ConcurrentDictionary<DateTime, List<Quotation>?> _hoursCache = new();
+    private readonly ConcurrentQueue<DateTime> _hoursKeys = new();
+    
+    private readonly DateTime _startDateTimeUtc;
+    private readonly BackupSettings _backupSettings;
     private readonly string? _server;
-    private string _currentHoursKey = null!;
+    private readonly int _maxHoursInCache;
 
     public DataService(IConfiguration configuration, IOptions<BackupSettings> backupSettings, ILogger<IDataService> logger)
     {
@@ -44,6 +45,7 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
         _server = DatabaseExtensionsAndHelpers.GetServerName();
         _backupSettings = backupSettings.Value;
         _startDateTimeUtc = DateTime.ParseExact(configuration.GetValue<string>("StartDate")!, "yyyy-MM-dd HH:mm:ss:fff", CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
+        _maxHoursInCache = configuration.GetValue<int>($"{nameof(_maxHoursInCache)}");
 
         _logger.LogTrace("({Guid}) is ON.", _guid);
     }
@@ -53,9 +55,10 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
         get;
     }
 
-    public async Task<int> SaveQuotationsAsync(IEnumerable<Quotation> quotations)
+    #region Save
+    public async Task<int> SaveDataAsync(IEnumerable<Quotation> quotations)
     {
-        if (Workplace is not (Workplace.Production or Workplace.Development))
+        if (Workplace is not Workplace.Production)
         {
             return 0;
         }
@@ -149,66 +152,78 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
 
         return result;
     }
+    #endregion Save
 
-    public async Task<IEnumerable<Quotation>> GetSinceDateTimeHourTillNowAsync(DateTime startDateTime)
+    #region Retrieve
+    public async Task<IEnumerable<Quotation>> GetDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
     {
-        var result = new List<Quotation>();
-        var start = startDateTime.Date.AddHours(startDateTime.Hour);
-        var end = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
-        _currentHoursKey = $"{end.Year}.{end.Month:D2}.{end.Day:D2}.{end.Hour:D2}";
-        end = end.AddHours(1);
+        var difference = Math.Ceiling((endDateTimeInclusive - startDateTimeInclusive).TotalHours);
+        if (difference > _maxHoursInCache)
+        {
+            throw new InvalidOperationException($"Requested hours exceed maximum cache size of {_maxHoursInCache} hours.");
+        }
+        if (difference < 0)
+        {
+            throw new InvalidOperationException("Start date cannot be later than end date.");
+        }
 
-        var index = start;
+        var tasks = new List<Task>();
+        var quotations = new List<Quotation>();
+        var start = startDateTimeInclusive.Date.AddHours(startDateTimeInclusive.Hour);
+        var end = endDateTimeInclusive.Date.AddHours(endDateTimeInclusive.Hour).AddHours(1);
+        var currentHoursKey = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
+        var key = start;
         do
         {
-            var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
-            if (!_ticksCache.ContainsKey(key))
+            if (!_hoursCache.ContainsKey(key) || currentHoursKey.Equals(key))
             {
-                try
-                {
-                    await LoadTicksToCacheAsync(index).ConfigureAwait(false);
-                }
-                catch (Exception exception)
-                {
-                    LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
-                    throw;
-                }
-                
-                if (!_ticksCache.ContainsKey(key))
-                {
-                    SetQuotations(key, new List<Quotation>());
-                }
+                tasks.Add(LoadHourToCacheAsync(key));
             }
 
-            if (_ticksCache.ContainsKey(key))
-            {
-                result.AddRange(GetQuotations(key));
-            }
-
-            index = index.Add(new TimeSpan(1, 0, 0));
+            key = key.Add(new TimeSpan(1, 0, 0));
+            
         }
-        while (index < end);
+        while (key < end);
 
-        return result;
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+
+        key = start;
+        do
+        {
+            if (_hoursCache.ContainsKey(key))
+            {
+                quotations.AddRange(GetData(key));
+            }
+            else
+            {
+               throw new InvalidOperationException("keyed data is absent.");
+            }
+
+            key = key.Add(new TimeSpan(1, 0, 0));
+        }
+        while (key < end);
+
+        return quotations;
     }
-    private async Task LoadTicksToCacheAsync(DateTime dateTime)
+    private async Task LoadHourToCacheAsync(DateTime key)
     {
-        var yearNumber = dateTime.Year;
-        var weekNumber = dateTime.Week();
-        var dayOfWeekNumber = ((int)dateTime.DayOfWeek + 6) % 7 + 1;
-        var hourNumber = dateTime.Hour;
-        var quotations = new List<Quotation>();
+        var yearNumber = key.Year;
+        var weekNumber = key.Week();
+        var dayOfWeekNumber = ((int)key.DayOfWeek + 6) % 7 + 1;
+        var hourNumber = key.Hour;
         var databaseName = DatabaseExtensionsAndHelpers.GetDatabaseName(yearNumber, weekNumber, Provider);
-        
+        var quotations = new List<Quotation>();
+        var done = false;
+
         try
         {
             await using var connection = new SqlConnection($"{_server};Database={databaseName};Trusted_Connection=True;");
             await connection.OpenAsync().ConfigureAwait(false);
             await using var command = new SqlCommand("GetQuotationsByWeekAndDayAndHour", connection) { CommandTimeout = 0 };
             command.CommandType = CommandType.StoredProcedure;
-            command.Parameters.AddWithValue("@Week", weekNumber);
-            command.Parameters.AddWithValue("@DayOfWeek", dayOfWeekNumber);
-            command.Parameters.AddWithValue("@HourOfDay", hourNumber);
+            command.Parameters.AddWithValue("@Week", weekNumber.ToString());
+            command.Parameters.AddWithValue("@DayOfWeek", dayOfWeekNumber.ToString());
+            command.Parameters.AddWithValue("@HourOfDay", hourNumber.ToString());
             await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
             int id = default;
             while (await reader.ReadAsync().ConfigureAwait(false))
@@ -221,40 +236,50 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
                 quotations.Add(quotation);
             }
 
-            //var yearsCounter = 0;
-            //var monthsCounter = 0;
-            //var daysCounter = 0;
-            //var hoursCounter = 0;
+            var yearsCounter = 0;
+            var monthsCounter = 0;
+            var daysCounter = 0;
+            var hoursCounter = 0;
 
             var groupedByYear = quotations.GroupBy(q => new QuotationKey { Year = q.DateTime.Year });
             foreach (var yearGroup in groupedByYear)
             {
                 var year = yearGroup.Key.Year;
-                //yearsCounter++;
+                yearsCounter++;
                 var groupedByMonth = yearGroup.GroupBy(q => new QuotationKey { Month = q.DateTime.Month });
                 foreach (var monthGroup in groupedByMonth)
                 {
                     var month = monthGroup.Key.Month;
-                    //monthsCounter++;
+                    monthsCounter++;
                     var groupedByDay = monthGroup.GroupBy(q => new QuotationKey { Day = q.DateTime.Day });
                     foreach (var dayGroup in groupedByDay)
                     {
                         var day = dayGroup.Key.Day;
-                        //daysCounter++;
+                        daysCounter++;
                         var groupedByHour = dayGroup.GroupBy(q => new QuotationKey { Hour = q.DateTime.Hour });
                         foreach (var hourGroup in groupedByHour)
                         {
                             var hour = hourGroup.Key.Hour;
-                            //hoursCounter++;
-                            var key = $"{year}.{month:D2}.{day:D2}.{hour:D2}";
-                            SetQuotations(key, hourGroup.ToList());
-                            _logger.LogTrace("{key}",key);
+                            hoursCounter++;
+                            var checkKey = new DateTime(year, month, day, hour, 0, 0);
+                            var quotationsToSave = hourGroup.ToList();
+                            if (!key.Equals(checkKey) || yearsCounter != 1 || monthsCounter != 1 || daysCounter != 1 || hoursCounter != 1 || quotations.Count != quotationsToSave.Count)
+                            {
+                                throw new InvalidOperationException("Keys are not identical or data corrupted.");
+                            }
+                            SetData(key, quotationsToSave);
+                            done = true;
+                            _logger.LogTrace("year:{Year}, month:{Month:D2}, day:{Day:D2}, hour:{Hour:D2}. Count:{QuotationsToSaveCount}", year, month, day, hour, quotationsToSave.Count);
                         }
                     }
                 }
             }
 
-            //_logger.LogTrace("year counter:{yearsCounter}, month counter:{monthsCounter:D2}, day counter:{daysCounter:D2}, hour counter:{hoursCounter:D2}", yearsCounter, monthsCounter, daysCounter, hoursCounter);
+            if (!done)
+            {
+                SetData(key, quotations: new List<Quotation>());
+                //_logger.LogTrace("year:{year}, month:{month:D2}, day:{day:D2}, hour:{hour:D2}. Count:{quotationsToSaveCount}", args: new object?[] { yearNumber.ToString(), monthNumber.ToString(), dayNumber.ToString(), hourNumber.ToString(), 0.ToString() });
+            }
         }
         catch (Exception exception)
         {
@@ -262,31 +287,36 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
             throw;
         }
     }
-    private void AddQuotation(string key, List<Quotation> quotationList)
+    private void AddData(DateTime key, List<Quotation>? quotations)
     {
-        if (_ticksCache.Count >= MaxItems)
+        if (_hoursCache.Count > _maxHoursInCache)
         {
-            var oldestKey = _keys.Dequeue();
-            _ticksCache.Remove(oldestKey);
+            if (_hoursKeys.TryDequeue(out var oldestKey))
+            {
+                _hoursCache.TryRemove(oldestKey, out _);
+            }
         }
 
-        if (string.Equals(_currentHoursKey, key))
+        if (!_hoursCache.ContainsKey(key))
         {
-            return;
+            _hoursCache[key] = quotations;
+            _hoursKeys.Enqueue(key);
         }
-
-        _ticksCache[key] = quotationList;
-        _keys.Enqueue(key);
+        else
+        {
+            throw new InvalidOperationException("the key already exists.");
+        }
     }
-    private void SetQuotations(string key, List<Quotation> quotations)
+    private void SetData(DateTime key, List<Quotation>? quotations)
     {
-        AddQuotation(key, quotations);
+        AddData(key, quotations);
     }
-    private IEnumerable<Quotation> GetQuotations(string key)
+    private IEnumerable<Quotation> GetData(DateTime key)
     {
-        _ticksCache.TryGetValue(key, out var quotations);
+        _hoursCache.TryGetValue(key, out var quotations);
         return quotations!;
     }
+    #endregion Retrieve
 
     public async Task<Dictionary<ActionResult, int>> BackupAsync()
     {

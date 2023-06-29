@@ -8,7 +8,6 @@ using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Common.MetaQuotes.Mediator;
 using Mediator.Contracts.Services;
-using Mediator.Helpers;
 using Mediator.Services.PipeMethodCalls;
 using Microsoft.Extensions.Logging;
 using PipeMethodCalls;
@@ -21,13 +20,13 @@ internal class IndicatorToMediatorService : IIndicatorToMediatorService
 {
     private readonly Guid _guid = Guid.NewGuid();
     private string _pipeName = "Indicator.To.Mediator";
-    private readonly ITicksProcessor _ticksProcessor;
+    private readonly IDataProviderService _dataProviderService;
     private readonly ILogger<IndicatorToMediatorService> _logger;
     private readonly IPipeSerializer _pipeSerializer = new NetJsonPipeSerializer();
 
-    public IndicatorToMediatorService(ITicksProcessor ticksProcessor, ILogger<IndicatorToMediatorService> logger)
+    public IndicatorToMediatorService(IDataProviderService dataProviderService, ILogger<IndicatorToMediatorService> logger) 
     {
-        _ticksProcessor = ticksProcessor;
+        _dataProviderService = dataProviderService;
         _logger = logger;
     }
 
@@ -38,25 +37,38 @@ internal class IndicatorToMediatorService : IIndicatorToMediatorService
         {
             try
             {
-                using var pipeServer = new PipeServer<ITicksMessenger>(_pipeSerializer, _pipeName, () => new IndicatorToMediatorMessenger(_ticksProcessor));
-                _logger.LogTrace("pipeName:({_pipeName}).({_guid}) is ON.", _pipeName, _guid);
-                await pipeServer.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
-                if (cancellationToken.IsCancellationRequested)
+                PipeServer<ITicksMessenger> pipeServer;
+                using (pipeServer = new PipeServer<ITicksMessenger>(_pipeSerializer, _pipeName, () => new IndicatorToMediatorMessenger(_dataProviderService)))
                 {
-                    break;
+                    _logger.LogTrace("pipeName:({_pipeName}).({_guid}) is ON.", _pipeName, _guid);
+                    await pipeServer.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+                    await pipeServer.WaitForRemotePipeCloseAsync(cancellationToken).ConfigureAwait(false);
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
                 }
-                await pipeServer.WaitForRemotePipeCloseAsync(cancellationToken).ConfigureAwait(false);
-                await _ticksProcessor.DeInitAsync((int)DeInitReason.Terminal_closed).ConfigureAwait(false);
-                _logger.Log(LogLevel.Trace, $"{_pipeName}.({_guid}) is OFF.");
+
+                pipeServer.Dispose();
             }
             catch (OperationCanceledException)
             {
+
                 break;
             }
             catch (Exception exception)
             {
                 LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, $"pipeName:({_pipeName}).({_guid})");
                 break;
+            }
+            finally
+            {
+                await _dataProviderService.DeInitAsync((int)DeInitReason.Terminal_closed).ConfigureAwait(false);
+                _logger.Log(LogLevel.Trace, $"{_pipeName}.({_guid}) is OFF.");
             }
         }
     }

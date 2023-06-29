@@ -71,7 +71,6 @@ public partial class App
 
             services.AddSingleton<CancellationTokenSource>();
             services.AddTransient<IIndicatorToMediatorService, IndicatorToMediatorService>();
-            services.AddSingleton<ITicksProcessor, TicksProcessor>();
             services.AddSingleton<IDataProviderService, DataProviderService>();
 
             services.AddSingleton<MainViewModel>();

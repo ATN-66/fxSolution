@@ -6,6 +6,8 @@
     xmlns:converters="using:Mediator.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:helpers="using:Mediator.Helpers"
+    xmlns:models="using:Mediator.Models"
     Loaded="OnLoaded"
     Unloaded="OnUnloaded"
     mc:Ignorable="d">
@@ -13,15 +15,24 @@
     <Page.Resources>
         <converters:BigBoolToBrushConverter x:Key="AllBoolToBrushConverter" />
         <converters:SmallBoolToBrushConverter x:Key="EachBoolToBrushConverter" />
+        <!--<Storyboard x:Name="colorStoryboard">
+            <ColorAnimation
+                AutoReverse="False"
+                Storyboard.TargetName="indicatorEllipse"
+                Storyboard.TargetProperty="(Rectangle.Fill).(SolidColorBrush.Color)"
+                From="Green"
+                To="Transparent"
+                Duration="0:0:2" />
+        </Storyboard>-->
     </Page.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
+            <!--<RowDefinition Height="Auto" />-->
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Grid Grid.Row="0">
+        <!--<Grid Grid.Row="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
@@ -30,7 +41,8 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <StackPanel
+        -->
+        <!--<StackPanel
                 Grid.Row="0"
                 Grid.Column="0"
                 HorizontalAlignment="Left"
@@ -39,8 +51,8 @@
                     Margin="5,0,0,0"
                     Style="{StaticResource TitleTextBlockStyle}"
                     Text="{x:Bind Path=ViewModel.Workplace}" />
-            </StackPanel>
-            <StackPanel
+            </StackPanel>-->
+        <!--<StackPanel
                 Grid.Row="0"
                 Grid.Column="2"
                 HorizontalAlignment="Center"
@@ -52,9 +64,10 @@
                     Content="Backup"
                     CornerRadius="10"
                     ToolTipService.ToolTip="BackupCommand" />
-            </StackPanel>
-        </Grid>
-        <Grid Grid.Row="1">
+            </StackPanel>-->
+        <!--
+        </Grid>-->
+        <Grid Grid.Row="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -66,14 +79,14 @@
                     RadiusX="10"
                     RadiusY="10" />
             </Grid>
-            <ItemsControl Grid.Row="0" ItemsSource="{x:Bind ViewModel.IndicatorStatuses, Mode=OneWay}">
+            <ItemsControl Grid.Row="0" ItemsSource="{x:Bind Path=ViewModel.IndicatorStatuses, Mode=OneWay}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <controls:UniformGrid Rows="1" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="models:IndicatorStatus">
                         <Border Style="{StaticResource IndicatorBorderStyle}">
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -89,13 +102,13 @@
                                     Grid.Row="0"
                                     Grid.Column="0"
                                     HorizontalAlignment="Stretch">
-                                    <Border Background="{Binding Path=IsConnected, Converter={StaticResource EachBoolToBrushConverter}}" CornerRadius="10">
+                                    <Border Background="{x:Bind Path=IsConnected, Converter={StaticResource EachBoolToBrushConverter}, Mode=OneWay}" CornerRadius="10">
                                         <TextBlock
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
                                             FontSize="18"
                                             FontWeight="Bold"
-                                            Text="{Binding Path=Symbol}" />
+                                            Text="{x:Bind Path=Symbol}" />
                                     </Border>
                                 </Grid>
                                 <Grid
@@ -113,40 +126,85 @@
                                         Grid.Column="0"
                                         Padding="5,0,0,0"
                                         Style="{StaticResource AskBidTextBlockStyle}"
-                                        Text="{Binding Path=Ask}" />
+                                        Text="{x:Bind Path=Ask, Mode=OneWay}" />
                                     <TextBlock
                                         Grid.Row="0"
                                         Grid.Column="1"
                                         Padding="5,0,0,0"
                                         Style="{StaticResource AskBidTextBlockStyle}"
-                                        Text="{Binding Path=Bid}" />
+                                        Text="{x:Bind Path=Bid, Mode=OneWay}" />
                                     <TextBlock
                                         Grid.Row="0"
                                         Grid.Column="2"
                                         Padding="0,0,5,0"
                                         HorizontalAlignment="Right"
                                         Style="{StaticResource AskBidTextBlockStyle}"
-                                        Text="{Binding Path=SpreadInPips}" />
+                                        Text="{x:Bind Path=SpreadInPips, Mode=OneWay}" />
                                 </Grid>
                                 <TextBlock
                                     Grid.Row="2"
                                     Grid.Column="0"
                                     Margin="0,5,0,0"
                                     Style="{StaticResource TimeTextBlockStyle}"
-                                    Text="{Binding Path=DateTime}" />
-                                <TextBlock
-                                    Grid.Row="3"
-                                    Grid.Column="0"
-                                    Margin="0,5,0,0"
-                                    Style="{StaticResource CounterTextBlockStyle}"
-                                    Text="{Binding Path=Counter}" />
+                                    Text="{x:Bind Path=DateTime, Mode=OneWay}" />
+                                <Grid Grid.Row="3" Grid.Column="0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Row="0"
+                                        Grid.Column="0"
+                                        Margin="0,5,0,0"
+                                        Style="{StaticResource CounterTextBlockStyle}"
+                                        Text="{x:Bind Path=Counter, Mode=OneWay}" />
+                                    <Grid
+                                        Grid.Row="0"
+                                        Grid.Column="1"
+                                        Margin="0,0,10,0"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center">
+                                        <Ellipse x:Name="indicatorEllipse" 
+                                                 Width="10" 
+                                                 Height="10" 
+                                                 Fill="Transparent">
+                                            <Ellipse.Resources>
+                                                <Storyboard x:Key="colorStoryboard">
+                                                    <ColorAnimation Storyboard.TargetName="indicatorEllipse" 
+                                                                    Storyboard.TargetProperty="(Fill).(SolidColorBrush.Color)" 
+                                                                    From="Black" 
+                                                                    To="Transparent" 
+                                                                    Duration="0:1:0" 
+                                                                    AutoReverse="False" />
+                                                </Storyboard>
+                                            </Ellipse.Resources>
+
+                                            <!--<VisualStateManager.VisualStateGroups>
+                                                <VisualStateGroup>
+                                                    <VisualState x:Name="BooleanTrueState">
+                                                        <VisualState.StateTriggers>
+                                                            <helpers:BooleanStateTrigger Value="{x:Bind Path=Pulse, Mode=OneWay}" />
+                                                        </VisualState.StateTriggers>
+                                                        <VisualState.Storyboard>
+                                                            <StaticResource ResourceKey="colorStoryboard" />
+                                                        </VisualState.Storyboard>
+                                                    </VisualState>
+                                                </VisualStateGroup>
+                                            </VisualStateManager.VisualStateGroups>-->
+                                        </Ellipse>
+
+                                    </Grid>
+                                </Grid>
                             </Grid>
                         </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </Grid>
-        <Grid Grid.Row="2" Grid.Column="0">
+        <Grid Grid.Row="1" Grid.Column="0">
             <Grid>
                 <Grid>
                     <Grid.RowDefinitions>
@@ -173,7 +231,7 @@
                 </Grid>
             </Grid>
         </Grid>
-        <Grid Grid.Row="2" Grid.Column="0">
+        <Grid Grid.Row="1" Grid.Column="0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
@@ -192,7 +250,7 @@
                             VerticalAlignment="Center"
                             FontSize="18"
                             FontWeight="Bold"
-                            Text="fxSolution.Terminal.WinUI3" />
+                            Text="{x:Bind Path=ViewModel.DataProviderServiceTitle, Mode=OneWay}" />
                     </Border>
                 </Grid>
                 <Grid

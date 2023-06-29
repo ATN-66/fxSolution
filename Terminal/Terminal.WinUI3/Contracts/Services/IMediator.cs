@@ -9,5 +9,5 @@ namespace Terminal.WinUI3.Contracts.Services;
 
 public interface IMediator
 {
-    Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive);
+    Task<IEnumerable<Quotation>> GetHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive);
 }

@@ -15,29 +15,29 @@ public class IndicatorToMediatorMessenger : ITicksMessenger//, IDisposable
     //private static int _lastInstanceId;
     //private static int _instanceId;
 
-    private readonly ITicksProcessor _ticksProcessor;
+    private readonly IDataProviderService _dataProviderService;
 
-    public IndicatorToMediatorMessenger(ITicksProcessor ticksProcessor)
+    public IndicatorToMediatorMessenger(IDataProviderService dataProviderService)
     {
         //_instanceId = ++_lastInstanceId;
         //Interlocked.Increment(ref _instanceCount);
         //Debug.WriteLine($"QuotationsMessenger instance {_instanceId} created. Total instances: {_instanceCount}");
-        _ticksProcessor = ticksProcessor;
+        _dataProviderService = dataProviderService;
     }
 
     public void DeInit(int reason)
     {
-        _ticksProcessor.DeInitAsync(reason);
+        _dataProviderService.DeInitAsync(reason);
     }
 
     public Task<string> InitAsync(int id, int symbol, string datetime, double ask, double bid, int environment)
     {
-        return _ticksProcessor.InitAsync(id, symbol, datetime, ask, bid, environment);
+        return _dataProviderService.InitAsync(id, symbol, datetime, ask, bid, environment);
     }
 
     public string Tick(int id, int symbol, string datetime, double ask, double bid)
     {
-        return _ticksProcessor.Tick(id, symbol, datetime, ask, bid);
+        return _dataProviderService.Tick(id, symbol, datetime, ask, bid);
     }
 
     //~QuotationsMessenger()

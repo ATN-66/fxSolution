@@ -16,6 +16,7 @@ using Enum = System.Enum;
 using Mediator.Helpers;
 using Microsoft.UI.Xaml;
 using Serilog;
+using Mediator.Services;
 
 namespace Mediator.ViewModels;
 
@@ -23,26 +24,20 @@ public partial class MainViewModel : ObservableRecipient
 {
     private readonly Guid _guid = Guid.NewGuid();
     private readonly IAppNotificationService _appNotificationService;
-    private readonly IDataService _dataService;
     private readonly CancellationTokenSource _cts;
     private readonly IDispatcherService _dispatcherService;
-    private readonly IDataProviderService _dataProviderService;
     private readonly ILogger<MainViewModel> _logger;
     
     private static readonly int TotalIndicators = Enum.GetValues(typeof(Symbol)).Length;
     private Workplace _workplace;
+    private string _dataProviderServiceTitle;
     public event Action InitializationComplete = null!;
 
-    public MainViewModel(IConfiguration configuration, IAppNotificationService appNotificationService, IDataService dataService, IDataProviderService dataProviderService, IDispatcherService dispatcherService, CancellationTokenSource cts, ILogger<MainViewModel> logger)
+    public MainViewModel(IConfiguration configuration, IAppNotificationService appNotificationService, IDispatcherService dispatcherService, CancellationTokenSource cts, ILogger<MainViewModel> logger)
     {
-        _dataService = dataService;
         _appNotificationService = appNotificationService;
         _cts = cts;
         _dispatcherService = dispatcherService;
-        _dataProviderService = dataProviderService;
-        _dataProviderService.IsServiceActivatedChanged += (_, e) => { IsDataProviderActivated = e.IsActivated; };
-        _dataProviderService.IsClientActivatedChanged += (_, e) => { IsDataClientActivated = e.IsActivated; };
-
         _logger = logger;
 
         Workplace = EnvironmentHelper.SetWorkplaceFromEnvironment();
@@ -68,7 +63,7 @@ public partial class MainViewModel : ObservableRecipient
     public bool? IsDataProviderActivated
     {
         get => _isDataProviderActivated;
-        private set
+        internal set
         {
             if (value == _isDataProviderActivated)
             {
@@ -88,7 +83,7 @@ public partial class MainViewModel : ObservableRecipient
     public bool IsDataClientActivated
     {
         get => _isDataClientActivated;
-        private set
+        internal set
         {
             if (value == _isDataClientActivated)
             {
@@ -125,11 +120,26 @@ public partial class MainViewModel : ObservableRecipient
             return true;
         }
     }
+            
+    public string DataProviderServiceTitle
+    {
+        get => _dataProviderServiceTitle;
+        private set
+        {
+            if (value == _dataProviderServiceTitle)
+            {
+                return;
+            }
 
-    public Workplace Workplace
+            _dataProviderServiceTitle = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private Workplace Workplace
     {
         get => _workplace;
-        private set
+        set
         {
             if (value == _workplace)
             {
@@ -137,7 +147,7 @@ public partial class MainViewModel : ObservableRecipient
             }
 
             _workplace = value;
-            OnPropertyChanged();
+            DataProviderServiceTitle = $"Data Provider Service ({Workplace})";
         }
     }
 
@@ -162,6 +172,7 @@ public partial class MainViewModel : ObservableRecipient
             IndicatorStatuses[index].Ask = ask;
             IndicatorStatuses[index].Bid = bid;
             IndicatorStatuses[index].Counter = counter;
+            IndicatorStatuses[index].Pulse = true;
             OnPropertyChanged(nameof(IndicatorStatuses));
         });
     }
@@ -218,8 +229,10 @@ public partial class MainViewModel : ObservableRecipient
     [RelayCommand]
     private async Task BackupAsync()
     {
-        var result = await _dataService.BackupAsync().ConfigureAwait(true);
-        _appNotificationService.ShowBackupResultToast(result);
+        throw new NotImplementedException();
+
+        //var result = await _dataService.BackupAsync().ConfigureAwait(true);
+        //_appNotificationService.ShowBackupResultToast(result);
     }
 
     private void CloseApplication()

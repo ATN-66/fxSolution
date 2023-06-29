@@ -10,7 +10,7 @@ namespace Mediator.Contracts.Services;
 
 public interface IDataService
 {
-    Task<int> SaveQuotationsAsync(IEnumerable<Quotation> quotations);
-    Task<IEnumerable<Quotation>> GetSinceDateTimeHourTillNowAsync(DateTime startDateTime);
+    Task<int> SaveDataAsync(IEnumerable<Quotation> quotations);
+    Task<IEnumerable<Quotation>> GetDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive);
     Task<Dictionary<ActionResult, int>> BackupAsync();
 }

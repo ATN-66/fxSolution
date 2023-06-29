@@ -79,18 +79,17 @@ static Task InitializeIndicators(Queue<Quotation> firstQuotations, Workplace spa
     return Task.CompletedTask;
 }
 
-static Task ProcessQuotations(Queue<Quotation> quotations, CancellationToken ct)
+static async Task ProcessQuotations(Queue<Quotation> quotations, CancellationToken ct)
 {
     int id = default;
     while (quotations.Count > 0)
     {
         if (ct.IsCancellationRequested) break;
         var quotation = quotations.Dequeue();
-
+        await Task.Delay(10, ct).ConfigureAwait(false);
         var result = Mediator.Tick(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.Ask, quotation.Bid);
         if (ok != result) throw new Exception(result);
     }
-    return Task.CompletedTask;
 }
 
 static async Task ConsoleService(CancellationTokenSource cts)

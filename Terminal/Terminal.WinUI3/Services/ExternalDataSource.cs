@@ -27,7 +27,7 @@ public class ExternalDataSource : IExternalDataSource
             switch (provider)
             {
                 case Provider.Mediator:
-                    var inputMediator = await _mediator.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
+                    var inputMediator = await _mediator.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
                     var resultMediator = inputMediator.ToList();
                     return resultMediator;
                 case Provider.FileService:
@@ -42,13 +42,13 @@ public class ExternalDataSource : IExternalDataSource
         {
             throw new NotImplementedException();
 
-            //var input_mediator = await _mediator.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
+            //var input_mediator = await _mediator.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
             //var result_mediator = input_mediator.ToList();
-            //var input_fileService = await _fileService.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
+            //var input_fileService = await _fileService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
             //var result_fileService = input_fileService.ToList();
 
 
-            //sample var fileServiceTask = _dataService.GetTicksAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.FileService, true);
+            //sample var fileServiceTask = _dataService.GetHistoricalDataAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.FileService, true);
             //await Task.WhenAll(fileServiceTask, mediatorTask, terminalTask).ConfigureAwait(true);
 
 
@@ -61,16 +61,16 @@ public class ExternalDataSource : IExternalDataSource
 
             //    //    if (result.Count == 0)
             //    //    {
-            //    //        input = await _fileService.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
+            //    //        input = await _fileService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
             //    //        result = input.ToList();
             //    //    }
             //    //    break;
             //    //case Provider.FileService:
-            //    //    input = await _fileService.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
+            //    //    input = await _fileService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
             //    //    result = input.ToList();
             //    //    if (result.Count == 0)
             //    //    {
-            //    //        input = await _mediator.GetTicksAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
+            //    //        input = await _mediator.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
             //    //        result = input.ToList();
             //    //    }
             //    //    break;

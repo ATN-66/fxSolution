@@ -17,10 +17,9 @@ public class DefaultActivationHandler : ActivationHandler<LaunchActivatedEventAr
         // None of the ActivationHandlers has handled the activation.
         _navigationService.Frame?.Content == null;
 
-    protected async override Task HandleInternalAsync(LaunchActivatedEventArgs args)
+    protected override Task HandleInternalAsync(LaunchActivatedEventArgs args)
     {
         _navigationService.NavigateTo(typeof(DashboardViewModel).FullName!, args.Arguments);
-
-        await Task.CompletedTask.ConfigureAwait(false);
+        return Task.CompletedTask;
     }
 }
