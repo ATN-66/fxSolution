@@ -3,6 +3,7 @@
   |                                                      Mediator.cs |
   +------------------------------------------------------------------+*/
 
+using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Reflection;
 using Common.Entities;
@@ -23,12 +24,11 @@ public class Mediator : IMediator
 {
     private readonly ILogger<Mediator> _logger;
     
-    private readonly Dictionary<DateTime, List<Quotation>> _hoursCache = new();
-    private readonly Queue<DateTime> _hoursKeys = new();
+    private readonly ConcurrentDictionary<DateTime, List<Quotation>> _hoursCache = new();
+    private readonly ConcurrentQueue<DateTime> _hoursKeys = new();
 
     private readonly int _maxHoursInCache;
     private readonly int _deadline;
-    private int _sessionCounter;
     private readonly int _maxSendMessageSize;
     private readonly int _maxReceiveMessageSize;
 
@@ -70,7 +70,7 @@ public class Mediator : IMediator
             throw new InvalidOperationException("Start date cannot be later than end date.");
         }
 
-        _sessionCounter = 0;
+        var tasks = new List<Task>();
         var quotations = new List<Quotation>();
         var start = startDateTimeInclusive.Date.AddHours(startDateTimeInclusive.Hour);
         var end = endDateTimeInclusive.Date.AddHours(endDateTimeInclusive.Hour).AddHours(1);
@@ -80,32 +80,30 @@ public class Mediator : IMediator
         {
             if (!_hoursCache.ContainsKey(key) || currentHoursKey.Equals(key))
             {
-                try
-                {
-                    await LoadHistoricalDataAsync(key, end.AddHours(-1)).ConfigureAwait(false);
-                }
-                catch (Exception exception)
-                {
-                    LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
-                    throw;
-                }
+                tasks.Add(LoadHistoricalDataAsync(key, key));
             }
 
+            key = key.Add(new TimeSpan(1, 0, 0));
+        }
+        while (key < end);
+
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+
+        key = start;
+        do
+        {
             if (_hoursCache.ContainsKey(key))
             {
                 quotations.AddRange(GetData(key));
             }
             else
             {
-                throw new InvalidOperationException("keyed data is absent.");
+                SetData(key, quotations: new List<Quotation>());
             }
 
             key = key.Add(new TimeSpan(1, 0, 0));
         }
         while (key < end);
-        
-        _logger.LogInformation("{quotationsCount} out of {sessionCounter} received.", quotations.Count.ToString(), _sessionCounter.ToString());
-
         return quotations;
     }
     private async Task LoadHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
@@ -210,7 +208,6 @@ public class Mediator : IMediator
                         var key = new DateTime(year, month, day, hour, 0, 0);
                         var quotationsToSave = hourGroup.ToList();
                         SetData(key, quotationsToSave);
-                        _sessionCounter += quotationsToSave.Count;
                         _logger.LogTrace("year:{year}, month:{month:D2}, day:{day:D2}, hour:{hour:D2}. Count:{quotationsToSaveCount}", year.ToString(), month.ToString(), day.ToString(), hour.ToString(), quotationsToSave.Count.ToString());
                     }
                 }
@@ -221,12 +218,21 @@ public class Mediator : IMediator
     {
         if (_hoursCache.Count >= _maxHoursInCache)
         {
-            var oldestKey = _hoursKeys.Dequeue();
-            _hoursCache.Remove(oldestKey);
+            if (_hoursKeys.TryDequeue(out var oldestKey))
+            {
+                _hoursCache.TryRemove(oldestKey, out _);
+            }
         }
 
-        _hoursCache[key] = quotations;
-        _hoursKeys.Enqueue(key);
+        if (!_hoursCache.ContainsKey(key))
+        {
+            _hoursCache[key] = quotations;
+            _hoursKeys.Enqueue(key);
+        }
+        else
+        {
+            throw new InvalidOperationException("the key already exists.");
+        }
     }
     private void SetData(DateTime key, List<Quotation> quotations)
     {

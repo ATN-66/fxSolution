@@ -278,7 +278,6 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
             if (!done)
             {
                 SetData(key, quotations: new List<Quotation>());
-                //_logger.LogTrace("year:{year}, month:{month:D2}, day:{day:D2}, hour:{hour:D2}. Count:{quotationsToSaveCount}", args: new object?[] { yearNumber.ToString(), monthNumber.ToString(), dayNumber.ToString(), hourNumber.ToString(), 0.ToString() });
             }
         }
         catch (Exception exception)

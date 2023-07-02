@@ -9,6 +9,7 @@
 //send request to get live data
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Globalization;
 using System.Net.Sockets;
 using Common.Entities;
@@ -47,30 +48,63 @@ var symbolMapping = new Dictionary<Ticksdata.Symbol, Symbol>
 
 Console.WriteLine("Terminal simulator...");
 
-endTime = new DateTime(2023, 6, 30, 0, 0, 0);
-startTime = endTime;
-Console.Write(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours. -> ");
-result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
-Console.WriteLine(result.Count());
-Console.WriteLine(Environment.NewLine);
+var stopwatch = new Stopwatch();
+stopwatch.Start();
 
-endTime = new DateTime(2023, 6, 28, 23, 0, 0);
-startTime = endTime.AddDays(-1).AddHours(1);
+// 1 hour empty
+//startTime = new DateTime(2023, 1, 1, 0, 0, 0);
+//endTime = new DateTime(2023, 1, 1, 0, 0, 0);
+//Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
+//result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
+//Console.WriteLine(result.Count().ToString("##,##0"));
+
+// 1 hour full
+//endTime = new DateTime(2023, 6, 30, 0, 0, 0);
+//startTime = endTime;
+//Console.Write(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours. -> ");
+//result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
+//Console.WriteLine(result.Count().ToString("##,##0"));
+
+// 1 day 
+//endTime = new DateTime(2023, 6, 28, 23, 0, 0);
+//startTime = endTime.AddDays(-1).AddHours(1);
+//Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
+//result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
+//Console.WriteLine(result.Count().ToString("##,##0"));
+
+// 1st week
+//startTime = new DateTime(2023, 1, 1, 0, 0, 0);
+//endTime = new DateTime(2023, 1, 7, 23, 0, 0);
+//Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
+//result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
+//Console.WriteLine(result.Count().ToString("##,##0"));
+
+// 2nd weeks
+//startTime = new DateTime(2023, 1, 8, 0, 0, 0);
+//endTime = new DateTime(2023, 1, 14, 23, 0, 0);
+//Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
+//result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
+//Console.WriteLine(result.Count().ToString("##,##0"));
+
+// Now
+//startTime = DateTime.Now;
+//endTime = startTime;
+//Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
+//result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
+//Console.WriteLine(result.Count().ToString("##,##0"));
+
+// 1 week before now
+endTime = DateTime.Now;
+startTime = endTime.AddDays(-7).AddHours(1);
 Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
 result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
-Console.WriteLine(Environment.NewLine);
+Console.WriteLine(result.Count().ToString("##,##0"));
 
-
-
-//endTime = new DateTime(2023, 6, 30, 0, 0, 0);
-//oneWeekAgo = endTime.AddDays(-7);
-//Console.WriteLine(Math.Ceiling((endTime - oneWeekAgo).TotalHours));
-//quotations = await GetHistoricalDataAsync(oneWeekAgo, endTime).ConfigureAwait(false);
-//Console.WriteLine(quotations.Count());
-
-
+stopwatch.Stop();
+var timeTaken = stopwatch.Elapsed;
+Console.WriteLine("Time Taken: " + timeTaken.ToString(@"m\:ss\.fff"));
 Console.WriteLine("End of the program. Press any key to exit ...");
-Console.ReadLine();
+Console.ReadKey();
 return 1;
 
 async Task<IEnumerable<Quotation>> GetHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
@@ -110,7 +144,7 @@ async Task<IEnumerable<Quotation>> GetHistoricalDataAsync(DateTime startDateTime
         }
         else
         {
-            throw new InvalidOperationException("keyed data is absent.");
+            SetData(key, quotations: new List<Quotation>());
         }
 
         key = key.Add(new TimeSpan(1, 0, 0));
@@ -221,7 +255,7 @@ void ProcessData(IEnumerable<Quotation> quotations)
 }
 void AddData(DateTime key, List<Quotation> quotations)
 {
-    if (hoursCache.Count > maxHoursInCache)
+    if (hoursCache.Count >= maxHoursInCache)
     {
         if (hoursKeys.TryDequeue(out var oldestKey))
         {
