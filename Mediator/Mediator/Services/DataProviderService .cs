@@ -440,6 +440,19 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                     await SendDataResponseAsync(responseStream, quotationsToSend, context).ConfigureAwait(false);
                 }
             }
+            catch (OperationCanceledException exception)
+            {
+                throw new NotImplementedException();
+            }
+            catch (InvalidOperationException invalidOperationException)
+            {
+                if (invalidOperationException.Message != "Already finished.")
+                {
+                    _isFaulted = true;
+                    await HandleDataServiceErrorAsync(responseStream, invalidOperationException).ConfigureAwait(false);
+                    throw;
+                }
+            }
             catch (Exception exception)
             {
                 _isFaulted = true;

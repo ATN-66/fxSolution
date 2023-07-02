@@ -22,6 +22,7 @@ using Symbol = Common.Entities.Symbol;
 
 ConcurrentDictionary<DateTime, List<Quotation>> hoursCache = new();
 ConcurrentQueue<DateTime> hoursKeys = new();
+DateTime currentHoursKey;
 
 const int deadline = 600;
 const int maxHoursInCache = 168;
@@ -86,6 +87,7 @@ stopwatch.Start();
 //result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
 //Console.WriteLine(result.Count().ToString("##,##0"));
 
+
 // Now
 //startTime = DateTime.Now;
 //endTime = startTime;
@@ -93,12 +95,55 @@ stopwatch.Start();
 //result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
 //Console.WriteLine(result.Count().ToString("##,##0"));
 
+// 3 hours before now
+//endTime = DateTime.Now;
+//startTime = endTime.AddHours(-3);
+//Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
+//result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
+//Console.WriteLine(result.Count().ToString("##,##0"));
+
 // 1 week before now
-endTime = DateTime.Now;
-startTime = endTime.AddDays(-7).AddHours(1);
-Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
-result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
-Console.WriteLine(result.Count().ToString("##,##0"));
+//endTime = DateTime.Now;
+//startTime = endTime.AddDays(-7).AddHours(1);
+//Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
+//result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
+//Console.WriteLine(result.Count().ToString("##,##0"));
+
+
+//this one will get:
+//Timeout expired.  The timeout period elapsed prior to obtaining a connection from the pool.  This may have occurred because all pooled connections were in use and max pool size was reached.
+//startTime = new DateTime(2023, 1, 1, 0, 0, 0);
+//endTime = startTime.AddDays(7).AddHours(-1);
+//do
+//{
+//    Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
+//    result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
+//    Console.WriteLine(result.Count().ToString("##,##0"));
+//    startTime = startTime.Add(new TimeSpan(7, 0, 0, 0));
+//    endTime = startTime.AddDays(7).AddHours(-1);
+//} while (endTime <= new DateTime(2023, 12, 31));
+
+do
+{
+    // 3 hours before now
+    endTime = DateTime.Now;
+    startTime = endTime.AddHours(-3);
+    Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
+    result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
+    Console.WriteLine(result.Count().ToString("##,##0"));
+} while (true);
+
+
+
+
+
+
+
+
+
+
+
+
 
 stopwatch.Stop();
 var timeTaken = stopwatch.Elapsed;
@@ -120,7 +165,7 @@ async Task<IEnumerable<Quotation>> GetHistoricalDataAsync(DateTime startDateTime
     var quotations = new List<Quotation>();
     var start = startDateTimeInclusive.Date.AddHours(startDateTimeInclusive.Hour);
     var end = endDateTimeInclusive.Date.AddHours(endDateTimeInclusive.Hour).AddHours(1);
-    var currentHoursKey = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
+    currentHoursKey = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
     var key = start;
     do
     {
@@ -144,7 +189,7 @@ async Task<IEnumerable<Quotation>> GetHistoricalDataAsync(DateTime startDateTime
         }
         else
         {
-            SetData(key, quotations: new List<Quotation>());
+            throw new NotImplementedException("Key is absent.");
         }
 
         key = key.Add(new TimeSpan(1, 0, 0));
@@ -154,10 +199,15 @@ async Task<IEnumerable<Quotation>> GetHistoricalDataAsync(DateTime startDateTime
 }
 async Task LoadHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
 {
+    if (!startDateTimeInclusive.Equals(endDateTimeInclusive))
+    {
+        throw new InvalidOperationException("Start and end times must be the same. This function only supports processing of a single hour at a time.");
+    }
+
     try
     {
         var quotations = await GetDataAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
-        ProcessData(quotations);
+        ProcessData(startDateTimeInclusive, quotations);
     }
     catch (RpcException rpcException)
     {
@@ -225,9 +275,15 @@ async Task<IList<Quotation>> GetDataAsync(DateTime startDateTimeInclusive, DateT
         Console.WriteLine(rpcException);
         throw;
     }
+    catch (Exception exception)
+    {
+        Console.WriteLine(exception);
+        throw;
+    }
 }
-void ProcessData(IEnumerable<Quotation> quotations)
+void ProcessData(DateTime dateTime, IEnumerable<Quotation> quotations)
 {
+    var done = false;
     var groupedByYear = quotations.GroupBy(q => new QuotationKey { Year = q.DateTime.Year });
     foreach (var yearGroup in groupedByYear)
     {
@@ -247,10 +303,16 @@ void ProcessData(IEnumerable<Quotation> quotations)
                     var key = new DateTime(year, month, day, hour, 0, 0);
                     var quotationsToSave = hourGroup.ToList();
                     SetData(key, quotationsToSave);
+                    done = true;
                     Console.WriteLine($"year:{year}, month:{month:D2}, day:{day:D2}, hour:{hour:D2}. Count:{quotationsToSave.Count}");
                 }
             }
         }
+    }
+
+    if (!done)
+    {
+        SetData(dateTime, quotations: new List<Quotation>());
     }
 }
 void AddData(DateTime key, List<Quotation> quotations)
@@ -270,7 +332,12 @@ void AddData(DateTime key, List<Quotation> quotations)
     }
     else
     {
-        throw new InvalidOperationException("the key already exists.");
+        if (!currentHoursKey.Equals(key))
+        {
+            throw new InvalidOperationException("the key already exists.");
+        }
+
+        hoursCache[key] = quotations;
     }
 }
 void SetData(DateTime key, List<Quotation> quotations)

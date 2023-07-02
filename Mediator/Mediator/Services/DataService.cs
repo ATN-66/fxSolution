@@ -31,7 +31,8 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
     private readonly ILogger<IDataService> _logger;
     private readonly ConcurrentDictionary<DateTime, List<Quotation>?> _hoursCache = new();
     private readonly ConcurrentQueue<DateTime> _hoursKeys = new();
-    
+    private DateTime _currentHoursKey;
+
     private readonly DateTime _startDateTimeUtc;
     private readonly BackupSettings _backupSettings;
     private readonly string? _server;
@@ -171,11 +172,11 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
         var quotations = new List<Quotation>();
         var start = startDateTimeInclusive.Date.AddHours(startDateTimeInclusive.Hour);
         var end = endDateTimeInclusive.Date.AddHours(endDateTimeInclusive.Hour).AddHours(1);
-        var currentHoursKey = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
+        _currentHoursKey = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
         var key = start;
         do
         {
-            if (!_hoursCache.ContainsKey(key) || currentHoursKey.Equals(key))
+            if (!_hoursCache.ContainsKey(key) || _currentHoursKey.Equals(key))
             {
                 tasks.Add(LoadHourToCacheAsync(key));
             }
@@ -196,7 +197,7 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
             }
             else
             {
-               throw new InvalidOperationException("keyed data is absent.");
+               throw new InvalidOperationException("The key is absent.");
             }
 
             key = key.Add(new TimeSpan(1, 0, 0));
@@ -280,6 +281,12 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
                 SetData(key, quotations: new List<Quotation>());
             }
         }
+        catch (SqlException exception)
+        {
+            //Timeout expired.  The timeout period elapsed prior to obtaining a connection from the pool.  This may have occurred because all pooled connections were in use and max pool size was reached.
+            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+            throw;
+        }
         catch (Exception exception)
         {
             LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
@@ -303,7 +310,11 @@ public class DataService : ObservableRecipient, IDataService //todo: ObservableR
         }
         else
         {
-            throw new InvalidOperationException("the key already exists.");
+            if (!_currentHoursKey.Equals(key))
+            {
+                throw new InvalidOperationException("The key already exists.");
+            }
+            _hoursCache[key] = quotations;
         }
     }
     private void SetData(DateTime key, List<Quotation>? quotations)

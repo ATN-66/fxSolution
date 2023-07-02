@@ -3,6 +3,7 @@
   |                                                      Mediator.cs |
   +------------------------------------------------------------------+*/
 
+using System;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Reflection;
@@ -26,6 +27,7 @@ public class Mediator : IMediator
     
     private readonly ConcurrentDictionary<DateTime, List<Quotation>> _hoursCache = new();
     private readonly ConcurrentQueue<DateTime> _hoursKeys = new();
+    private DateTime _currentHoursKey;
 
     private readonly int _maxHoursInCache;
     private readonly int _deadline;
@@ -74,11 +76,11 @@ public class Mediator : IMediator
         var quotations = new List<Quotation>();
         var start = startDateTimeInclusive.Date.AddHours(startDateTimeInclusive.Hour);
         var end = endDateTimeInclusive.Date.AddHours(endDateTimeInclusive.Hour).AddHours(1);
-        var currentHoursKey = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
+        _currentHoursKey = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
         var key = start;
         do
         {
-            if (!_hoursCache.ContainsKey(key) || currentHoursKey.Equals(key))
+            if (!_hoursCache.ContainsKey(key) || _currentHoursKey.Equals(key))
             {
                 tasks.Add(LoadHistoricalDataAsync(key, key));
             }
@@ -98,7 +100,7 @@ public class Mediator : IMediator
             }
             else
             {
-                SetData(key, quotations: new List<Quotation>());
+                throw new NotImplementedException("Key is absent.");
             }
 
             key = key.Add(new TimeSpan(1, 0, 0));
@@ -108,10 +110,15 @@ public class Mediator : IMediator
     }
     private async Task LoadHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
     {
+        if (!startDateTimeInclusive.Equals(endDateTimeInclusive))
+        {
+            throw new InvalidOperationException("Start and end times must be the same. This function only supports processing of a single hour at a time.");
+        }
+
         try
         {
             var quotations = await GetDataAsync(startDateTimeInclusive, endDateTimeInclusive).ConfigureAwait(false);
-            ProcessData(quotations);
+            ProcessData(startDateTimeInclusive, quotations);
         }
         catch (RpcException rpcException)
         {
@@ -186,9 +193,15 @@ public class Mediator : IMediator
             LogExceptionHelper.LogException(_logger, rpcException, MethodBase.GetCurrentMethod()!.Name, "");
             throw;
         }
+        catch (Exception exception)
+        {
+            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+            throw;
+        }
     }
-    private void ProcessData(IEnumerable<Quotation> quotations)
+    private void ProcessData(DateTime dateTime, IEnumerable<Quotation> quotations)
     {
+        var done = false;
         var groupedByYear = quotations.GroupBy(q => new QuotationKey { Year = q.DateTime.Year });
         foreach (var yearGroup in groupedByYear)
         {
@@ -208,10 +221,16 @@ public class Mediator : IMediator
                         var key = new DateTime(year, month, day, hour, 0, 0);
                         var quotationsToSave = hourGroup.ToList();
                         SetData(key, quotationsToSave);
+                        done = true;
                         _logger.LogTrace("year:{year}, month:{month:D2}, day:{day:D2}, hour:{hour:D2}. Count:{quotationsToSaveCount}", year.ToString(), month.ToString(), day.ToString(), hour.ToString(), quotationsToSave.Count.ToString());
                     }
                 }
             }
+        }
+
+        if (!done)
+        {
+            SetData(dateTime, quotations: new List<Quotation>());
         }
     }
     private void AddData(DateTime key, List<Quotation> quotations)
@@ -231,7 +250,12 @@ public class Mediator : IMediator
         }
         else
         {
-            throw new InvalidOperationException("the key already exists.");
+            if (!_currentHoursKey.Equals(key))
+            {
+                throw new InvalidOperationException("the key already exists.");
+            }
+
+            _hoursCache[key] = quotations;
         }
     }
     private void SetData(DateTime key, List<Quotation> quotations)
