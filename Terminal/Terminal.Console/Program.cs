@@ -3,7 +3,6 @@
   |                                                       Program.cs |
   +------------------------------------------------------------------+*/
 
-using System;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net.Sockets;
@@ -24,7 +23,8 @@ DateTime currentHoursKey;
 
 const int deadline = 600;
 const int maxHoursInCache = 168;
-const string grpcChannelAddress = "http://192.168.50.78:49051";
+//const string grpcChannelAddress = "http://192.168.50.78:49051";
+const string grpcChannelAddress = "http://192.168.50.111:49051";
 const int maxSendMessageSize = 50 * 1024 * 1024; //e.g. 50 MB wo 4
 const int maxReceiveMessageSize = 50 * 1024 * 1024; //e.g. 50 MB wo 4
 
@@ -121,17 +121,17 @@ Console.WriteLine("Terminal simulator...");
 #endregion
 
 
-// 1) get last known time of data from db <-- todo:
-// 2) send request to get saved data
-endTime = DateTime.Now;
-startTime = endTime.AddHours(-3);
-Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
-result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
-Console.WriteLine($"Historical:{result.Count():##,##0}");
-// 3) send request to get buffered data
-result = await GetBufferedDataAsync().ConfigureAwait(false);
-Console.WriteLine($"Buffered:{result.Count():##,##0}");
-// 4) send request to get live data
+//// 1) get last known time of data from db <-- todo:
+//// 2) send request to get saved data
+//endTime = DateTime.Now;
+//startTime = endTime.AddHours(-3);
+//Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
+//result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
+//Console.WriteLine($"Historical:{result.Count():##,##0}");
+//// 3) send request to get buffered data
+//result = await GetBufferedDataAsync().ConfigureAwait(false);
+//Console.WriteLine($"Buffered:{result.Count():##,##0}");
+//// 4) send request to get live data
 
 
 var cts = new CancellationTokenSource();
