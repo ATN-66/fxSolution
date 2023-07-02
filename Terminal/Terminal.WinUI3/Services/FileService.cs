@@ -1,10 +1,16 @@
-﻿using System.Diagnostics;
+﻿/*+------------------------------------------------------------------+
+  |                                          Terminal.WinUI3.Services|
+  |                                                   FileService.cs |
+  +------------------------------------------------------------------+*/
+
 using System.Globalization;
 using System.Reflection;
 using System.Text;
+using Common.DataSource;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Terminal.WinUI3.Contracts.Services;
 using Windows.Storage;
@@ -12,71 +18,34 @@ using Environment = System.Environment;
 
 namespace Terminal.WinUI3.Services;
 
-public class FileService : IFileService
+public class FileService : DataSource, IFileService
 {
-    private readonly string[] _formats;
-    private readonly string _inputDirectoryPath;
-    private readonly Dictionary<string, List<Quotation>> _ticksCache = new();
-    private readonly Queue<string> _keys = new();
-    private const int MaxItems = 4_032;
-    private string _currentHoursKey = null!;
+    private readonly string _fileServiceDateTimeFormat;
+    private readonly string _fileServiceInputDirectoryPath;
+    private readonly Dictionary<string, Symbol> _symbolsDict = Enum.GetValues<Symbol>().ToDictionary(e => e.ToString(), e => e);
 
-    public FileService(IConfiguration configuration)
+    public FileService(IConfiguration configuration, ILogger<IDataSource> logger, IAudioPlayer audioPlayer) : base(configuration, logger, audioPlayer)
     {
-        _inputDirectoryPath = configuration.GetValue<string>("InputDirectoryPath")!;
-        _formats = new[] { configuration.GetValue<string>("DateTimeFormat")! };
+        _fileServiceInputDirectoryPath = configuration.GetValue<string>($"{nameof(_fileServiceInputDirectoryPath)}")!;
+        _fileServiceDateTimeFormat = configuration.GetValue<string>($"{nameof(_fileServiceDateTimeFormat)}")!;
     }
 
-    public async Task<IEnumerable<Quotation>> GetTicksAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
+    protected async override Task<IList<Quotation>> GetDataAsync(DateTime startDateTimeInclusive)
     {
-        var quotations = new List<Quotation>();
-        var start = startDateTimeInclusive.Date.AddHours(startDateTimeInclusive.Hour);
-        var end = endDateTimeInclusive.Date.AddHours(endDateTimeInclusive.Hour);
-        _currentHoursKey = $"{end.Year}.{end.Month:D2}.{end.Day:D2}.{end.Hour:D2}";
-        end = end.AddHours(1);
+        var year = startDateTimeInclusive.Year.ToString();
+        var month = startDateTimeInclusive.Month.ToString("D2");
+        var week = startDateTimeInclusive.Week().ToString("D2");
+        var quarter = DateTimeExtensionsAndHelpers.Quarter(startDateTimeInclusive.Week()).ToString();
+        var day = startDateTimeInclusive.Day.ToString("D2");
+        var hour = startDateTimeInclusive.Hour.ToString("D2");
 
-        var index = start;
-        do
-        {
-            var key = $"{index.Year}.{index.Month:D2}.{index.Day:D2}.{index.Hour:D2}";
-            if (!_ticksCache.ContainsKey(key))
-            {
-                await LoadTicksToCacheAsync(index).ConfigureAwait(false);
-                if (!_ticksCache.ContainsKey(key))
-                {
-                    SetQuotations(key, new List<Quotation>());
-                }
-            }
-
-            if (_ticksCache.ContainsKey(key))
-            {
-                quotations.AddRange(GetQuotations(key));
-            }
-
-            index = index.Add(new TimeSpan(1, 0, 0));
-        }
-        while (index < end);
-
-        return quotations;
-    }
-
-    private async Task LoadTicksToCacheAsync(DateTime dateTime)
-    {
-        var symbolsDict = Enum.GetValues<Symbol>().ToDictionary(e => e.ToString(), e => e);
-        var year = dateTime.Year.ToString();
-        var month = dateTime.Month.ToString("D2");
-        var week = dateTime.Week().ToString("D2");
-        var quarter = DateTimeExtensionsAndHelpers.Quarter(dateTime.Week()).ToString();
-        var day = dateTime.Day.ToString("D2");
-        var hour = dateTime.Hour.ToString("D2");
         var key = $"{year}.{month}.{day}.{hour}";
 
-        var directoryPath = Path.Combine(_inputDirectoryPath, year, quarter, week, day);
+        var directoryPath = Path.Combine(_fileServiceInputDirectoryPath, year, quarter, week, day);
         var filePath = Path.Combine(directoryPath, $"{key}.csv");
         if (!File.Exists(filePath))
         {
-            SetQuotations(key, new List<Quotation>());
-            return;
+            return new List<Quotation>();
         }
 
         var lines = await File.ReadAllLinesAsync(filePath).ConfigureAwait(true);
@@ -87,49 +56,25 @@ public class FileService : IFileService
                 try
                 {
                     var quotationId = index + 1;
-                    var symbolResult = symbolsDict[items[0]];
+                    var symbolResult = _symbolsDict[items[0]];
                     var datetimeString = $"{items[1].Trim()}|{items[2].Trim()}|{items[3].Trim()}";
-                    var dateTimeResult = DateTime.ParseExact(datetimeString, _formats, new CultureInfo("en-US"), DateTimeStyles.AssumeUniversal).ToUniversalTime();
+                    var dateTimeResult = DateTime.ParseExact(datetimeString, _fileServiceDateTimeFormat, new CultureInfo("en-US"), DateTimeStyles.AssumeUniversal).ToUniversalTime();
                     var askResult = double.Parse(items[4]);
                     var bidResult = double.Parse(items[5]);
                     return new Quotation(quotationId, symbolResult, dateTimeResult, askResult, bidResult);
                 }
-                catch (FormatException ex)
+                catch (FormatException formatException)
                 {
-                    Debug.WriteLine(ex.Message);
-                    Debug.WriteLine($@"Failed to parse datetime string: {items[1]}, {items[2]}, {items[3]}");
+                    LogExceptionHelper.LogException(_logger, formatException, MethodBase.GetCurrentMethod()!.Name, "");
                     throw;
                 }
             })
             .OrderBy(quotation => quotation.DateTime)
             .ToList();
-        
-        SetQuotations(key, quotations);
+
+        return quotations;
     }
-
-    private void AddQuotation(string key, List<Quotation> quotationList)
-    {
-        if (_ticksCache.Count >= MaxItems)
-        {
-            var oldestKey = _keys.Dequeue();
-            _ticksCache.Remove(oldestKey);
-        }
-
-        _ticksCache[key] = quotationList;
-        _keys.Enqueue(key);
-    }
-
-    private void SetQuotations(string key, List<Quotation> quotations)
-    {
-        AddQuotation(key, quotations);
-    }
-
-    private IEnumerable<Quotation> GetQuotations(string key)
-    {
-        _ticksCache.TryGetValue(key, out var quotations);
-        return quotations!;
-    }
-
+    
     public T? Read<T>(string folderPath, string fileName)
     {
         var path = Path.Combine(folderPath, fileName);
@@ -141,7 +86,6 @@ public class FileService : IFileService
         var json = File.ReadAllText(path);
         return JsonConvert.DeserializeObject<T>(json);
     }
-
     public void Save<T>(string folderPath, string fileName, T content)
     {
         if (!Directory.Exists(folderPath))
@@ -152,7 +96,6 @@ public class FileService : IFileService
         var fileContent = JsonConvert.SerializeObject(content);
         File.WriteAllText(Path.Combine(folderPath, fileName), fileContent, Encoding.UTF8);
     }
-
     public void Delete(string folderPath, string? fileName)
     {
         if (fileName != null && File.Exists(Path.Combine(folderPath, fileName)))
@@ -160,7 +103,6 @@ public class FileService : IFileService
             File.Delete(Path.Combine(folderPath, fileName));
         }
     }
-
     public async Task<string> LoadTextAsync(string relativeFilePath)
     {
         //#if PACKAGED
@@ -171,7 +113,6 @@ public class FileService : IFileService
         var file = await StorageFile.GetFileFromPathAsync(sourcePath);
         return await FileIO.ReadTextAsync(file);
     }
-
     public async Task<IList<string>> LoadLinesAsync(string relativeFilePath)
     {
         var fileContents = await LoadTextAsync(relativeFilePath).ConfigureAwait(false);

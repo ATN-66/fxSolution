@@ -4,10 +4,14 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
     xmlns:converters="using:Mediator.Converters"
+    xmlns:core="using:Microsoft.Xaml.Interactions.Core"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:helpers="using:Mediator.Helpers"
+    xmlns:media="using:Microsoft.Xaml.Interactions.Media"
     xmlns:models="using:Mediator.Models"
+    x:Name="mainPage"
+    Background="Transparent"
     Loaded="OnLoaded"
     Unloaded="OnUnloaded"
     mc:Ignorable="d">
@@ -15,58 +19,29 @@
     <Page.Resources>
         <converters:BigBoolToBrushConverter x:Key="AllBoolToBrushConverter" />
         <converters:SmallBoolToBrushConverter x:Key="EachBoolToBrushConverter" />
-        <!--<Storyboard x:Name="colorStoryboard">
+        <Storyboard x:Key="pageStoryboard">
             <ColorAnimation
-                AutoReverse="False"
-                Storyboard.TargetName="indicatorEllipse"
-                Storyboard.TargetProperty="(Rectangle.Fill).(SolidColorBrush.Color)"
-                From="Green"
-                To="Transparent"
-                Duration="0:0:2" />
-        </Storyboard>-->
+                AutoReverse="True"
+                RepeatBehavior="Forever"
+                Storyboard.TargetName="mainPage"
+                Storyboard.TargetProperty="(Background).(SolidColorBrush.Color)"
+                From="Transparent"
+                To="Yellow"
+                Duration="0:0:1" />
+        </Storyboard>
     </Page.Resources>
 
-    <Grid>
+    <interactivity:Interaction.Behaviors>
+        <core:DataTriggerBehavior Binding="{x:Bind Path=ViewModel.AtFault, Mode=TwoWay}" Value="true">
+            <media:ControlStoryboardAction Storyboard="{StaticResource pageStoryboard}" />
+        </core:DataTriggerBehavior>
+    </interactivity:Interaction.Behaviors>
+
+    <Grid Padding="5,5,5,5" RowSpacing="5">
         <Grid.RowDefinitions>
-            <!--<RowDefinition Height="Auto" />-->
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <!--<Grid Grid.Row="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-        -->
-        <!--<StackPanel
-                Grid.Row="0"
-                Grid.Column="0"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Center">
-                <TextBlock
-                    Margin="5,0,0,0"
-                    Style="{StaticResource TitleTextBlockStyle}"
-                    Text="{x:Bind Path=ViewModel.Workplace}" />
-            </StackPanel>-->
-        <!--<StackPanel
-                Grid.Row="0"
-                Grid.Column="2"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center">
-                <Button
-                    Margin="1,0,0,0"
-                    BorderThickness="1"
-                    Command="{x:Bind Path=ViewModel.BackupCommand}"
-                    Content="Backup"
-                    CornerRadius="10"
-                    ToolTipService.ToolTip="BackupCommand" />
-            </StackPanel>-->
-        <!--
-        </Grid>-->
         <Grid Grid.Row="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -82,7 +57,7 @@
             <ItemsControl Grid.Row="0" ItemsSource="{x:Bind Path=ViewModel.IndicatorStatuses, Mode=OneWay}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <controls:UniformGrid Rows="1" />
+                        <controls:UniformGrid ColumnSpacing="0" Rows="1" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
@@ -167,35 +142,50 @@
                                         Margin="0,0,10,0"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center">
-                                        <Ellipse x:Name="indicatorEllipse" 
-                                                 Width="10" 
-                                                 Height="10" 
-                                                 Fill="Transparent">
+                                        <Ellipse
+                                            x:Name="indicatorEllipseTrue"
+                                            Width="10"
+                                            Height="10"
+                                            Fill="Transparent">
                                             <Ellipse.Resources>
-                                                <Storyboard x:Key="colorStoryboard">
-                                                    <ColorAnimation Storyboard.TargetName="indicatorEllipse" 
-                                                                    Storyboard.TargetProperty="(Fill).(SolidColorBrush.Color)" 
-                                                                    From="Black" 
-                                                                    To="Transparent" 
-                                                                    Duration="0:1:0" 
-                                                                    AutoReverse="False" />
+                                                <Storyboard x:Key="pulseStoryboardTrue">
+                                                    <ColorAnimation
+                                                        AutoReverse="False"
+                                                        Storyboard.TargetName="indicatorEllipseTrue"
+                                                        Storyboard.TargetProperty="(Fill).(SolidColorBrush.Color)"
+                                                        From="Black"
+                                                        To="Transparent"
+                                                        Duration="0:0:1" />
                                                 </Storyboard>
                                             </Ellipse.Resources>
-
-                                            <!--<VisualStateManager.VisualStateGroups>
-                                                <VisualStateGroup>
-                                                    <VisualState x:Name="BooleanTrueState">
-                                                        <VisualState.StateTriggers>
-                                                            <helpers:BooleanStateTrigger Value="{x:Bind Path=Pulse, Mode=OneWay}" />
-                                                        </VisualState.StateTriggers>
-                                                        <VisualState.Storyboard>
-                                                            <StaticResource ResourceKey="colorStoryboard" />
-                                                        </VisualState.Storyboard>
-                                                    </VisualState>
-                                                </VisualStateGroup>
-                                            </VisualStateManager.VisualStateGroups>-->
+                                            <interactivity:Interaction.Behaviors>
+                                                <core:DataTriggerBehavior Binding="{x:Bind Path=Pulse, Mode=OneWay}" Value="true">
+                                                    <media:ControlStoryboardAction Storyboard="{StaticResource pulseStoryboardTrue}" />
+                                                </core:DataTriggerBehavior>
+                                            </interactivity:Interaction.Behaviors>
                                         </Ellipse>
-
+                                        <Ellipse
+                                            x:Name="indicatorEllipseFalse"
+                                            Width="10"
+                                            Height="10"
+                                            Fill="Transparent">
+                                            <Ellipse.Resources>
+                                                <Storyboard x:Key="pulseStoryboardFalse">
+                                                    <ColorAnimation
+                                                        AutoReverse="False"
+                                                        Storyboard.TargetName="indicatorEllipseFalse"
+                                                        Storyboard.TargetProperty="(Fill).(SolidColorBrush.Color)"
+                                                        From="Black"
+                                                        To="Transparent"
+                                                        Duration="0:0:1" />
+                                                </Storyboard>
+                                            </Ellipse.Resources>
+                                            <interactivity:Interaction.Behaviors>
+                                                <core:DataTriggerBehavior Binding="{x:Bind Path=Pulse, Mode=OneWay}" Value="false">
+                                                    <media:ControlStoryboardAction Storyboard="{StaticResource pulseStoryboardFalse}" />
+                                                </core:DataTriggerBehavior>
+                                            </interactivity:Interaction.Behaviors>
+                                        </Ellipse>
                                     </Grid>
                                 </Grid>
                             </Grid>
@@ -205,34 +195,32 @@
             </ItemsControl>
         </Grid>
         <Grid Grid.Row="1" Grid.Column="0">
-            <Grid>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Rectangle
-                        Grid.Row="0"
-                        Grid.Column="0"
-                        Height="55"
-                        Fill="{x:Bind Path=ViewModel.IsDataProviderActivated, Mode=OneWay, Converter={StaticResource AllBoolToBrushConverter}}"
-                        RadiusX="10"
-                        RadiusY="10" />
-                    <Rectangle
-                        Grid.Row="0"
-                        Grid.Column="1"
-                        Height="55"
-                        Fill="DarkGray"
-                        RadiusX="10"
-                        RadiusY="10" />
-                </Grid>
+            <Grid ColumnSpacing="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Rectangle
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Height="55"
+                    Fill="{x:Bind Path=ViewModel.IsDataProviderActivated, Mode=OneWay, Converter={StaticResource AllBoolToBrushConverter}}"
+                    RadiusX="10"
+                    RadiusY="10" />
+                <Rectangle
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Height="55"
+                    Fill="DarkGray"
+                    RadiusX="10"
+                    RadiusY="10" />
             </Grid>
         </Grid>
         <Grid Grid.Row="1" Grid.Column="0">
-            <Grid>
+            <Grid ColumnSpacing="5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
@@ -244,7 +232,7 @@
                     Grid.Row="0"
                     Grid.Column="0"
                     HorizontalAlignment="Stretch">
-                    <Border Background="{x:Bind Path=ViewModel.IsDataClientActivated, Mode=OneWay, Converter={StaticResource AllBoolToBrushConverter}}" Style="{StaticResource IndicatorBorderStyle}">
+                    <Border Background="{x:Bind Path=ViewModel.IsDataClientActivated, Mode=OneWay, Converter={StaticResource AllBoolToBrushConverter}}" Style="{StaticResource ConsumerBorderStyle}">
                         <TextBlock
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
@@ -257,7 +245,7 @@
                     Grid.Row="0"
                     Grid.Column="1"
                     HorizontalAlignment="Stretch">
-                    <Border Background="LightGray" Style="{StaticResource IndicatorBorderStyle}">
+                    <Border Background="LightGray" Style="{StaticResource ConsumerBorderStyle}">
                         <TextBlock
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
@@ -270,3 +258,5 @@
         </Grid>
     </Grid>
 </Page>
+
+

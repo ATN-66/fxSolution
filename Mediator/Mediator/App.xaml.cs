@@ -3,11 +3,10 @@
   |                                                           App.cs |
   +------------------------------------------------------------------+*/
 
+using Common.DataSource;
 using Common.Entities;
-using Common.ExtensionsAndHelpers;
 using Mediator.Activation;
 using Mediator.Contracts.Services;
-using Mediator.Helpers;
 using Mediator.Models;
 using Mediator.Services;
 using Mediator.ViewModels;
@@ -18,9 +17,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Microsoft.VisualBasic.ApplicationServices;
 using Serilog;
-using WinUIEx.Messaging;
-using Environment = System.Environment;
 using Symbol = Common.Entities.Symbol;
 using UnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
 
@@ -66,8 +64,9 @@ public partial class App
             services.AddSingleton<IPageService, PageService>();
             services.AddSingleton<INavigationService, NavigationService>();
             services.AddSingleton<IFileService, FileService>();
-            services.AddSingleton<IDataService, DataService>();
+            services.AddSingleton<IDataBaseService, DataBaseService>();
             services.AddSingleton<IDispatcherService, DispatcherService>();
+            services.AddSingleton<IAudioPlayer, AudioPlayer>();
 
             services.AddSingleton<CancellationTokenSource>();
             services.AddTransient<IIndicatorToMediatorService, IndicatorToMediatorService>();
@@ -78,7 +77,7 @@ public partial class App
 
             services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
             services.Configure<DataProviderSettings>(context.Configuration.GetSection(nameof(DataProviderSettings)));
-            services.Configure<BackupSettings>(context.Configuration.GetSection(nameof(BackupSettings)));
+            services.Configure<ProviderBackupSettings>(context.Configuration.GetSection(nameof(ProviderBackupSettings)));
         }).UseSerilog().Build();
 
         DebugSettings.BindingFailed += DebugSettings_BindingFailed;
@@ -87,7 +86,10 @@ public partial class App
 
         App.GetService<IAppNotificationService>().Initialize();
         _cts = Host.Services.GetRequiredService<CancellationTokenSource>();
+
+        
     }
+
     private IHost Host
     {
         get;
@@ -144,6 +146,8 @@ public partial class App
         GetService<IDispatcherService>().Initialize(DispatcherQueue.GetForCurrentThread());
         await GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(false);
 
+        MainWindow.Closed += MainWindow_Closed;
+
         using var scope = Host.Services.CreateScope();
         var indicatorToMediatorTasks = (from Symbol symbol in Enum.GetValues(typeof(Symbol))
             let serviceIndicatorToMediator = scope.ServiceProvider.GetService<IIndicatorToMediatorService>()
@@ -152,6 +156,11 @@ public partial class App
         var ticksDataProviderService = scope.ServiceProvider.GetRequiredService<IDataProviderService>();
         var ticksDataProviderServiceTask = ticksDataProviderService.StartAsync();
         await Task.WhenAny(Task.WhenAll(indicatorToMediatorTasks), ticksDataProviderServiceTask).ConfigureAwait(false);
+    }
+
+    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        _cts.Cancel();
     }
 }
 

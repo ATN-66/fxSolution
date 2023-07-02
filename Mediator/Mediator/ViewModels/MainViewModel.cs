@@ -11,20 +11,15 @@ using Mediator.Models;
 using Microsoft.Extensions.Logging;
 using Symbol = Common.Entities.Symbol;
 using Microsoft.Extensions.Configuration;
-using CommunityToolkit.Mvvm.Input;
 using Enum = System.Enum;
 using Mediator.Helpers;
-using Microsoft.UI.Xaml;
-using Serilog;
-using Mediator.Services;
 
 namespace Mediator.ViewModels;
 
-public partial class MainViewModel : ObservableRecipient
+public class MainViewModel : ObservableRecipient
 {
     private readonly Guid _guid = Guid.NewGuid();
     private readonly IAppNotificationService _appNotificationService;
-    private readonly CancellationTokenSource _cts;
     private readonly IDispatcherService _dispatcherService;
     private readonly ILogger<MainViewModel> _logger;
     
@@ -32,11 +27,11 @@ public partial class MainViewModel : ObservableRecipient
     private Workplace _workplace;
     private string _dataProviderServiceTitle = null!;
     public event Action InitializationComplete = null!;
+    private bool _atFault;
 
-    public MainViewModel(IConfiguration configuration, IAppNotificationService appNotificationService, IDispatcherService dispatcherService, CancellationTokenSource cts, ILogger<MainViewModel> logger)
+    public MainViewModel(IConfiguration configuration, IAppNotificationService appNotificationService, IDispatcherService dispatcherService, ILogger<MainViewModel> logger)
     {
         _appNotificationService = appNotificationService;
-        _cts = cts;
         _dispatcherService = dispatcherService;
         _logger = logger;
 
@@ -73,7 +68,7 @@ public partial class MainViewModel : ObservableRecipient
             _isDataProviderActivated = value;
             _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
-                OnPropertyChanged(nameof(IsDataProviderActivated));
+                OnPropertyChanged();
             }).ConfigureAwait(true);
 
         }
@@ -93,7 +88,7 @@ public partial class MainViewModel : ObservableRecipient
             _isDataClientActivated = value;
             _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
-                OnPropertyChanged(nameof(IsDataClientActivated));
+                OnPropertyChanged();
             }).ConfigureAwait(true);
         }
     }
@@ -131,8 +126,11 @@ public partial class MainViewModel : ObservableRecipient
                 return;
             }
 
-            _dataProviderServiceTitle = value;
-            OnPropertyChanged();
+            _dispatcherService.ExecuteOnUIThreadAsync(() =>
+            {
+                _dataProviderServiceTitle = value;
+                OnPropertyChanged();
+            });
         }
     }
 
@@ -149,6 +147,18 @@ public partial class MainViewModel : ObservableRecipient
             _workplace = value;
             DataProviderServiceTitle = $"Data Provider Service ({Workplace})";
         }
+    }
+
+    public bool AtFault
+    {
+        get => _atFault;
+        set =>
+            _dispatcherService.ExecuteOnUIThreadAsync(() =>
+            {
+                DataProviderServiceTitle = "There's a malfunction with the service.";
+                _atFault = value;
+                OnPropertyChanged();
+            });
     }
 
     private void CheckIndicatorsWorkplaces()
@@ -172,7 +182,7 @@ public partial class MainViewModel : ObservableRecipient
             IndicatorStatuses[index].Ask = quotation.Ask;
             IndicatorStatuses[index].Bid = quotation.Bid;
             IndicatorStatuses[index].Counter = counter;
-            IndicatorStatuses[index].Pulse = true;
+            IndicatorStatuses[index].Pulse = !IndicatorStatuses[index].Pulse;
             OnPropertyChanged(nameof(IndicatorStatuses));
         });
     }
@@ -226,21 +236,19 @@ public partial class MainViewModel : ObservableRecipient
         _logger.LogTrace("Indicators disconnected. Reason:{reason}. Ticks to be saved: {ticksToBeSaved}.", reason, ticksToBeSaved);
     }
 
-    [RelayCommand]
-    private async Task BackupAsync()
-    {
-        throw new NotImplementedException();
+    //[RelayCommand]
+    //private async Task BackupAsync()
+    //{
+    //    //var result = await _dataService.BackupAsync().ConfigureAwait(true);
+    //    //_appNotificationService.ShowBackupResultToast(result);
+    //}
 
-        //var result = await _dataService.BackupAsync().ConfigureAwait(true);
-        //_appNotificationService.ShowBackupResultToast(result);
-    }
-
-    private void CloseApplication()
-    {
-        throw new NotImplementedException();
-        //save all quotations and close all
-        _cts.Cancel();
-        Log.CloseAndFlush();
-        Application.Current.Exit();
-    }
+    //private void CloseApplication()
+    //{
+    //    throw new NotImplementedException();
+    //    //save all quotations and close all
+    //    _cts.Cancel();
+    //    Log.CloseAndFlush();
+    //    Application.Current.Exit();
+    //}
 }

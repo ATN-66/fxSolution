@@ -92,11 +92,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Common\Common.DataSource\Common.DataSource.csproj" />
     <ProjectReference Include="..\..\Common\Common.Entities\Common.Entities.csproj" />
     <ProjectReference Include="..\..\Common\Common.ExtensionsAndHelpers\Common.ExtensionsAndHelpers.csproj" />
     <ProjectReference Include="..\..\Common\Common.Protos\Common.Protos.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="alert2.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="appsettings.production.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

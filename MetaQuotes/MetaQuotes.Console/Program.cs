@@ -13,7 +13,7 @@ var config = new Configuration()
     Workplace = Workplace.Development,
     Year = 2023,
     Week = 8,
-    Day = 7 
+    Day = 0 // 7 or 0
 };
 
 const string mt5Format = "yyyy.MM.dd HH:mm:ss"; // 2023.05.08 19:52:22 <- from MT5 
@@ -68,7 +68,6 @@ static Task InitializeIndicators(Queue<Quotation> firstQuotations, Workplace spa
     {
         if (ct.IsCancellationRequested) break;
         var quotation = firstQuotations.Dequeue();
-
         var output = Mediator.Init(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.Ask, quotation.Bid, (int)space).Split(':');
         var symbol = (Symbol)Convert.ToInt32(output[0]);
         var guid = Guid.Parse(output[1]);
@@ -164,3 +163,5 @@ internal class AudioPlayer : IDisposable
         _audioFileReader.Dispose();
     }
 }
+
+

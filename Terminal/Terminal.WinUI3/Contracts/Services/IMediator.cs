@@ -3,11 +3,10 @@
   |                                                     IMediator.cs |
   +------------------------------------------------------------------+*/
 
-using Common.Entities;
+using Common.DataSource;
 
 namespace Terminal.WinUI3.Contracts.Services;
 
-public interface IMediator
+public interface IMediator : IDataSource
 {
-    Task<IEnumerable<Quotation>> GetHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive);
 }

@@ -12,4 +12,8 @@
     <Exec Command="xcopy &quot;$(TargetDir)Common.Entities.dll&quot; &quot;C:\forex.mt5\libraries\&quot; /Y /R" />
   </Target>
 
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.1.0" />
+  </ItemGroup>
+
 </Project>

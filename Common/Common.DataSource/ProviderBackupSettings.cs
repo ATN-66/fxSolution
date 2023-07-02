@@ -1,6 +1,6 @@
-﻿namespace Mediator.Models;
+﻿namespace Common.DataSource;
 
-public class BackupSettings
+public class ProviderBackupSettings
 {
     public string Drive
     {

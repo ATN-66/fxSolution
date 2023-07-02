@@ -4,11 +4,9 @@
   +------------------------------------------------------------------+*/
 
 using System.Diagnostics;
-using System.Globalization;
 using Common.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.Configuration;
 using Microsoft.UI.Xaml.Controls;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
@@ -52,35 +50,51 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
     [ObservableProperty] private bool _mediatorQuotationsIsLoading;
     [ObservableProperty] private int _mediatorQuotationsCount;
 
+    [ObservableProperty] private Provider _selectedProvider;
+    public IEnumerable<Provider> Providers
+    {
+        get;
+    }
+
     private CancellationTokenSource? _cts;
     private DialogViewModel _dialogViewModel = null!;
-    private readonly DateTimeOffset _startDateTimeOffset;
+    public DateTimeOffset Today { get; } = DateTimeOffset.Now;
 
-    public TicksOverviewViewModel(IDataService dataService, IDialogService dialogService, IAppNotificationService notificationService, IDispatcherService dispatcherService, IConfiguration configuration)
+    public TicksOverviewViewModel(IDataService dataService, IDialogService dialogService, IAppNotificationService notificationService, IDispatcherService dispatcherService)
     {
         _dataService = dataService;
         _dialogService = dialogService;
         _notificationService = notificationService;
         _dispatcherService = dispatcherService;
 
-        var formats = new[] { configuration.GetValue<string>("DucascopyTickstoryDateTimeFormat")! };
-        _selectedDate = _startDateTimeOffset = DateTimeOffset.ParseExact(configuration.GetValue<string>("StartDate")!, formats, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
+        _selectedDate = Today;
+        Providers = Enum.GetValues(typeof(Provider)).Cast<Provider>().Where(p => p != Provider.Terminal);
     }
 
     partial void OnSelectedDateChanged(DateTimeOffset oldValue, DateTimeOffset newValue)
     {
+        if (oldValue.Equals(newValue))
+        {
+            return;
+        }
+
         SelectedTime = TimeSpan.Zero;
         ResetCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnSelectedTimeChanged(TimeSpan value)
     {
+        if (value.Equals(SelectedTime))
+        {
+            return;
+        }
+
         ResetCommand.NotifyCanExecuteChanged();
     }
 
     private bool CanExecuteReset()
     {
-        return SelectedDate.DateTime.Date != _startDateTimeOffset.DateTime.Date || SelectedTime != TimeSpan.Zero;
+        return SelectedDate.DateTime.Date != Today.DateTime.Date || SelectedTime != TimeSpan.Zero;
     }
 
     public void OnNavigatedTo(object parameter)
@@ -96,6 +110,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
 
     private async Task RefreshContributionsAsync()
     {
+        SelectedProvider = Provider.Mediator;
         YearlyContributionsIsLoading = true;
         YearlyContributionsCount = 0;
         YearlyContributions.Clear();
@@ -136,9 +151,9 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         var dateTimeInclusive = SelectedDate.Date.AddHours(SelectedTime.Hours);
         var endDateTimeInclusive = SelectedDate.Date.AddHours(SelectedTime.Hours);
 
-        var fileServiceTask = _dataService.GetTicksAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.FileService, true);
-        var mediatorTask = _dataService.GetTicksAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.Mediator, true);
-        var terminalTask = _dataService.GetTicksAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.Terminal, true);
+        var fileServiceTask = _dataService.GetHistoricalDataAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.FileService);
+        var mediatorTask = _dataService.GetHistoricalDataAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.Mediator);
+        var terminalTask = _dataService.GetHistoricalDataAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.Terminal);
 
         FileServiceQuotationsIsLoading = true;
         MediatorQuotationsIsLoading = true;
@@ -147,7 +162,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         MediatorQuotationsCount = 0;
         TerminalQuotationsCount = 0;
         
-        await Task.WhenAll(fileServiceTask, mediatorTask, terminalTask).ConfigureAwait(true);
+        await Task.WhenAll(tasks: new[] { fileServiceTask, mediatorTask, terminalTask }).ConfigureAwait(true);
 
         var fileServiceResult = await fileServiceTask.ConfigureAwait(true);
         FileServiceQuotations.AddRange(fileServiceResult.ToList());
@@ -168,7 +183,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
     [RelayCommand(CanExecute = nameof(CanExecuteReset))]
     private void Reset()
     {
-        SelectedDate = _startDateTimeOffset;
+        SelectedDate = Today;
         SelectedTime = TimeSpan.Zero;
         SelectedSymbol = Symbols[0];
 
@@ -241,7 +256,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         {
             try
             {
-                await _dataService.ImportAsync(_cts.Token).ConfigureAwait(true);
+                await _dataService.ImportAsync(_cts.Token, SelectedProvider).ConfigureAwait(true);
             }
             catch (OperationCanceledException e)
             {
@@ -262,8 +277,8 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         HourlyContributionsCount = 0;
         HourlyContributions.Clear();
 
-        var result = await _dataService.ReImportSelectedAsync(SelectedDate.DateTime.Date).ConfigureAwait(true);
-        Debug.WriteLine(result);//todo: notify Contribution
+        var result = await _dataService.ReImportSelectedAsync(SelectedDate.DateTime.Date, SelectedProvider).ConfigureAwait(true);
+        Debug.WriteLine(result.ToString());//todo: notify Contribution
         _ = RefreshContributionsAsync().ConfigureAwait(true);
         _ = GetHoursAsync(true).ConfigureAwait(true);
     }

@@ -57,7 +57,6 @@ internal class IndicatorToMediatorService : IIndicatorToMediatorService
             }
             catch (OperationCanceledException)
             {
-
                 break;
             }
             catch (Exception exception)

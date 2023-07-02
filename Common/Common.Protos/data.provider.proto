@@ -1,7 +1,6 @@
 ﻿syntax = "proto3";
 package ticksdata;
 import "timestamp.proto";
-import "google/protobuf/any.proto";
 
 message TerminalID {
     int32 id = 1;
@@ -33,16 +32,14 @@ message DataRequest {
     }
 
     google.protobuf.Timestamp startDateTime = 1;
-    google.protobuf.Timestamp endDateTime = 2;
-    StatusCode code = 3;
+    StatusCode code = 2;
 }
 
 message DataResponseStatus {
     enum StatusCode {
-        WAIT = 0;
-        OK = 1;
-        NO_DATA = 2;
-        SERVER_ERROR = 3;
+        OK = 0;
+        NO_DATA = 1;
+        SERVER_ERROR = 2;
     }
 
     StatusCode code = 1;

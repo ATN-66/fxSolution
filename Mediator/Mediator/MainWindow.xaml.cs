@@ -1,10 +1,8 @@
 ﻿using Mediator.Helpers;
 
-using Windows.UI.ViewManagement;
-
 namespace Mediator;
 
-public sealed partial class MainWindow : WindowEx
+public sealed partial class MainWindow
 {
     public MainWindow()
     {

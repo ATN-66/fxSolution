@@ -14,17 +14,17 @@ using Ticksdata;
 using Quotation = Common.Entities.Quotation;
 using Symbol = Common.Entities.Symbol;
 
-CancellationTokenSource? cancellationTokenSource = null;
+var cancellationTokenSource = new CancellationTokenSource();
 var liveDataQueue = new BlockingCollection<Quotation>();
 
 ConcurrentDictionary<DateTime, List<Quotation>> hoursCache = new();
 ConcurrentQueue<DateTime> hoursKeys = new();
 DateTime currentHoursKey;
 
-const int deadline = 600;
+const int deadline = int.MaxValue;
 const int maxHoursInCache = 168;
-//const string grpcChannelAddress = "http://192.168.50.78:49051";
-const string grpcChannelAddress = "http://192.168.50.111:49051";
+const string grpcChannelAddress = "http://192.168.50.78:49051";
+//const string grpcChannelAddress = "http://192.168.50.111:49051";
 const int maxSendMessageSize = 50 * 1024 * 1024; //e.g. 50 MB wo 4
 const int maxReceiveMessageSize = 50 * 1024 * 1024; //e.g. 50 MB wo 4
 
@@ -121,35 +121,27 @@ Console.WriteLine("Terminal simulator...");
 #endregion
 
 
-//// 1) get last known time of data from db <-- todo:
-//// 2) send request to get saved data
-//endTime = DateTime.Now;
-//startTime = endTime.AddHours(-3);
-//Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
-//result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
-//Console.WriteLine($"Historical:{result.Count():##,##0}");
-//// 3) send request to get buffered data
-//result = await GetBufferedDataAsync().ConfigureAwait(false);
-//Console.WriteLine($"Buffered:{result.Count():##,##0}");
-//// 4) send request to get live data
-
-
-var cts = new CancellationTokenSource();
-//it could be useful in scenarios where you'd want to wait for this task to complete or manage its life cycle
-var (liveDataTask, liveChannel) = await GetLiveDataAsync(cts.Token).ConfigureAwait(false);
+//1) get last known time of data from db <-- todo:
+// 2) send request to get saved data
+endTime = DateTime.Now;
+startTime = endTime.AddDays(-6).AddHours(-5);
+Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
+result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
+Console.WriteLine($"Historical:{result.Count():##,##0}");
+//3) send request to get buffered data
+result = await GetBufferedDataAsync().ConfigureAwait(false);
+Console.WriteLine($"Buffered:{result.Count():##,##0}");
+//4) send request to get live data
+var (liveDataTask, liveChannel) = await GetLiveDataAsync(cancellationTokenSource.Token).ConfigureAwait(false);
 Console.WriteLine("Press any key to cancel........");
 Console.ReadKey();
-
-cts.Cancel();
+cancellationTokenSource.Cancel();
 await liveChannel.ShutdownAsync().ConfigureAwait(false);
+
 
 Console.WriteLine("End of the program. Press any key to exit ...");
 Console.ReadKey();
 return 1;
-
-
-
-
 
 async Task<IEnumerable<Quotation>> GetHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
 {
@@ -234,7 +226,6 @@ async Task<IList<Quotation>> GetDataAsync(DateTime startDateTimeInclusive, DateT
     var request = new DataRequest
     {
         StartDateTime = Timestamp.FromDateTime(startDateTimeInclusive.ToUniversalTime()),
-        EndDateTime = Timestamp.FromDateTime(endDateTimeInclusive.ToUniversalTime()),
         Code = DataRequest.Types.StatusCode.HistoricalData
     };
 
@@ -350,7 +341,7 @@ IEnumerable<Quotation> GetData(DateTime key)
 }
 Symbol ToEntitiesSymbol(Ticksdata.Symbol protoSymbol)
 {
-    if (!symbolMapping.TryGetValue(protoSymbol, out var symbol))
+    if (!symbolMapping!.TryGetValue(protoSymbol, out var symbol))
     {
         throw new ArgumentOutOfRangeException(nameof(protoSymbol), protoSymbol, null);
     }
@@ -436,9 +427,6 @@ async Task<(Task, GrpcChannel)> GetLiveDataAsync(CancellationToken token)
             {
                 switch (response.Status.Code)
                 {
-                    case DataResponseStatus.Types.StatusCode.Wait:
-                        Console.WriteLine("I was told to wait...");
-                        break;
                     case DataResponseStatus.Types.StatusCode.Ok:
                         foreach (var item in response.Quotations)
                         {

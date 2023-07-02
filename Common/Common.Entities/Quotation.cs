@@ -53,7 +53,7 @@ public readonly record struct Quotation() : IComparable
         if (DateTime > otherQuotation.DateTime) return 1;
         if (Symbol < otherQuotation.Symbol) return -1;
         if (Symbol > otherQuotation.Symbol) return 1;
-        return 0;
+        throw new InvalidOperationException("The duplicates found.");
     }
 
     public string FormattedAsk

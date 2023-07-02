@@ -17,13 +17,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Ticksdata;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Timer = System.Timers.Timer;
 using Enum = System.Enum;
 using Quotation = Common.Entities.Quotation;
 using Symbol = Common.Entities.Symbol;
-using System.Threading.Tasks;
 
 namespace Mediator.Services;
 
@@ -35,8 +33,8 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     private readonly Guid _guid = Guid.NewGuid();
     private readonly MainViewModel _mainViewModel;
     private readonly CancellationTokenSource _cts;
-    private readonly IDataService _dataService;
-    private readonly ILogger<DataProviderService> _logger;
+    private readonly IDataBaseService _dataBaseService;
+    private readonly ILogger<IDataProviderService> _logger;
     private readonly DataProviderSettings _dataProviderSettings;
 
     private readonly SemaphoreSlim _mutex = new(1);
@@ -49,7 +47,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     private int[] _counter = new int[TotalIndicators];
 
     private const string Ok = "ok";
-    private readonly string _format;
+    private readonly string _mT5DateTimeFormat;
 
     private const int BatchSize = 1000;
     private const int Minutes = 10;
@@ -76,19 +74,18 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         { Symbol.USDJPY, Ticksdata.Symbol.UsdJpy }
     };
 
-    public DataProviderService(IConfiguration configuration, IOptions<DataProviderSettings> dataProviderSettings, MainViewModel mainViewModel, CancellationTokenSource cts, IDataService dataService, ILogger<DataProviderService> logger)
+    public DataProviderService(IConfiguration configuration, IOptions<DataProviderSettings> dataProviderSettings, MainViewModel mainViewModel, CancellationTokenSource cts, IDataBaseService dataBaseService, ILogger<IDataProviderService> logger)
     {
         _mainViewModel = mainViewModel;
-        IsServiceActivatedChanged += (_, e) => { _mainViewModel.IsDataProviderActivated = e.IsActivated; };//todo
-        IsClientActivatedChanged += (_, e) => { _mainViewModel.IsDataClientActivated = e.IsActivated; };//todo
+        IsServiceActivatedChanged += (_, e) => { _mainViewModel.IsDataProviderActivated = e.IsActivated; };
+        IsClientActivatedChanged += (_, e) => { _mainViewModel.IsDataClientActivated = e.IsActivated; };
         _logger = logger;
 
-        _format = configuration.GetValue<string>("MT5DateTimeFormat")!;
+        _mT5DateTimeFormat = configuration.GetValue<string>($"{nameof(_mT5DateTimeFormat)}")!;
+        _maxSendMessageSize = configuration.GetValue<int>($"{nameof(_maxSendMessageSize)}");
+        _maxReceiveMessageSize = configuration.GetValue<int>($"{nameof(_maxReceiveMessageSize)}");
 
-        _maxSendMessageSize = 50 * 1024 * 1024; //e.g. 50 MB //todo:
-        _maxReceiveMessageSize = 50 * 1024 * 1024; //e.g. 50 MB //todo: 
-
-        _saveTimer = new Timer(Minutes * 60 * 1000);
+        _saveTimer = new Timer(Minutes * 15 * 1000);
         _saveTimer.Elapsed += OnSaveTimerElapsedAsync;
         _saveTimer.AutoReset = true;
         _saveTimer.Enabled = true;
@@ -98,7 +95,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         _tick += _mainViewModel.SetIndicator;
 
         _cts = cts;
-        _dataService = dataService;
+        _dataBaseService = dataBaseService;
         _logger = logger;
 
         _isServiceActivated = false;
@@ -172,6 +169,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                 {
                     new("grpc.max_send_message_length", _maxSendMessageSize), 
                     new("grpc.max_receive_message_length", _maxReceiveMessageSize)
+
                 })
                 {
                     Services = { DataProvider.BindService(this) },
@@ -186,17 +184,17 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
 
                 retryCount = 0;
             }
-            catch (OperationCanceledException)//TODO:
+            catch (OperationCanceledException)
             {
-                _logger.LogInformation("Operation cancelled, shutting down gRPC server.");//todo:
+                _logger.LogInformation("Operation cancelled, shutting down and restarting gRPC server...");
                 break;  // Break out of the loop on cancellation, assuming we don't want to retry in this case
             }
-            catch (IOException ioException)//TODO:
+            catch (IOException ioException)
             {
                 LogExceptionHelper.LogException(_logger, ioException, MethodBase.GetCurrentMethod()!.Name, "");
                 retryCount++;
             }
-            catch (Exception exception)//TODO:
+            catch (Exception exception)
             {
                 LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
                 retryCount++;
@@ -219,6 +217,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
 
         if (retryCount >= RetryCountLimit)
         {
+            _mainViewModel.AtFault = true;
             _logger.LogCritical("CRITICAL ERROR: The gRPC server has repeatedly failed to start after {retryCount} attempts. This indicates a severe underlying issue that needs immediate attention. The server will not try to restart again. Please check the error logs for more information and take necessary action immediately.", retryCount);
         }
     }
@@ -256,6 +255,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         }
         catch (Exception exception)
         {
+            _mainViewModel.AtFault = true;
             LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
             throw;
         }
@@ -287,7 +287,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             {
                 await _mainViewModel.IndicatorConnectedAsync((Symbol)symbol, (Workplace)workplace).ConfigureAwait(false);
                 var resultSymbol = (Symbol)symbol;
-                var resultDateTime = DateTime.ParseExact(datetime, _format, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
+                var resultDateTime = DateTime.ParseExact(datetime, _mT5DateTimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
                 var quotation = new Quotation(id, resultSymbol, resultDateTime, ask, bid);
                 _lastKnownQuotations[symbol - 1] = quotation;
                 _quotations.Add((id, symbol, datetime, ask, bid));
@@ -300,6 +300,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         }
         catch (Exception exception)
         {
+            _mainViewModel.AtFault = true;
             LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
             throw;
         }
@@ -327,9 +328,16 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                 }
                 Process(id, symbol, datetime, ask, bid);
             }
+
+            // If cancellation has been requested, save remaining data
+            if (ct.IsCancellationRequested)
+            {
+                await SaveQuotationsAsync().ConfigureAwait(false);  // You might want to await this without .ConfigureAwait(false) if the continuation depends on the context
+            }
         }
         catch (Exception exception)
         {
+            _mainViewModel.AtFault = true;
             LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
             throw;
         }
@@ -339,7 +347,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         try
         {
             var resultSymbol = (Symbol)symbol;
-            var resultDateTime = DateTime.ParseExact(datetime, _format, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
+            var resultDateTime = DateTime.ParseExact(datetime, _mT5DateTimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
             while (_lastKnownQuotations[symbol - 1].DateTime >= resultDateTime)
             {
                 resultDateTime = resultDateTime.AddMilliseconds(1);
@@ -369,6 +377,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         }
         catch (Exception exception)
         {
+            _mainViewModel.AtFault = true;
             LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
             throw;
         }
@@ -379,6 +388,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     }
     private async Task SaveQuotationsAsync()
     {
+        int count;
         var quotationsToSave = new List<Quotation>();
 
         _queueLock.EnterReadLock();
@@ -388,6 +398,8 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             {
                 quotationsToSave.Add(quotation);
             }
+
+            count = quotationsToSave.Count;
         }
         finally
         {
@@ -399,16 +411,27 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             return;
         }
 
-        await _dataService.SaveDataAsync(quotationsToSave).ConfigureAwait(false);
+        try
+        {
+            var result = await _dataBaseService.SaveDataAsync(quotationsToSave).ConfigureAwait(false);
+            if (result != count)
+            {
+                throw new Exception("Not all data saved.");
+            }
+        }
+        catch (Exception exception)
+        {
+            _mainViewModel.AtFault = true;
+            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "error with _dataBaseService.SaveDataAsync");
+            throw;
+        }
     }
     #endregion Indicators
-
 
     private void AddTicks(Quotation quotation, int count)
     {
         _quotationsToSend!.Add(quotation);
     }
-
 
     #region Terminal
     public async override Task GetDataAsync(IAsyncStreamReader<DataRequest> requestStream, IServerStreamWriter<DataResponse> responseStream, ServerCallContext context)
@@ -434,12 +457,11 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             case DataRequest.Types.StatusCode.HistoricalData:
             {
                 var startDateTime = request.StartDateTime.ToDateTime();
-                var endDateTime = request.EndDateTime.ToDateTime();
 
                 try
                 {
                     await SaveQuotationsAsync().ConfigureAwait(false);
-                    var quotations = await _dataService.GetDataAsync(startDateTime, endDateTime).ConfigureAwait(false);
+                    var quotations = await _dataBaseService.GetHistoricalDataAsync(startDateTime, startDateTime).ConfigureAwait(false);
                     var quotationsToSend = quotations.ToList();
                     if (!quotationsToSend.Any())
                     {
@@ -450,22 +472,20 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                         await SendDataResponseAsync(responseStream, quotationsToSend, context).ConfigureAwait(false);
                     }
                 }
-                catch (OperationCanceledException exception)
+                catch (OperationCanceledException)
                 {
-                    throw new NotImplementedException();
+                    _logger.LogInformation("Operation cancelled...");
                 }
-                catch (RpcException rpcException)
+                catch (RpcException)
                 {
-                    LogExceptionHelper.LogException(_logger, rpcException, MethodBase.GetCurrentMethod()!.Name, "");
+                    _logger.LogInformation("RpcException...please investigate.");
+                    throw;
                 }
                 catch (InvalidOperationException invalidOperationException)
                 {
-                    if (invalidOperationException.Message != "Already finished.")
-                    {
-                        _isFaulted = true;
-                        await HandleDataServiceErrorAsync(responseStream, invalidOperationException).ConfigureAwait(false);
-                        throw;
-                    }
+                    _isFaulted = true;
+                    await HandleDataServiceErrorAsync(responseStream, invalidOperationException).ConfigureAwait(false);
+                    throw;
                 }
                 catch (Exception exception)
                 {
@@ -500,18 +520,15 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                         await SendDataResponseAsync(responseStream, quotations, context).ConfigureAwait(false);
                     }
                 }
-                catch (OperationCanceledException exception)
+                catch (OperationCanceledException)
                 {
-                    throw new NotImplementedException();
+                    _logger.LogInformation("Operation cancelled...");
                 }
                 catch (InvalidOperationException invalidOperationException)
                 {
-                    if (invalidOperationException.Message != "Already finished.")
-                    {
-                        _isFaulted = true;
-                        await HandleDataServiceErrorAsync(responseStream, invalidOperationException).ConfigureAwait(false);
-                        throw;
-                    }
+                    _isFaulted = true;
+                    await HandleDataServiceErrorAsync(responseStream, invalidOperationException).ConfigureAwait(false);
+                    throw;
                 }
                 catch (Exception exception)
                 {
@@ -547,23 +564,27 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
 
                         if (context.CancellationToken.IsCancellationRequested)
                         {
+                            //from client?
                             break;
                         }
 
                         await responseStream.WriteAsync(response).ConfigureAwait(false);
                     }
                 }
-                catch (OperationCanceledException operationCanceledException)
+                catch (OperationCanceledException)
                 {
-                    _logger.LogInformation("{Message}", operationCanceledException.Message); // A task was canceled.
+                    _logger.LogInformation("Operation cancelled...");
                 }
-                catch (RpcException rpcException)
+                catch (RpcException)
                 {
-                    LogExceptionHelper.LogException(_logger, rpcException, MethodBase.GetCurrentMethod()!.Name, "");
+                    _logger.LogInformation("RpcException...please investigate.");
+                    throw;
                 }
                 catch (Exception exception)
                 {
-                    LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+                    _isFaulted = true;
+                    await HandleDataServiceErrorAsync(responseStream, exception).ConfigureAwait(false);
+                    throw;
                 }
                 finally
                 {
@@ -620,6 +641,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     }
     private async Task HandleDataServiceErrorAsync(IAsyncStreamWriter<DataResponse> responseStream, Exception exception)
     {
+        _mainViewModel.AtFault = true;
         var exceptionResponse = new DataResponse
         {
             Status = new DataResponseStatus

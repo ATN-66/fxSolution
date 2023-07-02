@@ -21,6 +21,7 @@ using LaunchActivatedEventArgs = Microsoft.UI.Xaml.LaunchActivatedEventArgs;
 using UnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
 using Terminal.WinUI3.Models.Settings;
 using Microsoft.Extensions.Logging;
+using Common.DataSource;
 
 namespace Terminal.WinUI3;
 
@@ -92,12 +93,13 @@ public partial class App
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<CancellationTokenSource>();
             services.AddSingleton<IDashboardService, DashboardService>();
+            services.AddSingleton<IAudioPlayer, AudioPlayer>();
 
             // Business Services
             services.AddSingleton<IProcessor, Processor>();
-            services.AddSingleton<IExternalDataSource, ExternalDataSource>();
-            services.AddSingleton<IMediator, Mediator>();
             services.AddSingleton<IDataService, DataService>();
+            services.AddSingleton<IMediator, Mediator>();
+            services.AddSingleton<IDataBaseService, DataBaseService>();
             services.AddSingleton<IVisualService, VisualService>();
 
             // Views and ViewModels
@@ -148,6 +150,8 @@ public partial class App
             services.AddTransient<JPYUSDPage>();
 
             services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
+            services.Configure<ProviderBackupSettings>(context.Configuration.GetSection(nameof(ProviderBackupSettings)));
+            services.Configure<SolutionDataBaseSettings>(context.Configuration.GetSection(nameof(SolutionDataBaseSettings)));
 
         }).UseSerilog().Build();
 
@@ -217,9 +221,17 @@ public partial class App
         GetService<IDispatcherService>().Initialize(DispatcherQueue.GetForCurrentThread());
         GetService<IDashboardService>().InitializeAsync();
         GetService<IActivationService>().ActivateAsync(args);
+
+        MainWindow.Closed += MainWindow_Closed;
+    }
+
+    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        _cts.Cancel();
+        GetService<IAudioPlayer>().Dispose();
     }
 }
 
-//var dataServiceTask = GetService<IDataService>().InitializeAsync();
+//var dataServiceTask = GetService<IDataBaseService>().InitializeAsync();
 //await dataServiceTask.ConfigureAwait(false);
-//Task.Run(() => GetService<IDataService>().StartAsync());
+//Task.Run(() => GetService<IDataBaseService>().StartAsync());
