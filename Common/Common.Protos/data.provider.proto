@@ -27,8 +27,9 @@ message Quotation {
 message DataRequest {
     enum StatusCode {
         HISTORICAL_DATA = 0;
-        LIVE_DATA = 1;
-        STOP_DATA = 2;
+        BUFFERED_DATA = 1;
+        LIVE_DATA = 2;
+        STOP_DATA = 3;
     }
 
     google.protobuf.Timestamp startDateTime = 1;
@@ -38,9 +39,10 @@ message DataRequest {
 
 message DataResponseStatus {
     enum StatusCode {
-        OK = 0;
-        NO_DATA = 1;
-        SERVER_ERROR = 2;
+        WAIT = 0;
+        OK = 1;
+        NO_DATA = 2;
+        SERVER_ERROR = 3;
     }
 
     StatusCode code = 1;

@@ -1,4 +1,10 @@
-﻿using System.Collections.Concurrent;
+﻿/*+------------------------------------------------------------------+
+  |                                                  Common.Entities |
+  |                                  BlockingCollectionExtensions.cs |
+  +------------------------------------------------------------------+*/
+
+
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 
 namespace Common.Entities;

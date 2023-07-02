@@ -3,13 +3,8 @@
   |                                                       Program.cs |
   +------------------------------------------------------------------+*/
 
-//1) get last known time of data from db <-- todo:
-//2) send request to get saved data
-//send request to get buffered data
-//send request to get live data
-
+using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Globalization;
 using System.Net.Sockets;
 using Common.Entities;
@@ -20,6 +15,9 @@ using Ticksdata;
 using Quotation = Common.Entities.Quotation;
 using Symbol = Common.Entities.Symbol;
 
+CancellationTokenSource? cancellationTokenSource = null;
+var liveDataQueue = new BlockingCollection<Quotation>();
+
 ConcurrentDictionary<DateTime, List<Quotation>> hoursCache = new();
 ConcurrentQueue<DateTime> hoursKeys = new();
 DateTime currentHoursKey;
@@ -27,8 +25,8 @@ DateTime currentHoursKey;
 const int deadline = 600;
 const int maxHoursInCache = 168;
 const string grpcChannelAddress = "http://192.168.50.78:49051";
-const int maxSendMessageSize = 50 * 1024 * 1024 * 4; //e.g. 50 MB wo 4
-const int maxReceiveMessageSize = 50 * 1024 * 1024 * 4; //e.g. 50 MB wo 4
+const int maxSendMessageSize = 50 * 1024 * 1024; //e.g. 50 MB wo 4
+const int maxReceiveMessageSize = 50 * 1024 * 1024; //e.g. 50 MB wo 4
 
 // ReSharper disable once JoinDeclarationAndInitializer
 DateTime endTime;
@@ -49,9 +47,7 @@ var symbolMapping = new Dictionary<Ticksdata.Symbol, Symbol>
 
 Console.WriteLine("Terminal simulator...");
 
-var stopwatch = new Stopwatch();
-stopwatch.Start();
-
+#region MyRegion
 // 1 hour empty
 //startTime = new DateTime(2023, 1, 1, 0, 0, 0);
 //endTime = new DateTime(2023, 1, 1, 0, 0, 0);
@@ -121,36 +117,39 @@ stopwatch.Start();
 //    Console.WriteLine(result.Count().ToString("##,##0"));
 //    startTime = startTime.Add(new TimeSpan(7, 0, 0, 0));
 //    endTime = startTime.AddDays(7).AddHours(-1);
-//} while (endTime <= new DateTime(2023, 12, 31));
-
-do
-{
-    // 3 hours before now
-    endTime = DateTime.Now;
-    startTime = endTime.AddHours(-3);
-    Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
-    result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
-    Console.WriteLine(result.Count().ToString("##,##0"));
-} while (true);
+//} while (endTime <= new DateTime(2023, 12, 31)); 
+#endregion
 
 
+// 1) get last known time of data from db <-- todo:
+// 2) send request to get saved data
+endTime = DateTime.Now;
+startTime = endTime.AddHours(-3);
+Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
+result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
+Console.WriteLine($"Historical:{result.Count():##,##0}");
+// 3) send request to get buffered data
+result = await GetBufferedDataAsync().ConfigureAwait(false);
+Console.WriteLine($"Buffered:{result.Count():##,##0}");
+// 4) send request to get live data
 
 
+var cts = new CancellationTokenSource();
+//it could be useful in scenarios where you'd want to wait for this task to complete or manage its life cycle
+var (liveDataTask, liveChannel) = await GetLiveDataAsync(cts.Token).ConfigureAwait(false);
+Console.WriteLine("Press any key to cancel........");
+Console.ReadKey();
 
+cts.Cancel();
+await liveChannel.ShutdownAsync().ConfigureAwait(false);
 
-
-
-
-
-
-
-
-stopwatch.Stop();
-var timeTaken = stopwatch.Elapsed;
-Console.WriteLine("Time Taken: " + timeTaken.ToString(@"m\:ss\.fff"));
 Console.WriteLine("End of the program. Press any key to exit ...");
 Console.ReadKey();
 return 1;
+
+
+
+
 
 async Task<IEnumerable<Quotation>> GetHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
 {
@@ -189,7 +188,7 @@ async Task<IEnumerable<Quotation>> GetHistoricalDataAsync(DateTime startDateTime
         }
         else
         {
-            throw new NotImplementedException("Key is absent.");
+            throw new NotImplementedException("The key is absent.");
         }
 
         key = key.Add(new TimeSpan(1, 0, 0));
@@ -357,4 +356,144 @@ Symbol ToEntitiesSymbol(Ticksdata.Symbol protoSymbol)
     }
 
     return symbol;
+}
+async Task<IEnumerable<Quotation>> GetBufferedDataAsync()
+{
+    var channelOptions = new GrpcChannelOptions { MaxSendMessageSize = maxSendMessageSize, MaxReceiveMessageSize = maxReceiveMessageSize };
+    using var channel = GrpcChannel.ForAddress(grpcChannelAddress, channelOptions);
+    var client = new DataProvider.DataProviderClient(channel);
+    var callOptions = new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(deadline)));
+    var request = new DataRequest
+    {
+        Code = DataRequest.Types.StatusCode.BufferedData
+    };
+
+    try
+    {
+        var call = client.GetDataAsync(callOptions);
+        await call.RequestStream.WriteAsync(request).ConfigureAwait(false);
+        await call.RequestStream.CompleteAsync().ConfigureAwait(false);
+
+        int counter = default;
+        IList<Quotation> quotations = new List<Quotation>();
+
+        await foreach (var response in call.ResponseStream.ReadAllAsync())
+        {
+            switch (response.Status.Code)
+            {
+                case DataResponseStatus.Types.StatusCode.Ok:
+                    foreach (var item in response.Quotations)
+                    {
+                        var quotation = new Quotation(counter++, ToEntitiesSymbol(item.Symbol), item.Datetime.ToDateTime().ToUniversalTime(), item.Ask, item.Bid);
+                        quotations.Add(quotation);
+                    }
+                    break;
+                case DataResponseStatus.Types.StatusCode.NoData:
+                    break;
+                case DataResponseStatus.Types.StatusCode.ServerError:
+                    throw new Exception($"Server error: {response.Status.Details}");
+                default:
+                    throw new Exception($"Unknown status code: {response.Status.Code}");
+            }
+        }
+
+        return quotations;
+    }
+    catch (RpcException rpcException)
+    {
+        Console.WriteLine(rpcException);
+        throw;
+    }
+    catch (Exception exception)
+    {
+        Console.WriteLine(exception);
+        throw;
+    }
+}
+
+
+async Task<(Task, GrpcChannel)> GetLiveDataAsync(CancellationToken token)
+{
+    var channelOptions = new GrpcChannelOptions { MaxSendMessageSize = maxSendMessageSize, MaxReceiveMessageSize = maxReceiveMessageSize };
+    var channel = GrpcChannel.ForAddress(grpcChannelAddress, channelOptions);
+    var client = new DataProvider.DataProviderClient(channel);
+    var callOptions = new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(deadline)));
+    var request = new DataRequest
+    {
+        Code = DataRequest.Types.StatusCode.LiveData
+    };
+
+    var call = client.GetDataAsync(callOptions);
+    await call.RequestStream.WriteAsync(request, token).ConfigureAwait(false);
+    await call.RequestStream.CompleteAsync().ConfigureAwait(false);
+    
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            int counter = default;
+            await foreach (var response in call.ResponseStream.ReadAllAsync().WithCancellation(token))
+            {
+                switch (response.Status.Code)
+                {
+                    case DataResponseStatus.Types.StatusCode.Wait:
+                        Console.WriteLine("I was told to wait...");
+                        break;
+                    case DataResponseStatus.Types.StatusCode.Ok:
+                        foreach (var item in response.Quotations)
+                        {
+                            var quotation = new Quotation(counter++, ToEntitiesSymbol(item.Symbol), item.Datetime.ToDateTime().ToUniversalTime(), item.Ask, item.Bid);
+                            liveDataQueue.Add(quotation, token);
+                        }
+                        break;
+                    case DataResponseStatus.Types.StatusCode.NoData:
+                    case DataResponseStatus.Types.StatusCode.ServerError: liveDataQueue.CompleteAdding(); break;
+                    default: throw new Exception($"Unknown status code: {response.Status.Code}");
+                }
+            }
+        }
+        catch (OperationCanceledException operationCanceledException)
+        {
+            Console.WriteLine(operationCanceledException.Message);
+        }
+        catch (RpcException rpcException)
+        {
+            Console.WriteLine(rpcException.Message);
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(exception);
+        }
+        finally
+        {
+            liveDataQueue.CompleteAdding();
+        }
+    }, token);
+
+    var processingTask = Task.Run(async () =>
+    {
+        try
+        {
+            await foreach (var quotation in liveDataQueue.GetConsumingAsyncEnumerable(token).WithCancellation(token))
+            {
+                if (token.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                Console.WriteLine(quotation.ToString());
+            }
+        }
+        catch (OperationCanceledException operationCanceledException)
+        {
+            Console.WriteLine($"{operationCanceledException.Message}");
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(exception.Message);
+            throw;
+        }
+    }, token);
+
+    return (processingTask, channel);
 }

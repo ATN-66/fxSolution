@@ -17,16 +17,21 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Ticksdata;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Timer = System.Timers.Timer;
 using Enum = System.Enum;
 using Quotation = Common.Entities.Quotation;
 using Symbol = Common.Entities.Symbol;
+using System.Threading.Tasks;
 
 namespace Mediator.Services;
 
 internal sealed class DataProviderService : DataProvider.DataProviderBase, IDataProviderService
 {
+    private delegate void TickDelegate(Quotation quotation, int counter); 
+    private TickDelegate _tick = (_, _) => { };
+
     private readonly Guid _guid = Guid.NewGuid();
     private readonly MainViewModel _mainViewModel;
     private readonly CancellationTokenSource _cts;
@@ -39,6 +44,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
 
     private readonly Quotation[] _lastKnownQuotations = new Quotation[TotalIndicators];
     private BlockingCollection<(int id, int symbol, string datetime, double ask, double bid)> _quotations = new();
+    private BlockingCollection<Quotation>? _quotationsToSend;
     private readonly ConcurrentQueue<Quotation> _quotationsToSave = new();
     private int[] _counter = new int[TotalIndicators];
 
@@ -79,8 +85,8 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
 
         _format = configuration.GetValue<string>("MT5DateTimeFormat")!;
 
-        _maxSendMessageSize = 50 * 1024 * 1024 * 4; //e.g. 50 MB //todo: wo 4
-        _maxReceiveMessageSize = 50 * 1024 * 1024 * 4; //e.g. 50 MB //todo: wo 4
+        _maxSendMessageSize = 50 * 1024 * 1024; //e.g. 50 MB //todo:
+        _maxReceiveMessageSize = 50 * 1024 * 1024; //e.g. 50 MB //todo: 
 
         _saveTimer = new Timer(Minutes * 60 * 1000);
         _saveTimer.Elapsed += OnSaveTimerElapsedAsync;
@@ -89,6 +95,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
 
         void ProcessQuotationsAction() => Task.Run(() => ProcessAsync(cts.Token), cts.Token).ConfigureAwait(false);
         _mainViewModel.InitializationComplete += ProcessQuotationsAction;
+        _tick += _mainViewModel.SetIndicator;
 
         _cts = cts;
         _dataService = dataService;
@@ -284,7 +291,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                 var quotation = new Quotation(id, resultSymbol, resultDateTime, ask, bid);
                 _lastKnownQuotations[symbol - 1] = quotation;
                 _quotations.Add((id, symbol, datetime, ask, bid));
-                _mainViewModel.SetIndicator(resultSymbol, resultDateTime, ask, bid, 0);
+                _mainViewModel.SetIndicator(quotation, 0);
             }
             else
             {
@@ -338,10 +345,9 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                 resultDateTime = resultDateTime.AddMilliseconds(1);
             }
             _counter[symbol - 1] += 1;
-            var quotation = new Quotation(id, resultSymbol, resultDateTime, ask, bid);
 
-            Send(quotation);
-            _mainViewModel.SetIndicator(resultSymbol, resultDateTime, ask, bid, _counter[symbol - 1]);
+            var quotation = new Quotation(id, resultSymbol, resultDateTime, ask, bid);
+            _tick(quotation, _counter[symbol - 1]);
 
             bool shouldSave;
             _queueLock.EnterWriteLock();
@@ -398,13 +404,13 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     #endregion Indicators
 
 
-    private void Send(Quotation quotation)
+    private void AddTicks(Quotation quotation, int count)
     {
-
+        _quotationsToSend!.Add(quotation);
     }
 
 
-    #region Retrieve
+    #region Terminal
     public async override Task GetDataAsync(IAsyncStreamReader<DataRequest> requestStream, IServerStreamWriter<DataResponse> responseStream, ServerCallContext context)
     {
         if (IsServiceActivated is null || _isFaulted)
@@ -421,52 +427,152 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         }
 
         var request = requestStream.Current;
-        var startDateTime = request.StartDateTime.ToDateTime();
-        var endDateTime = request.EndDateTime.ToDateTime();
         var status = request.Code;
 
-        if (status == DataRequest.Types.StatusCode.HistoricalData)
+        switch (status)
         {
-            try
+            case DataRequest.Types.StatusCode.HistoricalData:
             {
-                var quotations = await _dataService.GetDataAsync(startDateTime, endDateTime).ConfigureAwait(false);
-                var quotationsToSend = quotations.ToList();
-                if (!quotationsToSend.Any())
+                var startDateTime = request.StartDateTime.ToDateTime();
+                var endDateTime = request.EndDateTime.ToDateTime();
+
+                try
                 {
-                    await SendNoDataResponseAsync(responseStream).ConfigureAwait(false);
+                    await SaveQuotationsAsync().ConfigureAwait(false);
+                    var quotations = await _dataService.GetDataAsync(startDateTime, endDateTime).ConfigureAwait(false);
+                    var quotationsToSend = quotations.ToList();
+                    if (!quotationsToSend.Any())
+                    {
+                        await SendNoDataResponseAsync(responseStream).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await SendDataResponseAsync(responseStream, quotationsToSend, context).ConfigureAwait(false);
+                    }
                 }
-                else
+                catch (OperationCanceledException exception)
                 {
-                    await SendDataResponseAsync(responseStream, quotationsToSend, context).ConfigureAwait(false);
+                    throw new NotImplementedException();
                 }
-            }
-            catch (OperationCanceledException exception)
-            {
-                throw new NotImplementedException();
-            }
-            catch (InvalidOperationException invalidOperationException)
-            {
-                if (invalidOperationException.Message != "Already finished.")
+                catch (RpcException rpcException)
+                {
+                    LogExceptionHelper.LogException(_logger, rpcException, MethodBase.GetCurrentMethod()!.Name, "");
+                }
+                catch (InvalidOperationException invalidOperationException)
+                {
+                    if (invalidOperationException.Message != "Already finished.")
+                    {
+                        _isFaulted = true;
+                        await HandleDataServiceErrorAsync(responseStream, invalidOperationException).ConfigureAwait(false);
+                        throw;
+                    }
+                }
+                catch (Exception exception)
                 {
                     _isFaulted = true;
-                    await HandleDataServiceErrorAsync(responseStream, invalidOperationException).ConfigureAwait(false);
+                    await HandleDataServiceErrorAsync(responseStream, exception).ConfigureAwait(false);
                     throw;
                 }
+                finally
+                {
+                    CleanupAfterStreaming();
+                }
+
+                break;
             }
-            catch (Exception exception)
-            {
-                _isFaulted = true;
-                await HandleDataServiceErrorAsync(responseStream, exception).ConfigureAwait(false);
-                throw;
-            }
-            finally
-            {
-                CleanupAfterStreaming();
-            }
-        }
-        else
-        {
-            throw new NotImplementedException();
+            case DataRequest.Types.StatusCode.BufferedData:
+                try
+                {
+                    var quotations = new List<Quotation>();
+                    _queueLock.EnterReadLock();
+                    while (_quotationsToSave.TryDequeue(out var quotation))
+                    {
+                        quotations.Add(quotation);
+                    }
+                    _queueLock.ExitReadLock();
+
+                    if (!quotations.Any())
+                    {
+                        await SendNoDataResponseAsync(responseStream).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await SendDataResponseAsync(responseStream, quotations, context).ConfigureAwait(false);
+                    }
+                }
+                catch (OperationCanceledException exception)
+                {
+                    throw new NotImplementedException();
+                }
+                catch (InvalidOperationException invalidOperationException)
+                {
+                    if (invalidOperationException.Message != "Already finished.")
+                    {
+                        _isFaulted = true;
+                        await HandleDataServiceErrorAsync(responseStream, invalidOperationException).ConfigureAwait(false);
+                        throw;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    _isFaulted = true;
+                    await HandleDataServiceErrorAsync(responseStream, exception).ConfigureAwait(false);
+                    throw;
+                }
+                finally
+                {
+                    CleanupAfterStreaming();
+                }
+
+                break;
+            case DataRequest.Types.StatusCode.LiveData:
+                _quotationsToSend = new BlockingCollection<Quotation>();
+                _tick += AddTicks;
+
+                try
+                {
+                    await foreach (var quotation in _quotationsToSend.GetConsumingAsyncEnumerable(context.CancellationToken).WithCancellation(context.CancellationToken))
+                    {
+                        var response = new DataResponse
+                        {
+                            Status = new DataResponseStatus
+                            {
+                                Code = DataResponseStatus.Types.StatusCode.Ok
+                            }
+                        };
+
+                        var q = new Ticksdata.Quotation { Id = quotation.ID, Symbol = ToProtoSymbol(quotation.Symbol), Datetime = Timestamp.FromDateTime(quotation.DateTime.ToUniversalTime()), Ask = quotation.Ask, Bid = quotation.Bid };
+
+                        response.Quotations.Add(q);
+
+                        if (context.CancellationToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
+                        await responseStream.WriteAsync(response).ConfigureAwait(false);
+                    }
+                }
+                catch (OperationCanceledException operationCanceledException)
+                {
+                    _logger.LogInformation("{Message}", operationCanceledException.Message); // A task was canceled.
+                }
+                catch (RpcException rpcException)
+                {
+                    LogExceptionHelper.LogException(_logger, rpcException, MethodBase.GetCurrentMethod()!.Name, "");
+                }
+                catch (Exception exception)
+                {
+                    LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+                }
+                finally
+                {
+                    _tick -= AddTicks;
+                    CleanupAfterStreaming();
+                }
+                break;
+            case DataRequest.Types.StatusCode.StopData:
+            default: throw new InvalidOperationException();
         }
     }
     private Task SendNoDataResponseAsync(IAsyncStreamWriter<DataResponse> responseStream)
@@ -485,8 +591,6 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     }
     private static Task SendDataResponseAsync(IAsyncStreamWriter<DataResponse> responseStream, IEnumerable<Quotation> quotations, ServerCallContext context)
     {
-        //_logger.LogTrace("{info}", "start transmitting data...");
-
         var response = new DataResponse
         {
             Status = new DataResponseStatus
@@ -503,7 +607,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                 Symbol = ToProtoSymbol(quotation.Symbol),
                 Datetime = Timestamp.FromDateTime(quotation.DateTime.ToUniversalTime()),
                 Ask = quotation.Ask,
-                Bid = quotation.Bid,
+                Bid = quotation.Bid
             });
 
             if (context.CancellationToken.IsCancellationRequested)
@@ -513,8 +617,6 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         }
 
         return responseStream.WriteAsync(response);
-
-        //_logger.LogTrace("{info}", "end transmitting data...");
     }
     private async Task HandleDataServiceErrorAsync(IAsyncStreamWriter<DataResponse> responseStream, Exception exception)
     {
@@ -546,5 +648,5 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
 
         return protoSymbol;
     }
-    #endregion Retrieve
+    #endregion Terminal
 }

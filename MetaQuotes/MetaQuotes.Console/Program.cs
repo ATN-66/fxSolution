@@ -13,7 +13,7 @@ var config = new Configuration()
     Workplace = Workplace.Development,
     Year = 2023,
     Week = 8,
-    Day = 7
+    Day = 7 
 };
 
 const string mt5Format = "yyyy.MM.dd HH:mm:ss"; // 2023.05.08 19:52:22 <- from MT5 
@@ -86,7 +86,7 @@ static async Task ProcessQuotations(Queue<Quotation> quotations, CancellationTok
     {
         if (ct.IsCancellationRequested) break;
         var quotation = quotations.Dequeue();
-        await Task.Delay(10, ct).ConfigureAwait(false);
+        //await Task.Delay(100, ct).ConfigureAwait(false);
         var result = Mediator.Tick(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.Ask, quotation.Bid);
         if (ok != result) throw new Exception(result);
     }

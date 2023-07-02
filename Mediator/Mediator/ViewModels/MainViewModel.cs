@@ -30,7 +30,7 @@ public partial class MainViewModel : ObservableRecipient
     
     private static readonly int TotalIndicators = Enum.GetValues(typeof(Symbol)).Length;
     private Workplace _workplace;
-    private string _dataProviderServiceTitle;
+    private string _dataProviderServiceTitle = null!;
     public event Action InitializationComplete = null!;
 
     public MainViewModel(IConfiguration configuration, IAppNotificationService appNotificationService, IDispatcherService dispatcherService, CancellationTokenSource cts, ILogger<MainViewModel> logger)
@@ -163,14 +163,14 @@ public partial class MainViewModel : ObservableRecipient
         }
     }
 
-    public void SetIndicator(Symbol symbol, DateTime dateTime, double ask, double bid, int counter)
+    public void SetIndicator(Quotation quotation, int counter)
     {
         _dispatcherService.ExecuteOnUIThreadAsync(() =>
         {
-            var index = (int)symbol - 1;
-            IndicatorStatuses[index].DateTime = dateTime;
-            IndicatorStatuses[index].Ask = ask;
-            IndicatorStatuses[index].Bid = bid;
+            var index = (int)quotation.Symbol - 1;
+            IndicatorStatuses[index].DateTime = quotation.DateTime;
+            IndicatorStatuses[index].Ask = quotation.Ask;
+            IndicatorStatuses[index].Bid = quotation.Bid;
             IndicatorStatuses[index].Counter = counter;
             IndicatorStatuses[index].Pulse = true;
             OnPropertyChanged(nameof(IndicatorStatuses));
