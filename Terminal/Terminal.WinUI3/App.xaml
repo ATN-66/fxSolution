@@ -85,7 +85,7 @@
 
             <!--  Breakpoints  -->
             <x:Double x:Key="Breakpoint640Plus">641</x:Double>
-            <Thickness x:Key="NavigationViewContentMargin">0,48,0,0</Thickness>
+            <Thickness x:Key="NavigationViewContentMargin">0,0,0,0</Thickness>
             <Thickness x:Key="ControlElementScreenshotModePadding">67</Thickness>
 
             <SolidColorBrush x:Key="GridViewHeaderItemDividerStroke" Color="White" />

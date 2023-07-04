@@ -74,6 +74,4 @@ public static class DateTimeExtensionsAndHelpers
             _ => throw new Exception(errorMessage)
         };
     }
-
-    
 }

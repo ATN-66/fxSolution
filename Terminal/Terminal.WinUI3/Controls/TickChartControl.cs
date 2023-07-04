@@ -2,7 +2,7 @@
   |                                         Terminal.WinUI3.Controls |
   |                                              TickChartControl.cs |
   +------------------------------------------------------------------+*/
-//#define DEBUGWIN2DCanvasControl
+#define DEBUGWIN2DCanvasControl
 
 using System.Numerics;
 using Windows.UI;

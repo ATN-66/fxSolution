@@ -132,7 +132,11 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
 
     private async Task GetHoursAsync(bool inforce = false)
     {
-        if (_currentDate == SelectedDate.DateTime.Date && inforce == false) return;
+        if (_currentDate == SelectedDate.DateTime.Date && inforce == false)
+        {
+            return;
+        }
+
         HourlyContributionsIsLoading = true;
         HourlyContributionsCount = 0;
         HourlyContributions.Clear();
@@ -278,7 +282,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         HourlyContributions.Clear();
 
         var result = await _dataService.ReImportSelectedAsync(SelectedDate.DateTime.Date, SelectedProvider).ConfigureAwait(true);
-        Debug.WriteLine(result.ToString());//todo: notify Contribution
+        Debug.WriteLine(result);
         _ = RefreshContributionsAsync().ConfigureAwait(true);
         _ = GetHoursAsync(true).ConfigureAwait(true);
     }
@@ -353,49 +357,45 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         }
     }
 
-    [RelayCommand]
-    private async Task BackupAsync()
-    {
-        var result = await _dataService.BackupAsync().ConfigureAwait(true);
-        Debug.WriteLine(result);//todo: notify Contribution
-    }
+    //[RelayCommand]
+    //private async Task BackupAsync()
+    //{
+    //    var result = await _dataService.BackupAsync().ConfigureAwait(true);
+    //    Debug.WriteLine(result);//todo: notify Contribution
+    //}
 
-    [RelayCommand]
-    private async Task RestoreAsync()
-    {
-        var result = await _dataService.RestoreAsync().ConfigureAwait(true);
-        Debug.WriteLine(result);//todo: notify Contribution
-    }
+    //[RelayCommand]
+    //private async Task RestoreAsync()
+    //{
+    //    var result = await _dataService.RestoreAsync().ConfigureAwait(true);
+    //    Debug.WriteLine(result);//todo: notify Contribution
+    //}
 
     private void OnDailyContributionChanged(DailyContribution dailyContribution)
     {
-        Debug.Assert(_dispatcherService.HasThreadAccess);
         _dispatcherService.ExecuteOnUIThreadAsync(() =>
         {
-            try
-            {
-                var yearlyContribution = YearlyContributions.FirstOrDefault(y => y.Year == dailyContribution.Year);
-                var monthlyContribution = yearlyContribution!.MonthlyContributions!.FirstOrDefault(m => m.Month == dailyContribution.Month);
-                var existingDailyContribution = monthlyContribution!.DailyContributions.FirstOrDefault(d => d.Day == dailyContribution.Day);
-                var index = monthlyContribution.DailyContributions.IndexOf(existingDailyContribution!);
-                monthlyContribution.DailyContributions[index] = dailyContribution;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-            
+            var yearlyContribution = YearlyContributions.FirstOrDefault(y => y.Year == dailyContribution.Year);
+            var monthlyContribution = yearlyContribution!.MonthlyContributions!.FirstOrDefault(m => m.Month == dailyContribution.Month);
+            var existingDailyContribution = monthlyContribution!.DailyContributions.FirstOrDefault(d => d.Day == dailyContribution.Day);
+            var index = monthlyContribution.DailyContributions.IndexOf(existingDailyContribution!);
+            monthlyContribution.DailyContributions[index] = dailyContribution;
         });
     }
 
     private void OnProgressReported(int progressPercentage)
     {
-        _dialogViewModel.ProgressPercentage = progressPercentage;
+        _dispatcherService.ExecuteOnUIThreadAsync(() =>
+        {
+            _dialogViewModel.ProgressPercentage = progressPercentage;
+        });
     }
 
     private void OnInfoReported(string info)
     {
-        _dialogViewModel.InfoMessage = info;
+        _dispatcherService.ExecuteOnUIThreadAsync(() =>
+        {
+            _dialogViewModel.InfoMessage = info;
+        });
     }
 }

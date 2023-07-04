@@ -145,22 +145,22 @@
                             Command="{x:Bind Path=RecalculateAllContributionsCommand}"
                             Content="Recalculate All"
                             ToolTipService.ToolTip="RecalculateAllContributionsCommand" />
-                        <Button
+                        <!--<Button
                             Grid.Row="0"
                             Grid.Column="10"
                             Margin="8,0,0,0"
                             Background="DarkGray"
                             Command="{x:Bind Path=BackupCommand}"
                             Content="Backup"
-                            ToolTipService.ToolTip="BackupCommand" />
-                        <Button
+                            ToolTipService.ToolTip="BackupCommand" />-->
+                        <!--<Button
                             Grid.Row="0"
                             Grid.Column="11"
                             Margin="8,0,0,0"
                             Background="DarkGray"
                             Command="{x:Bind Path=RestoreCommand}"
                             Content="Restore"
-                            ToolTipService.ToolTip="RestoreCommand" />
+                            ToolTipService.ToolTip="RestoreCommand" />-->
                     </Grid>
                 </StackPanel>
             </Border>

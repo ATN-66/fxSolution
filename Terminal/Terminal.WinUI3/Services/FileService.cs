@@ -30,7 +30,7 @@ public class FileService : DataSource, IFileService
         _fileServiceDateTimeFormat = configuration.GetValue<string>($"{nameof(_fileServiceDateTimeFormat)}")!;
     }
 
-    protected async override Task<IList<Quotation>> GetDataAsync(DateTime startDateTimeInclusive)
+    protected async override Task<IList<Quotation>> GetDataAsync(DateTime startDateTimeInclusive, CancellationToken token)
     {
         var year = startDateTimeInclusive.Year.ToString();
         var month = startDateTimeInclusive.Month.ToString("D2");
@@ -48,7 +48,7 @@ public class FileService : DataSource, IFileService
             return new List<Quotation>();
         }
 
-        var lines = await File.ReadAllLinesAsync(filePath).ConfigureAwait(true);
+        var lines = await File.ReadAllLinesAsync(filePath, token).ConfigureAwait(false);
         var quotations = lines.AsParallel()
             .Select(line => line.Split('|').Select(str => str.Trim()).ToArray())
             .Select((items, index) =>
@@ -65,7 +65,7 @@ public class FileService : DataSource, IFileService
                 }
                 catch (FormatException formatException)
                 {
-                    LogExceptionHelper.LogException(_logger, formatException, MethodBase.GetCurrentMethod()!.Name, "");
+                    LogException(formatException, "");
                     throw;
                 }
             })

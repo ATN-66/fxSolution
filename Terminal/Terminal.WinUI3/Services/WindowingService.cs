@@ -1,9 +1,10 @@
 using Windows.Graphics;
-using Mediator.Contracts.Services;
+using Windows.UI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.UI.Xaml;
+using Terminal.WinUI3.Contracts.Services;
 
-namespace Mediator.Services;
+namespace Terminal.WinUI3.Services;
 
 public class WindowingService : IWindowingService
 {
@@ -77,6 +78,7 @@ public class WindowingService : IWindowingService
         if (_window is not null && width > 0 && height > 0)
         {
             _window.GetAppWindow().Resize(new SizeInt32(width, height));
+            
         }
     }
 

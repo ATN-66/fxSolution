@@ -158,7 +158,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     {
         var retryCount = 0;
 
-        while (retryCount < RetryCountLimit)
+        while (retryCount < RetryCountLimit && !_cts.Token.IsCancellationRequested)
         {
             Server? grpcServer = null;
             _isFaulted = false;
@@ -191,21 +191,21 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             }
             catch (IOException ioException)
             {
-                LogExceptionHelper.LogException(_logger, ioException, MethodBase.GetCurrentMethod()!.Name, "");
+                LogExceptionHelper.LogException(_logger, ioException, "");
                 retryCount++;
             }
             catch (Exception exception)
             {
-                LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+                LogExceptionHelper.LogException(_logger, exception, "");
                 retryCount++;
             }
             finally
             {
                 if (grpcServer != null)
                 {
-                    await grpcServer.ShutdownAsync().ConfigureAwait(true);
                     IsServiceActivated = false;
-                    _logger.LogTrace("Shutted down.");
+                    await grpcServer.ShutdownAsync().ConfigureAwait(false);
+                    _logger.LogTrace("gRPC Server shutted down.");
                 }
             }
 
@@ -256,7 +256,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         catch (Exception exception)
         {
             _mainViewModel.AtFault = true;
-            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+            LogExceptionHelper.LogException(_logger, exception, "");
             throw;
         }
         finally
@@ -301,7 +301,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         catch (Exception exception)
         {
             _mainViewModel.AtFault = true;
-            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+            LogExceptionHelper.LogException(_logger, exception, "");
             throw;
         }
         finally
@@ -322,23 +322,20 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         {
             await foreach (var (id, symbol, datetime, ask, bid) in _quotations.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
             {
-                if (ct.IsCancellationRequested)
-                {
-                    break;
-                }
                 Process(id, symbol, datetime, ask, bid);
-            }
+                if (!ct.IsCancellationRequested)
+                {
+                    continue;
+                }
 
-            // If cancellation has been requested, save remaining data
-            if (ct.IsCancellationRequested)
-            {
-                await SaveQuotationsAsync().ConfigureAwait(false);  // You might want to await this without .ConfigureAwait(false) if the continuation depends on the context
+                await SaveQuotationsAsync().ConfigureAwait(false); // this place is never executed.
+                break;
             }
         }
         catch (Exception exception)
         {
             _mainViewModel.AtFault = true;
-            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+            LogExceptionHelper.LogException(_logger, exception, "");
             throw;
         }
     }
@@ -378,7 +375,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         catch (Exception exception)
         {
             _mainViewModel.AtFault = true;
-            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+            LogExceptionHelper.LogException(_logger, exception, "");
             throw;
         }
     }
@@ -422,7 +419,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         catch (Exception exception)
         {
             _mainViewModel.AtFault = true;
-            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "error with _dataBaseService.SaveDataAsync");
+            LogExceptionHelper.LogException(_logger, exception, "error with _dataBaseService.SaveDataAsync");
             throw;
         }
     }
@@ -461,15 +458,14 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                 try
                 {
                     await SaveQuotationsAsync().ConfigureAwait(false);
-                    var quotations = await _dataBaseService.GetHistoricalDataAsync(startDateTime, startDateTime).ConfigureAwait(false);
-                    var quotationsToSend = quotations.ToList();
-                    if (!quotationsToSend.Any())
+                    var quotations = await _dataBaseService.GetHistoricalDataAsync(startDateTime, startDateTime, context.CancellationToken).ConfigureAwait(false);
+                    if (!quotations.Any())
                     {
                         await SendNoDataResponseAsync(responseStream).ConfigureAwait(false);
                     }
                     else
                     {
-                        await SendDataResponseAsync(responseStream, quotationsToSend, context).ConfigureAwait(false);
+                        await SendDataResponseAsync(responseStream, quotations, context).ConfigureAwait(false);
                     }
                 }
                 catch (OperationCanceledException)
@@ -550,6 +546,11 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                 {
                     await foreach (var quotation in _quotationsToSend.GetConsumingAsyncEnumerable(context.CancellationToken).WithCancellation(context.CancellationToken))
                     {
+                        if (context.CancellationToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
                         var response = new DataResponse
                         {
                             Status = new DataResponseStatus
@@ -559,15 +560,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                         };
 
                         var q = new Ticksdata.Quotation { Id = quotation.ID, Symbol = ToProtoSymbol(quotation.Symbol), Datetime = Timestamp.FromDateTime(quotation.DateTime.ToUniversalTime()), Ask = quotation.Ask, Bid = quotation.Bid };
-
                         response.Quotations.Add(q);
-
-                        if (context.CancellationToken.IsCancellationRequested)
-                        {
-                            //from client?
-                            break;
-                        }
-
                         await responseStream.WriteAsync(response).ConfigureAwait(false);
                     }
                 }
@@ -588,7 +581,9 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                 }
                 finally
                 {
+#pragma warning disable CS8601
                     _tick -= AddTicks;
+#pragma warning restore CS8601
                     CleanupAfterStreaming();
                 }
                 break;
@@ -651,7 +646,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             }
         };
         await responseStream.WriteAsync(exceptionResponse).ConfigureAwait(false);
-        LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "Error during getting data from database or communication error.");
+        LogExceptionHelper.LogException(_logger, exception, "Error during getting data from database or communication error.");
     }
     private void CleanupAfterStreaming()
     {

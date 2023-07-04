@@ -3,10 +3,9 @@
   |                                                      Mediator.cs |
   +------------------------------------------------------------------+*/
 
-using System.Reflection;
+using System.Collections.Concurrent;
 using Common.DataSource;
 using Common.Entities;
-using Common.ExtensionsAndHelpers;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Grpc.Net.Client;
@@ -25,7 +24,7 @@ public class Mediator : DataSource, IMediator
     private readonly int _maxSendMessageSize;
     private readonly int _maxReceiveMessageSize;
     private readonly string _grpcChannelAddress;
-
+    
     private static readonly Dictionary<Ticksdata.Symbol, Symbol> SymbolMapping = new()
     {
         { Ticksdata.Symbol.EurGbp, Symbol.EURGBP },
@@ -42,34 +41,112 @@ public class Mediator : DataSource, IMediator
         _maxSendMessageSize = configuration.GetValue<int>($"{nameof(_maxSendMessageSize)}");
         _maxReceiveMessageSize = configuration.GetValue<int>($"{nameof(_maxReceiveMessageSize)}");
     }
-    
-    protected async override Task<IList<Quotation>> GetDataAsync(DateTime startDateTimeInclusive)
+
+    public async Task<(Task, GrpcChannel)> StartAsync(BlockingCollection<Quotation> quotations, CancellationToken token)
     {
-        var channelOptions = new GrpcChannelOptions
+        var channelOptions = new GrpcChannelOptions { MaxSendMessageSize = _maxSendMessageSize, MaxReceiveMessageSize = _maxReceiveMessageSize };
+        var channel = GrpcChannel.ForAddress(_grpcChannelAddress, channelOptions);
+        var client = new DataProvider.DataProviderClient(channel);
+        var callOptions = new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(Deadline)));
+        var request = new DataRequest
         {
-            MaxSendMessageSize = _maxSendMessageSize,
-            MaxReceiveMessageSize = _maxReceiveMessageSize
+            Code = DataRequest.Types.StatusCode.LiveData
         };
 
+        var call = client.GetDataAsync(callOptions);
+        await call.RequestStream.WriteAsync(request, token).ConfigureAwait(false);
+        await call.RequestStream.CompleteAsync().ConfigureAwait(false);
+
+        var receivingTask = Task.Run(async () =>
+        {
+            try
+            {
+                int counter = default;
+                await foreach (var response in call.ResponseStream.ReadAllAsync(token).WithCancellation(token))
+                {
+                    switch (response.Status.Code)
+                    {
+                        case DataResponseStatus.Types.StatusCode.Ok:
+                            foreach (var item in response.Quotations)
+                            {
+                                var quotation = new Quotation(counter++, ToEntitiesSymbol(item.Symbol), item.Datetime.ToDateTime().ToUniversalTime(), item.Ask, item.Bid);
+                                quotations.Add(quotation, token);
+                            }
+                            break;
+                        case DataResponseStatus.Types.StatusCode.NoData:
+                        case DataResponseStatus.Types.StatusCode.ServerError: quotations.CompleteAdding(); break;
+                        default: throw new Exception($"Unknown status code: {response.Status.Code}");
+                    }
+                }
+            }
+            catch (OperationCanceledException operationCanceledException)
+            {
+                if (!token.IsCancellationRequested)
+                {
+                    LogException(operationCanceledException, "");
+                    throw;
+                }
+            }
+            catch (RpcException rpcException)
+            {
+                if (rpcException.StatusCode == StatusCode.Cancelled)
+                {
+                }
+                else
+                {
+                    LogException(rpcException, "");
+                    throw;
+                }
+            }
+            catch (Exception exception)
+            {
+                LogException(exception, "");
+                throw;
+            }
+            finally
+            {
+                quotations.CompleteAdding();
+            }
+        }, token);
+
+        return (receivingTask, channel);
+    }
+    protected override Task<IList<Quotation>> GetDataAsync(DateTime startDateTimeInclusive, CancellationToken token)
+    {
+        var request = new DataRequest
+        {
+            StartDateTime = Timestamp.FromDateTime(startDateTimeInclusive.ToUniversalTime()),
+            Code = DataRequest.Types.StatusCode.HistoricalData
+        };
+
+        return GetStaticAsync(request, token);
+    }
+    public Task<IList<Quotation>> GetBufferedDataAsync(CancellationToken token)
+    {
+        var request = new DataRequest
+        {
+            Code = DataRequest.Types.StatusCode.BufferedData
+        };
+
+        return GetStaticAsync(request, token);
+    }
+    private async Task<IList<Quotation>> GetStaticAsync(DataRequest request, CancellationToken token)
+    {
+        var channelOptions = new GrpcChannelOptions { MaxSendMessageSize = _maxSendMessageSize, MaxReceiveMessageSize = _maxReceiveMessageSize };
         using var channel = GrpcChannel.ForAddress(_grpcChannelAddress, channelOptions);
         var client = new DataProvider.DataProviderClient(channel);
         var callOptions = new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(Deadline)));
-        var request = new DataRequest 
-        { 
-           StartDateTime = Timestamp.FromDateTime(startDateTimeInclusive.ToUniversalTime()),
-           Code = DataRequest.Types.StatusCode.HistoricalData
-        };
 
         try
         {
             var call = client.GetDataAsync(callOptions);
-            await call.RequestStream.WriteAsync(request).ConfigureAwait(false);
+            await call.RequestStream.WriteAsync(request, token).ConfigureAwait(false);
             await call.RequestStream.CompleteAsync().ConfigureAwait(false);
 
             int counter = default;
             IList<Quotation> quotations = new List<Quotation>();
 
-            await foreach (var response in call.ResponseStream.ReadAllAsync())
+            await foreach (var response in call.ResponseStream.ReadAllAsync(token).WithCancellation(token))
             {
                 switch (response.Status.Code)
                 {
@@ -80,12 +157,9 @@ public class Mediator : DataSource, IMediator
                             quotations.Add(quotation);
                         }
                         break;
-                    case DataResponseStatus.Types.StatusCode.NoData:
-                        break;
-                    case DataResponseStatus.Types.StatusCode.ServerError:
-                        throw new Exception($"Server error: {response.Status.Details}");
-                    default:
-                        throw new Exception($"Unknown status code: {response.Status.Code}");
+                    case DataResponseStatus.Types.StatusCode.NoData: break;
+                    case DataResponseStatus.Types.StatusCode.ServerError: throw new Exception($"Server error: {response.Status.Details}");
+                    default: throw new Exception($"Unknown status code: {response.Status.Code}");
                 }
             }
 
@@ -93,12 +167,12 @@ public class Mediator : DataSource, IMediator
         }
         catch (RpcException rpcException)
         {
-            LogExceptionHelper.LogException(_logger, rpcException, MethodBase.GetCurrentMethod()!.Name, "");
+            LogException(rpcException, "");
             throw;
         }
         catch (Exception exception)
         {
-            LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, "");
+            LogException(exception, "");
             throw;
         }
     }

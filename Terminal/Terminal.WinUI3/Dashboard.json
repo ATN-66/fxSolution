@@ -1,74 +1,164 @@
 {
-  "Groups": [
+  "DashboardGroups": [
     {
-      "Id": "Trade",
-      "Title": "Trade Title",
+      "Id": "live_trading",
+      "Title": "Live trading",
       "Items": [
         {
-          "Id": "AvaDemo",
-          "Title": "Ava Demo Title",
-          "IsEnabled": false
-        },
-        {
-          "Id": "Ava Real",
-          "Title": "Ava Real Title",
-          "IsEnabled": false
-        }
-      ]
-    },
-    {
-      "Id": "Account",
-      "Title": "Account Title",
-      "Items": [
-        {
-          "Id": "OpenOrders",
-          "Title": "OpenOrders Title",
-          "IsEnabled": false
-        },
-        {
-          "Id": "ClosedOrders",
-          "Title": "ClosedOrders Title",
-          "IsEnabled": false
-        },
-        {
-          "Id": "Perfomance",
-          "Title": "Perfomance Title",
-          "IsEnabled": false
-        },
-        {
-          "Id": "Plans",
-          "Title": "Plans Title",
-          "IsEnabled": false
-        }
-      ]
-    },
-    {
-      "Id": "DatabaseMaintenance",
-      "Title": "Database Maintenance",
-      "Items": [
-        {
-          "Id": "TicksImport",
-          "Title": "Ticks Import",
+          "Id": "ava_trade_ltd",
+          "Title": "AVA Trade Ltd.",
           "IsEnabled": true,
+          "IsSelected": false,
           "NavigationItems": [
             {
               "Content": "Overview",
-              "Tag": "Ticks overview",
-              "Glyph": "\uF245",
-              "NavigateTo": "TicksOverviewViewModel",
-              "IsMain": true
+              "Tag": "Overview",
+              "Glyph": "\u2720",
+              "NavigateTo": "OverviewViewModel",
+              "IsPageToNavigate": true
+            },
+            {
+              "Content": "USD",
+              "Tag": "USD Overview",
+              "Glyph": "\u0024",
+              "NavigateTo": "USDViewModel",
+              "IsPageToNavigate": false,
+              "NavigationItems": [
+                {
+                  "Content": "EUR USD",
+                  "Tag": "EURUSD Overview",
+                  "Glyph": "\u20AC\u00B7\u0024",
+                  "NavigateTo": "EURUSDViewModel",
+                  "IsPageToNavigate": false
+                },
+                {
+                  "Content": "GBP USD",
+                  "Tag": "GBPUSD Overview",
+                  "Glyph": "\u00A3\u00B7\u0024",
+                  "NavigateTo": "GBPUSDViewModel",
+                  "IsPageToNavigate": false
+                },
+                {
+                  "Content": "JPY USD",
+                  "Tag": "JPYUSD Overview",
+                  "Glyph": "\u00A5\u00B7\u0024",
+                  "NavigateTo": "JPYUSDViewModel",
+                  "IsPageToNavigate": false
+                }
+              ]
+            },
+            {
+              "Content": "EUR",
+              "Tag": "EUR Overview",
+              "Glyph": "\u20AC",
+              "NavigateTo": "EURViewModel",
+              "IsPageToNavigate": false,
+              "NavigationItems": [
+                {
+                  "Content": "USD EUR",
+                  "Tag": "USDEUR Overview",
+                  "Glyph": "\u0024\u00B7\u20AC",
+                  "NavigateTo": "USDEURViewModel",
+                  "IsPageToNavigate": false
+                },
+                {
+                  "Content": "GBP EUR",
+                  "Tag": "GBPEUR Overview",
+                  "Glyph": "\u00A3\u00B7\u20AC",
+                  "NavigateTo": "GBPEURViewModel",
+                  "IsPageToNavigate": false
+                },
+                {
+                  "Content": "JPY EUR",
+                  "Tag": "JPYEUR Overview",
+                  "Glyph": "\u00A5\u00B7\u20AC",
+                  "NavigateTo": "JPYEURViewModel",
+                  "IsPageToNavigate": false
+                }
+              ]
+            },
+            {
+              "Content": "GBP",
+              "Tag": "GBP Overview",
+              "Glyph": "\u00A3",
+              "NavigateTo": "EURViewModel",
+              "IsPageToNavigate": false,
+              "NavigationItems": [
+                {
+                  "Content": "USD GBP",
+                  "Tag": "USDGBP Overview",
+                  "Glyph": "\u0024\u00B7\u00A3",
+                  "NavigateTo": "USDGBPViewModel",
+                  "IsPageToNavigate": false
+                },
+                {
+                  "Content": "EUR GBP",
+                  "Tag": "EURGBP Overview",
+                  "Glyph": "\u20AC\u00B7\u00A3",
+                  "NavigateTo": "EURGBPViewModel",
+                  "IsPageToNavigate": false
+                },
+                {
+                  "Content": "JPY GBP",
+                  "Tag": "JPYGBP Overview",
+                  "Glyph": "\u00A5\u00B7\u00A3",
+                  "NavigateTo": "JPYGBPViewModel",
+                  "IsPageToNavigate": false
+                }
+              ]
+            },
+            {
+              "Content": "JPY",
+              "Tag": "JPY Overview",
+              "Glyph": "\u00A5",
+              "NavigateTo": "JPYViewModel",
+              "IsPageToNavigate": false,
+              "NavigationItems": [
+                {
+                  "Content": "USD JPY",
+                  "Tag": "USDJPY Overview",
+                  "Glyph": "\u0024\u00B7\u00A5",
+                  "NavigateTo": "USDJPYViewModel",
+                  "IsPageToNavigate": false
+                },
+                {
+                  "Content": "EUR JPY",
+                  "Tag": "EURJPY Overview",
+                  "Glyph": "\u20AC\u00B7\u00A5;",
+                  "NavigateTo": "EURJPYViewModel",
+                  "IsPageToNavigate": false
+                },
+                {
+                  "Content": "GBP JPY",
+                  "Tag": "GBP JPY Overview",
+                  "Glyph": "\u00A3\u00B7\u00A5",
+                  "NavigateTo": "GBPJPYViewModel",
+                  "IsPageToNavigate": false
+                }
+              ]
             }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "Id": "data_source_maintenance",
+      "Title": "Data Source Maintenance",
+      "Items": [
         {
-          "Id": "Sticks",
-          "Title": "Sticks Title",
-          "IsEnabled": false
-        },
-        {
-          "Id": "Backup",
-          "Title": "Backup Title",
-          "IsEnabled": false
+          "Id": "ticks",
+          "Title": "Ticks",
+          "IsEnabled": true,
+          "IsSelected": false,
+          "NavigationItems": [
+            {
+              "Content": "Ticks",
+              "Tag": "Overview",
+              "Glyph": "\u0024",
+              "NavigateTo": "TicksOverviewViewModel",
+              "IsPageToNavigate": true
+            }
+          ]
         }
       ]
     }

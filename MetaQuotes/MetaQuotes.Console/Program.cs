@@ -78,7 +78,7 @@ static Task InitializeIndicators(Queue<Quotation> firstQuotations, Workplace spa
     return Task.CompletedTask;
 }
 
-static async Task ProcessQuotations(Queue<Quotation> quotations, CancellationToken ct)
+static Task ProcessQuotations(Queue<Quotation> quotations, CancellationToken ct)
 {
     int id = default;
     while (quotations.Count > 0)
@@ -89,6 +89,8 @@ static async Task ProcessQuotations(Queue<Quotation> quotations, CancellationTok
         var result = Mediator.Tick(id++, (int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.Ask, quotation.Bid);
         if (ok != result) throw new Exception(result);
     }
+
+    return Task.CompletedTask;
 }
 
 static async Task ConsoleService(CancellationTokenSource cts)

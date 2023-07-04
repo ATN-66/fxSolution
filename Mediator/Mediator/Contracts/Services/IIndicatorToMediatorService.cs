@@ -9,5 +9,5 @@ namespace Mediator.Contracts.Services;
 
 internal interface IIndicatorToMediatorService
 {
-    Task StartAsync(Symbol symbol, CancellationToken cancellationToken);
+    Task StartAsync(Symbol symbol, CancellationToken token);
 }

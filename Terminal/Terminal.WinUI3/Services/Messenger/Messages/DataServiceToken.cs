@@ -2,9 +2,9 @@
 
 public sealed class DataServiceToken : IEquatable<DataServiceToken>
 {
-    public static readonly DataServiceToken DataToUpdate = new DataServiceToken(1, nameof(DataToUpdate));
-    public static readonly DataServiceToken Progress = new DataServiceToken(2, nameof(Progress));
-    public static readonly DataServiceToken Info = new DataServiceToken(2, nameof(Info));
+    public static readonly DataServiceToken DataToUpdate = new(1, nameof(DataToUpdate));
+    public static readonly DataServiceToken Progress = new(2, nameof(Progress));
+    public static readonly DataServiceToken Info = new(3, nameof(Info));
 
     public string Name
     {
@@ -22,8 +22,8 @@ public sealed class DataServiceToken : IEquatable<DataServiceToken>
         Name = name;
     }
 
-    public bool Equals(DataServiceToken other)
+    public bool Equals(DataServiceToken? other)
     {
-        return Id == other.Id;
+        return Id == other!.Id;
     }
 }

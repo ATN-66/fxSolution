@@ -14,12 +14,12 @@
             <StackPanel Height="48" Background="Transparent">
                 <CommandBar
                     x:Name="PageCommandBar"
+                    HorizontalAlignment="Left"
                     ClosedDisplayMode="Compact"
                     DefaultLabelPosition="Right"
-                    HorizontalAlignment="Left"
                     Style="{StaticResource CommandBarStyle}">
                     <CommandBar.Content>
-                        <TextBlock Text="{x:Bind HeaderContext, Mode=OneWay}" />
+                        <TextBlock Text="{x:Bind Path=HeaderContext, Mode=OneWay}" />
                     </CommandBar.Content>
                     <AppBarSeparator />
                 </CommandBar>

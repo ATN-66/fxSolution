@@ -9,7 +9,7 @@ namespace Terminal.WinUI3.Models.Dashboard;
 
 public class Root
 {
-    public ObservableCollection<DashboardGroup>? Groups
+    public ObservableCollection<DashboardGroup>? DashboardGroups
     {
         get; set;
     }

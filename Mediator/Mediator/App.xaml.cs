@@ -3,6 +3,7 @@
   |                                                           App.cs |
   +------------------------------------------------------------------+*/
 
+using System.Reflection;
 using Common.DataSource;
 using Common.Entities;
 using Mediator.Activation;
@@ -17,7 +18,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using Microsoft.VisualBasic.ApplicationServices;
 using Serilog;
 using Symbol = Common.Entities.Symbol;
 using UnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
@@ -29,20 +29,32 @@ public partial class App
     private readonly CancellationTokenSource _cts;
     public App()
     {
+        Workplace appWorkplace;
         InitializeComponent();
 
         // To set an environment variable on your computer, you can use the following steps.Please note these steps are for Windows 10, so they may vary slightly depending on your version of Windows:
         // 1) Right - click on the Computer icon on your desktop or in File Explorer, then choose Properties.
         // 2) Click on Advanced system settings.
         // 3) Click on Environment Variables.
-        // 4) In the System variables section, click on New....Enter "Terminal.WinUI3.ENVIRONMENT"(without quotes) as the variable name.
-        // 5) Enter the value you want in the variable value field.
+        // 4) In the System variables section, click on New....Enter "Mediator" (without quotes) as the variable name.
+        // 5) Enter the value you want in the variable value field (Development or Production).
         // 6) Click OK in all dialog boxes.
 
-        var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        var environmentVariable = Environment.GetEnvironmentVariable(Assembly.GetExecutingAssembly().GetName().Name!)!;
+        if (Enum.TryParse<Workplace>(environmentVariable, out var workplace))
+        {
+            appWorkplace = workplace;
+        }
+        else
+        {
+            throw new InvalidOperationException($"Environment variable for {Assembly.GetExecutingAssembly().GetName().Name} is null.");
+        }
+
+        var assemblyLocation = Assembly.GetExecutingAssembly().Location;
         var directoryPath = Path.GetDirectoryName(assemblyLocation);
         var builder = new ConfigurationBuilder().SetBasePath(directoryPath!)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+            .AddJsonFile($"appsettings.{appWorkplace.ToString().ToLower()}.json", optional: false, reloadOnChange: false);
         IConfiguration configuration = builder.Build();
 
         var logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
@@ -76,20 +88,17 @@ public partial class App
             services.AddTransient<MainPage>();
 
             services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
-            services.Configure<DataProviderSettings>(context.Configuration.GetSection(nameof(DataProviderSettings)));
             services.Configure<ProviderBackupSettings>(context.Configuration.GetSection(nameof(ProviderBackupSettings)));
+            services.Configure<DataProviderSettings>(context.Configuration.GetSection(nameof(DataProviderSettings)));
         }).UseSerilog().Build();
 
         DebugSettings.BindingFailed += DebugSettings_BindingFailed;
         DebugSettings.XamlResourceReferenceFailed += DebugSettings_XamlResourceReferenceFailed;
         UnhandledException += App_UnhandledException;
 
-        App.GetService<IAppNotificationService>().Initialize();
+        GetService<IAppNotificationService>().Initialize();
         _cts = Host.Services.GetRequiredService<CancellationTokenSource>();
-
-        
     }
-
     private IHost Host
     {
         get;
@@ -108,7 +117,12 @@ public partial class App
 
         return service;
     }
-
+    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        _cts.Cancel();
+        GetService<IAudioPlayer>().Dispose();
+        GetService<ILogger<App>>().LogInformation("<--- end --->");
+    }
     private void App_UnhandledException(object sender, UnhandledExceptionEventArgs exception)
     {
         //todo: save all quotations
@@ -125,28 +139,23 @@ public partial class App
         Log.CloseAndFlush();
         Current.Exit();
     }
-
-    private void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs exception)
+    private static void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs exception)
     {
         Log.Fatal(exception.Message, "DebugSettings_BindingFailed");
         throw new NotImplementedException("DebugSettings_BindingFailed");
     }
-    private void DebugSettings_XamlResourceReferenceFailed(DebugSettings sender, XamlResourceReferenceFailedEventArgs args)
+    private static void DebugSettings_XamlResourceReferenceFailed(DebugSettings sender, XamlResourceReferenceFailedEventArgs args)
     {
         throw new NotImplementedException();
     }
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
-        if (System.Diagnostics.Debugger.IsAttached)
-        {
-            DebugSettings.BindingFailed += DebugSettings_BindingFailed;
-        }
+        MainWindow.Closed += MainWindow_Closed;
+
         GetService<ILogger<App>>().LogInformation("<--- Start --->");
         GetService<IDispatcherService>().Initialize(DispatcherQueue.GetForCurrentThread());
         await GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(false);
-
-        MainWindow.Closed += MainWindow_Closed;
 
         using var scope = Host.Services.CreateScope();
         var indicatorToMediatorTasks = (from Symbol symbol in Enum.GetValues(typeof(Symbol))
@@ -157,17 +166,4 @@ public partial class App
         var ticksDataProviderServiceTask = ticksDataProviderService.StartAsync();
         await Task.WhenAny(Task.WhenAll(indicatorToMediatorTasks), ticksDataProviderServiceTask).ConfigureAwait(false);
     }
-
-    private void MainWindow_Closed(object sender, WindowEventArgs args)
-    {
-        _cts.Cancel();
-    }
 }
-
-
-
-//var mediatorToTerminalClient = scope.ServiceProvider.GetRequiredService<Client>();
-//var administrator = scope.ServiceProvider.GetRequiredService<Settings>();
-//administrator.TerminalConnectedChanged += async (_, _) => { await mediatorToTerminalClient.StartAsync(cts.Token).ConfigureAwait(false); };
-//administrator.TerminalConnectedChanged += async (_, _) => { await mediatorToTerminalClient.ProcessAsync(cts.Token).ConfigureAwait(false); };
-//cts.Cancel();

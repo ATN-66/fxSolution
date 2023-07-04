@@ -11,15 +11,22 @@ namespace Common.Entities;
 
 public static class BlockingCollectionExtensions
 {
-    public static async IAsyncEnumerable<T?> GetConsumingAsyncEnumerable<T>(this BlockingCollection<T?> collection, [EnumeratorCancellation] CancellationToken ct)
+    public static async IAsyncEnumerable<T?> GetConsumingAsyncEnumerable<T>(this BlockingCollection<T?> collection, [EnumeratorCancellation] CancellationToken token)
     {
-        while (!ct.IsCancellationRequested)
+        while (!token.IsCancellationRequested)
         {
             while (collection.TryTake(out var item))
             {
                 yield return item;
             }
-            await Task.Delay(10, ct).ConfigureAwait(false);
+
+            try
+            {
+                await Task.Delay(10, token).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+            }
         }
     }
 }

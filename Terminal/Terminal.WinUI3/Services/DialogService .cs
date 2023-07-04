@@ -14,11 +14,8 @@ namespace Terminal.WinUI3.Services;
 
 public class DialogService : IDialogService
 {
-    private readonly IWindowService _windowService;
-
-    public DialogService(IWindowService windowService)
+    public DialogService()
     {
-        _windowService = windowService;
     }
     
     public ContentDialog CreateDialog(DialogViewModel viewModel, string title, string primaryButtonText, string? secondaryButtonText, string? closeButtonText)
@@ -67,7 +64,7 @@ public class DialogService : IDialogService
             PrimaryButtonText = primaryButtonText,
             SecondaryButtonText = secondaryButtonText,
             CloseButtonText = closeButtonText,
-            XamlRoot = _windowService.CurrentWindow.Content.XamlRoot
+            XamlRoot = App.MainWindow.Content.XamlRoot
         };
 
         return dialog;

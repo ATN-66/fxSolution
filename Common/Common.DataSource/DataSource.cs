@@ -1,5 +1,4 @@
 ﻿using Common.Entities;
-using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
@@ -8,9 +7,8 @@ using System.Globalization;
 
 namespace Common.DataSource;
 
-public abstract class DataSource : ObservableRecipient, IDataSource
+public abstract class DataSource : IDataSource
 {
-   
     private readonly Guid _guid = Guid.NewGuid();
     protected readonly ILogger<IDataSource> _logger;
     private readonly IAudioPlayer _audioPlayer;
@@ -25,11 +23,12 @@ public abstract class DataSource : ObservableRecipient, IDataSource
         _logger = logger;
         _audioPlayer = audioPlayer;
 
+        _currentHoursKey = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
         _maxHoursInCache = configuration.GetValue<int>($"{nameof(_maxHoursInCache)}");
         _logger.LogTrace("({Guid}) is ON.", _guid);
     }
 
-    public async Task<IList<Quotation>> GetHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
+    public async Task<IList<Quotation>> GetHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive, CancellationToken token)
     {
         var difference = Math.Ceiling((endDateTimeInclusive - startDateTimeInclusive).TotalHours);
         if (difference > _maxHoursInCache)
@@ -45,6 +44,23 @@ public abstract class DataSource : ObservableRecipient, IDataSource
         var quotations = new List<Quotation>();
         var start = startDateTimeInclusive.Date.AddHours(startDateTimeInclusive.Hour);
         var end = endDateTimeInclusive.Date.AddHours(endDateTimeInclusive.Hour).AddHours(1);
+
+        if (_currentHoursKey != DateTime.Now.Date.AddHours(DateTime.Now.Hour))
+        {
+            while (!_hoursKeys.IsEmpty)
+            {
+                if (_hoursKeys.TryDequeue(out var oldKey))
+                {
+                    _hoursCache.TryRemove(oldKey, out _);
+                }
+            }
+
+            if (!_hoursKeys.IsEmpty || !_hoursCache.IsEmpty)
+            {
+                throw new Exception("!_hoursKeys.IsEmpty || !_hoursCache.IsEmpty");
+            }
+        }
+
         _currentHoursKey = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
 
         var key = start;
@@ -52,7 +68,7 @@ public abstract class DataSource : ObservableRecipient, IDataSource
         {
             if (!_hoursCache.ContainsKey(key) || _currentHoursKey.Equals(key))
             {
-                tasks.Add(LoadHistoricalDataAsync(key, key));
+                tasks.Add(LoadHistoricalDataAsync(key, key, token));
             }
 
             key = key.Add(new TimeSpan(1, 0, 0));
@@ -80,7 +96,7 @@ public abstract class DataSource : ObservableRecipient, IDataSource
 
         return quotations;
     }
-    private async Task LoadHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
+    private async Task LoadHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive, CancellationToken token)
     {
         if (!startDateTimeInclusive.Equals(endDateTimeInclusive))
         {
@@ -89,16 +105,16 @@ public abstract class DataSource : ObservableRecipient, IDataSource
 
         try
         {
-            var quotations = await GetDataAsync(startDateTimeInclusive).ConfigureAwait(false);
+            var quotations = await GetDataAsync(startDateTimeInclusive, token).ConfigureAwait(false);
             ProcessData(endDateTimeInclusive, quotations);
         }
         catch (Exception exception)
         {
-            LogException(exception, MethodBase.GetCurrentMethod()!.Name, "");
+            LogException(exception, "");
             throw;
         }
     }
-    protected abstract Task<IList<Quotation>> GetDataAsync(DateTime startDateTimeInclusive);
+    protected abstract Task<IList<Quotation>> GetDataAsync(DateTime startDateTimeInclusive, CancellationToken token);
     private void ProcessData(DateTime dateTime, IEnumerable<Quotation> quotations)
     {
         var done = false;
@@ -185,20 +201,31 @@ public abstract class DataSource : ObservableRecipient, IDataSource
             _ => throw new Exception(errorMessage)
         };
     }
-    
-    protected void LogException(Exception exception, string methodName, string? message = null)
+
+    protected void LogException(Exception exception, string? message = null)
     {
         _audioPlayer.Play();
 
+        // Log optional message
         if (!string.IsNullOrEmpty(message))
         {
-            _logger.LogError("{Message}", message);
+            _logger.LogError("Custom Message: {Message}", message);
         }
 
-        _logger.LogError("Method Name: {methodName}", methodName);
-        _logger.LogError("Exception (1st level): {exceptionMessage}", exception.Message);
-        _logger.LogError("Exception (2nd level):{exceptionMessage}", exception.InnerException?.Message);
+        // Log exception details
+        _logger.LogError("Exception Details: ");
+
+        // Use loop to log inner exceptions
+        var currentException = exception;
+        var exceptionLevel = 1;
+        while (currentException != null)
+        {
+            _logger.LogError("Exception (level {Level}): {exceptionMessage}", exceptionLevel++, currentException.Message);
+            currentException = currentException.InnerException;
+        }
+
+        // Log stack trace
         _logger.LogError("<-------- StackTrace -------->");
-        _logger.LogError("{ExceptionType}: {exceptionMessage}\n{StackTrace}", exception.GetType(), exception.Message, exception.StackTrace);//todo
-    }                                                       
+        _logger.LogError("{ExceptionType}: {exceptionMessage}\n{StackTrace}", exception.GetType(), exception.Message, exception.StackTrace);
+    }
 }

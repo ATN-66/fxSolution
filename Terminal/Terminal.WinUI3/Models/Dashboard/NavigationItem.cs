@@ -1,14 +1,16 @@
-﻿namespace Terminal.WinUI3.Models.Dashboard;
+﻿using System.Collections.ObjectModel;
+
+namespace Terminal.WinUI3.Models.Dashboard;
 
 public class NavigationItem
 {
-    public NavigationItem(string content, string tag, string glyph, string navigateTo, bool isMain)
+    public NavigationItem(string content, string tag, string glyph, string navigateTo, bool isPageToNavigate)
     {
         Content = content;
         Tag = tag;
         Glyph = glyph;
         NavigateTo = navigateTo;
-        IsMain = isMain;
+        IsPageToNavigate = isPageToNavigate;
     }
 
     public string Content
@@ -27,8 +29,14 @@ public class NavigationItem
     {
         get; set;
     }
-    public bool IsMain
+    public bool IsPageToNavigate
     {
         get; set;
     }
+
+    public ObservableCollection<NavigationItem>? NavigationItems
+    {
+        get;
+        set;
+    } = null;
 }

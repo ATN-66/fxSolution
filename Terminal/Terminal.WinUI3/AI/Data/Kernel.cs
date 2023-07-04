@@ -9,8 +9,9 @@ namespace Terminal.WinUI3.AI.Data;
 
 public class Kernel
 {
-    private Symbol _symbol;
-    private IList<Quotation> _quotations = new List<Quotation>();
+    private readonly Symbol _symbol;
+    private readonly List<Quotation> _quotations = new();
+
     //collection to keep candlesticks
     //collection to keep any other data
 
@@ -19,18 +20,13 @@ public class Kernel
         _symbol = symbol;
     }
 
-    public void Initialize(Quotation quotation)
+    public void AddRange(IEnumerable<Quotation> quotations)
     {
-        _quotations.Add(quotation);
+        _quotations.AddRange(quotations);
     }
 
-    public void Tick(Quotation quotation)
+    public void Add(Quotation quotation)
     {
-        //if(_symbol == Symbol.EURUSD && _quotations.Count >= 20)
-        //{
-        //    return;
-        //}
-
         _quotations.Add(quotation);
     }
 
@@ -48,6 +44,4 @@ public class Kernel
             return _quotations[_quotations.Count - 1 - i];
         }
     }
-
-   
 }

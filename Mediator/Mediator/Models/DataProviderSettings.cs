@@ -2,7 +2,7 @@
 
 public class DataProviderSettings
 {
-    public string Host
+    public string? Host
     {
         get; set;
     }

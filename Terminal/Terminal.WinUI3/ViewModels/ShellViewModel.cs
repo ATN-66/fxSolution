@@ -4,20 +4,17 @@
   +------------------------------------------------------------------+*/
 
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Globalization;
 using System.Reflection;
-using Windows.Storage;
+using Common.ExtensionsAndHelpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Helpers;
-using Terminal.WinUI3.Services;
 using Terminal.WinUI3.Services.Messenger.Messages;
 using Terminal.WinUI3.Views;
 
@@ -25,19 +22,29 @@ namespace Terminal.WinUI3.ViewModels;
 
 public partial class ShellViewModel : ObservableRecipient
 {
-    private IConfiguration _configuration;
+    private readonly ILogger<ShellViewModel> _logger;
+
     [ObservableProperty] private bool _isBackEnabled;
     [ObservableProperty] private object? _selected;
-    public ObservableCollection<NavigationViewItemBase> NavigationItems { get; } = new();
+    public ObservableCollection<NavigationViewItemBase> NavigationItems { get; private init; } = new();
     private readonly FontFamily _symbolThemeFontFamily = (FontFamily)Application.Current.Resources["SymbolThemeFontFamily"];
 
-    public ShellViewModel(INavigationService navigationService, INavigationViewService navigationViewService, IConfiguration configuration)
+    public ShellViewModel(INavigationService navigationService, INavigationViewService navigationViewService, ILogger<ShellViewModel> logger)
     {
+        _logger = logger;
+
         NavigationService = navigationService;
         NavigationViewService = navigationViewService;
-        _configuration = configuration;
-
         NavigationService.Navigated += OnNavigated;
+        InitializeNavigationView();
+    }
+
+    private void InitializeNavigationView()
+    {
+        while (NavigationItems.Count > 0)
+        {
+            NavigationItems.RemoveAt(0);
+        }
 
         var dashboardItem = new NavigationViewItem
         {
@@ -82,49 +89,59 @@ public partial class ShellViewModel : ObservableRecipient
     protected override void OnActivated()
     {
         base.OnActivated();
-
-        if (ApplicationData.Current.LocalSettings.Values.TryGetValue("MainWindowWidth", out var width))
-        {
-            App.MainWindow.Width = width != null ? Convert.ToInt32(width) : Convert.ToInt32(_configuration.GetValue<int>("MainWindowWidth"));
-        }
-        else
-        {
-            ApplicationData.Current.LocalSettings.Values.Add("MainWindowWidth", _configuration.GetValue<int>("MainWindowWidth"));
-        }
-
-        if (ApplicationData.Current.LocalSettings.Values.TryGetValue("MainWindowHeight", out var height))
-        {
-            App.MainWindow.Height = height != null ? Convert.ToInt32(height) : Convert.ToInt32(_configuration.GetValue<int>("MainWindowHeight"));
-        }
-        else
-        {
-            ApplicationData.Current.LocalSettings.Values.Add("MainWindowHeight", _configuration.GetValue<int>("MainWindowHeight"));
-        }
-
         Messenger.Register<DashboardChangedMessage>(this, (_, m) =>
         {
-            var item = m.Value.DashboardItem;
-            var pageToNavigate = string.Empty;
-
-            foreach (var navigationItem in item.NavigationItems)
+            try
             {
-                var viewItem = new NavigationViewItem
-                {
-                    Content = navigationItem.Content,
-                    Tag = navigationItem.Tag,
-                    Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = navigationItem.Glyph }
-                };
+                InitializeNavigationView();
 
-                var page = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{navigationItem.NavigateTo}")!.FullName;
-                if (navigationItem.IsMain)
+                var item = m.Value.DashboardItem;
+                var pageToNavigate = string.Empty;
+
+                foreach (var navigationItem in item.NavigationItems)
                 {
-                    pageToNavigate = page;
+                    var viewItem = new NavigationViewItem
+                    {
+                        Content = navigationItem.Content,
+                        Tag = navigationItem.Tag,
+                        Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = navigationItem.Glyph }
+                    };
+
+                    var page = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{navigationItem.NavigateTo}")!.FullName;
+                    if (navigationItem.IsPageToNavigate)
+                    {
+                        pageToNavigate = page;
+                    }
+                    NavigationHelper.SetNavigateTo(viewItem, page!);
+                    NavigationItems.Add(viewItem);
+
+                    if (navigationItem.NavigationItems is not { Count: > 0 })
+                    {
+                        continue;
+                    }
+
+                    foreach (var navigationSubItem in navigationItem.NavigationItems)
+                    {
+                        var viewSubItem = new NavigationViewItem
+                        {
+                            Content = navigationSubItem.Content,
+                            Tag = navigationSubItem.Tag,
+                            Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = navigationSubItem.Glyph }
+                        };
+
+                        var subPage = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{navigationSubItem.NavigateTo}")!.FullName;
+                        NavigationHelper.SetNavigateTo(viewSubItem, subPage!);
+                        viewItem.MenuItems.Add(viewSubItem);
+                    }
                 }
-                NavigationHelper.SetNavigateTo(viewItem, page!);
-                NavigationItems.Add(viewItem);
-            }
 
-            NavigationService.NavigateTo(pageToNavigate!);
+                NavigationService.NavigateTo(pageToNavigate!);
+            }
+            catch (Exception exception)
+            {
+                LogExceptionHelper.LogException(_logger, exception, "");
+                throw;
+            }
         });
     }
 }

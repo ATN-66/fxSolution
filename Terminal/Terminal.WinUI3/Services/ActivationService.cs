@@ -12,13 +12,15 @@ public class ActivationService : IActivationService
     private readonly IEnumerable<IActivationHandler> _activationHandlers;
     private readonly ActivationHandler<LaunchActivatedEventArgs> _defaultHandler;
     private readonly IThemeSelectorService _themeSelectorService;
+    private readonly IWindowingService _windowingService;
     private UIElement? _shell;
 
-    public ActivationService(ActivationHandler<LaunchActivatedEventArgs> defaultHandler, IEnumerable<IActivationHandler> activationHandlers, IThemeSelectorService themeSelectorService)
+    public ActivationService(ActivationHandler<LaunchActivatedEventArgs> defaultHandler, IEnumerable<IActivationHandler> activationHandlers, IThemeSelectorService themeSelectorService, IWindowingService windowingService)
     {
         _defaultHandler = defaultHandler;
         _activationHandlers = activationHandlers;
         _themeSelectorService = themeSelectorService;
+        _windowingService = windowingService;
     }
 
     public async Task ActivateAsync(object activationArgs)
@@ -60,6 +62,7 @@ public class ActivationService : IActivationService
 
     private async Task InitializeAsync()
     {
+        await _windowingService.InitializeAsync(App.MainWindow).ConfigureAwait(false);
         await _themeSelectorService.InitializeAsync().ConfigureAwait(false);
         await Task.CompletedTask.ConfigureAwait(false);
     }

@@ -30,44 +30,41 @@ internal class IndicatorToMediatorService : IIndicatorToMediatorService
         _logger = logger;
     }
 
-    public async Task StartAsync(Symbol symbol, CancellationToken cancellationToken)
+    public async Task StartAsync(Symbol symbol, CancellationToken token)
     {
         _pipeName = $"{_pipeName}.{(int)symbol}";
-        while (!cancellationToken.IsCancellationRequested)
+        while (!token.IsCancellationRequested)
         {
             try
             {
                 PipeServer<ITicksMessenger> pipeServer;
                 using (pipeServer = new PipeServer<ITicksMessenger>(_pipeSerializer, _pipeName, () => new IndicatorToMediatorMessenger(_dataProviderService)))
                 {
-                    _logger.LogTrace("pipeName:({_pipeName}).({_guid}) is ON.", _pipeName, _guid);
-                    await pipeServer.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        break;
-                    }
-                    await pipeServer.WaitForRemotePipeCloseAsync(cancellationToken).ConfigureAwait(false);
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        break;
-                    }
+                    _logger.LogTrace("pipeName:({_pipeName}).({_guid}) is ON.", _pipeName, _guid.ToString());
+                    await pipeServer.WaitForConnectionAsync(token).ConfigureAwait(false);
+                    await pipeServer.WaitForRemotePipeCloseAsync(token).ConfigureAwait(false);
                 }
 
                 pipeServer.Dispose();
             }
             catch (OperationCanceledException)
             {
-                break;
+               break;
             }
             catch (Exception exception)
             {
-                LogExceptionHelper.LogException(_logger, exception, MethodBase.GetCurrentMethod()!.Name, $"pipeName:({_pipeName}).({_guid})");
-                break;
+                LogExceptionHelper.LogException(_logger, exception, $"pipeName:({_pipeName}).({_guid})");
+                throw;
             }
             finally
             {
-                await _dataProviderService.DeInitAsync((int)DeInitReason.Terminal_closed).ConfigureAwait(false);
-                _logger.Log(LogLevel.Trace, $"{_pipeName}.({_guid}) is OFF.");
+                switch (token.IsCancellationRequested)
+                {
+                    case false:
+                        await _dataProviderService.DeInitAsync((int)DeInitReason.Terminal_closed).ConfigureAwait(false);
+                        _logger.LogTrace("pipeName:({_pipeName}).({_guid}) is OFF.", _pipeName, _guid.ToString());
+                        break;
+                }
             }
         }
     }

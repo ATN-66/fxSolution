@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:Terminal.WinUI3.Behaviors"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
+    Background="Transparent"
     Loaded="OnLoaded">
     <Grid Background="Transparent">
         <NavigationView
@@ -23,107 +24,6 @@
             SelectionFollowsFocus="Disabled"
             Unloaded="NavigationViewControl_OnUnLoaded">
 
-            <!--<NavigationView.MenuItems>
-                <NavigationViewItem x:Uid="Shell_Dashboard" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.DashboardViewModel">
-                    <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xF246;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItemSeparator />
-            </NavigationView.MenuItems>-->
-            <!--<NavigationViewItemHeader Content="Charts" />-->
-
-            <!--<NavigationViewItem x:Uid="Shell_USD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.USDViewModel">
-                    <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x24;" />
-                    </NavigationViewItem.Icon>
-                    <NavigationViewItem.MenuItems>-->
-
-
-
-            <!--     <NavigationViewItem x:Uid="Shell_EURUSD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURUSDViewModel">
-                            <NavigationViewItem.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x20AC;&#xB7;&#x24;" />
-                            </NavigationViewItem.Icon>
-                        </NavigationViewItem>
-                        <NavigationViewItem x:Uid="Shell_GBPUSD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.GBPUSDViewModel">
-                            <NavigationViewItem.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA3;&#xB7;&#x24;" />
-                            </NavigationViewItem.Icon>
-                        </NavigationViewItem>
-                        <NavigationViewItem x:Uid="Shell_JPYUSD" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.JPYUSDViewModel">
-                            <NavigationViewItem.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA5;&#xB7;&#x24;" />
-                            </NavigationViewItem.Icon>
-                        </NavigationViewItem>
-                    </NavigationViewItem.MenuItems>
-                </NavigationViewItem>-->
-            <!--<NavigationViewItem x:Uid="Shell_EUR" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURViewModel">
-                    <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x20AC;" />
-                    </NavigationViewItem.Icon>
-                    <NavigationViewItem.MenuItems>
-                        <NavigationViewItem x:Uid="Shell_USDEUR" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.USDEURViewModel">
-                            <NavigationViewItem.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x24;&#xB7;&#x20AC;" />
-                            </NavigationViewItem.Icon>
-                        </NavigationViewItem>
-                        <NavigationViewItem x:Uid="Shell_GBPEUR" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.GBPEURViewModel">
-                            <NavigationViewItem.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA3;&#xB7;&#x20AC;" />
-                            </NavigationViewItem.Icon>
-                        </NavigationViewItem>
-                        <NavigationViewItem x:Uid="Shell_JPYEUR" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.JPYEURViewModel" >
-                            <NavigationViewItem.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA5;&#xB7;&#x20AC;" />
-                            </NavigationViewItem.Icon>
-                        </NavigationViewItem>
-                    </NavigationViewItem.MenuItems>
-                </NavigationViewItem>-->
-            <!--<NavigationViewItem x:Uid="Shell_GBP" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.GBPViewModel">
-                    <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA3;" />
-                    </NavigationViewItem.Icon>
-                    <NavigationViewItem.MenuItems>
-                        <NavigationViewItem x:Uid="Shell_USDGBP" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.USDGBPViewModel">
-                            <NavigationViewItem.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x24;&#xB7;&#xA3;" />
-                            </NavigationViewItem.Icon>
-                        </NavigationViewItem>
-                        <NavigationViewItem x:Uid="Shell_EURGBP" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURGBPViewModel">
-                            <NavigationViewItem.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x20AC;&#xB7;&#xA3;" />
-                            </NavigationViewItem.Icon>
-                        </NavigationViewItem>
-                        <NavigationViewItem x:Uid="Shell_JPYGBP" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.JPYGBPViewModel" >
-                            <NavigationViewItem.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA5;&#xB7;&#xA3;" />
-                            </NavigationViewItem.Icon>
-                        </NavigationViewItem>
-                    </NavigationViewItem.MenuItems>
-                </NavigationViewItem>-->
-            <!--<NavigationViewItem x:Uid="Shell_JPY" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.JPYViewModel">
-                    <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA5;" />
-                    </NavigationViewItem.Icon>
-                    <NavigationViewItem.MenuItems>
-                        <NavigationViewItem x:Uid="Shell_USDJPY" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.USDJPYViewModel" >
-                            <NavigationViewItem.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x24;&#xB7;&#xA5;" />
-                            </NavigationViewItem.Icon>
-                        </NavigationViewItem>
-                        <NavigationViewItem x:Uid="Shell_EURJPY" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.EURJPYViewModel" >
-                            <NavigationViewItem.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#x20AC;&#xB7;&#xA5;" />
-                            </NavigationViewItem.Icon>
-                        </NavigationViewItem>
-                        <NavigationViewItem x:Uid="Shell_GBPJPY" helpers:NavigationHelper.NavigateTo="Terminal.WinUI3.ViewModels.GBPJPYViewModel" >
-                            <NavigationViewItem.Icon>
-                                <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xA3;&#xB7;&#xA5;" />
-                            </NavigationViewItem.Icon>
-                        </NavigationViewItem>
-                    </NavigationViewItem.MenuItems>
-                </NavigationViewItem>-->
             <!--<NavigationViewItemHeader Content="Orders" />-->
 
             <!--<NavigationView.FooterMenuItems>

@@ -3,6 +3,7 @@
   |                                                           App.cs |
   +------------------------------------------------------------------+*/
 
+using System.Reflection;
 using Common.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,32 +31,32 @@ public partial class App
     private readonly CancellationTokenSource _cts;
     public App()
     {
+        Workplace appWorkplace;
         InitializeComponent();
 
         // To set an environment variable on your computer, you can use the following steps.Please note these steps are for Windows 10, so they may vary slightly depending on your version of Windows:
         // 1) Right - click on the Computer icon on your desktop or in File Explorer, then choose Properties.
         // 2) Click on Advanced system settings.
         // 3) Click on Environment Variables.
-        // 4) In the System variables section, click on New....Enter "Terminal.WinUI3.ENVIRONMENT"(without quotes) as the variable name.
-        // 5) Enter the value you want in the variable value field.
+        // 4) In the System variables section, click on New....Enter "Terminal.WinUI3" (without quotes) as the variable name.
+        // 5) Enter the value you want in the variable value field (Development or Production).
         // 6) Click OK in all dialog boxes.
 
-        const string environmentStr = "Terminal.WinUI3.ENVIRONMENT";
-        var environment = Environment.GetEnvironmentVariable(environmentStr)!;
-        if (Enum.TryParse<Workplace>(environment, out var workplace))
+        var environmentVariable = Environment.GetEnvironmentVariable(Assembly.GetExecutingAssembly().GetName().Name!)!;
+        if (Enum.TryParse<Workplace>(environmentVariable, out var workplace))
         {
-            Workplace = workplace;
+            appWorkplace = workplace;
         }
         else
         {
-            throw new InvalidOperationException($"{GetType()}: {environmentStr} is null.");
+            throw new InvalidOperationException($"Environment variable for {Assembly.GetExecutingAssembly().GetName().Name} is null.");
         }
 
-        var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        var assemblyLocation = Assembly.GetExecutingAssembly().Location;
         var directoryPath = Path.GetDirectoryName(assemblyLocation);
         var builder = new ConfigurationBuilder().SetBasePath(directoryPath!)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
-            .AddJsonFile($"appsettings.{environment.ToLower()}.json", optional: false, reloadOnChange: false);
+            .AddJsonFile($"appsettings.{appWorkplace.ToString().ToLower()}.json", optional: false, reloadOnChange: false);
         IConfiguration configuration = builder.Build();
 
         var logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
@@ -89,7 +90,7 @@ public partial class App
             services.AddSingleton<IPageService, PageService>();
             services.AddSingleton<INavigationService, NavigationService>();
             services.AddSingleton<IDispatcherService, DispatcherService>();
-            services.AddSingleton<IWindowService, WindowService>();
+            services.AddSingleton<IWindowingService, WindowingService>();
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<CancellationTokenSource>();
             services.AddSingleton<IDashboardService, DashboardService>();
@@ -114,59 +115,40 @@ public partial class App
             //DatabaseMaintenance
             services.AddTransient<TicksOverviewViewModel>();
             services.AddTransient<TicksOverviewPage>();
-            
+
             //todo: to fabric
-            services.AddTransient<USDViewModel>();
-            services.AddTransient<USDPage>();
-            services.AddTransient<EURViewModel>();
-            services.AddTransient<EURPage>();
-            services.AddTransient<GBPViewModel>();
-            services.AddTransient<GBPPage>();
-            services.AddTransient<JPYViewModel>();
-            services.AddTransient<JPYPage>();
-            services.AddTransient<EURUSDViewModel>();
-            services.AddTransient<EURUSDPage>();
-            services.AddTransient<USDEURViewModel>();
-            services.AddTransient<USDEURPage>();
-            services.AddTransient<GBPUSDViewModel>();
-            services.AddTransient<GBPUSDPage>();
-            services.AddTransient<USDGBPViewModel>();
-            services.AddTransient<USDGBPPage>();
-            services.AddTransient<EURGBPViewModel>();
-            services.AddTransient<EURGBPPage>();
-            services.AddTransient<GBPEURViewModel>();
-            services.AddTransient<GBPEURPage>();
-            services.AddTransient<USDJPYViewModel>();
-            services.AddTransient<USDJPYPage>();
-            services.AddTransient<EURJPYViewModel>();
-            services.AddTransient<EURJPYPage>();
-            services.AddTransient<JPYEURViewModel>();
-            services.AddTransient<JPYEURPage>();
-            services.AddTransient<GBPJPYViewModel>();
-            services.AddTransient<GBPJPYPage>();
-            services.AddTransient<JPYGBPViewModel>();
-            services.AddTransient<JPYGBPPage>();
-            services.AddTransient<JPYUSDViewModel>();
-            services.AddTransient<JPYUSDPage>();
+            services.AddTransient<OverviewViewModel>(); services.AddTransient<OverviewPage>();
+            services.AddTransient<USDViewModel>(); services.AddTransient<USDPage>();
+            services.AddTransient<EURViewModel>(); services.AddTransient<EURPage>();
+            services.AddTransient<GBPViewModel>(); services.AddTransient<GBPPage>();
+            services.AddTransient<JPYViewModel>(); services.AddTransient<JPYPage>();
+            services.AddTransient<EURUSDViewModel>(); services.AddTransient<EURUSDPage>();
+            services.AddTransient<USDEURViewModel>(); services.AddTransient<USDEURPage>();
+            services.AddTransient<GBPUSDViewModel>(); services.AddTransient<GBPUSDPage>();
+            services.AddTransient<USDGBPViewModel>(); services.AddTransient<USDGBPPage>();
+            services.AddTransient<EURGBPViewModel>(); services.AddTransient<EURGBPPage>();
+            services.AddTransient<GBPEURViewModel>(); services.AddTransient<GBPEURPage>();
+            services.AddTransient<USDJPYViewModel>(); services.AddTransient<USDJPYPage>();
+            services.AddTransient<EURJPYViewModel>(); services.AddTransient<EURJPYPage>();
+            services.AddTransient<JPYEURViewModel>(); services.AddTransient<JPYEURPage>();
+            services.AddTransient<GBPJPYViewModel>(); services.AddTransient<GBPJPYPage>();
+            services.AddTransient<JPYGBPViewModel>(); services.AddTransient<JPYGBPPage>();
+            services.AddTransient<JPYUSDViewModel>(); services.AddTransient<JPYUSDPage>();
 
             services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
             services.Configure<ProviderBackupSettings>(context.Configuration.GetSection(nameof(ProviderBackupSettings)));
             services.Configure<SolutionDataBaseSettings>(context.Configuration.GetSection(nameof(SolutionDataBaseSettings)));
-
         }).UseSerilog().Build();
+
+        DebugSettings.IsBindingTracingEnabled = true;
+        DebugSettings.IsXamlResourceReferenceTracingEnabled = true;
 
         DebugSettings.BindingFailed += DebugSettings_BindingFailed;
         DebugSettings.XamlResourceReferenceFailed += DebugSettings_XamlResourceReferenceFailed;
         UnhandledException += App_UnhandledException;
-        
+
         GetService<IAppNotificationService>().Initialize();
         _cts = Host.Services.GetRequiredService<CancellationTokenSource>();
-    }
-
-    public Workplace Workplace
-    {
-        get;
-        set;
     }
     private IHost Host
     {
@@ -185,11 +167,23 @@ public partial class App
 
         return service;
     }
+    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        _cts.Cancel();
+        GetService<IAudioPlayer>().Dispose();
+        GetService<ILogger<App>>().LogInformation("<--- end --->");
+    }
+    private static void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs exception)
+    {
+        Log.Fatal(exception.Message, "DebugSettings_BindingFailed");
+        throw new NotImplementedException("DebugSettings_BindingFailed");
+    }
+    private static void DebugSettings_XamlResourceReferenceFailed(DebugSettings sender, XamlResourceReferenceFailedEventArgs args)
+    {
+        throw new NotImplementedException();
+    }
     private void App_UnhandledException(object sender, UnhandledExceptionEventArgs exception)
     {
-        //todo: save all quotations
-        _cts.Cancel();
-
         if (exception.Exception is { } ex)
         {
             Log.Fatal(ex, "Host terminated unexpectedly");
@@ -199,39 +193,25 @@ public partial class App
             Log.Fatal("Host terminated unexpectedly due to an unknown exception");
         }
         Log.CloseAndFlush();
+
+        //todo: save all quotations
+        _cts.Cancel();
+
         Current.Exit();
     }
-    private void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs exception)
-    {
-        Log.Fatal(exception.Message, "DebugSettings_BindingFailed");
-        throw new NotImplementedException("DebugSettings_BindingFailed");
-    }
-    private void DebugSettings_XamlResourceReferenceFailed(DebugSettings sender, XamlResourceReferenceFailedEventArgs args)
-    {
-        throw new NotImplementedException();
-    }
-    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
-        if (System.Diagnostics.Debugger.IsAttached)
-        {
-            DebugSettings.BindingFailed += DebugSettings_BindingFailed;
-        }
-        GetService<ILogger<App>>().LogInformation("<--- Start --->");
-        GetService<IDispatcherService>().Initialize(DispatcherQueue.GetForCurrentThread());
-        GetService<IDashboardService>().InitializeAsync();
-        GetService<IActivationService>().ActivateAsync(args);
-
         MainWindow.Closed += MainWindow_Closed;
-    }
 
-    private void MainWindow_Closed(object sender, WindowEventArgs args)
-    {
-        _cts.Cancel();
-        GetService<IAudioPlayer>().Dispose();
+        GetService<ILogger<App>>().LogInformation("<--- start --->");
+        GetService<IDispatcherService>().Initialize(DispatcherQueue.GetForCurrentThread());
+        await GetService<IDashboardService>().InitializeAsync().ConfigureAwait(true);
+        await GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(true);
+
+        using var scope = Host.Services.CreateScope();
+        var processor = scope.ServiceProvider.GetRequiredService<IProcessor>();
+        var processorTask = processor.StartAsync(_cts.Token);
+        await Task.WhenAny(processorTask).ConfigureAwait(false);
     }
 }
-
-//var dataServiceTask = GetService<IDataBaseService>().InitializeAsync();
-//await dataServiceTask.ConfigureAwait(false);
-//Task.Run(() => GetService<IDataBaseService>().StartAsync());
