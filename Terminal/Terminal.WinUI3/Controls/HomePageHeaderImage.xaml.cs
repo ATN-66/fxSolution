@@ -12,15 +12,15 @@ namespace Terminal.WinUI3.Controls;
 public sealed partial class HomePageHeaderImage
 {
     private const string GradientSizeKey = "GradientSize";
-    private ExpressionAnimation _bottomGradientStartPointAnimation;
-    private Compositor _compositor;
-    private CompositionLinearGradientBrush _imageGridBottomGradientBrush;
-    private CompositionEffectBrush _imageGridEffectBrush;
-    private ExpressionAnimation _imageGridSizeAnimation;
-    private SpriteVisual _imageGridSpriteVisual;
-    private CompositionSurfaceBrush _imageGridSurfaceBrush;
-    private Visual _imageGridVisual;
-    private CompositionVisualSurface _imageGridVisualSurface;
+    private ExpressionAnimation? _bottomGradientStartPointAnimation;
+    private Compositor _compositor = null!;
+    private CompositionLinearGradientBrush _imageGridBottomGradientBrush = null!;
+    private CompositionEffectBrush _imageGridEffectBrush = null!;
+    private ExpressionAnimation _imageGridSizeAnimation = null!;
+    private SpriteVisual _imageGridSpriteVisual = null!;
+    private CompositionSurfaceBrush _imageGridSurfaceBrush = null!;
+    private Visual _imageGridVisual = null!;
+    private CompositionVisualSurface _imageGridVisualSurface = null!;
 
     public HomePageHeaderImage()
     {
@@ -67,19 +67,18 @@ public sealed partial class HomePageHeaderImage
         _imageGridSpriteVisual.Brush = _imageGridEffectBrush;
 
         ElementCompositionPreview.GetElementVisual(ImageGridSurfaceRec).ParentForTransform = _imageGridVisual;
-
         ElementCompositionPreview.SetElementChildVisual(ImageGridSurfaceRec, _imageGridSpriteVisual);
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         ElementCompositionPreview.SetElementChildVisual(ImageGridSurfaceRec, null);
-        _imageGridSpriteVisual?.Dispose();
-        _imageGridEffectBrush?.Dispose();
-        _imageGridSurfaceBrush?.Dispose();
-        _imageGridVisualSurface?.Dispose();
-        _imageGridSizeAnimation?.Dispose();
-        _bottomGradientStartPointAnimation?.Dispose();
+        _imageGridSpriteVisual.Dispose();
+        _imageGridEffectBrush.Dispose();
+        _imageGridSurfaceBrush.Dispose();
+        _imageGridVisualSurface.Dispose();
+        _imageGridSizeAnimation.Dispose();
+        _bottomGradientStartPointAnimation!.Dispose();
         _bottomGradientStartPointAnimation = null;
     }
 

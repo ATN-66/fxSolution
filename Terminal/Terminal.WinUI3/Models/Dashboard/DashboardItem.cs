@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Terminal.WinUI3.Models.Dashboard;
 
@@ -39,7 +40,7 @@ public class DashboardItem
     {
         get;
         set;
-    }
+    } = null!;
 
     public override string ToString() => Title;
 }

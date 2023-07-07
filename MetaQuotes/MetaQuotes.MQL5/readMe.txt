@@ -1,8 +1,7 @@
 MAKE IT ON DEVELOPER COMPUTER:
 
-1) Post-Build action in project "Common.Entities":
-
-xcopy "$(TargetDir)Common.Entities.dll" "C:\forex.mt5\libraries\" /Y /R
+//1) Post-Build action in project "Common.Entities": <-- no need
+//xcopy "$(TargetDir)Common.Entities.dll" "C:\forex.mt5\libraries\" /Y /R <-- no need
 
 2) Post-Build action in project "Common.MetaQuotes.Mediator":
 
