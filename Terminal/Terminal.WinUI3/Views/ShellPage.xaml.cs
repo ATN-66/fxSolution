@@ -45,17 +45,7 @@ public sealed partial class ShellPage
 
     private void NavigationViewControl_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
-        var navItem = args.SelectedItemContainer as NavigationViewItem;
-        if (navItem == null)
-        {
-            return;
-        }
-
-        var viewModelName = NavigationHelper.GetNavigateTo(navItem);
-        if (viewModelName == null)
-        {
-            Debug.Assert(args.IsSettingsSelected);
-        }
+       //todo: nothing todo
     }
 
     private static KeyboardAccelerator BuildKeyboardAccelerator(VirtualKey key, VirtualKeyModifiers? modifiers = null)

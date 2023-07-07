@@ -31,7 +31,7 @@ public sealed partial class USDJPYPage
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         base.OnNavigatedFrom(e);
-        //ContentArea.Children.Remove(ViewModel.TickChartControl);
+        //ContentArea.Children.Remove(OverviewViewModel.TickChartControl);
     }
 
     private void StackPanel_MouseEnter(object sender, PointerRoutedEventArgs pointerRoutedEventArgs)

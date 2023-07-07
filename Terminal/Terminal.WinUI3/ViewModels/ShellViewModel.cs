@@ -26,7 +26,7 @@ public partial class ShellViewModel : ObservableRecipient
 
     [ObservableProperty] private bool _isBackEnabled;
     [ObservableProperty] private object? _selected;
-    public ObservableCollection<NavigationViewItemBase> NavigationItems { get; private init; } = new();
+    public ObservableCollection<NavigationViewItemBase> NavigationItems { get; } = new();
     private readonly FontFamily _symbolThemeFontFamily = (FontFamily)Application.Current.Resources["SymbolThemeFontFamily"];
 
     public ShellViewModel(INavigationService navigationService, INavigationViewService navigationViewService, ILogger<ShellViewModel> logger)
@@ -49,7 +49,7 @@ public partial class ShellViewModel : ObservableRecipient
         var dashboardItem = new NavigationViewItem
         {
             Content = "Dashboard",
-            Tag = "Dashboard",
+            Tag = "dashboard_tag",
             Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = "\uF246" }
         };
         NavigationHelper.SetNavigateTo(dashboardItem, typeof(DashboardViewModel).FullName!);
@@ -94,48 +94,53 @@ public partial class ShellViewModel : ObservableRecipient
             try
             {
                 InitializeNavigationView();
-
                 var item = m.Value.DashboardItem;
-                var pageToNavigate = string.Empty;
+                var mainItem = item.MainItem;
+                var mainPage = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{mainItem.NavigateTo}")!.FullName;
+                var mainViewItem = new NavigationViewItem
+                {
+                    Content = mainItem.Content,
+                    Tag = mainItem.Tag,
+                    Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = mainItem.Glyph }
+                };
+
+                NavigationHelper.SetNavigateTo(mainViewItem, mainPage!);
+                NavigationItems.Add(mainViewItem);
 
                 foreach (var navigationItem in item.NavigationItems)
                 {
-                    var viewItem = new NavigationViewItem
+                    var navigationViewItem = new NavigationViewItem
                     {
                         Content = navigationItem.Content,
                         Tag = navigationItem.Tag,
                         Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = navigationItem.Glyph }
                     };
 
-                    var page = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{navigationItem.NavigateTo}")!.FullName;
-                    if (navigationItem.IsPageToNavigate)
-                    {
-                        pageToNavigate = page;
-                    }
-                    NavigationHelper.SetNavigateTo(viewItem, page!);
-                    NavigationItems.Add(viewItem);
+                    var navigationPage = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{navigationItem.NavigateTo}")!.FullName;
+                    NavigationHelper.SetNavigateTo(navigationViewItem, navigationPage!);
+                    NavigationItems.Add(navigationViewItem);
 
-                    if (navigationItem.NavigationItems is not { Count: > 0 })
+                    if (navigationItem.MenuItems == null)
                     {
                         continue;
                     }
 
-                    foreach (var navigationSubItem in navigationItem.NavigationItems)
+                    foreach (var menuItem in navigationItem.MenuItems)
                     {
-                        var viewSubItem = new NavigationViewItem
+                        var menuViewItem = new NavigationViewItem
                         {
-                            Content = navigationSubItem.Content,
-                            Tag = navigationSubItem.Tag,
-                            Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = navigationSubItem.Glyph }
+                            Content = menuItem.Content,
+                            Tag = menuItem.Tag,
+                            Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = menuItem.Glyph }
                         };
 
-                        var subPage = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{navigationSubItem.NavigateTo}")!.FullName;
-                        NavigationHelper.SetNavigateTo(viewSubItem, subPage!);
-                        viewItem.MenuItems.Add(viewSubItem);
+                        var menuPage = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{menuItem.NavigateTo}")!.FullName;
+                        NavigationHelper.SetNavigateTo(menuViewItem, menuPage!);
+                        navigationViewItem.MenuItems.Add(menuViewItem);
                     }
                 }
 
-                NavigationService.NavigateTo(pageToNavigate!);
+                NavigationService.NavigateTo(mainPage!, mainViewItem.Tag);
             }
             catch (Exception exception)
             {

@@ -1,48 +1,47 @@
 ﻿/*+------------------------------------------------------------------+
   |                                             Terminal.WinUI3.Views|
-  |                                             TicksOverviewPage.cs |
+  |                                        TicksContributionsPage.cs |
   +------------------------------------------------------------------+*/
 
+using System.Globalization;
 using Windows.Storage;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
-using Terminal.WinUI3.Behaviors;
 using Terminal.WinUI3.ViewModels;
 
 namespace Terminal.WinUI3.Views;
 
-public sealed partial class TicksOverviewPage
+public sealed partial class TicksContributionsPage
 {
     private bool _isDrag;
     private double _originalHeight;
     private double _originalWidth;
     private double _originalMousePosition;
 
-    public TicksOverviewPage()
+    public TicksContributionsPage()
     {
-        ViewModel = App.GetService<TicksOverviewViewModel>();
+        ViewModel = App.GetService<TicksContributionsViewModel>();
         InitializeComponent();
-        SetBinding(NavigationViewHeaderBehavior.HeaderContextProperty, new Binding { Source = ViewModel, Mode = BindingMode.OneWay });
 
-        if (ApplicationData.Current.LocalSettings.Values.TryGetValue("TicksOverviewPage_FirstRowDefinition_Height", out var height))
+        if (ApplicationData.Current.LocalSettings.Values.TryGetValue("TicksContributionsPage_FirstRowDefinition_Height", out var height))
         {
             FirstRowDefinition.Height = new GridLength(Convert.ToInt32(height));
         }
         else
         {
-            ApplicationData.Current.LocalSettings.Values.Add("TicksOverviewPage_FirstRowDefinition_Height", 100);
+            ApplicationData.Current.LocalSettings.Values.Add("TicksContributionsPage_FirstRowDefinition_Height", 100.ToString());
+            FirstRowDefinition.Height = new GridLength(Convert.ToInt32(100));
         }
 
-        if (ApplicationData.Current.LocalSettings.Values.TryGetValue("TicksOverviewPage_FirstColumnDefinition_Width", out var width))
+        if (ApplicationData.Current.LocalSettings.Values.TryGetValue("TicksContributionsPage_FirstColumnDefinition_Width", out var width))
         {
             FirstColumnDefinition.Width = new GridLength(Convert.ToInt32(width));
         }
         else
         {
-            ApplicationData.Current.LocalSettings.Values.Add("TicksOverviewPage_FirstColumnDefinition_Width", 100);
+            ApplicationData.Current.LocalSettings.Values.Add("TicksContributionsPage_FirstColumnDefinition_Width", 100.ToString());
+            FirstColumnDefinition.Width = new GridLength(Convert.ToInt32(100));
         }
     }
 
@@ -51,7 +50,7 @@ public sealed partial class TicksOverviewPage
         get;
     } = new(Enumerable.Range(0, 2));
 
-    public TicksOverviewViewModel ViewModel
+    public TicksContributionsViewModel ViewModel
     {
         get;
     }
@@ -59,8 +58,8 @@ public sealed partial class TicksOverviewPage
     protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
     {
         base.OnNavigatingFrom(e);
-        ApplicationData.Current.LocalSettings.Values["TicksOverviewPage_FirstRowDefinition_Height"] = FirstRowDefinition.Height.Value;
-        ApplicationData.Current.LocalSettings.Values["TicksOverviewPage_FirstColumnDefinition_Width"] = FirstColumnDefinition.Width.Value;
+        ApplicationData.Current.LocalSettings.Values["TicksContributionsPage_FirstRowDefinition_Height"] = FirstRowDefinition.Height.Value.ToString(CultureInfo.InvariantCulture);
+        ApplicationData.Current.LocalSettings.Values["TTicksContributionsPage_FirstColumnDefinition_Width"] = FirstColumnDefinition.Width.Value.ToString(CultureInfo.InvariantCulture);
     }
 
     private void GridSplitter_PointerReleased(object sender, PointerRoutedEventArgs e)

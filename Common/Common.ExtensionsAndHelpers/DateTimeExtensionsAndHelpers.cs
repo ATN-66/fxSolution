@@ -3,9 +3,7 @@
   |                                  DateTimeExtensionsAndHelpers.cs |
   +------------------------------------------------------------------+*/
 
-using System.Diagnostics;
 using System.Globalization;
-using Common.Entities;
 
 namespace Common.ExtensionsAndHelpers;
 
@@ -73,5 +71,15 @@ public static class DateTimeExtensionsAndHelpers
             <= 52 => 4,
             _ => throw new Exception(errorMessage)
         };
+    }
+
+    public static DateTime SundayBeforeLastWeek()
+    {
+        var now = DateTime.Now;
+        var currentDayOfWeek = ((int)now.DayOfWeek + 6) % 7 + 1; // Monday = 1, Sunday = 7 (ISO 8601)
+        var startOfThisWeek = now.AddDays(-currentDayOfWeek + 1);
+        var startOfWeekBeforeLast = startOfThisWeek.AddDays(-7); // Monday of the last week
+        var sundayBeforeLast = startOfWeekBeforeLast.AddDays(-1); // Sunday before the last week
+        return sundayBeforeLast.Date;
     }
 }

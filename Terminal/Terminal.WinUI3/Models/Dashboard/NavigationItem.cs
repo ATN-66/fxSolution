@@ -1,16 +1,20 @@
-﻿using System.Collections.ObjectModel;
+﻿/*+------------------------------------------------------------------+
+  |                                 Terminal.WinUI3.Models.Dashboard |
+  |                                                NavigationItem.cs |
+  +------------------------------------------------------------------+*/
+
+using System.Collections.ObjectModel;
 
 namespace Terminal.WinUI3.Models.Dashboard;
 
 public class NavigationItem
 {
-    public NavigationItem(string content, string tag, string glyph, string navigateTo, bool isPageToNavigate)
+    public NavigationItem(string content, string tag, string glyph, string navigateTo)
     {
         Content = content;
         Tag = tag;
         Glyph = glyph;
         NavigateTo = navigateTo;
-        IsPageToNavigate = isPageToNavigate;
     }
 
     public string Content
@@ -29,12 +33,7 @@ public class NavigationItem
     {
         get; set;
     }
-    public bool IsPageToNavigate
-    {
-        get; set;
-    }
-
-    public ObservableCollection<NavigationItem>? NavigationItems
+    public ObservableCollection<MenuItem>? MenuItems
     {
         get;
         set;

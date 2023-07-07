@@ -4,7 +4,6 @@
   +------------------------------------------------------------------+*/
 
 using Microsoft.UI;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Terminal.WinUI3.Models.Dashboard;
@@ -21,7 +20,7 @@ public partial class DashboardPage
         itemsCVS.Source = ViewModel.Groups;
     }
 
-    public DashboardViewModel ViewModel
+    private DashboardViewModel ViewModel
     {
         get;
     }

@@ -11,12 +11,12 @@ namespace Mediator.Services;
 
 public class AppNotificationService : IAppNotificationService
 {
-    private readonly INavigationService _navigationService;
+    //private readonly INavigationService _navigationService;
 
-    public AppNotificationService(INavigationService navigationService)
-    {
-        _navigationService = navigationService;
-    }
+    //public AppNotificationService()
+    //{
+    //    //_navigationService = navigationService; //INavigationService navigationService
+    //}
 
     ~AppNotificationService()
     {
@@ -29,7 +29,7 @@ public class AppNotificationService : IAppNotificationService
         AppNotificationManager.Default.Register();
     }
 
-    public void OnNotificationInvoked(AppNotificationManager sender, AppNotificationActivatedEventArgs args)
+    public static void OnNotificationInvoked(AppNotificationManager sender, AppNotificationActivatedEventArgs args)
     {
         // TODO: Handle notification invocations when your app is already running.
 
@@ -75,7 +75,7 @@ public class AppNotificationService : IAppNotificationService
         textNodes[0].AppendChild(toastXml.CreateTextNode(notificationMessage.ToString()));
 
         var serializer = toastXml as IXmlNodeSerializer;
-        var payload = serializer?.GetXml();
+        var payload = serializer.GetXml();
 
         Show(payload!);
     }
@@ -98,7 +98,7 @@ public class AppNotificationService : IAppNotificationService
         textNodes[0].AppendChild(toastXml.CreateTextNode(message));
 
         var serializer = toastXml as IXmlNodeSerializer;
-        var payload = serializer?.GetXml();
+        var payload = serializer.GetXml();
 
         Show(payload!);
     }

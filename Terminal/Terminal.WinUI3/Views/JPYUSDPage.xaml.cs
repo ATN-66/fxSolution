@@ -20,7 +20,7 @@ public sealed partial class JPYUSDPage
         ViewModel = App.GetService<JPYUSDViewModel>();
         InitializeComponent();
         SetBinding(NavigationViewHeaderBehavior.HeaderContextProperty, new Binding { Source = ViewModel, Mode = BindingMode.OneWay });
-        //ContentArea.Children.Add(ViewModel.TickChartControl);
+        //ContentArea.Children.Add(OverviewViewModel.TickChartControl);
     }
 
     // ReSharper disable once MemberCanBePrivate.Global
@@ -32,7 +32,7 @@ public sealed partial class JPYUSDPage
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         base.OnNavigatedFrom(e);
-        //ContentArea.Children.Remove(ViewModel.TickChartControl);
+        //ContentArea.Children.Remove(OverviewViewModel.TickChartControl);
     }
 
     private void StackPanel_MouseEnter(object sender, PointerRoutedEventArgs pointerRoutedEventArgs)

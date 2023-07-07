@@ -1,26 +1,31 @@
 ﻿/*+------------------------------------------------------------------+
   |                                        Terminal.WinUI3.ViewModels|
-  |                                                  USDViewModel.cs |
+  |                                             CurrencyViewModel.cs |
   +------------------------------------------------------------------+*/
 
+using Common.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.WinUI;
 using Terminal.WinUI3.Contracts.ViewModels;
-using Terminal.WinUI3.Helpers;
 
 namespace Terminal.WinUI3.ViewModels;
 
-public partial class USDViewModel : ObservableRecipient, INavigationAware
+public class CurrencyViewModel : ObservableRecipient, INavigationAware
 {
-    [ObservableProperty] private string _headerContext = "USDViewModel_HeaderContext".GetLocalizedString();
+    public Currency Currency
+    {
+        get;
+        private set;
+    }
 
     public void OnNavigatedTo(object parameter)
     {
-        // Run code when the app navigates to this page
+        if (Enum.TryParse<Currency>((string)parameter, out var currency))
+        {
+            Currency = currency;
+        }
     }
 
     public void OnNavigatedFrom()
     {
-        // Run code when the app navigates away from this page
     }
 }

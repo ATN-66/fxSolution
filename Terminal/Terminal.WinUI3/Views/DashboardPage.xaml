@@ -2,14 +2,11 @@
     x:Class="Terminal.WinUI3.Views.DashboardPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:behaviors="using:Terminal.WinUI3.Behaviors"
     xmlns:controls="using:Terminal.WinUI3.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dashboard="using:Terminal.WinUI3.Models.Dashboard"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-
-    <behaviors:NavigationViewHeaderBehavior.HeaderMode>Never</behaviors:NavigationViewHeaderBehavior.HeaderMode>
 
     <Page.Resources>
         <CollectionViewSource x:Name="itemsCVS" IsSourceGrouped="true" />

@@ -7,13 +7,12 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using Terminal.WinUI3.Contracts.Services;
-using Terminal.WinUI3.Contracts.ViewModels;
 using Terminal.WinUI3.Models.Dashboard;
 using Terminal.WinUI3.Services.Messenger.Messages;
 
 namespace Terminal.WinUI3.ViewModels;
 
-public partial class DashboardViewModel : ObservableRecipient, INavigationAware
+public partial class DashboardViewModel : ObservableRecipient
 {
     [ObservableProperty] private ObservableCollection<TitledGroups> _groups;
     private readonly IDashboardService _dashboardService;
@@ -42,15 +41,5 @@ public partial class DashboardViewModel : ObservableRecipient, INavigationAware
 
             Messenger.Send(new DashboardChangedMessage(new DashboardMessage(selectedItem!)));
         }
-    }
-
-    public void OnNavigatedTo(object parameter)
-    {
-
-    }
-
-    public void OnNavigatedFrom()
-    {
-
     }
 }

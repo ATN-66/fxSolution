@@ -3,6 +3,7 @@
   |                                                   DataService.cs |
   +------------------------------------------------------------------+*/
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -56,23 +57,28 @@ public class DataService : ObservableRecipient, IDataService
 
         while (start <= end)
         {
-            var quotations = await _fileService.GetHistoricalDataAsync(start, start, _token).ConfigureAwait(true);
+            var quotations = await _mediator.GetHistoricalDataAsync(start, start, _token).ConfigureAwait(true);
 
             if (quotations.Count == 0)
             {
-                quotations = await _mediator.GetHistoricalDataAsync(start, start, _token).ConfigureAwait(true);
+                quotations = await _fileService.GetHistoricalDataAsync(start, start, _token).ConfigureAwait(true);
             }
 
             if (quotations.Count == 0)
             {
-                // CHECK IF IT is IN the EXCLUDED LIST
-                throw new Exception("quotations.Count == 0");
+                if (!HourExcludedPass(start))
+                {
+                    throw new Exception($"No data for {start}.");
+                }
             }
 
-            foreach (var symbol in Enum.GetValues(typeof(Symbol)))
+            if (quotations.Count != 0)
             {
-                var filteredQuotations = quotations.Where(quotation => quotation.Symbol == (Symbol)symbol).ToList();
-                kernels[(Symbol)symbol].AddRange(filteredQuotations);
+                foreach (var symbol in Enum.GetValues(typeof(Symbol)))
+                {
+                    var filteredQuotations = quotations.Where(quotation => quotation.Symbol == (Symbol)symbol).ToList();
+                    kernels[(Symbol)symbol].AddRange(filteredQuotations);
+                }
             }
 
             start = start.Add(new TimeSpan(1, 0, 0));
@@ -164,7 +170,7 @@ public class DataService : ObservableRecipient, IDataService
                     {
                         HourlyContributions = hourlyContributions
                     };
-                    dailyContribution.Contribution = DetermineContributionStatus(dailyContribution);
+                    dailyContribution.Contribution = DetermineDailyContributionStatus(dailyContribution);
                     monthlyContribution.DailyContributions.Add(dailyContribution);
                 }
 
@@ -215,7 +221,7 @@ public class DataService : ObservableRecipient, IDataService
 
         foreach (var symbolicContribution in symbolicContributions)
         {
-            symbolicContribution.Contribution = DetermineContributionStatus(symbolicContribution);
+            symbolicContribution.Contribution = DetermineDailyContributionStatus(symbolicContribution);
         }
 
         return symbolicContributions;
@@ -375,7 +381,7 @@ public class DataService : ObservableRecipient, IDataService
                         dailyContribution.HourlyContributions[hour].HasContribution = true;
                     }
                     Debug.Assert(quotations.Count == counter);//todo
-                    monthlyContribution.DailyContributions[d].Contribution = DetermineContributionStatus(dailyContribution);
+                    monthlyContribution.DailyContributions[d].Contribution = DetermineDailyContributionStatus(dailyContribution);
                     var list = await _dataBaseService.GetTicksContributionsAsync().ConfigureAwait(true);
                     CreateGroups(list);
                     //_logger.LogInformation("{date} was updated. {count} were saved.", dailyContribution.HourlyContributions[0].DateTime.ToString(), counter.ToString());
@@ -481,7 +487,7 @@ public class DataService : ObservableRecipient, IDataService
             }
         }
     }
-    private Contribution DetermineContributionStatus(DailyContribution dailyContribution)
+    private Contribution DetermineDailyContributionStatus(DailyContribution dailyContribution)
     {
         if (_excludedDates.Contains(dailyContribution.HourlyContributions[0].DateTime.Date) || dailyContribution.HourlyContributions[0].DateTime.DayOfWeek == DayOfWeek.Saturday)
         {
@@ -517,6 +523,78 @@ public class DataService : ObservableRecipient, IDataService
                 }
         }
     }
+    private bool HourExcludedPass(DateTime dateTime)
+    {
+        var dateExists = _excludedDates.Any(dt => dt.Date == dateTime.Date);
+        if (dateExists)
+        {
+            return true;
+        }
+
+        if (dateTime.DayOfWeek == DayOfWeek.Saturday)
+        {
+            return true;
+        }
+
+        if (dateTime.DayOfWeek == DayOfWeek.Friday)
+        {
+            dateExists = _excludedHours.Any(dt => dt.Date == dateTime.Date);
+            if (dateExists)
+            {
+                var dateInHashSet = _excludedHours.FirstOrDefault(dt => dt == dateTime);
+                var nextDay = dateInHashSet.AddDays(1).Date;
+                if (dateTime >= dateInHashSet && dateTime <= nextDay)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+
+        //if (excludedDateTime > start)
+        //{
+        //    throw new Exception("quotations.Count == 0 && excludedDateTime >= start");
+        //}
+
+        return false;
+        //if (_excludedDates.Contains(dailyContribution.HourlyContributions[0].DateTime.Date) || dailyContribution.HourlyContributions[0].DateTime.DayOfWeek == DayOfWeek.Saturday)
+        //{
+        //    return Contribution.Excluded;
+        //}
+
+        //switch (dailyContribution.HourlyContributions[0].DateTime.DayOfWeek)
+        //{
+        //    case DayOfWeek.Friday:
+        //        if (dailyContribution.HourlyContributions.SkipLast(2).All(c => c.HasContribution))
+        //        {
+        //            return Contribution.Full;
+        //        }
+        //        if (dailyContribution.HourlyContributions.SkipLast(3).All(c => c.HasContribution) && _excludedHours.Contains(dailyContribution.HourlyContributions[^3].DateTime))
+        //        {
+        //            return Contribution.Full;
+        //        }
+        //        return dailyContribution.HourlyContributions.Any(c => c.HasContribution) ? Contribution.Partial : Contribution.None;
+        //    case DayOfWeek.Sunday when dailyContribution.HourlyContributions.TakeLast(2).All(c => c.HasContribution): return Contribution.Full;
+        //    case DayOfWeek.Monday:
+        //    case DayOfWeek.Tuesday:
+        //    case DayOfWeek.Wednesday:
+        //    case DayOfWeek.Thursday:
+        //    case DayOfWeek.Saturday:
+        //    default:
+        //    {
+        //        if (dailyContribution.HourlyContributions.All(c => c.HasContribution))
+        //        {
+        //            return Contribution.Full;
+        //        }
+
+        //        return dailyContribution.HourlyContributions.Any(c => c.HasContribution) ? Contribution.Partial : Contribution.None;
+        //    }
+        //}
+    }
     private int ReportProgressReport(int totalItems, int processedItems, DailyContribution dailyContribution)
     {
         processedItems += dailyContribution.HourlyContributions.Count;
@@ -526,7 +604,7 @@ public class DataService : ObservableRecipient, IDataService
     }
     private void UpdateStatus(DailyContribution dailyContribution)
     {
-        dailyContribution.Contribution = DetermineContributionStatus(dailyContribution);
+        dailyContribution.Contribution = DetermineDailyContributionStatus(dailyContribution);
         Messenger.Send(new DailyContributionChangedMessage(dailyContribution), DataServiceToken.DataToUpdate);
     }
     public Task<object?> BackupAsync()

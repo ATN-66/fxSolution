@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                                        Terminal.WinUI3.ViewModels|
-  |                                        TicksOverviewViewModel.cs |
+  |                                        TicksContributionsViewModel.cs |
   +------------------------------------------------------------------+*/
 
 using System.Diagnostics;
@@ -15,7 +15,7 @@ using Terminal.WinUI3.Services.Messenger.Messages;
 
 namespace Terminal.WinUI3.ViewModels;
 
-public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAware
+public partial class TicksContributionsViewModel : ObservableRecipient, INavigationAware
 {
     private readonly IDataService _dataService;
     private readonly IAppNotificationService _notificationService;
@@ -24,7 +24,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
 
     [ObservableProperty] private string _headerContext = "Ticks";
 
-    public List<Common.Entities.Symbol> Symbols { get; } = Enum.GetValues(typeof(Common.Entities.Symbol)).Cast<Common.Entities.Symbol>().ToList();
+    private List<Common.Entities.Symbol> Symbols { get; } = Enum.GetValues(typeof(Common.Entities.Symbol)).Cast<Common.Entities.Symbol>().ToList();
     [ObservableProperty] private Common.Entities.Symbol _selectedSymbol;
     [ObservableProperty] private DateTimeOffset _selectedDate;
     [ObservableProperty] private TimeSpan _selectedTime;
@@ -58,9 +58,9 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
 
     private CancellationTokenSource? _cts;
     private DialogViewModel _dialogViewModel = null!;
-    public DateTimeOffset Today { get; } = DateTimeOffset.Now;
+    private DateTimeOffset Today { get; } = DateTimeOffset.Now;
 
-    public TicksOverviewViewModel(IDataService dataService, IDialogService dialogService, IAppNotificationService notificationService, IDispatcherService dispatcherService)
+    public TicksContributionsViewModel(IDataService dataService, IDialogService dialogService, IAppNotificationService notificationService, IDispatcherService dispatcherService)
     {
         _dataService = dataService;
         _dialogService = dialogService;
@@ -115,7 +115,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         YearlyContributionsCount = 0;
         YearlyContributions.Clear();
         var yearlyContributions = await _dataService.GetYearlyContributionsAsync().ConfigureAwait(true);
-        Debug.Assert(_dispatcherService.HasThreadAccess);
+        Debug.Assert(_dispatcherService.HasUIThreadAccess);
         YearlyContributions.AddRange(yearlyContributions);
         YearlyContributionsCount = YearlyContributions.Count;
         YearlyContributionsIsLoading = false;
@@ -142,7 +142,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
         HourlyContributions.Clear();
 
         var contributions = await _dataService.GetDayContributionAsync(SelectedDate.DateTime.Date).ConfigureAwait(true);
-        Debug.Assert(_dispatcherService.HasThreadAccess);
+        Debug.Assert(_dispatcherService.HasUIThreadAccess);
         HourlyContributions.AddRange(contributions);
 
         _currentDate = SelectedDate.DateTime.Date;
@@ -234,7 +234,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
     {
         if (!Messenger.IsRegistered<DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate))
         {
-            Messenger.Register<TicksOverviewViewModel, DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate, (_, m) =>
+            Messenger.Register<TicksContributionsViewModel, DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate, (_, m) =>
             {
                 OnDailyContributionChanged(m.Value);
             });
@@ -242,7 +242,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
 
         if (!Messenger.IsRegistered<ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress))
         {
-            Messenger.Register<TicksOverviewViewModel, ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress, (_, m) =>
+            Messenger.Register<TicksContributionsViewModel, ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress, (_, m) =>
             {
                 OnProgressReported(m.Value);
             });
@@ -250,7 +250,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
 
         if (!Messenger.IsRegistered<InfoMessage, DataServiceToken>(this, DataServiceToken.Info))
         {
-            Messenger.Register<TicksOverviewViewModel, InfoMessage, DataServiceToken>(this, DataServiceToken.Info, (_, m) =>
+            Messenger.Register<TicksContributionsViewModel, InfoMessage, DataServiceToken>(this, DataServiceToken.Info, (_, m) =>
             {
                 OnInfoReported(m.Value);
             });
@@ -317,7 +317,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
     {
         if (!Messenger.IsRegistered<DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate))
         {
-            Messenger.Register<TicksOverviewViewModel, DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate, (_, m) =>
+            Messenger.Register<TicksContributionsViewModel, DailyContributionChangedMessage, DataServiceToken>(this, DataServiceToken.DataToUpdate, (_, m) =>
             {
                 OnDailyContributionChanged(m.Value);
             });
@@ -325,7 +325,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
 
         if (!Messenger.IsRegistered<ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress))
         {
-            Messenger.Register<TicksOverviewViewModel, ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress, (_, m) =>
+            Messenger.Register<TicksContributionsViewModel, ProgressReportMessage, DataServiceToken>(this, DataServiceToken.Progress, (_, m) =>
             {
                 OnProgressReported(m.Value);
             });
@@ -333,7 +333,7 @@ public partial class TicksOverviewViewModel : ObservableRecipient, INavigationAw
 
         if (!Messenger.IsRegistered<InfoMessage, DataServiceToken>(this, DataServiceToken.Info))
         {
-            Messenger.Register<TicksOverviewViewModel, InfoMessage, DataServiceToken>(this, DataServiceToken.Info, (_, m) =>
+            Messenger.Register<TicksContributionsViewModel, InfoMessage, DataServiceToken>(this, DataServiceToken.Info, (_, m) =>
             {
                 OnInfoReported(m.Value);
             });

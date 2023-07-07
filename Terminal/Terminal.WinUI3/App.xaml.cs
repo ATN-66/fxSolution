@@ -70,13 +70,8 @@ public partial class App
                 loggingBuilder.AddSerilog(logger, dispose: true);
             });
 
-            // Configuration
-            services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
-
-            // Default Activation Handler
+            // Default Activation Handler and Other Activation Handlers
             services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
-
-            // Other Activation Handlers
             services.AddTransient<IActivationHandler, AppNotificationActivationHandler>();
 
             // Services
@@ -103,37 +98,19 @@ public partial class App
             services.AddSingleton<IDataBaseService, DataBaseService>();
             services.AddSingleton<IVisualService, VisualService>();
 
-            // Views and ViewModels
-            services.AddTransient<SettingsViewModel>();
-            services.AddTransient<SettingsPage>();
+            // Navigation and settings
+            services.AddTransient<ShellPage>(); services.AddTransient<ShellViewModel>();
+            services.AddTransient<DashboardViewModel>(); services.AddTransient<DashboardPage>();
+            services.AddTransient<SettingsViewModel>(); services.AddTransient<SettingsPage>();
 
-            services.AddTransient<DashboardViewModel>();
-            services.AddTransient<DashboardPage>();
-            services.AddTransient<ShellPage>();
-            services.AddTransient<ShellViewModel>();
+            // Currencies and Symbols
+            services.AddTransient<CurrenciesOverviewViewModel>(); services.AddTransient<CurrenciesOverviewPage>();
+            services.AddTransient<CurrencyViewModel>(); services.AddTransient<CurrencyPage>();
+            services.AddTransient<SymbolViewModel>(); services.AddTransient<SymbolPage>();
 
-            //DatabaseMaintenance
-            services.AddTransient<TicksOverviewViewModel>();
-            services.AddTransient<TicksOverviewPage>();
-
-            //todo: to fabric
-            services.AddTransient<OverviewViewModel>(); services.AddTransient<OverviewPage>();
-            services.AddTransient<USDViewModel>(); services.AddTransient<USDPage>();
-            services.AddTransient<EURViewModel>(); services.AddTransient<EURPage>();
-            services.AddTransient<GBPViewModel>(); services.AddTransient<GBPPage>();
-            services.AddTransient<JPYViewModel>(); services.AddTransient<JPYPage>();
-            services.AddTransient<EURUSDViewModel>(); services.AddTransient<EURUSDPage>();
-            services.AddTransient<USDEURViewModel>(); services.AddTransient<USDEURPage>();
-            services.AddTransient<GBPUSDViewModel>(); services.AddTransient<GBPUSDPage>();
-            services.AddTransient<USDGBPViewModel>(); services.AddTransient<USDGBPPage>();
-            services.AddTransient<EURGBPViewModel>(); services.AddTransient<EURGBPPage>();
-            services.AddTransient<GBPEURViewModel>(); services.AddTransient<GBPEURPage>();
-            services.AddTransient<USDJPYViewModel>(); services.AddTransient<USDJPYPage>();
-            services.AddTransient<EURJPYViewModel>(); services.AddTransient<EURJPYPage>();
-            services.AddTransient<JPYEURViewModel>(); services.AddTransient<JPYEURPage>();
-            services.AddTransient<GBPJPYViewModel>(); services.AddTransient<GBPJPYPage>();
-            services.AddTransient<JPYGBPViewModel>(); services.AddTransient<JPYGBPPage>();
-            services.AddTransient<JPYUSDViewModel>(); services.AddTransient<JPYUSDPage>();
+            // DatabaseMaintenance
+            services.AddTransient<HistoricalDataOverviewViewModel>(); services.AddTransient<HistoricalDataOverviewPage>();
+            services.AddTransient<TicksContributionsViewModel>(); services.AddTransient<TicksContributionsPage>();
 
             services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
             services.Configure<ProviderBackupSettings>(context.Configuration.GetSection(nameof(ProviderBackupSettings)));
@@ -194,9 +171,9 @@ public partial class App
         }
         Log.CloseAndFlush();
 
-        //todo: save all quotations
         _cts.Cancel();
-
+        GetService<IAudioPlayer>().Dispose();
+        GetService<ILogger<App>>().LogInformation("<--- end --->");
         Current.Exit();
     }
     protected async override void OnLaunched(LaunchActivatedEventArgs args)

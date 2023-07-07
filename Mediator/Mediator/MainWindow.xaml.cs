@@ -1,4 +1,5 @@
-﻿using Mediator.Helpers;
+﻿using CommunityToolkit.WinUI;
+using Mediator.Helpers;
 
 namespace Mediator;
 

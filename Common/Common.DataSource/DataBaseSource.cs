@@ -3,7 +3,6 @@ using Common.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Reflection;
 using System.Data;
 using System.Data.SqlClient;
 
@@ -41,6 +40,8 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
 
     public async Task<Dictionary<ActionResult, int>> BackupAsync()
     {
+        throw new NotImplementedException("public async Task<Dictionary<ActionResult, int>> BackupAsync() --> NotImplementedException ");
+
         var resultCounts = new Dictionary<ActionResult, int>
         {
             [ActionResult.ActionNotPossible] = 0,
@@ -142,9 +143,12 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
                 quotations.Add(quotation);
             }
         }
-        catch (SqlException exception)
+        catch (TaskCanceledException)
         {
-            LogException(exception, "");
+        }
+        catch (SqlException sqlException)
+        {
+            LogException(sqlException, "");
             throw;
         }
         catch (Exception exception)
@@ -175,6 +179,11 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
             try
             {
                 await connection.OpenAsync().ConfigureAwait(false);
+            }
+            catch (SqlException sqlException)
+            {
+                LogException(sqlException, "");
+                throw;
             }
             catch (Exception exception)
             {
@@ -225,9 +234,9 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
                 _logger.LogInformation("{dataTableRowsCount} ticks saved. Week: {weekNumber}.", dataTable.Rows.Count.ToString(), weekNumber.ToString());
             }
         }
-        catch (Exception exception)
+        catch (SqlException sqlException)
         {
-            LogException(exception, "");
+            LogException(sqlException, "");
 
             if (transaction == null)
             {

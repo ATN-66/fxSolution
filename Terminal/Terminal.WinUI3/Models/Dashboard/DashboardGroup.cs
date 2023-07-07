@@ -13,7 +13,6 @@ public class DashboardGroup
     {
         Id = id;
         Title = title;
-        Items = new ObservableCollection<DashboardItem>();
     }
 
     public string Id
@@ -32,7 +31,7 @@ public class DashboardGroup
     {
         get;
         set;
-    }
+    } = new();
 
     public override string ToString() => Title;
 }

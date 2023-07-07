@@ -5,19 +5,16 @@
 
 using Common.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
 using Terminal.WinUI3.Controls;
-using Terminal.WinUI3.Helpers;
 
 namespace Terminal.WinUI3.ViewModels;
 
 public partial class EURUSDViewModel : ObservableRecipient, INavigationAware
 {
-    [ObservableProperty] private string _headerContext = "EURUSDViewModel_HeaderContext".GetLocalizedString();
     [ObservableProperty] private float _pipsPerChart = 100;//settings
     [ObservableProperty] private float _maxPipsPerChart = 200;//settings
     [ObservableProperty] private float _minPipsPerChart = 10;//settings
@@ -32,9 +29,8 @@ public partial class EURUSDViewModel : ObservableRecipient, INavigationAware
         private set;
     }
 
-    public EURUSDViewModel()
+    public EURUSDViewModel(IVisualService visualService)
     {
-        var visualService = App.GetService<IVisualService>();//todo: 
         TickChartControl = visualService.GetTickChartControl(Symbol.EURUSD, false)!;
         TickChartControl.DataContext = this;
         TickChartControl.SetBinding(TickChartControl.PipsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(PipsPerChart)), Mode = BindingMode.TwoWay });
@@ -63,7 +59,6 @@ public partial class EURUSDViewModel : ObservableRecipient, INavigationAware
 
     public void OnNavigatedTo(object parameter)
     {
-        // Run code when the app navigates to this page
     }
 
     public void OnNavigatedFrom()

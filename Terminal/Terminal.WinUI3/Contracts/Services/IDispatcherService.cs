@@ -12,5 +12,5 @@ public interface IDispatcherService
 {
     void Initialize(DispatcherQueue dispatcherQueue);
     Task ExecuteOnUIThreadAsync(Action action, DispatcherQueuePriority priority = DispatcherQueuePriority.Normal);
-    bool HasThreadAccess { get; }
+    bool HasUIThreadAccess { get; }
 }

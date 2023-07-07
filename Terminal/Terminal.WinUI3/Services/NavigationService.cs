@@ -8,9 +8,6 @@ using Terminal.WinUI3.Helpers;
 
 namespace Terminal.WinUI3.Services;
 
-// For more information on navigation between pages see
-// https://github.com/microsoft/TemplateStudio/blob/main/docs/WinUI/navigation.md
-
 public class NavigationService : INavigationService
 {
     private readonly IPageService _pageService;
@@ -28,11 +25,13 @@ public class NavigationService : INavigationService
     {
         get
         {
-            if (_frame == null)
+            if (_frame != null)
             {
-                _frame = App.MainWindow.Content as Frame;
-                RegisterFrameEvents();
+                return _frame;
             }
+
+            _frame = App.MainWindow.Content as Frame;
+            RegisterFrameEvents();
 
             return _frame;
         }
@@ -70,28 +69,29 @@ public class NavigationService : INavigationService
     {
         var pageType = _pageService.GetPageType(pageKey);
 
-        if (_frame != null && (_frame.Content?.GetType() != pageType || (parameter != null && !parameter.Equals(_lastParameterUsed))))
+        if (_frame == null || (_frame.Content?.GetType() == pageType && (parameter == null || parameter.Equals(_lastParameterUsed))))
         {
-            _frame.Tag = clearNavigation;
-            var vmBeforeNavigation = _frame.GetPageViewModel();
-            var navigated = _frame.Navigate(pageType, parameter);
-            if (navigated)
-            {
-                _lastParameterUsed = parameter;
-                if (vmBeforeNavigation is INavigationAware navigationAware)
-                {
-                    navigationAware.OnNavigatedFrom();
-                }
-            }
+            return false;
+        }
 
+        _frame.Tag = clearNavigation;
+        var vmBeforeNavigation = _frame.GetPageViewModel();
+        var navigated = _frame.Navigate(pageType, parameter);
+        if (!navigated)
+        {
             return navigated;
         }
 
-        return false;
+        _lastParameterUsed = parameter;
+        if (vmBeforeNavigation is INavigationAware navigationAware)
+        {
+            navigationAware.OnNavigatedFrom();
+        }
+
+        return navigated;
     }
 
-    public void SetListDataItemForNextConnectedAnimation(object item) =>
-        Frame.SetListDataItemForNextConnectedAnimation(item);
+    public void SetListDataItemForNextConnectedAnimation(object item) => Frame.SetListDataItemForNextConnectedAnimation(item);
 
     private void RegisterFrameEvents()
     {
@@ -111,20 +111,22 @@ public class NavigationService : INavigationService
 
     private void OnNavigated(object sender, NavigationEventArgs e)
     {
-        if (sender is Frame frame)
+        if (sender is not Frame frame)
         {
-            var clearNavigation = (bool)frame.Tag;
-            if (clearNavigation)
-            {
-                frame.BackStack.Clear();
-            }
-
-            if (frame.GetPageViewModel() is INavigationAware navigationAware)
-            {
-                navigationAware.OnNavigatedTo(e.Parameter);
-            }
-
-            Navigated?.Invoke(sender, e);
+            return;
         }
+
+        var clearNavigation = (bool)frame.Tag;
+        if (clearNavigation)
+        {
+            frame.BackStack.Clear();
+        }
+
+        if (frame.GetPageViewModel() is INavigationAware navigationAware)
+        {
+            navigationAware.OnNavigatedTo(e.Parameter);
+        }
+
+        Navigated?.Invoke(sender, e);
     }
 }

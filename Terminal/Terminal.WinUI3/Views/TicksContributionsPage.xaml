@@ -1,5 +1,5 @@
 ﻿<Page
-    x:Class="Terminal.WinUI3.Views.TicksOverviewPage"
+    x:Class="Terminal.WinUI3.Views.TicksContributionsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:Terminal.WinUI3.Behaviors"
@@ -12,7 +12,7 @@
     xmlns:viewModels="using:Terminal.WinUI3.ViewModels"
     mc:Ignorable="d">
 
-    <behaviors:NavigationViewHeaderBehavior.HeaderMode>Always</behaviors:NavigationViewHeaderBehavior.HeaderMode>
+    <!--<behaviors:NavigationViewHeaderBehavior.HeaderMode>Always</behaviors:NavigationViewHeaderBehavior.HeaderMode>
     <behaviors:NavigationViewHeaderBehavior.HeaderTemplate>
         <DataTemplate x:DataType="viewModels:TicksOverviewViewModel">
             <Border
@@ -145,7 +145,8 @@
                             Command="{x:Bind Path=RecalculateAllContributionsCommand}"
                             Content="Recalculate All"
                             ToolTipService.ToolTip="RecalculateAllContributionsCommand" />
-                        <!--<Button
+    -->
+    <!--<Button
                             Grid.Row="0"
                             Grid.Column="10"
                             Margin="8,0,0,0"
@@ -153,7 +154,7 @@
                             Command="{x:Bind Path=BackupCommand}"
                             Content="Backup"
                             ToolTipService.ToolTip="BackupCommand" />-->
-                        <!--<Button
+    <!--<Button
                             Grid.Row="0"
                             Grid.Column="11"
                             Margin="8,0,0,0"
@@ -161,11 +162,12 @@
                             Command="{x:Bind Path=RestoreCommand}"
                             Content="Restore"
                             ToolTipService.ToolTip="RestoreCommand" />-->
+    <!--
                     </Grid>
                 </StackPanel>
             </Border>
         </DataTemplate>
-    </behaviors:NavigationViewHeaderBehavior.HeaderTemplate>
+    </behaviors:NavigationViewHeaderBehavior.HeaderTemplate>-->
 
     <Page.Resources>
         <Style x:Key="TextBlockStyle" TargetType="TextBlock">

@@ -7,7 +7,7 @@
     xmlns:windowex="using:WinUIEx"
     MinWidth="10"
     MinHeight="10"
-    IsTitleBarVisible="False"
+    IsTitleBarVisible="True"
     PersistenceId="MainWindow"
     mc:Ignorable="d">
     <Window.SystemBackdrop>

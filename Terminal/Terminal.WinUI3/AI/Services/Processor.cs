@@ -16,31 +16,33 @@ namespace Terminal.WinUI3.AI.Services;
 public class Processor : IProcessor
 {
     private readonly IDataService _dataService;
-    private readonly ILogger<IMediator> _logger;
+    private readonly IVisualService _visualService;
+    private readonly ILogger<IProcessor> _logger;
 
     private readonly BlockingCollection<Quotation> _liveDataQueue = new();
     private IDictionary<Symbol, Kernel> _kernels = null!;
-    private readonly IVisualService _visualService;
 
-    public Processor(IDataService dataService, IVisualService visualService, ILogger<IMediator> logger)
+    private readonly DateTime _startDateTime;
+
+    public Processor(IDataService dataService, IVisualService visualService, ILogger<IProcessor> logger)
     {
         _dataService = dataService;
         _visualService = visualService;
         _logger = logger;
+
+        _startDateTime = DateTime.Now.AddDays(-3).AddHours(1);
     }
 
     public async Task StartAsync(CancellationToken token)
     {
-        var startDateTime = DateTime.Now.AddDays(0).AddHours(-6);//todo: config or rule
-
-        _kernels = await _dataService.LoadDataAsync(startDateTime).ConfigureAwait(false);
+        _kernels = await _dataService.LoadDataAsync(_startDateTime).ConfigureAwait(false);
         _visualService.Initialize(_kernels);
 
-        //var (receivingTask, channel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
-        //var processingTask = ProcessingTaskAsync(token);
+        var (receivingTask, channel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
+        var processingTask = ProcessingTaskAsync(token);
 
-        //await Task.WhenAll(receivingTask, processingTask).ConfigureAwait(false);
-        //await channel.ShutdownAsync().ConfigureAwait(false);
+        await Task.WhenAll(receivingTask, processingTask).ConfigureAwait(false);
+        await channel.ShutdownAsync().ConfigureAwait(false);
     }
     private Task ProcessingTaskAsync(CancellationToken token)
     {
@@ -55,6 +57,8 @@ public class Processor : IProcessor
                         break;
                     }
 
+                    _kernels[quotation.Symbol].Add(quotation);
+                    _visualService.Tick(quotation.Symbol);
                 }
             }
             catch (OperationCanceledException operationCanceledException)
@@ -70,12 +74,5 @@ public class Processor : IProcessor
         }, token);
 
         return processingTask;
-    }
-
-    public Task TickAsync(Quotation quotation)
-    {
-        _kernels[quotation.Symbol].Add(quotation);
-        _visualService.Tick();
-        return Task.CompletedTask;
     }
 }

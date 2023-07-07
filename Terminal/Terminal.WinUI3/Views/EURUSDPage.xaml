@@ -2,30 +2,9 @@
     x:Class="Terminal.WinUI3.Views.EURUSDPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:behaviors="using:Terminal.WinUI3.Behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:viewModels="using:Terminal.WinUI3.ViewModels"
+    Background="Transparent"
     mc:Ignorable="d">
-
-    <behaviors:NavigationViewHeaderBehavior.HeaderMode>Always</behaviors:NavigationViewHeaderBehavior.HeaderMode>
-    <behaviors:NavigationViewHeaderBehavior.HeaderTemplate>
-        <DataTemplate x:DataType="viewModels:EURUSDViewModel">
-            <StackPanel Height="48" Background="Transparent">
-                <CommandBar
-                    x:Name="PageCommandBar"
-                    HorizontalAlignment="Left"
-                    ClosedDisplayMode="Compact"
-                    DefaultLabelPosition="Right"
-                    Style="{StaticResource CommandBarStyle}">
-                    <CommandBar.Content>
-                        <TextBlock Text="{x:Bind Path=HeaderContext, Mode=OneWay}" />
-                    </CommandBar.Content>
-                    <AppBarSeparator />
-                </CommandBar>
-            </StackPanel>
-        </DataTemplate>
-    </behaviors:NavigationViewHeaderBehavior.HeaderTemplate>
-
     <Grid x:Name="ContentArea" Background="Transparent" />
 </Page>

@@ -2,8 +2,6 @@
     x:Class="Terminal.WinUI3.Views.ShellPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:behaviors="using:Terminal.WinUI3.Behaviors"
-    xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     Background="Transparent"
     Loaded="OnLoaded">
     <Grid Background="Transparent">
@@ -23,78 +21,9 @@
             SelectionChanged="NavigationViewControl_SelectionChanged"
             SelectionFollowsFocus="Disabled"
             Unloaded="NavigationViewControl_OnUnLoaded">
-
-            <!--<NavigationViewItemHeader Content="Orders" />-->
-
-            <!--<NavigationView.FooterMenuItems>
-                <NavigationViewItem
-                    Content="Account"
-                    Icon="Contact"
-                    Tag="SamplePage4" />
-                    Icon="Shop"
-                    Tag="SamplePage5" />
-
-                <NavigationViewItem
-                    Content="Help"
-                    Icon="Help"
-                    Tag="SamplePage5" />
-            </NavigationView.FooterMenuItems>-->
-            <!--<NavigationView.PaneFooter>
-                <StackPanel
-                    x:Name="FooterStackPanel"
-                    Orientation="Vertical"
-                    Visibility="Collapsed">
-                    <NavigationViewItem AutomationProperties.Name="download" Icon="Download" />
-                    <NavigationViewItem AutomationProperties.Name="favorite" Icon="Favorite" />
-                </StackPanel>
-            </NavigationView.PaneFooter>-->
-
-            <NavigationView.HeaderTemplate>
-                <DataTemplate>
-                    <Grid>
-                        <TextBlock
-                            Foreground="Red"
-                            Style="{ThemeResource TitleTextBlockStyle}"
-                            Text="{Binding}" />
-                    </Grid>
-                </DataTemplate>
-            </NavigationView.HeaderTemplate>
-            <interactivity:Interaction.Behaviors>
-                <behaviors:NavigationViewHeaderBehavior DefaultHeader="{x:Bind ((ContentControl)ViewModel.Selected).Content, Mode=OneWay}">
-                    <behaviors:NavigationViewHeaderBehavior.DefaultHeaderTemplate>
-                        <DataTemplate>
-                            <Grid>
-                                <TextBlock
-                                    Foreground="Blue"
-                                    Style="{ThemeResource TitleTextBlockStyle}"
-                                    Text="{Binding}" />
-                            </Grid>
-                        </DataTemplate>
-                    </behaviors:NavigationViewHeaderBehavior.DefaultHeaderTemplate>
-                </behaviors:NavigationViewHeaderBehavior>
-            </interactivity:Interaction.Behaviors>
-
             <Grid Margin="{StaticResource NavigationViewPageContentMargin}">
-                <Frame x:Name="NavigationFrame">
-                    <!--<Frame.ContentTransitions>
-                        <TransitionCollection>
-                            <NavigationThemeTransition>
-                                <NavigationThemeTransition.DefaultNavigationTransitionInfo>
-                                    <SlideNavigationTransitionInfo Effect="FromRight" />
-                                </NavigationThemeTransition.DefaultNavigationTransitionInfo>
-                            </NavigationThemeTransition>
-                        </TransitionCollection>
-                    </Frame.ContentTransitions>-->
-                </Frame>
+                <Frame x:Name="NavigationFrame" />
             </Grid>
         </NavigationView>
     </Grid>
 </Page>
-
-<!--  &#xA3;   pound  -->
-<!--  &#x20AC; euro  -->
-<!--  &#x24;   dollar  -->
-<!--  &#xA5;   yen  -->
-<!--  &#xB7;   Middle Dot  -->
-<!--  DisplayModeChanged="NavigationViewControl_DisplayModeChanged"  -->
-<!--  Header="{x:Bind ((ContentControl)ViewModel.Selected).Content, Mode=OneWay}"  -->

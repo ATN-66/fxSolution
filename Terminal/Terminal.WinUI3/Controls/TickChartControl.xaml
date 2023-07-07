@@ -22,45 +22,59 @@
                             <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Slider Grid.Row="0" Grid.Column="0"
+                        <Slider
+                            Grid.Row="0"
+                            Grid.Column="0"
                             Maximum="{Binding MaxUnitsPerChart, Mode=TwoWay}"
                             Minimum="{Binding MinUnitsPerChart, Mode=OneWay}"
                             Orientation="Horizontal"
                             SmallChange="5"
                             StepFrequency="10"
                             Value="{Binding UnitsPerChart, Mode=TwoWay}" />
-                        <win2d:CanvasControl Grid.Row="1" Grid.Column="0"
+                        <win2d:CanvasControl
                             x:Name="xAxisCanvas"
+                            Grid.Row="1"
+                            Grid.Column="0"
                             Margin="{TemplateBinding Margin}"
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
                             Foreground="{TemplateBinding Foreground}" />
-                        <win2d:CanvasControl Grid.Row="2" Grid.Column="0"
+                        <win2d:CanvasControl
                             x:Name="debugCanvas"
+                            Grid.Row="2"
+                            Grid.Column="0"
                             Margin="{TemplateBinding Margin}"
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
                             Foreground="{TemplateBinding Foreground}" />
-                        <win2d:CanvasControl Grid.Row="3" Grid.Column="0"
+                        <win2d:CanvasControl
                             x:Name="graphCanvas"
+                            Grid.Row="3"
+                            Grid.Column="0"
                             Margin="{TemplateBinding Margin}"
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
                             Foreground="{TemplateBinding Foreground}" />
-                        <Slider Grid.Row="4" Grid.Column="0"
+                        <Slider
+                            Grid.Row="4"
+                            Grid.Column="0"
                             Maximum="100"
                             Minimum="0"
                             Orientation="Horizontal"
                             SmallChange="1"
                             StepFrequency="1"
                             Value="{Binding KernelShiftPercent, Mode=TwoWay}" />
-                        <win2d:CanvasControl Grid.Row="3" Grid.Column="1"
+                        <win2d:CanvasControl
                             x:Name="yAxisCanvas"
+                            Grid.Row="3"
+                            Grid.Column="1"
                             Margin="{TemplateBinding Margin}"
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
                             Foreground="{TemplateBinding Foreground}" />
-                        <Slider Grid.Row="3" Grid.Column="2"
+                        <Slider
+                            Grid.Row="3"
+                            Grid.Column="2"
                             Maximum="{Binding MaxPipsPerChart, Mode=OneWay}"
                             Minimum="{Binding MinPipsPerChart, Mode=OneWay}"
                             Orientation="Vertical"

@@ -12,28 +12,12 @@ public class PageService : IPageService
 
     public PageService()
     {
-        Configure<OverviewViewModel, OverviewPage>();
-        Configure<USDViewModel, USDPage>();
-        Configure<EURViewModel, EURPage>();
-        Configure<GBPViewModel, GBPPage>();
-        Configure<JPYViewModel, JPYPage>();
-
-        Configure<EURUSDViewModel, EURUSDPage>();
-        Configure<USDEURViewModel, USDEURPage>();
-        Configure<GBPUSDViewModel, GBPUSDPage>();
-        Configure<USDGBPViewModel, USDGBPPage>();
-        Configure<EURGBPViewModel, EURGBPPage>();
-        Configure<GBPEURViewModel, GBPEURPage>();
-        Configure<USDJPYViewModel, USDJPYPage>();
-        Configure<JPYUSDViewModel, JPYUSDPage>();
-        Configure<EURJPYViewModel, EURJPYPage>();
-        Configure<JPYEURViewModel, JPYEURPage>();
-        Configure<GBPJPYViewModel, GBPJPYPage>();
-        Configure<JPYGBPViewModel, JPYGBPPage>();
-
         Configure<DashboardViewModel, DashboardPage>();
-        Configure<TicksOverviewViewModel, TicksOverviewPage>();
-
+        Configure<CurrenciesOverviewViewModel, CurrenciesOverviewPage>();
+        Configure<CurrencyViewModel, CurrencyPage>();
+        Configure<SymbolViewModel, SymbolPage>();
+        Configure<HistoricalDataOverviewViewModel, HistoricalDataOverviewPage>();
+        Configure<TicksContributionsViewModel, TicksContributionsPage>();
         Configure<SettingsViewModel, SettingsPage>();
     }
 

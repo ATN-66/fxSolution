@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                                        Terminal.WinUI3.ViewModels|
-  |                                             OverviewViewModel.cs |
+  |                               HistoricalDataOverviewViewModel.cs |
   +------------------------------------------------------------------+*/
 
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -8,7 +8,7 @@ using Terminal.WinUI3.Contracts.ViewModels;
 
 namespace Terminal.WinUI3.ViewModels;
 
-public class OverviewViewModel : ObservableRecipient, INavigationAware
+public class HistoricalDataOverviewViewModel : ObservableRecipient, INavigationAware
 {
     public void OnNavigatedTo(object parameter)
     {

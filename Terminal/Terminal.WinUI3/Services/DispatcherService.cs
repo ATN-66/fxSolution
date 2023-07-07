@@ -18,17 +18,10 @@ public class DispatcherService : IDispatcherService
         _dispatcherQueue = dispatcherQueue;
     }
 
-    public async Task ExecuteOnUIThreadAsync(Action action, DispatcherQueuePriority priority = DispatcherQueuePriority.Normal)
+    public Task ExecuteOnUIThreadAsync(Action action, DispatcherQueuePriority priority = DispatcherQueuePriority.Normal)
     {
-        if (_dispatcherQueue.HasThreadAccess)
-        {
-            await _dispatcherQueue.EnqueueAsync(action, priority).ConfigureAwait(false);
-        }
-        else
-        {
-            throw new InvalidOperationException("Cannot access UI thread.");
-        }
+        return _dispatcherQueue.EnqueueAsync(action, priority);
     }
 
-    public bool HasThreadAccess => _dispatcherQueue.HasThreadAccess;
+    public bool HasUIThreadAccess => _dispatcherQueue.HasThreadAccess;
 }

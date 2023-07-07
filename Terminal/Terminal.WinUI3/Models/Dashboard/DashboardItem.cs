@@ -1,15 +1,21 @@
-﻿using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
+﻿/*+------------------------------------------------------------------+
+  |                                 Terminal.WinUI3.Models.Dashboard |
+  |                                                 DashboardItem.cs |
+  +------------------------------------------------------------------+*/
+
+using System.Collections.ObjectModel;
 
 namespace Terminal.WinUI3.Models.Dashboard;
 
 public class DashboardItem
 {
-    public DashboardItem(string id, string title, bool isEnabled)
+    public DashboardItem(string id, string title, bool isEnabled, bool isSelected, MainItem mainItem)
     {
         Id = id;
         Title = title;
         IsEnabled = isEnabled;
+        IsSelected = isSelected;
+        MainItem   = mainItem;
     }
 
     public string Id
@@ -32,6 +38,13 @@ public class DashboardItem
 
     public bool IsSelected
     {
+        get;
+        set;
+    }
+
+    public MainItem MainItem
+    {
+
         get;
         set;
     }
