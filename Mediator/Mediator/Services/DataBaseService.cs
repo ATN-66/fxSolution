@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                                                 Mediator.Services|
-  |                                                   DataBaseService.cs |
+  |                                               DataBaseService.cs |
   +------------------------------------------------------------------+*/
 
 using Mediator.Contracts.Services;
@@ -15,7 +15,7 @@ namespace Mediator.Services;
 
 public class DataBaseService : DataBaseSource, IDataBaseService
 {
-    public DataBaseService(IConfiguration configuration, IOptions<ProviderBackupSettings> providerBackupSettings, ILogger<IDataSource> logger, IAudioPlayer audioPlayer) : base(configuration,  providerBackupSettings, logger, audioPlayer)
+    public DataBaseService(IConfiguration configuration,  ILogger<IDataSource> logger, IAudioPlayer audioPlayer) : base(configuration, logger, audioPlayer)//providerBackupSettings,IOptions<ProviderBackupSettings> providerBackupSettings,
     {
         Workplace = SetWorkplaceFromEnvironment(Assembly.GetExecutingAssembly().GetName().Name!);
     }

@@ -90,11 +90,12 @@ public partial class App
             services.AddSingleton<CancellationTokenSource>();
             services.AddSingleton<IDashboardService, DashboardService>();
             services.AddSingleton<IAudioPlayer, AudioPlayer>();
+            services.AddSingleton<ISplashScreenService, SplashScreenService>();
 
             // Business Services
             services.AddSingleton<IProcessor, Processor>();
             services.AddSingleton<IDataService, DataService>();
-            services.AddSingleton<IMediator, Mediator>();
+            services.AddSingleton<IMediator, Services.Mediator>();
             services.AddSingleton<IDataBaseService, DataBaseService>();
             services.AddSingleton<IVisualService, VisualService>();
 
@@ -186,6 +187,7 @@ public partial class App
         await GetService<IDashboardService>().InitializeAsync().ConfigureAwait(true);
         await GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(true);
 
+        return;
         using var scope = Host.Services.CreateScope();
         var processor = scope.ServiceProvider.GetRequiredService<IProcessor>();
         var processorTask = processor.StartAsync(_cts.Token);

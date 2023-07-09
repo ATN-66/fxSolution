@@ -22,7 +22,7 @@ public class DataBaseService : DataBaseSource, IDataBaseService
 {
     private readonly SolutionDataBaseSettings _solutionDataBaseSettings;
 
-    public DataBaseService(IConfiguration configuration, IOptions<ProviderBackupSettings> providerBackupSettings, IOptions<SolutionDataBaseSettings> solutionDataBaseSettings, ILogger<IDataSource> logger, IAudioPlayer audioPlayer) : base(configuration, providerBackupSettings, logger, audioPlayer)
+    public DataBaseService(IConfiguration configuration, IOptions<SolutionDataBaseSettings> solutionDataBaseSettings, ILogger<IDataSource> logger, IAudioPlayer audioPlayer) : base(configuration, logger, audioPlayer)//providerBackupSettings,IOptions<ProviderBackupSettings> providerBackupSettings,
     {
         _solutionDataBaseSettings = solutionDataBaseSettings.Value;
     }

@@ -17,6 +17,7 @@
     <SupportedOSPlatformVersion>10.0.22621.0</SupportedOSPlatformVersion>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Assets\Butterfly_Brown.png" />
     <None Remove="Assets\GalleryHeaderImage.png" />
     <None Remove="Assets\SampleMedia\LandscapeImage1.jpg" />
     <None Remove="Assets\SampleMedia\LandscapeImage2.jpg" />
@@ -28,34 +29,20 @@
     <None Remove="Assets\SampleMedia\LandscapeImage8.jpg" />
     <None Remove="Controls\HomePageHeaderImage.xaml" />
     <None Remove="Controls\TickChartControl.xaml" />
-    <None Remove="dashboard - Copy.json" />
     <None Remove="Generic.xaml" />
     <None Remove="ItemTemplates.xaml" />
     <None Remove="Models\WorkflowInfoData.json" />
     <None Remove="Styles\CommandBar.xaml" />
     <None Remove="Views\CurrenciesOverviewPage.xaml" />
     <None Remove="Views\CurrencyPage.xaml" />
-    <None Remove="Views\EURGBPPage.xaml" />
-    <None Remove="Views\EURJPYPage.xaml" />
-    <None Remove="Views\GBPJPYPage.xaml" />
-    <None Remove="Views\GBPUSDPage.xaml" />
     <None Remove="Views\HistoricalDataOverviewPage.xaml" />
-    <None Remove="Views\JPYEURPage.xaml" />
-    <None Remove="Views\JPYGBPPage.xaml" />
-    <None Remove="Views\JPYUSDPage.xaml" />
     <None Remove="Views\SymbolPage.xaml" />
     <None Remove="Views\TicksContributionsPage.xaml" />
-    <None Remove="Views\USDEURPage.xaml" />
-    <None Remove="Views\USDGBPPage.xaml" />
-    <None Remove="Views\USDJPYPage.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Page Remove="Generic.xaml" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="dashboard - Copy.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="dashboard.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -146,45 +133,9 @@
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="Views\JPYGBPPage.xaml">
-      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="Views\USDGBPPage.xaml">
-      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="Views\JPYEURPage.xaml">
-      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
-      <SubType>Designer</SubType>
-    </Page>
     <Page Update="Views\SymbolPage.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
-    </Page>
-    <Page Update="Views\USDEURPage.xaml">
-      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
-    </Page>
-    <Page Update="Views\GBPJPYPage.xaml">
-      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="Views\EURGBPPage.xaml">
-      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
-    </Page>
-    <Page Update="Views\EURJPYPage.xaml">
-      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="Views\JPYUSDPage.xaml">
-      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="Views\USDJPYPage.xaml">
-      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
-    </Page>
-    <Page Update="Views\GBPUSDPage.xaml">
-      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
     </Page>
     <Page Update="Views\TicksContributionsPage.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>

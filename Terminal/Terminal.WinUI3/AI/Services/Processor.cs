@@ -17,6 +17,7 @@ public class Processor : IProcessor
 {
     private readonly IDataService _dataService;
     private readonly IVisualService _visualService;
+    private readonly ISplashScreenService _splashScreenService;
     private readonly ILogger<IProcessor> _logger;
 
     private readonly BlockingCollection<Quotation> _liveDataQueue = new();
@@ -24,23 +25,25 @@ public class Processor : IProcessor
 
     private readonly DateTime _startDateTime;
 
-    public Processor(IDataService dataService, IVisualService visualService, ILogger<IProcessor> logger)
+    public Processor(IDataService dataService, IVisualService visualService, ISplashScreenService splashScreenService, ILogger<IProcessor> logger)
     {
         _dataService = dataService;
         _visualService = visualService;
+        _splashScreenService = splashScreenService;
         _logger = logger;
 
-        _startDateTime = DateTime.Now.AddDays(-3).AddHours(1);
+        _startDateTime = DateTime.Now.AddDays(-3).AddHours(1); // The minimum is 3 days
     }
 
     public async Task StartAsync(CancellationToken token)
     {
-        _kernels = await _dataService.LoadDataAsync(_startDateTime).ConfigureAwait(false);
+        _splashScreenService.DisplaySplash();
+        _kernels = await _dataService.LoadDataAsync(_startDateTime).ConfigureAwait(true);
         _visualService.Initialize(_kernels);
+        _splashScreenService.HideSplash();
 
         var (receivingTask, channel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
         var processingTask = ProcessingTaskAsync(token);
-
         await Task.WhenAll(receivingTask, processingTask).ConfigureAwait(false);
         await channel.ShutdownAsync().ConfigureAwait(false);
     }

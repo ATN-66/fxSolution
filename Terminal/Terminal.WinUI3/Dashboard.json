@@ -46,19 +46,79 @@
               "Content": "EUR",
               "Tag": "EUR",
               "Glyph": "\u20AC",
-              "NavigateTo": "CurrencyViewModel"
+              "NavigateTo": "CurrencyViewModel",
+              "MenuItems": [
+                {
+                  "Content": "USD EUR",
+                  "Tag": "EURUSD, true",
+                  "Glyph": "\u0024\u00B7\u20AC",
+                  "NavigateTo": "SymbolViewModel"
+                },
+                {
+                  "Content": "GBP EUR",
+                  "Tag": "EURGBP, true",
+                  "Glyph": "\u00A3\u00B7\u20AC",
+                  "NavigateTo": "SymbolViewModel"
+                },
+                {
+                  "Content": "JPY EUR",
+                  "Tag": "EURJPY, true",
+                  "Glyph": "\u00A5\u00B7\u20AC",
+                  "NavigateTo": "SymbolViewModel"
+                }
+              ]
             },
             {
               "Content": "GBP",
               "Tag": "GBP",
               "Glyph": "\u00A3",
-              "NavigateTo": "CurrencyViewModel"
+              "NavigateTo": "CurrencyViewModel",
+              "MenuItems": [
+                {
+                  "Content": "USD GBP",
+                  "Tag": "GBPUSD, true",
+                  "Glyph": "\u0024\u00B7\u00A3",
+                  "NavigateTo": "SymbolViewModel"
+                },
+                {
+                  "Content": "EUR GBP",
+                  "Tag": "EURGBP, false",
+                  "Glyph": "\u20AC\u00B7\u00A3",
+                  "NavigateTo": "SymbolViewModel"
+                },
+                {
+                  "Content": "JPY GBP",
+                  "Tag": "GBPJPY, true",
+                  "Glyph": "\u00A5\u00B7\u00A3",
+                  "NavigateTo": "SymbolViewModel"
+                }
+              ]
             },
             {
               "Content": "JPY",
               "Tag": "JPY",
               "Glyph": "\u00A5",
-              "NavigateTo": "CurrencyViewModel"
+              "NavigateTo": "CurrencyViewModel",
+              "MenuItems": [
+                {
+                  "Content": "USD JPY",
+                  "Tag": "USDJPY, false",
+                  "Glyph": "\u0024\u00B7\u00A5",
+                  "NavigateTo": "SymbolViewModel"
+                },
+                {
+                  "Content": "EUR JPY",
+                  "Tag": "EURJPY, false",
+                  "Glyph": "\u20AC\u00B7\u00A5;",
+                  "NavigateTo": "SymbolViewModel"
+                },
+                {
+                  "Content": "GBP JPY",
+                  "Tag": "GBPJPY, false",
+                  "Glyph": "\u00A3\u00B7\u00A5",
+                  "NavigateTo": "SymbolViewModel"
+                }
+              ]
             }
           ]
         }

@@ -8,6 +8,7 @@ using Windows.Storage;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
+using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.ViewModels;
 
 namespace Terminal.WinUI3.Views;
@@ -19,30 +20,19 @@ public sealed partial class TicksContributionsPage
     private double _originalWidth;
     private double _originalMousePosition;
 
+    private readonly ILocalSettingsService _localSettingsService;
+    private readonly IDispatcherService _dispatcherService;
+
+    private static string TicksContributionsPageFirstColumnDefinitionWidth => "TicksContributionsPage_FirstColumnDefinition_Width";
+    private static string TicksContributionsPageFirstRowDefinitionHeight => "TicksContributionsPage_FirstRowDefinition_Height";
+
     public TicksContributionsPage()
     {
-        ViewModel = App.GetService<TicksContributionsViewModel>();
         InitializeComponent();
 
-        if (ApplicationData.Current.LocalSettings.Values.TryGetValue("TicksContributionsPage_FirstRowDefinition_Height", out var height))
-        {
-            FirstRowDefinition.Height = new GridLength(Convert.ToInt32(height));
-        }
-        else
-        {
-            ApplicationData.Current.LocalSettings.Values.Add("TicksContributionsPage_FirstRowDefinition_Height", 100.ToString());
-            FirstRowDefinition.Height = new GridLength(Convert.ToInt32(100));
-        }
-
-        if (ApplicationData.Current.LocalSettings.Values.TryGetValue("TicksContributionsPage_FirstColumnDefinition_Width", out var width))
-        {
-            FirstColumnDefinition.Width = new GridLength(Convert.ToInt32(width));
-        }
-        else
-        {
-            ApplicationData.Current.LocalSettings.Values.Add("TicksContributionsPage_FirstColumnDefinition_Width", 100.ToString());
-            FirstColumnDefinition.Width = new GridLength(Convert.ToInt32(100));
-        }
+        ViewModel = App.GetService<TicksContributionsViewModel>();
+        _localSettingsService = App.GetService<ILocalSettingsService>();
+        _dispatcherService = App.GetService<IDispatcherService>();
     }
 
     public List<int> DotsCollection
@@ -55,11 +45,37 @@ public sealed partial class TicksContributionsPage
         get;
     }
 
+    protected async override void OnNavigatedTo(NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+
+        var widthSetting = await _localSettingsService.ReadSettingAsync<string>(TicksContributionsPageFirstColumnDefinitionWidth).ConfigureAwait(false);
+        var heightSetting = await _localSettingsService.ReadSettingAsync<string>(TicksContributionsPageFirstRowDefinitionHeight).ConfigureAwait(false);
+
+        if (int.TryParse(widthSetting, out var width) && int.TryParse(heightSetting, out var height))
+        {
+            await _dispatcherService.ExecuteOnUIThreadAsync(() =>
+            {
+                FirstColumnDefinition.Width = new GridLength(Convert.ToInt32(width));
+                FirstRowDefinition.Height = new GridLength(Convert.ToInt32(height));
+            }).ConfigureAwait(true);
+        }
+        else
+        {
+            FirstColumnDefinition.Width = new GridLength(Convert.ToInt32(100));
+            FirstRowDefinition.Height = new GridLength(Convert.ToInt32(100));
+        }
+    }
+
     protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
     {
         base.OnNavigatingFrom(e);
-        ApplicationData.Current.LocalSettings.Values["TicksContributionsPage_FirstRowDefinition_Height"] = FirstRowDefinition.Height.Value.ToString(CultureInfo.InvariantCulture);
-        ApplicationData.Current.LocalSettings.Values["TTicksContributionsPage_FirstColumnDefinition_Width"] = FirstColumnDefinition.Width.Value.ToString(CultureInfo.InvariantCulture);
+
+        _dispatcherService.ExecuteOnUIThreadAsync( async () => 
+        {
+            await _localSettingsService.SaveSettingAsync(TicksContributionsPageFirstColumnDefinitionWidth, FirstColumnDefinition.Width.Value.ToString(CultureInfo.InvariantCulture)).ConfigureAwait(false);
+            await _localSettingsService.SaveSettingAsync(TicksContributionsPageFirstRowDefinitionHeight, FirstRowDefinition.Height.Value.ToString(CultureInfo.InvariantCulture)).ConfigureAwait(false);
+        });
     }
 
     private void GridSplitter_PointerReleased(object sender, PointerRoutedEventArgs e)
@@ -67,7 +83,6 @@ public sealed partial class TicksContributionsPage
         _isDrag = false;
         ((UIElement)sender).ReleasePointerCapture(e.Pointer);
     }
-
     private void GridSplitterHorizontal_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
         _isDrag = true;
@@ -75,7 +90,6 @@ public sealed partial class TicksContributionsPage
         _originalMousePosition = e.GetCurrentPoint(this).Position.Y;
         ((UIElement)sender).CapturePointer(e.Pointer);
     }
-
     private void GridSplitterHorizontal_PointerMoved(object sender, PointerRoutedEventArgs e)
     {
         if (!_isDrag)
@@ -95,7 +109,6 @@ public sealed partial class TicksContributionsPage
 
         FirstRowDefinition.Height = new GridLength(newHeight);
     }
-
     private void GridSplitterVertical_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
         _isDrag = true;
@@ -103,7 +116,6 @@ public sealed partial class TicksContributionsPage
         _originalMousePosition = e.GetCurrentPoint(this).Position.X;
         ((UIElement)sender).CapturePointer(e.Pointer);
     }
-
     private void GridSplitterVertical_PointerMoved(object sender, PointerRoutedEventArgs e)
     {
         if (!_isDrag)

@@ -13,16 +13,16 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
     protected readonly Provider _thisProvider;
     protected readonly string _dataBaseSourceDateTimeFormat;
     protected readonly DateTime _startDateTimeUtc;
-    private readonly ProviderBackupSettings _providerBackupSettings;
-    private const int QuartersInYear = 4;
+    //private readonly ProviderBackupSettings _providerBackupSettings;
+    //private const int QuartersInYear = 4;
 
-    protected DataBaseSource(IConfiguration configuration, IOptions<ProviderBackupSettings> providerBackupSettings, ILogger<IDataSource> logger, IAudioPlayer audioPlayer) : base(configuration, logger, audioPlayer) 
+    protected DataBaseSource(IConfiguration configuration, ILogger<IDataSource> logger, IAudioPlayer audioPlayer) : base(configuration, logger, audioPlayer) 
     {
         _thisProvider = Enum.Parse<Provider>(configuration.GetValue<string>($"{nameof(_thisProvider)}")!);
         _dataBaseSourceDateTimeFormat = configuration.GetValue<string>($"{nameof(_dataBaseSourceDateTimeFormat)}")!;
 
         _startDateTimeUtc = DateTime.ParseExact(configuration.GetValue<string>($"{nameof(_startDateTimeUtc)}")!, _dataBaseSourceDateTimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
-        _providerBackupSettings = providerBackupSettings.Value;
+        //_providerBackupSettings = providerBackupSettings.Value;IOptions<ProviderBackupSettings> providerBackupSettings,
     }
 
     protected Workplace Workplace { get; init; }
@@ -38,80 +38,80 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
         throw new InvalidOperationException($"{nameof(environment)} setting for {executingAssemblyName} is null or invalid.");
     }
 
-    public async Task<Dictionary<ActionResult, int>> BackupAsync()
+    public Task<Dictionary<ActionResult, int>> BackupAsync()
     {
         throw new NotImplementedException("public async Task<Dictionary<ActionResult, int>> BackupAsync() --> NotImplementedException ");
 
-        var resultCounts = new Dictionary<ActionResult, int>
-        {
-            [ActionResult.ActionNotPossible] = 0,
-            [ActionResult.Failure] = 0,
-            [ActionResult.NoActionRequired] = 0,
-            [ActionResult.Success] = 0
-        };
-        var startYear = _startDateTimeUtc.Year;
-        var endYear = DateTime.UtcNow.Year;
+        //var resultCounts = new Dictionary<ActionResult, int>
+        //{
+        //    [ActionResult.ActionNotPossible] = 0,
+        //    [ActionResult.Failure] = 0,
+        //    [ActionResult.NoActionRequired] = 0,
+        //    [ActionResult.Success] = 0
+        //};
+        //var startYear = _startDateTimeUtc.Year;
+        //var endYear = DateTime.UtcNow.Year;
 
-        if (Workplace is not (Workplace.Production or Workplace.Development))
-        {
-            for (var yearToBackup = startYear; yearToBackup <= endYear; yearToBackup++)
-            {
-                for (var quarter = 1; quarter <= QuartersInYear; quarter++)
-                {
-                    resultCounts[ActionResult.ActionNotPossible]++;
-                }
-            }
+        //if (Workplace is not (Workplace.Production or Workplace.Development))
+        //{
+        //    for (var yearToBackup = startYear; yearToBackup <= endYear; yearToBackup++)
+        //    {
+        //        for (var quarter = 1; quarter <= QuartersInYear; quarter++)
+        //        {
+        //            resultCounts[ActionResult.ActionNotPossible]++;
+        //        }
+        //    }
 
-            return resultCounts;
-        }
+        //    return resultCounts;
+        //}
 
-        try
-        {
-            for (var yearToBackup = startYear; yearToBackup <= endYear; yearToBackup++)
-            {
-                for (var quarter = 1; quarter <= QuartersInYear; quarter++)
-                {
-                    var result = await BackupProviderDatabase(yearToBackup, quarter).ConfigureAwait(false);
-                    switch (result)
-                    {
-                        case -1:
-                            resultCounts[ActionResult.Failure]++;
-                            break;
-                        case 0:
-                            resultCounts[ActionResult.NoActionRequired]++;
-                            break;
-                        case 1:
-                            resultCounts[ActionResult.Success]++;
-                            break;
-                    }
-                }
-            }
-        }
-        catch (Exception exception)
-        {
-            LogException(exception, "");
-            throw;
-        }
+        //try
+        //{
+        //    for (var yearToBackup = startYear; yearToBackup <= endYear; yearToBackup++)
+        //    {
+        //        for (var quarter = 1; quarter <= QuartersInYear; quarter++)
+        //        {
+        //            var result = await BackupProviderDatabase(yearToBackup, quarter).ConfigureAwait(false);
+        //            switch (result)
+        //            {
+        //                case -1:
+        //                    resultCounts[ActionResult.Failure]++;
+        //                    break;
+        //                case 0:
+        //                    resultCounts[ActionResult.NoActionRequired]++;
+        //                    break;
+        //                case 1:
+        //                    resultCounts[ActionResult.Success]++;
+        //                    break;
+        //            }
+        //        }
+        //    }
+        //}
+        //catch (Exception exception)
+        //{
+        //    LogException(exception, "");
+        //    throw;
+        //}
 
-        return resultCounts;
+        //return resultCounts;
 
-        async Task<int> BackupProviderDatabase(int yearNumber, int quarterNumber)
-        {
-            var databaseName = $"{yearNumber}.{quarterNumber}.{_thisProvider.ToString().ToLower()}";
-            await using var connection = new SqlConnection($@"Server={Environment.MachineName}\SQLEXPRESS;Database={databaseName};Trusted_Connection=True;");
-            await connection.OpenAsync().ConfigureAwait(false);
-            await using var cmd = new SqlCommand("BackupProviderDatabase", connection) { CommandType = CommandType.StoredProcedure };
+        //async Task<int> BackupProviderDatabase(int yearNumber, int quarterNumber)
+        //{
+        //    var databaseName = $"{yearNumber}.{quarterNumber}.{_thisProvider.ToString().ToLower()}";
+        //    await using var connection = new SqlConnection($@"Server={Environment.MachineName}\SQLEXPRESS;Database={databaseName};Trusted_Connection=True;");
+        //    await connection.OpenAsync().ConfigureAwait(false);
+        //    await using var cmd = new SqlCommand("BackupProviderDatabase", connection) { CommandType = CommandType.StoredProcedure };
 
-            cmd.Parameters.Add(new SqlParameter("@Drive", _providerBackupSettings.Drive));
-            cmd.Parameters.Add(new SqlParameter("@Folder", _providerBackupSettings.Folder));
+        //    cmd.Parameters.Add(new SqlParameter("@Drive", _providerBackupSettings.Drive));
+        //    cmd.Parameters.Add(new SqlParameter("@Folder", _providerBackupSettings.Folder));
 
-            var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
-            returnParameter.Direction = ParameterDirection.ReturnValue;
+        //    var returnParameter = cmd.Parameters.Add("@ReturnVal", SqlDbType.Int);
+        //    returnParameter.Direction = ParameterDirection.ReturnValue;
 
-            await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
-            var result = (int)returnParameter.Value;
-            return result;
-        }
+        //    await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        //    var result = (int)returnParameter.Value;
+        //    return result;
+        //}
     }
     protected override async Task<IList<Quotation>> GetDataAsync(DateTime startDateTimeInclusive, CancellationToken token)
     {

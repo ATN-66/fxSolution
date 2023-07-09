@@ -46,6 +46,7 @@ public class DataService : ObservableRecipient, IDataService
 
     public async Task<IDictionary<Symbol, Kernel>> LoadDataAsync(DateTime startDateTimeInclusive)
     {
+        IList<Quotation> quotations;
         IDictionary<Symbol, Kernel> kernels = new Dictionary<Symbol, Kernel>();
         foreach (var symbol in Enum.GetValues(typeof(Symbol)))
         {
@@ -57,11 +58,16 @@ public class DataService : ObservableRecipient, IDataService
 
         while (start <= end)
         {
-            var quotations = await _mediator.GetHistoricalDataAsync(start, start, _token).ConfigureAwait(true);
+            quotations = await _dataBaseService.GetHistoricalDataAsync(start, start, _token).ConfigureAwait(true);
 
             if (quotations.Count == 0)
             {
-                quotations = await _fileService.GetHistoricalDataAsync(start, start, _token).ConfigureAwait(true);
+                quotations = await _mediator.GetHistoricalDataAsync(start, start, _token).ConfigureAwait(true);
+
+                if (quotations.Count == 0)
+                {
+                    quotations = await _fileService.GetHistoricalDataAsync(start, start, _token).ConfigureAwait(true);
+                }
             }
 
             if (quotations.Count == 0)
@@ -84,10 +90,15 @@ public class DataService : ObservableRecipient, IDataService
             start = start.Add(new TimeSpan(1, 0, 0));
         }
 
-        var buffered = await _mediator.GetBufferedDataAsync(_token).ConfigureAwait(true);
+        quotations = await _mediator.GetBufferedDataAsync(_token).ConfigureAwait(true);
+        if (quotations.Count == 0)
+        {
+            return kernels;
+        }
+        
         foreach (var symbol in Enum.GetValues(typeof(Symbol)))
         {
-            var filteredQuotations = buffered.Where(quotation => quotation.Symbol == (Symbol)symbol).ToList();
+            var filteredQuotations = quotations.Where(quotation => quotation.Symbol == (Symbol)symbol).ToList();
             kernels[(Symbol)symbol].AddRange(filteredQuotations);
         }
 
@@ -525,75 +536,43 @@ public class DataService : ObservableRecipient, IDataService
     }
     private bool HourExcludedPass(DateTime dateTime)
     {
-        var dateExists = _excludedDates.Any(dt => dt.Date == dateTime.Date);
-        if (dateExists)
-        {
-            return true;
-        }
+        bool dateExists;
 
-        if (dateTime.DayOfWeek == DayOfWeek.Saturday)
+        switch (dateTime.DayOfWeek)
         {
-            return true;
-        }
-
-        if (dateTime.DayOfWeek == DayOfWeek.Friday)
-        {
-            dateExists = _excludedHours.Any(dt => dt.Date == dateTime.Date);
-            if (dateExists)
+            case DayOfWeek.Friday:
             {
-                var dateInHashSet = _excludedHours.FirstOrDefault(dt => dt == dateTime);
-                var nextDay = dateInHashSet.AddDays(1).Date;
-                if (dateTime >= dateInHashSet && dateTime <= nextDay)
+                dateExists = _excludedHours.Any(dt => dt.Date == dateTime.Date);
+                if (!dateExists)
+                {
+                    return false;
+                }
+
+                var today = _excludedHours.FirstOrDefault(dt => dt.Date == dateTime.Date);
+                var nextDay = today.AddDays(1).Date;
+                return dateTime >= today && dateTime <= nextDay;
+            }
+            case DayOfWeek.Saturday: return true;
+            case DayOfWeek.Sunday:
+                if (dateTime.Hour <= 21)
                 {
                     return true;
                 }
-            }
-            else
-            {
-                return false;
-            }
+                break;
+            case DayOfWeek.Monday:
+                break;
+            case DayOfWeek.Tuesday:
+                break;
+            case DayOfWeek.Wednesday:
+                break;
+            case DayOfWeek.Thursday:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
 
-
-        //if (excludedDateTime > start)
-        //{
-        //    throw new Exception("quotations.Count == 0 && excludedDateTime >= start");
-        //}
-
-        return false;
-        //if (_excludedDates.Contains(dailyContribution.HourlyContributions[0].DateTime.Date) || dailyContribution.HourlyContributions[0].DateTime.DayOfWeek == DayOfWeek.Saturday)
-        //{
-        //    return Contribution.Excluded;
-        //}
-
-        //switch (dailyContribution.HourlyContributions[0].DateTime.DayOfWeek)
-        //{
-        //    case DayOfWeek.Friday:
-        //        if (dailyContribution.HourlyContributions.SkipLast(2).All(c => c.HasContribution))
-        //        {
-        //            return Contribution.Full;
-        //        }
-        //        if (dailyContribution.HourlyContributions.SkipLast(3).All(c => c.HasContribution) && _excludedHours.Contains(dailyContribution.HourlyContributions[^3].DateTime))
-        //        {
-        //            return Contribution.Full;
-        //        }
-        //        return dailyContribution.HourlyContributions.Any(c => c.HasContribution) ? Contribution.Partial : Contribution.None;
-        //    case DayOfWeek.Sunday when dailyContribution.HourlyContributions.TakeLast(2).All(c => c.HasContribution): return Contribution.Full;
-        //    case DayOfWeek.Monday:
-        //    case DayOfWeek.Tuesday:
-        //    case DayOfWeek.Wednesday:
-        //    case DayOfWeek.Thursday:
-        //    case DayOfWeek.Saturday:
-        //    default:
-        //    {
-        //        if (dailyContribution.HourlyContributions.All(c => c.HasContribution))
-        //        {
-        //            return Contribution.Full;
-        //        }
-
-        //        return dailyContribution.HourlyContributions.Any(c => c.HasContribution) ? Contribution.Partial : Contribution.None;
-        //    }
-        //}
+        dateExists = _excludedDates.Any(dt => dt.Date == dateTime.Date);
+        return dateExists;
     }
     private int ReportProgressReport(int totalItems, int processedItems, DailyContribution dailyContribution)
     {

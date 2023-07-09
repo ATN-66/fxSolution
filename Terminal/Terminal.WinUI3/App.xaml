@@ -116,7 +116,7 @@
                 <Setter Property="ZoomMode" Value="Disabled" />
             </Style>
 
-         
+
             <Style x:Key="ColorPageExampleBox" TargetType="StackPanel">
                 <Setter Property="CornerRadius" Value="4" />
                 <Setter Property="Background" Value="White" />

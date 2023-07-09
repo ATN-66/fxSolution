@@ -24,7 +24,7 @@ public partial class TicksContributionsViewModel : ObservableRecipient, INavigat
 
     [ObservableProperty] private string _headerContext = "Ticks";
 
-    private List<Common.Entities.Symbol> Symbols { get; } = Enum.GetValues(typeof(Common.Entities.Symbol)).Cast<Common.Entities.Symbol>().ToList();
+    public List<Common.Entities.Symbol> Symbols { get; } = Enum.GetValues(typeof(Common.Entities.Symbol)).Cast<Common.Entities.Symbol>().ToList();
     [ObservableProperty] private Common.Entities.Symbol _selectedSymbol;
     [ObservableProperty] private DateTimeOffset _selectedDate;
     [ObservableProperty] private TimeSpan _selectedTime;
@@ -58,7 +58,7 @@ public partial class TicksContributionsViewModel : ObservableRecipient, INavigat
 
     private CancellationTokenSource? _cts;
     private DialogViewModel _dialogViewModel = null!;
-    private DateTimeOffset Today { get; } = DateTimeOffset.Now;
+    public DateTimeOffset Today { get; } = DateTimeOffset.Now;
 
     public TicksContributionsViewModel(IDataService dataService, IDialogService dialogService, IAppNotificationService notificationService, IDispatcherService dispatcherService)
     {
