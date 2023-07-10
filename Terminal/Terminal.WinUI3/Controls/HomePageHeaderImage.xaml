@@ -36,7 +36,7 @@
                 x:Name="HeroImage"
                 ui:VisualExtensions.NormalizedCenterPoint="0.5"
                 ImageOpened="OnImageOpened"
-                Source="/Assets/c1.webp"
+                Source="/Assets/R.jpg"
                 Stretch="UniformToFill" />
             <Image
                 x:Name="HeroOverlayImage"

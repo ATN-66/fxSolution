@@ -55,6 +55,25 @@
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
                             Foreground="{TemplateBinding Foreground}" />
+
+                        <Button
+                            Grid.Row="3"
+                            Grid.Column="0"
+                            Margin="0,0,10,10"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            Command="{Binding DownCommand}"
+                            Content="Down" />
+
+                        <TextBlock
+                            Grid.Row="3"
+                            Grid.Column="0"
+                            Text="{Binding S}"
+                            Margin="0,0,10,10"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom" />
+
+
                         <Slider
                             Grid.Row="4"
                             Grid.Column="0"

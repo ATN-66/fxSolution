@@ -3,7 +3,6 @@
   |                                                   DataService.cs |
   +------------------------------------------------------------------+*/
 
-using System;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -366,7 +365,7 @@ public class DataService : ObservableRecipient, IDataService
                         throw new InvalidOperationException("updateContributionsResult != 24");
                     }
 
-                    _ = await _dataBaseService.DeleteTicksAsync(dateTimes, dailyContribution.Year, dailyContribution.HourlyContributions[0].DateTime.Week()).ConfigureAwait(true);
+                    _ = await _dataBaseService.DeleteTicksAsync(dateTimes, dailyContribution.Year, dailyContribution.Week).ConfigureAwait(true);
                     var quotations = await GetHistoricalDataAsync(dateTimes, provider).ConfigureAwait(true);
                     var groupedQuotations = quotations.GroupBy(q => new QuotationKey { Symbol = q.Symbol, Hour = q.DateTime.Hour, });
                     var sortedGroups = groupedQuotations.OrderBy(g => g.Key.Hour).ThenBy(g => g.Key.Symbol);
@@ -391,17 +390,21 @@ public class DataService : ObservableRecipient, IDataService
                         }
                         dailyContribution.HourlyContributions[hour].HasContribution = true;
                     }
-                    Debug.Assert(quotations.Count == counter);//todo
+
+                    if (quotations.Count != counter)
+                    {
+                        throw new InvalidOperationException("quotations.Count != counter");
+                    }
+
                     monthlyContribution.DailyContributions[d].Contribution = DetermineDailyContributionStatus(dailyContribution);
                     var list = await _dataBaseService.GetTicksContributionsAsync().ConfigureAwait(true);
                     CreateGroups(list);
-                    //_logger.LogInformation("{date} was updated. {count} were saved.", dailyContribution.HourlyContributions[0].DateTime.ToString(), counter.ToString());
-                    return 0.ToString();
+                    return $"{dailyContribution.HourlyContributions[0].DateTime:D} was updated. {counter} were saved.";
                 }
             }
         }
 
-        throw new InvalidOperationException("Never should be here.");
+        throw new InvalidOperationException("Must never be here!");
     }
     public async Task ImportAsync(CancellationToken cancellationToken, Provider provider)
     {

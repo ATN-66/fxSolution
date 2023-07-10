@@ -3,7 +3,6 @@
   |                                    IndicatorToMediatorService.cs |
   +------------------------------------------------------------------+*/
 
-using System.Reflection;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Common.MetaQuotes.Mediator;
@@ -19,6 +18,7 @@ namespace Mediator.Services;
 internal class IndicatorToMediatorService : IIndicatorToMediatorService
 {
     private readonly Guid _guid = Guid.NewGuid();
+    private Symbol _symbol;
     private string _pipeName = "Indicator.To.Mediator";
     private readonly IDataProviderService _dataProviderService;
     private readonly ILogger<IndicatorToMediatorService> _logger;
@@ -32,7 +32,8 @@ internal class IndicatorToMediatorService : IIndicatorToMediatorService
 
     public async Task StartAsync(Symbol symbol, CancellationToken token)
     {
-        _pipeName = $"{_pipeName}.{(int)symbol}";
+        _symbol = symbol;
+        _pipeName = $"{_pipeName}.{(int)_symbol}";
         while (!token.IsCancellationRequested)
         {
             try
@@ -49,7 +50,7 @@ internal class IndicatorToMediatorService : IIndicatorToMediatorService
             }
             catch (OperationCanceledException)
             {
-               break;
+                break;
             }
             catch (Exception exception)
             {
@@ -61,7 +62,7 @@ internal class IndicatorToMediatorService : IIndicatorToMediatorService
                 switch (token.IsCancellationRequested)
                 {
                     case false:
-                        await _dataProviderService.DeInitAsync((int)DeInitReason.Terminal_closed).ConfigureAwait(false);
+                        await _dataProviderService.DeInitAsync((int)_symbol, (int)DeInitReason.Terminal_closed).ConfigureAwait(false);
                         _logger.LogTrace("pipeName:({_pipeName}).({_guid}) is OFF.", _pipeName, _guid.ToString());
                         break;
                 }

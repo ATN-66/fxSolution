@@ -5,18 +5,18 @@ mode con: cols=100 lines=100
 rem ------------------------------------------------------------------------------------------------------------------------------
 @SET DownloadedDLLFolder=C:\forex.shared\mt5\dll\
 @SET DownloadedLibrariesFolder=C:\forex.shared\mt5\libraries\
-@SET DownloadedScriptsFolder=C:\forex.shared\mt5\scripts\
+@SET DownloadedEAFolder=C:\forex.shared\mt5\scripts\
 rem ------------------------------------------------------------------------------------------------------------------------------
 @SET DLLFolder=C:\Users\%userame%\AppData\Roaming\MetaQuotes\Terminal\%instance_id%\MQL5\Libraries\
 @SET LibrariesFolder=C:\forex.mt5\libraries\
-@SET IndicatorsFolder=C:\Users\%userame%\AppData\Roaming\MetaQuotes\Terminal\%instance_id%\MQL5\Indicators\Examples\
+@SET EAFolder=C:\Users\%userame%\AppData\Roaming\MetaQuotes\Terminal\%instance_id%\MQL5\Experts\Advisors\
 rem ------------------------------------------------------------------------------------------------------------------------------
 mkdir %DLLFolder%
 mkdir %LibrariesFolder%
-mkdir %IndicatorsFolder%
+mkdir %EAFolder%
 rem ------------------------------------------------------------------------------------------------------------------------------
 @ECHO ON
 move %DownloadedDLLFolder%*.* %DLLFolder% 
 move %DownloadedLibrariesFolder%*.* %LibrariesFolder% 
-move %DownloadedScriptsFolder%*.* %IndicatorsFolder% 
+move %DownloadedEAFolder%*.* %EAFolder% 
 pause

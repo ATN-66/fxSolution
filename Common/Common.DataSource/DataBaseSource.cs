@@ -191,7 +191,31 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
                 throw;
             }
 
-            result += await InsertDataAsync(connection, tableName, dataTable, weekNumber).ConfigureAwait(false);
+            try
+            {
+                result += await InsertDataAsync(connection, tableName, dataTable, weekNumber).ConfigureAwait(false);
+            }
+            catch (SqlException sqlException)
+            {
+                if (sqlException.Number is 2627 or 2601)
+                {
+                    // Violation of primary key/unique constraint
+                    var updatedQuotations = quotations
+                        .GroupBy(q => q.Symbol)
+                        .SelectMany(group => group.Skip(1))
+                        .ToList();
+                    // Recursive call to SaveDataAsync
+                    return await SaveDataAsync(updatedQuotations).ConfigureAwait(false);
+                }
+
+                LogException(sqlException, "");
+                throw;
+            }
+            catch (Exception exception)
+            {
+                LogException(exception, "");
+                throw;
+            }
         }
 
         return result;
@@ -234,13 +258,11 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
                 _logger.LogInformation("{dataTableRowsCount} ticks saved. Week: {weekNumber}.", dataTable.Rows.Count.ToString(), weekNumber.ToString());
             }
         }
-        catch (SqlException sqlException)
+        catch (SqlException)
         {
-            LogException(sqlException, "");
-
             if (transaction == null)
             {
-                throw;
+                throw new NotImplementedException("transaction == null");
             }
 
             try

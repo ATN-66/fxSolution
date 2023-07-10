@@ -13,6 +13,7 @@ using Terminal.WinUI3.Contracts.ViewModels;
 using Terminal.WinUI3.Controls;
 using Binding = Microsoft.UI.Xaml.Data.Binding;
 using Microsoft.Extensions.Logging;
+using CommunityToolkit.Mvvm.Input;
 
 namespace Terminal.WinUI3.ViewModels;
 
@@ -42,6 +43,24 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     } = null!;
 
     private Symbol Symbol
+    {
+        get;
+        set;
+    }
+
+    private bool IsReversed
+    {
+        get;
+        set;
+    }
+
+    public Currency UpCurrency
+    {
+        get;
+        set;
+    }
+
+    public Currency DownCurrency
     {
         get;
         set;
@@ -77,9 +96,9 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
                 throw new Exception($"Failed to parse '{symbolStr}' into a Symbol enum value.");
             }
 
-            var isReversed = bool.Parse(parts?[1].Trim()!);
+            IsReversed = bool.Parse(parts?[1].Trim()!);
 
-            TickChartControl = _visualService.GetTickChartControl(Symbol, isReversed)!;
+            TickChartControl = _visualService.GetTickChartControl(Symbol, IsReversed)!;
             TickChartControl.DataContext = this;
 
             TickChartControl.SetBinding(TickChartControl.PipsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(PipsPerChart)), Mode = BindingMode.TwoWay });
@@ -95,11 +114,32 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
             LogExceptionHelper.LogException(_logger, exception, "");
             throw;
         }
+
+        (UpCurrency, DownCurrency) = GetCurrenciesFromSymbol(Symbol, IsReversed);
     }
 
     public void OnNavigatedFrom()
     {
         TickChartControl.Detach();
         TickChartControl = null!;
+    }
+
+    [RelayCommand]
+    private Task DownAsync()
+    {
+        return Task.CompletedTask;
+    }
+
+    private static (Currency upCurrency, Currency downCurrency) GetCurrenciesFromSymbol(Symbol symbol, bool isReversed)
+    {
+        var symbolName = symbol.ToString();
+        var firstCurrency = symbolName[..3];
+        var secondCurrency = symbolName.Substring(3, 3);
+        if (Enum.TryParse<Currency>(firstCurrency, out var firstCurrencyEnum) && Enum.TryParse<Currency>(secondCurrency, out var secondCurrencyEnum))
+        {
+            return isReversed ? (secondCurrencyEnum, firstCurrencyEnum) : (firstCurrencyEnum, secondCurrencyEnum);
+        }
+
+        throw new Exception("Failed to parse currencies from symbol.");
     }
 }

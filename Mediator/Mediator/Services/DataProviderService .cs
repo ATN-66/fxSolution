@@ -4,7 +4,6 @@
   +------------------------------------------------------------------+*/
 
 using System.Globalization;
-using System.Reflection;
 using Common.Entities;
 using System.Timers;
 using Common.ExtensionsAndHelpers;
@@ -61,8 +60,8 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     private readonly int _maxReceiveMessageSize;
     private static volatile bool _isFaulted;
    
-    public event EventHandler<ThreeStateChangedEventArgs> IsServiceActivatedChanged = null!;
-    public event EventHandler<TwoStateChangedEventArgs> IsClientActivatedChanged = null!;
+    public event EventHandler<ServiceStatusChangedEventArgs> ServiceStatusChanged = null!;
+    public event EventHandler<ClientStatusChangedEventArgs> IsClientActivatedChanged = null!;
 
     private static readonly Dictionary<Symbol, Ticksdata.Symbol> SymbolMapping = new()
     {
@@ -77,8 +76,8 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     public DataProviderService(IConfiguration configuration, IOptions<DataProviderSettings> dataProviderSettings, MainViewModel mainViewModel, CancellationTokenSource cts, IDataBaseService dataBaseService, ILogger<IDataProviderService> logger)
     {
         _mainViewModel = mainViewModel;
-        IsServiceActivatedChanged += (_, e) => { _mainViewModel.IsDataProviderActivated = e.IsActivated; };
-        IsClientActivatedChanged += (_, e) => { _mainViewModel.IsDataClientActivated = e.IsActivated; };
+        ServiceStatusChanged += (_, e) => { _mainViewModel.DataProviderStatus = e.ServiceStatus; };
+        IsClientActivatedChanged += (_, e) => { _mainViewModel.DataClientStatus = e.ClientStatus; };
         _logger = logger;
 
         _mT5DateTimeFormat = configuration.GetValue<string>($"{nameof(_mT5DateTimeFormat)}")!;
@@ -98,51 +97,51 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         _dataBaseService = dataBaseService;
         _logger = logger;
 
-        _isServiceActivated = false;
-        _isClientConnected = false;
+        _serviceStatus = ServiceStatus.Off;
+        _clientStatus = ClientStatus.Off;
 
         _dataProviderSettings = dataProviderSettings.Value;
         _logger.LogTrace("{_guid} is ON. {_dataProviderHost}:{_dataProviderPort}", _guid, _dataProviderSettings.Host, _dataProviderSettings.Port);
     }
 
-    private bool? _isServiceActivated;
-    private bool? IsServiceActivated
+    private ServiceStatus _serviceStatus;
+    private ServiceStatus ServiceStatus
     {
-        get => _isServiceActivated;
+        get => _serviceStatus;
         set
         {
-            if (value == _isServiceActivated)
+            if (value == _serviceStatus)
             {
                 return;
             }
 
-            _isServiceActivated = value;
-            IsServiceActivatedChanged(this, new ThreeStateChangedEventArgs(_isServiceActivated));
+            _serviceStatus = value;
+            ServiceStatusChanged(this, new ServiceStatusChangedEventArgs(ServiceStatus));
         }
     }
 
     #region ClientConnection
     private int _clientConnectionCounter;
-    private bool _isClientConnected;
-    private bool IsClientConnected
+    private ClientStatus _clientStatus;
+    private ClientStatus ClientStatus
     {
         set
         {
-            _isClientConnected = value;
-            var newValue = _clientConnectionCounter > 0;
-            if (newValue == _isClientConnected)
+            _clientStatus = value;
+            var newValue = _clientConnectionCounter > 0 ? ClientStatus.On : ClientStatus.Off;
+            if (newValue == _clientStatus)
             {
                 return;
             }
 
-            _isClientConnected = newValue;
-            IsClientActivatedChanged(this, new TwoStateChangedEventArgs(_isClientConnected));
+            _clientStatus = newValue;
+            IsClientActivatedChanged(this, new ClientStatusChangedEventArgs(_clientStatus));
         }
     }
     private void ConnectClient()
     {
         Interlocked.Increment(ref _clientConnectionCounter);
-        IsClientConnected = _isClientConnected;
+        ClientStatus = _clientStatus;
     }
     private void DisconnectClient()
     {
@@ -150,7 +149,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         {
             Interlocked.Decrement(ref _clientConnectionCounter);
         }
-        IsClientConnected = _isClientConnected;
+        ClientStatus = _clientStatus;
     }
     #endregion ClientConnection
 
@@ -167,7 +166,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             {
                 grpcServer = new Server(new List<ChannelOption>
                 {
-                    new("grpc.max_send_message_length", _maxSendMessageSize), 
+                    new("grpc.max_send_message_length", _maxSendMessageSize),
                     new("grpc.max_receive_message_length", _maxReceiveMessageSize)
 
                 })
@@ -178,7 +177,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
 
                 grpcServer.Start();
 
-                IsServiceActivated = true;
+                ServiceStatus = ServiceStatus.On;
                 _logger.LogTrace("Listening on {host}:{port}", _dataProviderSettings.Host, _dataProviderSettings.Port.ToString());
                 await Task.Delay(Timeout.Infinite, _cts.Token).ConfigureAwait(false);
 
@@ -203,7 +202,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             {
                 if (grpcServer != null)
                 {
-                    IsServiceActivated = false;
+                    ServiceStatus = ServiceStatus.Off;
                     await grpcServer.ShutdownAsync().ConfigureAwait(false);
                     _logger.LogTrace("gRPC Server shutted down.");
                 }
@@ -223,35 +222,44 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     }
 
     #region Indicators
-    public async Task DeInitAsync(int reason)
+    public async Task DeInitAsync(int symbol, int reason)
     {
         await _mutex.WaitAsync().ConfigureAwait(false);
         try
         {
-            if (!_mainViewModel.IndicatorsConnected)
+            switch (_mainViewModel.ConnectionStatus)
             {
-                return;
+                case ConnectionStatus.Disconnected: return;
+                case ConnectionStatus.Connected:
+                    if (!_quotations.IsAddingCompleted)
+                    {
+                        _quotations.CompleteAdding();
+                    }
+
+                    while (!_quotations.IsCompleted)
+                    {
+                        Task.Delay(1000).ConfigureAwait(false).GetAwaiter();
+                    }
+
+                    if (!_quotationsToSave.IsEmpty)
+                    {
+                        await SaveQuotationsAsync().ConfigureAwait(false);
+                    }
+                    break;
+                case ConnectionStatus.Disconnecting:
+                    break;
+                case ConnectionStatus.Connecting:
+                default: throw new ArgumentOutOfRangeException(@"Must never be here.");
             }
 
-            if (!_quotations.IsAddingCompleted)
-            {
-                _quotations.CompleteAdding();
-            }
+            _lastKnownQuotations[symbol - 1] = Quotation.Empty;
+            await _mainViewModel.IndicatorDisconnectedAsync((Symbol)symbol, (DeInitReason)reason).ConfigureAwait(false);
 
-            while (!_quotations.IsCompleted)
+            if (_mainViewModel.ConnectionStatus == ConnectionStatus.Disconnected)
             {
-                Task.Delay(1000).ConfigureAwait(false).GetAwaiter();
+                _quotations = new();
+                _counter = new int[TotalIndicators];
             }
-
-            await SaveQuotationsAsync().ConfigureAwait(false);
-            for (var i = 0; i < TotalIndicators; i++)
-            {
-                _lastKnownQuotations[i] = Quotation.Empty;
-            }
-
-            await _mainViewModel.IndicatorDisconnectedAsync((DeInitReason)reason, _counter.Sum()).ConfigureAwait(false);
-            _quotations = new();
-            _counter = new int[TotalIndicators];
         }
         catch (Exception exception)
         {
@@ -272,11 +280,11 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         await _mutex.WaitAsync().ConfigureAwait(false);
         try
         {
-            while (_mainViewModel.IndicatorsConnected && retryCount < maxRetries)
+            do
             {
-                await Task.Delay(2000).ConfigureAwait(false);
+                await Task.Delay(10).ConfigureAwait(false);
                 retryCount++;
-            }
+            } while (_mainViewModel.ConnectionStatus is ConnectionStatus.Connected or ConnectionStatus.Disconnecting && retryCount < maxRetries);
 
             if (retryCount == maxRetries)
             {
@@ -313,7 +321,11 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     }
     public string Tick(int id, int symbol, string datetime, double ask, double bid)
     {
-        _quotations.Add((id, symbol, datetime, ask, bid));
+        if(!_quotations.IsCompleted)
+        {
+            _quotations.Add((id, symbol, datetime, ask, bid));
+        }
+
         return Ok;
     }
     private async Task ProcessAsync(CancellationToken ct)
@@ -413,7 +425,11 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             var result = await _dataBaseService.SaveDataAsync(quotationsToSave).ConfigureAwait(false);
             if (result != count)
             {
-                throw new Exception("Not all data saved.");
+                var duplicates = count - result;
+                if (Enum.GetNames(typeof(Symbol)).Length != duplicates)
+                {
+                    throw new Exception("Not all data saved.");
+                }
             }
         }
         catch (Exception exception)
@@ -430,10 +446,10 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         _quotationsToSend!.Add(quotation);
     }
 
-    #region Terminal
+    #region DataService
     public async override Task GetDataAsync(IAsyncStreamReader<DataRequest> requestStream, IServerStreamWriter<DataResponse> responseStream, ServerCallContext context)
     {
-        if (IsServiceActivated is null || _isFaulted)
+        if (ServiceStatus != ServiceStatus.On)
         {
             return;
         }
@@ -653,7 +669,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         DisconnectClient();
         if (_isFaulted)
         {
-            IsServiceActivated = null;
+            ServiceStatus = ServiceStatus.Fault;
         }
     }
     private static Ticksdata.Symbol ToProtoSymbol(Symbol symbol)
@@ -665,5 +681,5 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
 
         return protoSymbol;
     }
-    #endregion Terminal
+    #endregion DataService
 }

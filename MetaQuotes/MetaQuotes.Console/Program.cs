@@ -4,7 +4,7 @@
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
-using MetaQuotes.Client.Indicator.To.Mediator;
+using fxSolution.MetaQuotes.Client;
 using MetaQuotes.Console;
 using NAudio.Wave;
 
@@ -13,7 +13,7 @@ var config = new Configuration()
     Workplace = Workplace.Development,
     Year = 2023,
     Week = 8,
-    Day = 0 // 7 or 0
+    Day = 7 // 7 or 0
 };
 
 const string mt5Format = "yyyy.MM.dd HH:mm:ss"; // 2023.05.08 19:52:22 <- from MT5 
@@ -56,7 +56,10 @@ return 1;
 
 static Task DeInitializeIndicators()
 {
-    Mediator.DeInit((int)DeInitReason.Terminal_closed);
+    foreach (var symbol in Enum.GetValues(typeof(Symbol)))
+    {
+        Mediator.DeInit((int)symbol, (int)DeInitReason.Terminal_closed);
+    }
 
     return Task.CompletedTask;
 }

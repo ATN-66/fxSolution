@@ -25,9 +25,9 @@ public class IndicatorToMediatorMessenger : ITicksMessenger//, IDisposable
         _dataProviderService = dataProviderService;
     }
 
-    public void DeInit(int reason)
+    public void DeInit(int symbol, int reason)
     {
-        _dataProviderService.DeInitAsync(reason);
+        _dataProviderService.DeInitAsync(symbol, reason);
     }
 
     public Task<string> InitAsync(int id, int symbol, string datetime, double ask, double bid, int environment)

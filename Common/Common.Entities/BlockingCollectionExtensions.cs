@@ -11,7 +11,7 @@ namespace Common.Entities;
 
 public static class BlockingCollectionExtensions
 {
-    public static async IAsyncEnumerable<T?> GetConsumingAsyncEnumerable<T>(this BlockingCollection<T?> collection, [EnumeratorCancellation] CancellationToken token)
+    public static async IAsyncEnumerable<T> GetConsumingAsyncEnumerable<T>(this BlockingCollection<T> collection, [EnumeratorCancellation] CancellationToken token)
     {
         while (!token.IsCancellationRequested)
         {
