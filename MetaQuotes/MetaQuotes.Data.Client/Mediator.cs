@@ -1,5 +1,5 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                                MetaQuotes.Client |
+  |                                           MetaQuotes.Data.PipeClient |
   |                                                      Mediator.cs |
   +------------------------------------------------------------------+*/
 
@@ -8,13 +8,13 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace MetaQuotes.Client;
+namespace MetaQuotes.Data.Client;
 
 //This class is called by Indicator.mq5 or console simulator
 public static class Mediator
 {
     private const string mt5lib = @"C:\forex.mt5\libraries";
-    private static Client client;
+    private static PipeClient _pipeClient;
 
     static Mediator()
     {
@@ -31,18 +31,22 @@ public static class Mediator
 
     public static void DeInit(int symbol, int reason)
     {
-        client.DeInit(symbol, reason);
-        client.Dispose();
+        _pipeClient.DeInit(symbol, reason);
+        _pipeClient.Dispose();
     }
 
     public static string Init(int id, int symbol, string datetime, double ask, double bid, int environment)
     {
-        client = new Client(symbol, enableLogging: false);
-        return Task.Run(() => client.InitAsync(id, symbol, datetime, ask, bid, environment)).GetAwaiter().GetResult();
+        _pipeClient = new PipeClient(symbol, enableLogging: false);
+        return Task.Run(() => _pipeClient.InitAsync(id, symbol, datetime, ask, bid, environment)).GetAwaiter().GetResult();
     }
 
     public static string Tick(int id, int symbol, string datetime, double ask, double bid)
     {
-        return client.Tick(id, symbol, datetime, ask, bid);
+        return _pipeClient.Tick(id, symbol, datetime, ask, bid);
     }
+
+    //public static string SetAccountInfo
+
+
 }

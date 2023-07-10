@@ -9,8 +9,8 @@ xcopy "$(TargetDir)Common.MetaQuotes.Mediator.dll" "C:\forex.mt5\libraries\" /Y 
 
 3) Post-Build action in project "MetaQuotes.Client":
 
-xcopy "$(TargetDir)MetaQuotes.Client.dll" "C:\forex.mt5\dll\" /Y /R
-xcopy "$(TargetDir)MetaQuotes.Client.dll" "C:\Users\andre\AppData\Roaming\MetaQuotes\Terminal\9B101088254A9C260A9790D5079A7B11\MQL5\Libraries" /Y /R
+xcopy "$(TargetDir)MetaQuotes.Data.Client.dll" "C:\forex.mt5\dll\" /Y /R
+xcopy "$(TargetDir)MetaQuotes.Data.Client.dll" "C:\Users\andre\AppData\Roaming\MetaQuotes\Terminal\9B101088254A9C260A9790D5079A7B11\MQL5\Libraries" /Y /R
 xcopy "C:\forex.mt5\dll\*.*" "\\UNIT1068\forex.shared\mt5\dll\" /Y /R
 rem ----- !!!!! check new packages !!!!! -----
 xcopy "C:\Users\andre\.nuget\packages\microsoft.bcl.asyncinterfaces\8.0.0-preview.5.23280.8\lib\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll" "C:\forex.mt5\libraries\" /Y /R

@@ -1,5 +1,5 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                                MetaQuotes.Client |
+  |                                           MetaQuotes.Data.PipeClient |
   |                                  BlockingCollectionExtensions.cs |
   +------------------------------------------------------------------+*/
 
@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MetaQuotes.Client;
+namespace MetaQuotes.Data.Client;
 
 public static class BlockingCollectionExtensions
 {

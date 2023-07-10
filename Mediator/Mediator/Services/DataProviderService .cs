@@ -249,7 +249,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                 case ConnectionStatus.Disconnecting:
                     break;
                 case ConnectionStatus.Connecting:
-                default: throw new ArgumentOutOfRangeException(@"Must never be here.");
+                default: throw new ArgumentOutOfRangeException($@"Must never be here.");
             }
 
             _lastKnownQuotations[symbol - 1] = Quotation.Empty;
@@ -321,9 +321,17 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     }
     public string Tick(int id, int symbol, string datetime, double ask, double bid)
     {
-        if(!_quotations.IsCompleted)
+        try
         {
-            _quotations.Add((id, symbol, datetime, ask, bid));
+            if (!_quotations.IsAddingCompleted)
+            {
+                _quotations.Add((id, symbol, datetime, ask, bid));
+            }
+        }
+        catch (Exception exception)
+        {
+            LogExceptionHelper.LogException(_logger, exception, "");
+            throw;
         }
 
         return Ok;

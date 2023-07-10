@@ -4,8 +4,8 @@
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
-using MetaQuotes.Client;
 using MetaQuotes.Console;
+using MetaQuotes.Data.Client;
 using NAudio.Wave;
 
 var config = new Configuration()

@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                                MetaQuotes.Client |
-  |                                                        Client.cs |
+  |                                           MetaQuotes.Data.PipeClient |
+  |                                                        PipeClient.cs |
   +------------------------------------------------------------------+*/
 
 using System;
@@ -12,9 +12,9 @@ using Common.MetaQuotes.Mediator;
 using PipeMethodCalls;
 using PipeMethodCalls.NetJson;
 
-namespace MetaQuotes.Client;
+namespace MetaQuotes.Data.Client;
 
-internal sealed class Client : IDisposable
+internal sealed class PipeClient : IDisposable
 {
     private readonly Guid guid = Guid.NewGuid();
     private const string ok = "ok";
@@ -28,7 +28,7 @@ internal sealed class Client : IDisposable
     private event Action OnInitializationComplete;
     private readonly Action processQuotationsAction;
 
-    internal Client(int symbol, bool enableLogging = false)
+    internal PipeClient(int symbol, bool enableLogging = false)
     {
         pipeClient = new PipeClient<ITicksMessenger>(new NetJsonPipeSerializer(), $"Indicator.To.Mediator.{symbol}");
         if (enableLogging) pipeClient.SetLogger(Console.WriteLine);

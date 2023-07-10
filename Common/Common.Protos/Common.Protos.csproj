@@ -9,9 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="account.provider.proto" />
     <None Remove="data.provider.proto" />
-    <None Remove="grpcquotation.proto" />
-    <None Remove="mediator.to.terminal.proto" />
+    <None Remove="symbol.proto" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,16 +26,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="grpcquotation.proto">
-      <GrpcServices>Both</GrpcServices>
-    </Protobuf>
-    <Protobuf Include="mediator.to.terminal.proto">
-      <GrpcServices>Both</GrpcServices>
-    </Protobuf>
+    <Protobuf Include="account.provider.proto" GrpcServices="Both" />
+    <Protobuf Include="symbol.proto" GrpcServices="Both" />
     <Protobuf Include="data.provider.proto">
       <GrpcServices>Both</GrpcServices>
     </Protobuf>
-    <Protobuf Include="terminal.to.mediator.proto" GrpcServices="Both" />
   </ItemGroup>
 
 </Project>
