@@ -34,6 +34,7 @@ public class WindowingService : IWindowingService
         };
 
         var (width, height) = await LoadWindowSizeSettingsAsync().ConfigureAwait(true);
+
         if (width > 0 && height > 0)
         {
             SetWindowSize(width, height);

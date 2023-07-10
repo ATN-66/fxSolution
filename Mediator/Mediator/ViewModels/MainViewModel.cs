@@ -13,6 +13,7 @@ using Symbol = Common.Entities.Symbol;
 using Microsoft.Extensions.Configuration;
 using Enum = System.Enum;
 using Mediator.Helpers;
+using Windows.Web.AtomPub;
 
 namespace Mediator.ViewModels;
 
@@ -27,6 +28,7 @@ public class MainViewModel : ObservableRecipient
     private Workplace _workplace;
     private string _dataProviderServiceTitle = null!;
     public event Action InitializationComplete = null!;
+    private bool _connecting;
     private bool _atFault;
 
     public MainViewModel(IConfiguration configuration, IAppNotificationService appNotificationService, IDispatcherService dispatcherService, ILogger<MainViewModel> logger)
@@ -51,21 +53,24 @@ public class MainViewModel : ObservableRecipient
             }
         }
 
+        _dataProviderStatus = ServiceStatus.Off;
+        _dataClientStatus = ClientStatus.Off;
+
         _logger.LogTrace("({Guid}) is ON.", _guid);
     }
 
-    private bool? _isDataProviderActivated;
-    public bool? IsDataProviderActivated
+    private ServiceStatus _dataProviderStatus;
+    public ServiceStatus DataProviderStatus
     {
-        get => _isDataProviderActivated;
+        get => _dataProviderStatus;
         internal set
         {
-            if (value == _isDataProviderActivated)
+            if (value == _dataProviderStatus)
             {
                 return;
             }
 
-            _isDataProviderActivated = value;
+            _dataProviderStatus = value;
             _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
                 OnPropertyChanged();
@@ -74,18 +79,18 @@ public class MainViewModel : ObservableRecipient
         }
     }
 
-    private bool _isDataClientActivated;
-    public bool IsDataClientActivated
+    private ClientStatus _dataClientStatus;
+    public ClientStatus DataClientStatus
     {
-        get => _isDataClientActivated;
+        get => _dataClientStatus;
         internal set
         {
-            if (value == _isDataClientActivated)
+            if (value == _dataClientStatus)
             {
                 return;
             }
 
-            _isDataClientActivated = value;
+            _dataClientStatus = value;
             _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
                 OnPropertyChanged();
@@ -98,24 +103,33 @@ public class MainViewModel : ObservableRecipient
         get;
     } = new(Enumerable.Range(0, TotalIndicators).Select(i => new IndicatorStatus { Index = i, IsConnected = false }));
 
-    public bool IndicatorsConnected
+    public ConnectionStatus ConnectionStatus
     {
         get
         {
+            var connectedCount = 0;
             for (var index = 0; index < TotalIndicators; index++)
             {
                 if (IndicatorStatuses[index].IsConnected)
                 {
-                    continue;
+                    connectedCount++;
                 }
-
-                return false;
             }
 
-            return true;
+            if (connectedCount == 0)
+            {
+                return ConnectionStatus.Disconnected;
+            }
+
+            if (connectedCount == TotalIndicators)
+            {
+                return ConnectionStatus.Connected;
+            }
+
+            return _connecting ? ConnectionStatus.Connecting : ConnectionStatus.Disconnecting;
         }
     }
-            
+
     public string DataProviderServiceTitle
     {
         get => _dataProviderServiceTitle;
@@ -189,66 +203,49 @@ public class MainViewModel : ObservableRecipient
 
     public async Task IndicatorConnectedAsync(Symbol symbol, Workplace workplace)
     {
+        _connecting = true;
         await _dispatcherService.ExecuteOnUIThreadAsync(() =>
         {
             var index = (int)symbol - 1;
             IndicatorStatuses[index].IsConnected = true;
             IndicatorStatuses[index].Workplace = workplace;
             OnPropertyChanged(nameof(IndicatorStatuses));
+            OnPropertyChanged(nameof(ConnectionStatus));
         }).ConfigureAwait(true);
 
-        if (!IndicatorsConnected)
+        if (ConnectionStatus != ConnectionStatus.Connected)
         {
             return;
         }
 
         CheckIndicatorsWorkplaces();
-
-        await _dispatcherService.ExecuteOnUIThreadAsync(() =>
-        {
-            OnPropertyChanged(nameof(IndicatorsConnected));
-        }).ConfigureAwait(true);
-
         const string message = "Indicators connected.";
-        _appNotificationService.ShowMessage(message);
+        //_appNotificationService.ShowMessage(message);
         _logger.LogTrace(message);
 
         InitializationComplete.Invoke();
     }
 
-    public async Task IndicatorDisconnectedAsync(DeInitReason reason, int ticksToBeSaved)
+    public async Task IndicatorDisconnectedAsync(Symbol symbol, DeInitReason reason)
     {
+        _connecting = false;
         await _dispatcherService.ExecuteOnUIThreadAsync(() =>
         {
-            for (var index = 0; index < TotalIndicators; index++)
-            {
-                IndicatorStatuses[index].IsConnected = false;
-                IndicatorStatuses[index].Workplace = Workplace.None;
-            }
-
+            var index = (int)symbol - 1;
+            IndicatorStatuses[index].IsConnected = false;
+            IndicatorStatuses[index].Workplace = Workplace.None;
             OnPropertyChanged(nameof(IndicatorStatuses));
-            OnPropertyChanged(nameof(IndicatorsConnected));
+            OnPropertyChanged(nameof(ConnectionStatus));
         }).ConfigureAwait(true);
+
+        if (ConnectionStatus != ConnectionStatus.Disconnected)
+        {
+            return;
+        }
 
         Workplace = EnvironmentHelper.SetWorkplaceFromEnvironment(); 
 
-        _appNotificationService.ShowMessage($"Indicators disconnected. Reason:{reason}. Ticks to be saved: {ticksToBeSaved}.");
-        _logger.LogTrace("Indicators disconnected. Reason:{reason}. Ticks to be saved: {ticksToBeSaved}.", reason, ticksToBeSaved);
+        //_appNotificationService.ShowMessage($"Indicators disconnected. Reason:{reason}.");
+        _logger.LogTrace("Indicators disconnected. Reason:{reason}.", reason);
     }
-
-    //[RelayCommand]
-    //private async Task BackupAsync()
-    //{
-    //    //var result = await _dataService.BackupAsync().ConfigureAwait(true);
-    //    //_appNotificationService.ShowBackupResultToast(result);
-    //}
-
-    //private void CloseApplication()
-    //{
-    //    throw new NotImplementedException();
-    //    //save all quotations and close all
-    //    _cts.Cancel();
-    //    Log.CloseAndFlush();
-    //    Application.Current.Exit();
-    //}
 }

@@ -1,156 +1,15 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Drawing;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using Microsoft.UI.Xaml;
 
 namespace Terminal.WinUI3.Models.SplashScreen;
 
 public class SplashScreen
 {
-    //[DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    //public static extern bool UpdateLayeredWindow(IntPtr hwnd, IntPtr hdcDst, ref System.Drawing.Point pptDst, ref System.Drawing.Size psize, IntPtr hdcSrc, ref System.Drawing.Point pprSrc, int crKey, ref BLENDFUNCTION pblend, int dwFlags);
+    public delegate int WNDPROC(IntPtr hwnd, uint uMsg, int wParam, IntPtr lParam);
 
-    [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern bool UpdateLayeredWindow(IntPtr hwnd, IntPtr hdcDst, IntPtr pptDst, IntPtr psize, IntPtr hdcSrc, IntPtr pprSrc, int crKey, ref BLENDFUNCTION pblend, int dwFlags);
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct BLENDFUNCTION
-    {
-        public byte BlendOp;
-        public byte BlendFlags;
-        public byte SourceConstantAlpha;
-        public byte AlphaFormat;
-    }
-
-    public const byte AC_SRC_OVER = 0x00;
-    public const byte AC_SRC_ALPHA = 0x01;
-
-    public const int ULW_COLORKEY = 0x00000001;
-    public const int ULW_ALPHA = 0x00000002;
-    public const int ULW_OPAQUE = 0x00000004;
-
-    [DllImport("Gdi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern int GetObject(IntPtr hFont, int nSize, out BITMAP bm);
-
-    [StructLayoutAttribute(LayoutKind.Sequential)]
-    public struct BITMAP
-    {
-        public int bmType;
-        public int bmWidth;
-        public int bmHeight;
-        public int bmWidthBytes;
-        public short bmPlanes;
-        public short bmBitsPixel;
-        public IntPtr bmBits;
-    }
-
-    [DllImport("Gdi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern IntPtr CreateCompatibleDC(IntPtr hDC);
-
-    [DllImport("Gdi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern IntPtr SelectObject(IntPtr hDC, IntPtr hObject);
-
-    [DllImport("Gdi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern bool DeleteObject(IntPtr hObject);
-
-    [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern IntPtr GetDC(IntPtr hWnd);
-
-    [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
-
-    [DllImport("Gdi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern bool DeleteDC(IntPtr hdc);
-
-
-
-
-
-    [DllImport("user32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-
-
-
-    [DllImport("User32.dll", SetLastError = true)]
-    public static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct RECT
-    {
-        public int left;
-        public int top;
-        public int right;
-        public int bottom;
-        public RECT(int Left, int Top, int Right, int Bottom)
-        {
-            left = Left;
-            top = Top;
-            right = Right;
-            bottom = Bottom;
-        }
-    }
-
-
-
-    public const long STGM_READ = 0x00000000L;
-    public const long GENERIC_READ = (0x80000000L);
-    public const long GENERIC_WRITE = (0x40000000L);
-
-    [DllImport("Shlwapi.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern HRESULT SHCreateStreamOnFile(string pszFile, int grfMode, out System.Runtime.InteropServices.ComTypes.IStream ppstm);
-
-    [DllImport("GdiPlus.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern GpStatus GdiplusStartup(out IntPtr token, ref StartupInput input, out StartupOutput output);
-
-    [DllImport("GdiPlus.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern void GdiplusShutdown(IntPtr token);
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct StartupInput
-    {
-        public int GdiplusVersion;             // Must be 1
-
-        // public DebugEventProc DebugEventCallback; // Ignored on free builds
-        public IntPtr DebugEventCallback;
-
-        public bool SuppressBackgroundThread;     // FALSE unless you're prepared to call 
-                                                  // the hook/unhook functions properly
-
-        public bool SuppressExternalCodecs;       // FALSE unless you want GDI+ only to use
-                                                  // its internal image codecs.
-
-        public static StartupInput GetDefault()
-        {
-            StartupInput result = new StartupInput();
-            result.GdiplusVersion = 1;
-            // result.DebugEventCallback = null;
-            result.SuppressBackgroundThread = false;
-            result.SuppressExternalCodecs = false;
-            return result;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct StartupOutput
-    {
-        // The following 2 fields won't be used.  They were originally intended 
-        // for getting GDI+ to run on our thread - however there are marshalling
-        // dealing with function *'s and what not - so we make explicit calls
-        // to gdi+ after the fact, via the GdiplusNotificationHook and 
-        // GdiplusNotificationUnhook methods.
-        public IntPtr hook;//not used
-        public IntPtr unhook;//not used.
-    }
-
-    [DllImport("GdiPlus.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern GpStatus GdipCreateBitmapFromFile(string filename, out IntPtr bitmap);
-
-    [DllImport("GdiPlus.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern GpStatus GdipCreateBitmapFromStream(System.Runtime.InteropServices.ComTypes.IStream Stream, out IntPtr bitmap);
-
-    [DllImport("GdiPlus.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern GpStatus GdipCreateHBITMAPFromBitmap(HandleRef nativeBitmap, out IntPtr hbitmap, int argbBackground);
-
-    public enum GpStatus : int
+    public enum GpStatus
     {
         Ok = 0,
         GenericError = 1,
@@ -173,11 +32,20 @@ public class SplashScreen
         GdiplusNotInitialized = 18,
         PropertyNotFound = 19,
         PropertyNotSupported = 20,
-        ProfileNotFound = 21,
+        ProfileNotFound = 21
     }
 
-    [DllImport("User32.dll", SetLastError = true)]
-    public static extern IntPtr CreateWindowEx(int dwExStyle, string lpClassName, string lpWindowName, int dwStyle, int x, int y, int nWidth, int nHeight, IntPtr hWndParent, IntPtr hMenu, IntPtr hInstance, IntPtr lpParam);
+    public const byte AC_SRC_OVER = 0x00;
+    public const byte AC_SRC_ALPHA = 0x01;
+
+    public const int ULW_COLORKEY = 0x00000001;
+    public const int ULW_ALPHA = 0x00000002;
+    public const int ULW_OPAQUE = 0x00000004;
+
+
+    public const long STGM_READ = 0x00000000L;
+    public const long GENERIC_READ = 0x80000000L;
+    public const long GENERIC_WRITE = 0x40000000L;
 
     public const int WS_OVERLAPPED = 0x00000000,
         WS_POPUP = unchecked((int)0x80000000),
@@ -223,8 +91,8 @@ public class SplashScreen
     public const int WS_EX_STATICEDGE = 0x00020000;
     public const int WS_EX_APPWINDOW = 0x00040000;
 
-    public const int WS_EX_OVERLAPPEDWINDOW = (WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE);
-    public const int WS_EX_PALETTEWINDOW = (WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST);
+    public const int WS_EX_OVERLAPPEDWINDOW = WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE;
+    public const int WS_EX_PALETTEWINDOW = WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST;
 
     public const int WS_EX_LAYERED = 0x00080000;
 
@@ -249,6 +117,93 @@ public class SplashScreen
     public const int IDC_CROSS = 32515;
     public const int IDC_UPARROW = 32516;
 
+    private const int GWL_STYLE = -16;
+    private const int GWL_EXSTYLE = -20;
+
+    public const int SPI_GETWORKAREA = 0x30;
+
+    public const int SWP_NOSIZE = 0x0001;
+    public const int SWP_NOMOVE = 0x0002;
+    public const int SWP_NOZORDER = 0x0004;
+    public const int SWP_NOREDRAW = 0x0008;
+    public const int SWP_NOACTIVATE = 0x0010;
+    public const int SWP_FRAMECHANGED = 0x0020; /* The frame changed: send WM_NCCALCSIZE */
+    public const int SWP_SHOWWINDOW = 0x0040;
+    public const int SWP_HIDEWINDOW = 0x0080;
+    public const int SWP_NOCOPYBITS = 0x0100;
+    public const int SWP_NOOWNERZORDER = 0x0200; /* Don't do owner Z ordering */
+    public const int SWP_NOSENDCHANGING = 0x0400; /* Don't send WM_WINDOWPOSCHANGING */
+    public const int SWP_DRAWFRAME = SWP_FRAMECHANGED;
+    public const int SWP_NOREPOSITION = SWP_NOOWNERZORDER;
+    public const int SWP_DEFERERASE = 0x2000;
+    public const int SWP_ASYNCWINDOWPOS = 0x4000;
+    private WNDPROC delegateWndProc;
+
+
+    private DispatcherTimer dTimer;
+    private IntPtr hBitmap = IntPtr.Zero;
+    private IntPtr hWndSplash = IntPtr.Zero;
+    private IntPtr initToken = IntPtr.Zero;
+    private TimeSpan tsFadeoutDuration;
+
+    private DateTime tsFadeoutEnd;
+    //[DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    //public static extern bool UpdateLayeredWindow(IntPtr hwnd, IntPtr hdcDst, ref System.Drawing.Point pptDst, ref System.Drawing.Size psize, IntPtr hdcSrc, ref System.Drawing.Point pprSrc, int crKey, ref BLENDFUNCTION pblend, int dwFlags);
+
+    [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern bool UpdateLayeredWindow(IntPtr hwnd, IntPtr hdcDst, IntPtr pptDst, IntPtr psize, IntPtr hdcSrc, IntPtr pprSrc, int crKey, ref BLENDFUNCTION pblend, int dwFlags);
+
+    [DllImport("Gdi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern int GetObject(IntPtr hFont, int nSize, out BITMAP bm);
+
+    [DllImport("Gdi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern IntPtr CreateCompatibleDC(IntPtr hDC);
+
+    [DllImport("Gdi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern IntPtr SelectObject(IntPtr hDC, IntPtr hObject);
+
+    [DllImport("Gdi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern bool DeleteObject(IntPtr hObject);
+
+    [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern IntPtr GetDC(IntPtr hWnd);
+
+    [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
+
+    [DllImport("Gdi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern bool DeleteDC(IntPtr hdc);
+
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+
+    [DllImport("User32.dll", SetLastError = true)]
+    public static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
+
+    [DllImport("Shlwapi.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern HRESULT SHCreateStreamOnFile(string pszFile, int grfMode, out IStream ppstm);
+
+    [DllImport("GdiPlus.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern GpStatus GdiplusStartup(out IntPtr token, ref StartupInput input, out StartupOutput output);
+
+    [DllImport("GdiPlus.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern void GdiplusShutdown(IntPtr token);
+
+    [DllImport("GdiPlus.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern GpStatus GdipCreateBitmapFromFile(string filename, out IntPtr bitmap);
+
+    [DllImport("GdiPlus.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern GpStatus GdipCreateBitmapFromStream(IStream Stream, out IntPtr bitmap);
+
+    [DllImport("GdiPlus.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern GpStatus GdipCreateHBITMAPFromBitmap(HandleRef nativeBitmap, out IntPtr hbitmap, int argbBackground);
+
+    [DllImport("User32.dll", SetLastError = true)]
+    public static extern IntPtr CreateWindowEx(int dwExStyle, string lpClassName, string lpWindowName, int dwStyle, int x, int y, int nWidth, int nHeight, IntPtr hWndParent, IntPtr hMenu, IntPtr hInstance, IntPtr lpParam);
+
     [DllImport("User32.dll", CharSet = CharSet.Auto)]
     public static extern bool DestroyWindow(IntPtr hWnd);
 
@@ -267,56 +222,16 @@ public class SplashScreen
     [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     public static extern bool UnregisterClass(string lpClassName, IntPtr hInstance);
 
-    public delegate int WNDPROC(IntPtr hwnd, uint uMsg, int wParam, IntPtr lParam);
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    public struct WNDCLASS
-    {
-        [MarshalAs(UnmanagedType.U4)]
-        public uint style;
-        public WNDPROC lpfnWndProc;
-        public int cbClsExtra;
-        public int cbWndExtra;
-        public IntPtr hInstance;
-        public IntPtr hIcon;
-        public IntPtr hCursor;
-        public IntPtr hbrBackground;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-        public string lpszMenuName;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-        public string lpszClassName;
-    }
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    public struct WNDCLASSEX
-    {
-        [MarshalAs(UnmanagedType.U4)]
-        public int cbSize;
-        [MarshalAs(UnmanagedType.U4)]
-        public int style;
-        public WNDPROC lpfnWndProc;
-        public int cbClsExtra;
-        public int cbWndExtra;
-        public IntPtr hInstance;
-        public IntPtr hIcon;
-        public IntPtr hCursor;
-        public IntPtr hbrBackground;
-        public string lpszMenuName;
-        public string lpszClassName;
-        public IntPtr hIconSm;
-    }
-
     [DllImport("User32.dll", SetLastError = true)]
     public static extern IntPtr LoadCursor(IntPtr hInstance, int lpCursorName);
 
-    const int GWL_STYLE = (-16);
-    const int GWL_EXSTYLE = (-20);
     public static IntPtr SetWindowLong(IntPtr hWnd, int nIndex, IntPtr dwNewLong)
     {
         if (IntPtr.Size == 4)
         {
             return SetWindowLongPtr32(hWnd, nIndex, dwNewLong);
         }
+
         return SetWindowLongPtr64(hWnd, nIndex, dwNewLong);
     }
 
@@ -333,6 +248,7 @@ public class SplashScreen
         {
             return GetWindowLong32(hWnd, nIndex);
         }
+
         return GetWindowLongPtr64(hWnd, nIndex);
     }
 
@@ -342,49 +258,22 @@ public class SplashScreen
     [DllImport("User32.dll", EntryPoint = "GetWindowLongPtr", CharSet = CharSet.Auto)]
     public static extern long GetWindowLongPtr64(IntPtr hWnd, int nIndex);
 
-    public const int SPI_GETWORKAREA = 0x30;
-
     [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern bool SystemParametersInfo(uint uiAction, uint uiParam, [In, Out] ref RECT pvParam, uint fWinIni);
-
-    public const int SWP_NOSIZE = 0x0001;
-    public const int SWP_NOMOVE = 0x0002;
-    public const int SWP_NOZORDER = 0x0004;
-    public const int SWP_NOREDRAW = 0x0008;
-    public const int SWP_NOACTIVATE = 0x0010;
-    public const int SWP_FRAMECHANGED = 0x0020;  /* The frame changed: send WM_NCCALCSIZE */
-    public const int SWP_SHOWWINDOW = 0x0040;
-    public const int SWP_HIDEWINDOW = 0x0080;
-    public const int SWP_NOCOPYBITS = 0x0100;
-    public const int SWP_NOOWNERZORDER = 0x0200;  /* Don't do owner Z ordering */
-    public const int SWP_NOSENDCHANGING = 0x0400;  /* Don't send WM_WINDOWPOSCHANGING */
-    public const int SWP_DRAWFRAME = SWP_FRAMECHANGED;
-    public const int SWP_NOREPOSITION = SWP_NOOWNERZORDER;
-    public const int SWP_DEFERERASE = 0x2000;
-    public const int SWP_ASYNCWINDOWPOS = 0x4000;
+    public static extern bool SystemParametersInfo(uint uiAction, uint uiParam, [In] [Out] ref RECT pvParam, uint fWinIni);
 
     [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
-
-    private DispatcherTimer dTimer;
-    private TimeSpan tsFadeoutDuration;
-    private DateTime tsFadeoutEnd;
-    IntPtr hWndSplash = IntPtr.Zero;
-    private WNDPROC delegateWndProc;
-    private IntPtr hBitmap = IntPtr.Zero;
-    private IntPtr initToken = IntPtr.Zero;
-
     public void Initialize()
     {
-        StartupInput input = StartupInput.GetDefault();
+        var input = StartupInput.GetDefault();
         StartupOutput output;
-        GpStatus nStatus = GdiplusStartup(out initToken, ref input, out output);
+        var nStatus = GdiplusStartup(out initToken, ref input, out output);
     }
 
     public void DisplaySplash(IntPtr hWnd, IntPtr hBitMap)
     {
-        this.hBitmap = hBitMap;
+        hBitmap = hBitMap;
 
         delegateWndProc = Win32WndProc;
         var wcex = new WNDCLASSEX();
@@ -425,10 +314,10 @@ public class SplashScreen
         GetWindowRect(hWnd, out rect);
 
         // Calculate the center position for the splash screen on this window
-        int parentWidth = rect.right - rect.left;
-        int parentHeight = rect.bottom - rect.top;
-        int xPos = rect.left + (parentWidth - nWidth) / 2;
-        int yPos = rect.top + (parentHeight - nHeight) / 2;
+        var parentWidth = rect.right - rect.left;
+        var parentHeight = rect.bottom - rect.top;
+        var xPos = rect.left + (parentWidth - nWidth) / 2;
+        var yPos = rect.top + (parentHeight - nHeight) / 2;
 
         // Use the calculated position instead of hardcoding (400, 400)
         hWndSplash = CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_NOACTIVATE,
@@ -453,7 +342,6 @@ public class SplashScreen
         //int yPos = mi.rcMonitor.top + (monitorHeight - nHeight) / 2;
 
 
-
         ////xPos = 0;
         ////yPos = 0;
 
@@ -474,48 +362,11 @@ public class SplashScreen
     }
 
 
-
-
-
-
     [DllImport("user32.dll")]
-    static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
 
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
-    static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct MONITORINFO
-    {
-        public uint cbSize;
-        public RECT rcMonitor;
-        public RECT rcWork;
-        public uint dwFlags;
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
 
     public void HideSplash(int nSeconds)
@@ -525,42 +376,43 @@ public class SplashScreen
         tsFadeoutDuration = TimeSpan.FromSeconds(nSeconds);
         tsFadeoutEnd = DateTime.UtcNow + tsFadeoutDuration;
         dTimer.Tick += Dt_Tick;
-        dTimer.Start();//todo: where is end?
+        dTimer.Start(); //todo: where is end?
     }
 
     public IntPtr GetBitmap(string sBitmapFile)
     {
-        IntPtr hBitmap = IntPtr.Zero;
-        IntPtr pBitmap = IntPtr.Zero;
+        var hBitmap = IntPtr.Zero;
+        var pBitmap = IntPtr.Zero;
         // Uri uri = new System.Uri("ms-appx:///Assets/Butterfly.png");
         //            Some APIs require package identity and are not supported in unpackaged apps, such as:
         //            ApplicationData
         //            StorageFile.GetFileFromApplicationUriAsync
         // var file = await Windows.Storage.StorageFile.GetFileFromApplicationUriAsync(uri);
-        string sDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        string sPath = sDirectory + sBitmapFile;
+        var sDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        var sPath = sDirectory + sBitmapFile;
 
         //var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(sPath);
         //Stream stream = await storageFile.OpenStreamForReadAsync();
         // new GPStream(stream)
 
-        System.Runtime.InteropServices.ComTypes.IStream pstm;
-        HRESULT hr = SHCreateStreamOnFile(sPath, (int)STGM_READ, out pstm);
+        IStream pstm;
+        var hr = SHCreateStreamOnFile(sPath, (int)STGM_READ, out pstm);
         if (hr == HRESULT.S_OK)
         {
-            GpStatus nStatus = GdipCreateBitmapFromStream(pstm, out pBitmap);
+            var nStatus = GdipCreateBitmapFromStream(pstm, out pBitmap);
             if (nStatus == GpStatus.Ok)
             {
-                GdipCreateHBITMAPFromBitmap(new HandleRef(this, pBitmap), out hBitmap, System.Drawing.ColorTranslator.ToWin32(System.Drawing.Color.FromArgb(0)));
+                GdipCreateHBITMAPFromBitmap(new HandleRef(this, pBitmap), out hBitmap, ColorTranslator.ToWin32(Color.FromArgb(0)));
             }
         }
-        return (hBitmap);
+
+        return hBitmap;
     }
 
     // Adapted from WPF source code
     public void Dt_Tick(object sender, object e)
     {
-        DateTime dtNow = DateTime.UtcNow;
+        var dtNow = DateTime.UtcNow;
         if (dtNow >= tsFadeoutEnd)
         {
             if (dTimer != null)
@@ -568,21 +420,24 @@ public class SplashScreen
                 dTimer.Stop();
                 dTimer = null;
             }
+
             if (hWndSplash != IntPtr.Zero)
             {
                 DestroyWindow(hWndSplash);
             }
+
             if (hBitmap != IntPtr.Zero)
             {
                 DeleteObject(hBitmap);
                 hBitmap = IntPtr.Zero;
             }
+
             GdiplusShutdown(initToken);
         }
         else
         {
-            double nProgress = (tsFadeoutEnd - dtNow).TotalMilliseconds / tsFadeoutDuration.TotalMilliseconds;
-            BLENDFUNCTION bf = new BLENDFUNCTION();
+            var nProgress = (tsFadeoutEnd - dtNow).TotalMilliseconds / tsFadeoutDuration.TotalMilliseconds;
+            var bf = new BLENDFUNCTION();
             bf.BlendOp = AC_SRC_OVER;
             bf.AlphaFormat = AC_SRC_ALPHA;
             bf.SourceConstantAlpha = (byte)(255 * nProgress);
@@ -594,13 +449,13 @@ public class SplashScreen
     {
         BITMAP bm;
         GetObject(hBitmap, Marshal.SizeOf(typeof(BITMAP)), out bm);
-        System.Drawing.Size sizeBitmap = new System.Drawing.Size(bm.bmWidth, bm.bmHeight);
+        var sizeBitmap = new Size(bm.bmWidth, bm.bmHeight);
 
-        IntPtr hDCScreen = GetDC(IntPtr.Zero);
-        IntPtr hDCMem = CreateCompatibleDC(hDCScreen);
-        IntPtr hBitmapOld = SelectObject(hDCMem, hBitmap);
+        var hDCScreen = GetDC(IntPtr.Zero);
+        var hDCMem = CreateCompatibleDC(hDCScreen);
+        var hBitmapOld = SelectObject(hDCMem, hBitmap);
 
-        BLENDFUNCTION bf = new BLENDFUNCTION();
+        var bf = new BLENDFUNCTION();
         bf.BlendOp = AC_SRC_OVER;
         bf.SourceConstantAlpha = 255;
         bf.AlphaFormat = AC_SRC_ALPHA;
@@ -609,21 +464,19 @@ public class SplashScreen
         GetWindowRect(hWnd, out rectWnd);
 
 
+        var ptSrc = new Point();
+        var ptDest = new Point(rectWnd.left, rectWnd.top);
 
-
-        System.Drawing.Point ptSrc = new System.Drawing.Point();
-        System.Drawing.Point ptDest = new System.Drawing.Point(rectWnd.left, rectWnd.top);
-
-        IntPtr pptSrc = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(System.Drawing.Point)));
+        var pptSrc = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Point)));
         Marshal.StructureToPtr(ptSrc, pptSrc, false);
 
-        IntPtr pptDest = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(System.Drawing.Point)));
+        var pptDest = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Point)));
         Marshal.StructureToPtr(ptDest, pptDest, false);
 
-        IntPtr psizeBitmap = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(System.Drawing.Size)));
+        var psizeBitmap = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Size)));
         Marshal.StructureToPtr(sizeBitmap, psizeBitmap, false);
 
-        bool bRet = UpdateLayeredWindow(hWnd, hDCScreen, pptDest, psizeBitmap, hDCMem, pptSrc, 0, ref bf, ULW_ALPHA);
+        var bRet = UpdateLayeredWindow(hWnd, hDCScreen, pptDest, psizeBitmap, hDCMem, pptSrc, 0, ref bf, ULW_ALPHA);
         //bool bRet = UpdateLayeredWindow(hWnd, hDCScreen, ref ptDest, ref sizeBitmap, hDCMem, ref ptSrc, ColorTranslator.ToWin32(System.Drawing.Color.White), ref bf, ULW_ALPHA);
 
         Marshal.FreeHGlobal(pptSrc);
@@ -637,12 +490,12 @@ public class SplashScreen
 
     public void CenterToScreen(IntPtr hWnd)
     {
-        RECT rcWorkArea = new RECT();
+        var rcWorkArea = new RECT();
         SystemParametersInfo(SPI_GETWORKAREA, 0, ref rcWorkArea, 0);
         RECT rc;
         GetWindowRect(hWnd, out rc);
-        int nX = System.Convert.ToInt32((rcWorkArea.left + rcWorkArea.right) / (double)2 - (rc.right - rc.left) / (double)2);
-        int nY = System.Convert.ToInt32((rcWorkArea.top + rcWorkArea.bottom) / (double)2 - (rc.bottom - rc.top) / (double)2);
+        var nX = Convert.ToInt32((rcWorkArea.left + rcWorkArea.right) / (double)2 - (rc.right - rc.left) / (double)2);
+        var nY = Convert.ToInt32((rcWorkArea.top + rcWorkArea.bottom) / (double)2 - (rc.bottom - rc.top) / (double)2);
         SetWindowPos(hWnd, IntPtr.Zero, nX, nY, -1, -1, SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOACTIVATE);
     }
 
@@ -651,9 +504,128 @@ public class SplashScreen
         //int wmId, wmEvent;
         switch (msg)
         {
-            default:
-                break;
         }
+
         return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct BLENDFUNCTION
+    {
+        public byte BlendOp;
+        public byte BlendFlags;
+        public byte SourceConstantAlpha;
+        public byte AlphaFormat;
+    }
+
+    [StructLayoutAttribute(LayoutKind.Sequential)]
+    public struct BITMAP
+    {
+        public int bmType;
+        public int bmWidth;
+        public int bmHeight;
+        public int bmWidthBytes;
+        public short bmPlanes;
+        public short bmBitsPixel;
+        public IntPtr bmBits;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct RECT
+    {
+        public int left;
+        public int top;
+        public int right;
+        public int bottom;
+
+        public RECT(int Left, int Top, int Right, int Bottom)
+        {
+            left = Left;
+            top = Top;
+            right = Right;
+            bottom = Bottom;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct StartupInput
+    {
+        public int GdiplusVersion; // Must be 1
+
+        // public DebugEventProc DebugEventCallback; // Ignored on free builds
+        public IntPtr DebugEventCallback;
+
+        public bool SuppressBackgroundThread; // FALSE unless you're prepared to call 
+        // the hook/unhook functions properly
+
+        public bool SuppressExternalCodecs; // FALSE unless you want GDI+ only to use
+        // its internal image codecs.
+
+        public static StartupInput GetDefault()
+        {
+            var result = new StartupInput();
+            result.GdiplusVersion = 1;
+            // result.DebugEventCallback = null;
+            result.SuppressBackgroundThread = false;
+            result.SuppressExternalCodecs = false;
+            return result;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct StartupOutput
+    {
+        // The following 2 fields won't be used.  They were originally intended 
+        // for getting GDI+ to run on our thread - however there are marshalling
+        // dealing with function *'s and what not - so we make explicit calls
+        // to gdi+ after the fact, via the GdiplusNotificationHook and 
+        // GdiplusNotificationUnhook methods.
+        public IntPtr hook; //not used
+        public IntPtr unhook; //not used.
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    public struct WNDCLASS
+    {
+        [MarshalAs(UnmanagedType.U4)] public uint style;
+        public WNDPROC lpfnWndProc;
+        public int cbClsExtra;
+        public int cbWndExtra;
+        public IntPtr hInstance;
+        public IntPtr hIcon;
+        public IntPtr hCursor;
+        public IntPtr hbrBackground;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+        public string lpszMenuName;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+        public string lpszClassName;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    public struct WNDCLASSEX
+    {
+        [MarshalAs(UnmanagedType.U4)] public int cbSize;
+        [MarshalAs(UnmanagedType.U4)] public int style;
+        public WNDPROC lpfnWndProc;
+        public int cbClsExtra;
+        public int cbWndExtra;
+        public IntPtr hInstance;
+        public IntPtr hIcon;
+        public IntPtr hCursor;
+        public IntPtr hbrBackground;
+        public string lpszMenuName;
+        public string lpszClassName;
+        public IntPtr hIconSm;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MONITORINFO
+    {
+        public uint cbSize;
+        public RECT rcMonitor;
+        public RECT rcWork;
+        public uint dwFlags;
     }
 }

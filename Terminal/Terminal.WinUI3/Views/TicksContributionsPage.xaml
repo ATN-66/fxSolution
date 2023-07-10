@@ -124,7 +124,6 @@
                 Grid.Row="0"
                 Grid.Column="0"
                 Grid.ColumnSpan="3"
-
                 Margin="1,1,1,3"
                 BorderBrush="White"
                 BorderThickness="1"
@@ -168,18 +167,18 @@
                         <TextBlock
                             Grid.Row="0"
                             Grid.Column="0"
-                            Style="{StaticResource BodyTextStyle}"
                             Margin="5,3,3,5"
-                            VerticalAlignment="Center"
                             HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource BodyTextStyle}"
                             Text="{x:Bind Path=ViewModel.HeaderContext}" />
 
                         <CalendarDatePicker
                             Grid.Row="0"
                             Grid.Column="1"
                             Margin="5,3,3,5"
-                            VerticalAlignment="Center"
                             HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
                             Date="{x:Bind Path=ViewModel.SelectedDate, Mode=TwoWay}"
                             MaxDate="{x:Bind Path=ViewModel.Today}" />
 
@@ -187,8 +186,8 @@
                             Grid.Row="0"
                             Grid.Column="2"
                             Margin="5,3,3,5"
-                            VerticalAlignment="Center"
                             HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
                             ClockIdentifier="24HourClock"
                             MinuteIncrement="30"
                             Time="{x:Bind Path=ViewModel.SelectedTime, Mode=TwoWay}" />
@@ -197,8 +196,8 @@
                             Grid.Row="0"
                             Grid.Column="3"
                             Margin="5,3,3,5"
-                            VerticalAlignment="Center"
                             HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
                             ItemsSource="{x:Bind Path=ViewModel.Symbols}"
                             SelectedIndex="0"
                             SelectedItem="{x:Bind Path=ViewModel.SelectedSymbol, Mode=TwoWay}" />
@@ -207,8 +206,8 @@
                             Grid.Row="0"
                             Grid.Column="4"
                             Margin="5,3,3,5"
-                            VerticalAlignment="Center"
                             HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
                             Command="{x:Bind Path=ViewModel.ResetCommand}"
                             Content="Reset"
                             ToolTipService.ToolTip="ResetDateTimeCommand" />
@@ -217,8 +216,8 @@
                             Grid.Row="0"
                             Grid.Column="5"
                             Margin="5,3,3,5"
-                            VerticalAlignment="Center"
                             HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
                             Command="{x:Bind Path=ViewModel.ContributionsCommand}"
                             Content="Contributions"
                             ToolTipService.ToolTip="HourlyContributionsCommand" />
@@ -228,8 +227,8 @@
                             Grid.Column="6"
                             Width="150"
                             Margin="5,3,3,5"
-                            VerticalAlignment="Center"
                             HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
                             ItemsSource="{x:Bind Path=ViewModel.Providers}"
                             PlaceholderText="Pick a provider"
                             SelectedItem="{x:Bind Path=ViewModel.SelectedProvider, Mode=TwoWay}" />
@@ -238,8 +237,8 @@
                             Grid.Row="0"
                             Grid.Column="7"
                             Margin="5,3,3,5"
-                            VerticalAlignment="Center"
                             HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
                             Command="{x:Bind Path=ViewModel.ReImportSelectedCommand}"
                             Content="Re-Import Selected"
                             ToolTipService.ToolTip="ReImportSelectedCommand" />
@@ -248,8 +247,8 @@
                             Grid.Row="0"
                             Grid.Column="8"
                             Margin="5,3,3,5"
-                            VerticalAlignment="Center"
                             HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
                             Command="{x:Bind Path=ViewModel.ImportCommand}"
                             Content="Import"
                             Foreground="White"
@@ -259,8 +258,8 @@
                             Grid.Row="0"
                             Grid.Column="9"
                             Margin="5,3,3,5"
-                            VerticalAlignment="Center"
                             HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
                             Command="{x:Bind Path=ViewModel.RecalculateAllContributionsCommand}"
                             Content="Recalculate All"
                             ToolTipService.ToolTip="RecalculateAllContributionsCommand" />

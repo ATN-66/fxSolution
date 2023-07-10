@@ -3,8 +3,8 @@
   |                                        TicksContributionsPage.cs |
   +------------------------------------------------------------------+*/
 
+using System.Diagnostics;
 using System.Globalization;
-using Windows.Storage;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
@@ -49,21 +49,29 @@ public sealed partial class TicksContributionsPage
     {
         base.OnNavigatedTo(e);
 
-        var widthSetting = await _localSettingsService.ReadSettingAsync<string>(TicksContributionsPageFirstColumnDefinitionWidth).ConfigureAwait(false);
-        var heightSetting = await _localSettingsService.ReadSettingAsync<string>(TicksContributionsPageFirstRowDefinitionHeight).ConfigureAwait(false);
+        try
+        {
+            var widthSetting = await _localSettingsService.ReadSettingAsync<string>(TicksContributionsPageFirstColumnDefinitionWidth).ConfigureAwait(true);
+            var heightSetting = await _localSettingsService.ReadSettingAsync<string>(TicksContributionsPageFirstRowDefinitionHeight).ConfigureAwait(true);
 
-        if (int.TryParse(widthSetting, out var width) && int.TryParse(heightSetting, out var height))
-        {
-            await _dispatcherService.ExecuteOnUIThreadAsync(() =>
+            if (int.TryParse(widthSetting, out var width) && int.TryParse(heightSetting, out var height))
             {
-                FirstColumnDefinition.Width = new GridLength(Convert.ToInt32(width));
-                FirstRowDefinition.Height = new GridLength(Convert.ToInt32(height));
-            }).ConfigureAwait(true);
+                await _dispatcherService.ExecuteOnUIThreadAsync(() =>
+                {
+                    FirstColumnDefinition.Width = new GridLength(Convert.ToInt32(width));
+                    FirstRowDefinition.Height = new GridLength(Convert.ToInt32(height));
+                }).ConfigureAwait(true);
+            }
+            else
+            {
+                FirstColumnDefinition.Width = new GridLength(Convert.ToInt32(100));
+                FirstRowDefinition.Height = new GridLength(Convert.ToInt32(100));
+            }
         }
-        else
+        catch (Exception exception)
         {
-            FirstColumnDefinition.Width = new GridLength(Convert.ToInt32(100));
-            FirstRowDefinition.Height = new GridLength(Convert.ToInt32(100));
+            Debug.WriteLine(exception);
+            throw;
         }
     }
 
@@ -71,11 +79,21 @@ public sealed partial class TicksContributionsPage
     {
         base.OnNavigatingFrom(e);
 
-        _dispatcherService.ExecuteOnUIThreadAsync( async () => 
+        try
         {
-            await _localSettingsService.SaveSettingAsync(TicksContributionsPageFirstColumnDefinitionWidth, FirstColumnDefinition.Width.Value.ToString(CultureInfo.InvariantCulture)).ConfigureAwait(false);
-            await _localSettingsService.SaveSettingAsync(TicksContributionsPageFirstRowDefinitionHeight, FirstRowDefinition.Height.Value.ToString(CultureInfo.InvariantCulture)).ConfigureAwait(false);
-        });
+            async void Action()
+            {
+                await _localSettingsService.SaveSettingAsync(TicksContributionsPageFirstColumnDefinitionWidth, FirstColumnDefinition.Width.Value.ToString(CultureInfo.InvariantCulture)).ConfigureAwait(true);
+                await _localSettingsService.SaveSettingAsync(TicksContributionsPageFirstRowDefinitionHeight, FirstRowDefinition.Height.Value.ToString(CultureInfo.InvariantCulture)).ConfigureAwait(true);
+            }
+
+            _dispatcherService.ExecuteOnUIThreadAsync(Action);
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            throw;
+        }
     }
 
     private void GridSplitter_PointerReleased(object sender, PointerRoutedEventArgs e)

@@ -6,7 +6,6 @@
 using Mediator.Contracts.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Common.DataSource;
 using System.Reflection;
 using Common.Entities;

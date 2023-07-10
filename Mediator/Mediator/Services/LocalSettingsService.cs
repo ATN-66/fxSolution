@@ -36,36 +36,40 @@ public class LocalSettingsService : ILocalSettingsService
 
     public async Task<T?> ReadSettingAsync<T>(string key)
     {
-        if (RuntimeHelper.IsMSIX)
+        await InitializeAsync().ConfigureAwait(false);
+        if (_settings.TryGetValue(key, out var obj))
         {
-            if (ApplicationData.Current.LocalSettings.Values.TryGetValue(key, out var obj))
-            {
-                return await Json.ToObjectAsync<T>((string)obj).ConfigureAwait(false);
-            }
+            return await Json.ToObjectAsync<T>((string)obj).ConfigureAwait(false);
         }
-        else
-        {
-            await InitializeAsync().ConfigureAwait(false);
-            if (_settings.TryGetValue(key, out var obj))
-            {
-                return await Json.ToObjectAsync<T>((string)obj).ConfigureAwait(false);
-            }
-        }
+
+        //if (RuntimeHelper.IsMSIX)
+        //{
+        //    if (ApplicationData.Current.LocalSettings.Values.TryGetValue(key, out var obj))
+        //    {
+        //        return await Json.ToObjectAsync<T>((string)obj).ConfigureAwait(false);
+        //    }
+        //}
+        //else
+        //{
+           
+        //}
 
         return default;
     }
 
     public async Task SaveSettingAsync<T>(string key, T value)
     {
-        if (RuntimeHelper.IsMSIX)
-        {
-            ApplicationData.Current.LocalSettings.Values[key] = await Json.StringifyAsync(value!).ConfigureAwait(false);
-        }
-        else
-        {
-            await InitializeAsync().ConfigureAwait(false);
-            _settings[key] = await Json.StringifyAsync(value!).ConfigureAwait(false);
-            await Task.Run(() => _fileService.Save(_applicationDataFolder, _localsettingsFile, _settings)).ConfigureAwait(false);
-        }
+        await InitializeAsync().ConfigureAwait(false);
+        _settings[key] = await Json.StringifyAsync(value!).ConfigureAwait(false);
+        await Task.Run(() => _fileService.Save(_applicationDataFolder, _localsettingsFile, _settings)).ConfigureAwait(false);
+
+        //if (RuntimeHelper.IsMSIX)
+        //{
+        //    ApplicationData.Current.LocalSettings.Values[key] = await Json.StringifyAsync(value!).ConfigureAwait(false);
+        //}
+        //else
+        //{
+            
+        //}
     }
 }
