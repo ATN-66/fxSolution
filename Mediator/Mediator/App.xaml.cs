@@ -81,7 +81,7 @@ public partial class App
             services.AddSingleton<IAudioPlayer, AudioPlayer>();
 
             services.AddSingleton<CancellationTokenSource>();
-            services.AddTransient<IIndicatorToMediatorService, IndicatorToMediatorService>();
+            services.AddTransient<IEaToMediatorService, EaToMediatorService>();
             services.AddSingleton<IDataProviderService, DataProviderService>();
 
             services.AddSingleton<MainViewModel>();
@@ -159,7 +159,7 @@ public partial class App
 
         using var scope = Host.Services.CreateScope();
         var indicatorToMediatorTasks = (from Symbol symbol in Enum.GetValues(typeof(Symbol))
-            let serviceIndicatorToMediator = scope.ServiceProvider.GetService<IIndicatorToMediatorService>()
+            let serviceIndicatorToMediator = scope.ServiceProvider.GetService<IEaToMediatorService>()
             select Task.Run(() => serviceIndicatorToMediator.StartAsync(symbol, _cts.Token), _cts.Token)).ToList();
 
         var ticksDataProviderService = scope.ServiceProvider.GetRequiredService<IDataProviderService>();

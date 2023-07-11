@@ -18,7 +18,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MetaQuotes.MQL5", "MetaQuot
 		MetaQuotes\MetaQuotes.MQL5\Ea.mq4 = MetaQuotes\MetaQuotes.MQL5\Ea.mq4
 		MetaQuotes\MetaQuotes.MQL5\fxSolution.mq5 = MetaQuotes\MetaQuotes.MQL5\fxSolution.mq5
 		MetaQuotes\MetaQuotes.MQL5\InstallOnUnit1068.bat = MetaQuotes\MetaQuotes.MQL5\InstallOnUnit1068.bat
-		MetaQuotes\MetaQuotes.MQL5\readMe.txt = MetaQuotes\MetaQuotes.MQL5\readMe.txt
+		MetaQuotes\MetaQuotes.MQL5\MetaQuotes.Account.Client.txt = MetaQuotes\MetaQuotes.MQL5\MetaQuotes.Account.Client.txt
+		MetaQuotes\MetaQuotes.MQL5\MetaQuotes.Data.Client.txt = MetaQuotes\MetaQuotes.MQL5\MetaQuotes.Data.Client.txt
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common.MetaQuotes.Mediator", "Common\Common.MetaQuotes.Mediator\Common.MetaQuotes.Mediator.csproj", "{AF58E9B9-93EB-42F4-8322-65330B81AC63}"
@@ -40,6 +41,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mediator", "Mediator\Mediator\Mediator.csproj", "{162FEFF1-575C-4ACD-9143-0FEE3C10A338}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MetaQuotes.Data.Client", "MetaQuotes\MetaQuotes.Data.Client\MetaQuotes.Data.Client.csproj", "{F97AE299-B4DA-4B71-ACE4-E48E077DE06A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MetaQuotes.Account.Client", "MetaQuotes\MetaQuotes.Account.Client\MetaQuotes.Account.Client.csproj", "{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -238,6 +241,22 @@ Global
 		{F97AE299-B4DA-4B71-ACE4-E48E077DE06A}.Release|x64.Build.0 = Release|x64
 		{F97AE299-B4DA-4B71-ACE4-E48E077DE06A}.Release|x86.ActiveCfg = Release|x64
 		{F97AE299-B4DA-4B71-ACE4-E48E077DE06A}.Release|x86.Build.0 = Release|x64
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Debug|arm64.ActiveCfg = Debug|Any CPU
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Debug|arm64.Build.0 = Debug|Any CPU
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Debug|x64.ActiveCfg = Debug|x64
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Debug|x64.Build.0 = Debug|x64
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Debug|x86.Build.0 = Debug|Any CPU
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Release|arm64.ActiveCfg = Release|Any CPU
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Release|arm64.Build.0 = Release|Any CPU
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Release|x64.ActiveCfg = Release|Any CPU
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Release|x64.Build.0 = Release|Any CPU
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Release|x86.ActiveCfg = Release|Any CPU
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -255,6 +274,7 @@ Global
 		{43FD8F03-59E0-4E64-A482-AB948E719335} = {DC45EAC1-1CCC-4BEA-8C1C-EB0BFD6C4F5E}
 		{162FEFF1-575C-4ACD-9143-0FEE3C10A338} = {2448CA3F-A691-4C28-9BBB-C64CE7374A4A}
 		{F97AE299-B4DA-4B71-ACE4-E48E077DE06A} = {1CC6F02C-CB9B-404C-A979-0C9D064C6D44}
+		{55C87C64-ECEA-4ED7-B3EA-0EDEAC62CB1D} = {1CC6F02C-CB9B-404C-A979-0C9D064C6D44}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1F0D73AF-03B2-46C6-85FC-4001F40459D5}

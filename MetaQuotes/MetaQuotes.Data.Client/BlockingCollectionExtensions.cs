@@ -1,5 +1,5 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                           MetaQuotes.Data.PipeClient |
+  |                                           MetaQuotes.Data.DataClient |
   |                                  BlockingCollectionExtensions.cs |
   +------------------------------------------------------------------+*/
 

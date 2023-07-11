@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>x64</Platforms>
+  </PropertyGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy &quot;$(TargetDir)MetaQuotes.Account.Client.dll&quot; &quot;C:\forex.mt5\dll\&quot; /Y /R&#xD;&#xA;xcopy &quot;$(TargetDir)MetaQuotes.Account.Client.dll&quot; &quot;C:\Users\andre\AppData\Roaming\MetaQuotes\Terminal\9B101088254A9C260A9790D5079A7B11\MQL5\Libraries&quot; /Y /R&#xD;&#xA;xcopy &quot;C:\forex.mt5\dll\*.*&quot; &quot;\\UNIT1068\forex.shared\mt5\dll\&quot; /Y /R" />
+  </Target>
+
+</Project>
