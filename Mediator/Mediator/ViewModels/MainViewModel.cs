@@ -26,7 +26,15 @@ public class MainViewModel : ObservableRecipient
     
     private static readonly int TotalIndicators = Enum.GetValues(typeof(Symbol)).Length;
     private Workplace _workplace;
+
+    private ServiceStatus _dataProviderStatus;
+    private ServiceStatus _executiveProviderStatus;
+    private ClientStatus _dataClientStatus;
+    private ClientStatus _executiveClientStatus;
+  
     private string _dataProviderServiceTitle = null!;
+    private string _executiveProviderServiceTitle = null!;
+
     public event Action InitializationComplete = null!;
     private bool _connecting;
     private bool _atFault;
@@ -54,12 +62,13 @@ public class MainViewModel : ObservableRecipient
         }
 
         _dataProviderStatus = ServiceStatus.Off;
+        _executiveProviderStatus = ServiceStatus.Off;
         _dataClientStatus = ClientStatus.Off;
+        _executiveClientStatus = ClientStatus.Off;
 
         _logger.LogTrace("({Guid}) is ON.", _guid);
     }
-
-    private ServiceStatus _dataProviderStatus;
+    
     public ServiceStatus DataProviderStatus
     {
         get => _dataProviderStatus;
@@ -75,11 +84,25 @@ public class MainViewModel : ObservableRecipient
             {
                 OnPropertyChanged();
             }).ConfigureAwait(true);
-
         }
     }
+    public ServiceStatus ExecutiveProviderStatus
+    {
+        get => _executiveProviderStatus;
+        internal set
+        {
+            if (value == _executiveProviderStatus)
+            {
+                return;
+            }
 
-    private ClientStatus _dataClientStatus;
+            _executiveProviderStatus = value;
+            _dispatcherService.ExecuteOnUIThreadAsync(() =>
+            {
+                OnPropertyChanged();
+            }).ConfigureAwait(true);
+        }
+    }
     public ClientStatus DataClientStatus
     {
         get => _dataClientStatus;
@@ -95,6 +118,57 @@ public class MainViewModel : ObservableRecipient
             {
                 OnPropertyChanged();
             }).ConfigureAwait(true);
+        }
+    }
+    public ClientStatus ExecutiveClientStatus
+    {
+        get => _executiveClientStatus;
+        internal set
+        {
+            if (value == _executiveClientStatus)
+            {
+                return;
+            }
+
+            _executiveClientStatus = value;
+            _dispatcherService.ExecuteOnUIThreadAsync(() =>
+            {
+                OnPropertyChanged();
+            }).ConfigureAwait(true);
+        }
+    }
+    public string DataProviderServiceTitle
+    {
+        get => _dataProviderServiceTitle;
+        private set
+        {
+            if (value == _dataProviderServiceTitle)
+            {
+                return;
+            }
+
+            _dispatcherService.ExecuteOnUIThreadAsync(() =>
+            {
+                _dataProviderServiceTitle = value;
+                OnPropertyChanged();
+            });
+        }
+    }
+    public string ExecutiveProviderServiceTitle
+    {
+        get => _executiveProviderServiceTitle;
+        private set
+        {
+            if (value == _executiveProviderServiceTitle)
+            {
+                return;
+            }
+
+            _dispatcherService.ExecuteOnUIThreadAsync(() =>
+            {
+                _executiveProviderServiceTitle = value;
+                OnPropertyChanged();
+            });
         }
     }
 
@@ -130,24 +204,6 @@ public class MainViewModel : ObservableRecipient
         }
     }
 
-    public string DataProviderServiceTitle
-    {
-        get => _dataProviderServiceTitle;
-        private set
-        {
-            if (value == _dataProviderServiceTitle)
-            {
-                return;
-            }
-
-            _dispatcherService.ExecuteOnUIThreadAsync(() =>
-            {
-                _dataProviderServiceTitle = value;
-                OnPropertyChanged();
-            });
-        }
-    }
-
     private Workplace Workplace
     {
         get => _workplace;
@@ -159,7 +215,8 @@ public class MainViewModel : ObservableRecipient
             }
 
             _workplace = value;
-            DataProviderServiceTitle = $"Data Provider Service ({Workplace})";
+            DataProviderServiceTitle = $"Data ({Workplace})";
+            ExecutiveProviderServiceTitle = $"Execution ({Workplace})";
         }
     }
 

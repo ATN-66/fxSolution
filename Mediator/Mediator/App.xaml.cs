@@ -81,8 +81,10 @@ public partial class App
             services.AddSingleton<IAudioPlayer, AudioPlayer>();
 
             services.AddSingleton<CancellationTokenSource>();
-            services.AddTransient<IEaToMediatorService, EaToMediatorService>();
+            services.AddTransient<IDataConsumerService, DataConsumerService>();
             services.AddSingleton<IDataProviderService, DataProviderService>();
+            services.AddSingleton<IExecutiveSupplierService, ExecutiveSupplierService>();
+            services.AddSingleton<IExecutiveProviderService, ExecutiveProviderService>();
 
             services.AddSingleton<MainViewModel>();
             services.AddTransient<MainPage>();
@@ -90,6 +92,7 @@ public partial class App
             services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
             services.Configure<ProviderBackupSettings>(context.Configuration.GetSection(nameof(ProviderBackupSettings)));
             services.Configure<DataProviderSettings>(context.Configuration.GetSection(nameof(DataProviderSettings)));
+            services.Configure<ExecutiveProviderSettings>(context.Configuration.GetSection(nameof(ExecutiveProviderSettings)));
         }).UseSerilog().Build();
 
         DebugSettings.BindingFailed += DebugSettings_BindingFailed;
@@ -159,11 +162,15 @@ public partial class App
 
         using var scope = Host.Services.CreateScope();
         var indicatorToMediatorTasks = (from Symbol symbol in Enum.GetValues(typeof(Symbol))
-            let serviceIndicatorToMediator = scope.ServiceProvider.GetService<IEaToMediatorService>()
+            let serviceIndicatorToMediator = scope.ServiceProvider.GetService<IDataConsumerService>()
             select Task.Run(() => serviceIndicatorToMediator.StartAsync(symbol, _cts.Token), _cts.Token)).ToList();
 
-        var ticksDataProviderService = scope.ServiceProvider.GetRequiredService<IDataProviderService>();
-        var ticksDataProviderServiceTask = ticksDataProviderService.StartAsync();
-        await Task.WhenAny(Task.WhenAll(indicatorToMediatorTasks), ticksDataProviderServiceTask).ConfigureAwait(false);
+        var dataProviderService = scope.ServiceProvider.GetRequiredService<IDataProviderService>();
+        var dataProviderServiceTask = dataProviderService.StartAsync();
+
+        var executiveProviderService = scope.ServiceProvider.GetRequiredService<IExecutiveProviderService>();
+        var executiveProviderServiceTask = executiveProviderService.StartAsync();
+
+        await Task.WhenAll(Task.WhenAll(indicatorToMediatorTasks), dataProviderServiceTask, executiveProviderServiceTask).ConfigureAwait(false);
     }
 }

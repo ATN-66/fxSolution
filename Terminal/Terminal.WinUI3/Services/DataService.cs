@@ -107,26 +107,26 @@ public class DataService : ObservableRecipient, IDataService
     {
         return _mediator.StartAsync(quotations, token);
     }
-    public async Task<IList<Quotation>> GetHistoricalDataAsync(Symbol symbol, DateTime startDateTimeInclusive, DateTime endDateTimeInclusive, Provider provider)
+    public async Task<IList<Quotation>> GetHistoricalDataAsync(Symbol symbol, DateTime startDateTimeInclusive, DateTime endDateTimeInclusive, Common.Entities.Provider provider)
     {
         var quotations = provider switch
         {
-            Provider.Mediator => await _mediator.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
-            Provider.FileService => await _fileService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
-            Provider.Terminal => await _dataBaseService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
+            Common.Entities.Provider.Mediator => await _mediator.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
+            Common.Entities.Provider.FileService => await _fileService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
+            Common.Entities.Provider.Terminal => await _dataBaseService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
             _ => throw new ArgumentOutOfRangeException(nameof(provider), provider, @"Unknown provider.")
         };
 
         var filteredQuotations = quotations.Where(quotation => quotation.Symbol == symbol);
         return filteredQuotations.ToList();
     }
-    private async Task<IList<Quotation>> GetHistoricalDataAsync(List<DateTime> dateTimes, Provider provider)
+    private async Task<IList<Quotation>> GetHistoricalDataAsync(List<DateTime> dateTimes, Common.Entities.Provider provider)
     {
         var quotations = provider switch
         {
-            Provider.Mediator => await _mediator.GetHistoricalDataAsync(dateTimes[0], dateTimes[^1].AddHours(1), _token).ConfigureAwait(true),
-            Provider.FileService => await _fileService.GetHistoricalDataAsync(dateTimes[0], dateTimes[^1].AddHours(1), _token).ConfigureAwait(true),
-            Provider.Terminal => throw new ArgumentOutOfRangeException(nameof(provider), provider, @"Provider must be Mediator or FileService."),
+            Common.Entities.Provider.Mediator => await _mediator.GetHistoricalDataAsync(dateTimes[0], dateTimes[^1].AddHours(1), _token).ConfigureAwait(true),
+            Common.Entities.Provider.FileService => await _fileService.GetHistoricalDataAsync(dateTimes[0], dateTimes[^1].AddHours(1), _token).ConfigureAwait(true),
+            Common.Entities.Provider.Terminal => throw new ArgumentOutOfRangeException(nameof(provider), provider, @"Provider must be Mediator or FileService."),
             _ => throw new ArgumentOutOfRangeException(nameof(provider), provider, @"Provider must be Mediator or FileService.")
         };
 
@@ -329,7 +329,7 @@ public class DataService : ObservableRecipient, IDataService
             Debug.Assert(result == 1);
         }
     }
-    public async Task<string> ReImportSelectedAsync(DateTime dateTime, Provider provider)
+    public async Task<string> ReImportSelectedAsync(DateTime dateTime, Common.Entities.Provider provider)
     {
         var contributions = await GetYearlyContributionsAsync().ConfigureAwait(true);
 
@@ -406,7 +406,7 @@ public class DataService : ObservableRecipient, IDataService
 
         throw new InvalidOperationException("Must never be here!");
     }
-    public async Task ImportAsync(CancellationToken cancellationToken, Provider provider)
+    public async Task ImportAsync(CancellationToken cancellationToken, Common.Entities.Provider provider)
     {
         var processedItems = 0;
         var totalItems = _yearlyContributionsCache!.SelectMany(y => y.MonthlyContributions!.SelectMany(m => m.DailyContributions.SelectMany(d => d.HourlyContributions))).Count();

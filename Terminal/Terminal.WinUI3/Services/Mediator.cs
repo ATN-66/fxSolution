@@ -12,7 +12,7 @@ using Grpc.Net.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Terminal.WinUI3.Contracts.Services;
-using Ticksdata;
+using Provider.Grpc;
 using Quotation = Common.Entities.Quotation;
 using Symbol = Common.Entities.Symbol;
 
@@ -25,14 +25,14 @@ public class Mediator : DataSource, IMediator
     private readonly int _maxReceiveMessageSize;
     private readonly string _grpcChannelAddress;
     
-    private static readonly Dictionary<Ticksdata.Symbol, Symbol> SymbolMapping = new()
+    private static readonly Dictionary<Provider.Grpc.Symbol, Symbol> SymbolMapping = new()
     {
-        { Ticksdata.Symbol.EurGbp, Symbol.EURGBP },
-        { Ticksdata.Symbol.EurJpy , Symbol.EURJPY },
-        { Ticksdata.Symbol.EurUsd , Symbol.EURUSD },
-        { Ticksdata.Symbol.GbpJpy , Symbol.GBPJPY },
-        { Ticksdata.Symbol.GbpUsd , Symbol.GBPUSD },
-        { Ticksdata.Symbol.UsdJpy , Symbol.USDJPY }
+        { Provider.Grpc.Symbol.EurGbp, Symbol.EURGBP },
+        { Provider.Grpc.Symbol.EurJpy , Symbol.EURJPY },
+        { Provider.Grpc.Symbol.EurUsd , Symbol.EURUSD },
+        { Provider.Grpc.Symbol.GbpJpy , Symbol.GBPJPY },
+        { Provider.Grpc.Symbol.GbpUsd , Symbol.GBPUSD },
+        { Provider.Grpc.Symbol.UsdJpy , Symbol.USDJPY }
     };
 
     public Mediator(IConfiguration configuration, ILogger<IMediator> logger, IAudioPlayer audioPlayer) : base(configuration, logger, audioPlayer)
@@ -176,7 +176,7 @@ public class Mediator : DataSource, IMediator
             throw;
         }
     }
-    private static Symbol ToEntitiesSymbol(Ticksdata.Symbol protoSymbol)
+    private static Symbol ToEntitiesSymbol(Provider.Grpc.Symbol protoSymbol)
     {
         if (!SymbolMapping.TryGetValue(protoSymbol, out var symbol))
         {

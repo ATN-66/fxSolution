@@ -5,7 +5,7 @@
 
 using Common.Entities;
 using MetaQuotes.Console;
-using MetaQuotes.Data.Client;
+using MetaQuotes.Data;
 using NAudio.Wave;
 
 var config = new Configuration()

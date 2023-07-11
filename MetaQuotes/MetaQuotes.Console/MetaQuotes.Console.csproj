@@ -19,7 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Common.Entities\Common.Entities.csproj" />
     <ProjectReference Include="..\..\Common\Common.ExtensionsAndHelpers\Common.ExtensionsAndHelpers.csproj" />
-    <ProjectReference Include="..\MetaQuotes.Data.Client\MetaQuotes.Data.Client.csproj" />
+    <ProjectReference Include="..\MetaQuotes.Data\MetaQuotes.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -14,7 +14,7 @@ using Mediator.Models;
 using Mediator.ViewModels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Ticksdata;
+using Provider.Grpc;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Configuration;
 using Timer = System.Timers.Timer;
@@ -63,14 +63,14 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     public event EventHandler<ServiceStatusChangedEventArgs> ServiceStatusChanged = null!;
     public event EventHandler<ClientStatusChangedEventArgs> IsClientActivatedChanged = null!;
 
-    private static readonly Dictionary<Symbol, Ticksdata.Symbol> SymbolMapping = new()
+    private static readonly Dictionary<Symbol, Provider.Grpc.Symbol> SymbolMapping = new()
     {
-        { Symbol.EURGBP, Ticksdata.Symbol.EurGbp },
-        { Symbol.EURJPY, Ticksdata.Symbol.EurJpy },
-        { Symbol.EURUSD, Ticksdata.Symbol.EurUsd },
-        { Symbol.GBPJPY, Ticksdata.Symbol.GbpJpy },
-        { Symbol.GBPUSD, Ticksdata.Symbol.GbpUsd },
-        { Symbol.USDJPY, Ticksdata.Symbol.UsdJpy }
+        { Symbol.EURGBP, Provider.Grpc.Symbol.EurGbp },
+        { Symbol.EURJPY, Provider.Grpc.Symbol.EurJpy },
+        { Symbol.EURUSD, Provider.Grpc.Symbol.EurUsd },
+        { Symbol.GBPJPY, Provider.Grpc.Symbol.GbpJpy },
+        { Symbol.GBPUSD, Provider.Grpc.Symbol.GbpUsd },
+        { Symbol.USDJPY, Provider.Grpc.Symbol.UsdJpy }
     };
 
     public DataProviderService(IConfiguration configuration, IOptions<DataProviderSettings> dataProviderSettings, MainViewModel mainViewModel, CancellationTokenSource cts, IDataBaseService dataBaseService, ILogger<IDataProviderService> logger)
@@ -583,7 +583,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                             }
                         };
 
-                        var q = new Ticksdata.Quotation { Id = quotation.ID, Symbol = ToProtoSymbol(quotation.Symbol), Datetime = Timestamp.FromDateTime(quotation.DateTime.ToUniversalTime()), Ask = quotation.Ask, Bid = quotation.Bid };
+                        var q = new Provider.Grpc.Quotation { Id = quotation.ID, Symbol = ToProtoSymbol(quotation.Symbol), Datetime = Timestamp.FromDateTime(quotation.DateTime.ToUniversalTime()), Ask = quotation.Ask, Bid = quotation.Bid };
                         response.Quotations.Add(q);
                         await responseStream.WriteAsync(response).ConfigureAwait(false);
                     }
@@ -641,7 +641,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
 
         foreach (var quotation in quotations)
         {
-            response.Quotations.Add(new Ticksdata.Quotation
+            response.Quotations.Add(new Provider.Grpc.Quotation
             {
                 Id = quotation.ID,
                 Symbol = ToProtoSymbol(quotation.Symbol),
@@ -680,7 +680,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             ServiceStatus = ServiceStatus.Fault;
         }
     }
-    private static Ticksdata.Symbol ToProtoSymbol(Symbol symbol)
+    private static Provider.Grpc.Symbol ToProtoSymbol(Symbol symbol)
     {
         if (!SymbolMapping.TryGetValue(symbol, out var protoSymbol))
         {

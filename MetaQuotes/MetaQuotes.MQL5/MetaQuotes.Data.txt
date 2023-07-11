@@ -6,8 +6,8 @@ xcopy "$(TargetDir)Common.MetaQuotes.Mediator.dll" "C:\forex.mt5\libraries\" /Y 
 
 3) Post-Build action in project "MetaQuotes.Data.Client":
 
-xcopy "$(TargetDir)MetaQuotes.Data.Client.dll" "C:\forex.mt5\dll\" /Y /R
-xcopy "$(TargetDir)MetaQuotes.Data.Client.dll" "C:\Users\andre\AppData\Roaming\MetaQuotes\Terminal\9B101088254A9C260A9790D5079A7B11\MQL5\Libraries" /Y /R
+xcopy "$(TargetDir)MetaQuotes.Data.dll" "C:\forex.mt5\dll\" /Y /R
+xcopy "$(TargetDir)MetaQuotes.Data.dll" "C:\Users\andre\AppData\Roaming\MetaQuotes\Terminal\9B101088254A9C260A9790D5079A7B11\MQL5\Libraries" /Y /R
 xcopy "C:\forex.mt5\dll\*.*" "\\UNIT1068\forex.shared\mt5\dll\" /Y /R
 rem ----- !!!!! check new packages !!!!! -----
 xcopy "C:\Users\andre\.nuget\packages\microsoft.bcl.asyncinterfaces\8.0.0-preview.5.23280.8\lib\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll" "C:\forex.mt5\libraries\" /Y /R
@@ -26,7 +26,7 @@ xcopy C:\Users\andre\AppData\Roaming\MetaQuotes\Terminal\9B101088254A9C260A9790D
 xcopy C:\Users\andre\AppData\Roaming\MetaQuotes\Terminal\9B101088254A9C260A9790D5079A7B11\MQL5\Experts\Advisors\fxSolution.mq5 "\\UNIT1068\forex.shared\mt5\scripts\" /Y /R
 rem ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 xcopy "D:\forex\fxSolution\MetaQuotes\MetaQuotes.MQL5\InstallOnUnit1068.bat" "\\UNIT1068\forex.shared\" /Y /R
-xcopy "D:\forex\fxSolution\MetaQuotes\MetaQuotes.MQL5\MetaQuotes.Data.Client.txt" "\\UNIT1068\forex.shared\" /Y /R
+xcopy "D:\forex\fxSolution\MetaQuotes\MetaQuotes.MQL5\MetaQuotes.Data.txt" "\\UNIT1068\forex.shared\" /Y /R
 rem ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 xcopy "D:\forex\tickstory\tickstory.com.scripts\MS-SQL\MetaQuotes.MQL5\01_CREATE_DATABASE_AND_TABLES.sql"                        "\\UNIT1068\forex.shared\ms-sql" /Y /R
 xcopy "D:\forex\tickstory\tickstory.com.scripts\MS-SQL\MetaQuotes.MQL5\02_CREATE_TYPE_QuotationTableType.sql"                    "\\UNIT1068\forex.shared\ms-sql" /Y /R

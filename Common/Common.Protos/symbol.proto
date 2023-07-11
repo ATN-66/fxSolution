@@ -1,5 +1,5 @@
 ﻿syntax = "proto3";
-package ticksdata;
+package provider.grpc;
 
 enum Symbol {
     EUR_USD = 0;

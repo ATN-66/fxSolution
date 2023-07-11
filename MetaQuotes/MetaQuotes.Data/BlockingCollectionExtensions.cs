@@ -1,5 +1,5 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                           MetaQuotes.Data.DataClient |
+  |                                                  MetaQuotes.Data |
   |                                  BlockingCollectionExtensions.cs |
   +------------------------------------------------------------------+*/
 
@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MetaQuotes.Data.Client;
+namespace MetaQuotes.Data;
 
 public static class BlockingCollectionExtensions
 {

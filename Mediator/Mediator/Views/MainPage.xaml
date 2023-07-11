@@ -216,7 +216,7 @@
                     Grid.Row="0"
                     Grid.Column="1"
                     Height="55"
-                    Fill="DarkGray"
+                    Fill="{x:Bind Path=ViewModel.ExecutiveProviderStatus, Mode=OneWay, Converter={StaticResource ServiceStatusConverter}}"
                     RadiusX="10"
                     RadiusY="10" />
             </Grid>
@@ -247,13 +247,13 @@
                     Grid.Row="0"
                     Grid.Column="1"
                     HorizontalAlignment="Stretch">
-                    <Border Background="LightGray" Style="{StaticResource ConsumerBorderStyle}">
+                    <Border Background="{x:Bind Path=ViewModel.ExecutiveClientStatus, Mode=OneWay, Converter={StaticResource ClientStatusConverter}}" Style="{StaticResource ConsumerBorderStyle}">
                         <TextBlock
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             FontSize="18"
                             FontWeight="Bold"
-                            Text="Expert Advisor client" />
+                            Text="{x:Bind Path=ViewModel.ExecutiveProviderServiceTitle, Mode=OneWay}" />
                     </Border>
                 </Grid>
             </Grid>

@@ -4,13 +4,10 @@
   +------------------------------------------------------------------+*/
 
 using System.Collections.Concurrent;
-using System.Globalization;
-using System.Net.Sockets;
 using Common.Entities;
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Grpc.Net.Client;
-using Ticksdata;
+using Provider.Grpc;
 using Quotation = Common.Entities.Quotation;
 using Symbol = Common.Entities.Symbol;
 
@@ -35,14 +32,14 @@ const int maxReceiveMessageSize = 50 * 1024 * 1024; //e.g. 50 MB wo 4
 // ReSharper disable once JoinDeclarationAndInitializer
 IEnumerable<Quotation> result;
 
-var symbolMapping = new Dictionary<Ticksdata.Symbol, Symbol>
+var symbolMapping = new Dictionary<Provider.Grpc.Symbol, Symbol>
 {
-    { Ticksdata.Symbol.EurGbp, Symbol.EURGBP },
-    { Ticksdata.Symbol.EurJpy, Symbol.EURJPY },
-    { Ticksdata.Symbol.EurUsd, Symbol.EURUSD },
-    { Ticksdata.Symbol.GbpJpy, Symbol.GBPJPY },
-    { Ticksdata.Symbol.GbpUsd, Symbol.GBPUSD },
-    { Ticksdata.Symbol.UsdJpy, Symbol.USDJPY }
+    { Provider.Grpc.Symbol.EurGbp, Symbol.EURGBP },
+    { Provider.Grpc.Symbol.EurJpy, Symbol.EURJPY },
+    { Provider.Grpc.Symbol.EurUsd, Symbol.EURUSD },
+    { Provider.Grpc.Symbol.GbpJpy, Symbol.GBPJPY },
+    { Provider.Grpc.Symbol.GbpUsd, Symbol.GBPUSD },
+    { Provider.Grpc.Symbol.UsdJpy, Symbol.USDJPY }
 };
 
 Console.WriteLine("Terminal simulator...");
@@ -339,7 +336,7 @@ return 1;
 //    hoursCache.TryGetValue(key, out var quotations);
 //    return quotations!;
 //}
-Symbol ToEntitiesSymbol(Ticksdata.Symbol protoSymbol)
+Symbol ToEntitiesSymbol(Provider.Grpc.Symbol protoSymbol)
 {
     if (!symbolMapping!.TryGetValue(protoSymbol, out var symbol))
     {

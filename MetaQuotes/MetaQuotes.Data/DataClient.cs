@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                           MetaQuotes.Data.DataClient |
-  |                                                        DataClient.cs |
+  |                                                  MetaQuotes.Data |
+  |                                                    DataClient.cs |
   +------------------------------------------------------------------+*/
 
 using System;
@@ -12,7 +12,7 @@ using Common.MetaQuotes.Mediator;
 using PipeMethodCalls;
 using PipeMethodCalls.NetJson;
 
-namespace MetaQuotes.Data.Client;
+namespace MetaQuotes.Data;
 
 internal sealed class DataClient : IDisposable
 {

@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                                                Mediator.Services |
-  |                                           EaToMediatorService.cs |
+  |                                           DataConsumerService.cs |
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
@@ -15,16 +15,16 @@ using Symbol = Common.Entities.Symbol;
 
 namespace Mediator.Services;
 
-internal class EaToMediatorService : IEaToMediatorService
+internal class DataConsumerService : IDataConsumerService
 {
     private readonly Guid _guid = Guid.NewGuid();
     private Symbol _symbol;
     private string _pipeName = "EA.To.Mediator";
     private readonly IDataProviderService _dataProviderService;
-    private readonly ILogger<EaToMediatorService> _logger;
+    private readonly ILogger<DataConsumerService> _logger;
     private readonly IPipeSerializer _pipeSerializer = new NetJsonPipeSerializer();
 
-    public EaToMediatorService(IDataProviderService dataProviderService, ILogger<EaToMediatorService> logger) 
+    public DataConsumerService(IDataProviderService dataProviderService, ILogger<DataConsumerService> logger) 
     {
         _dataProviderService = dataProviderService;
         _logger = logger;

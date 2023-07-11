@@ -1,5 +1,5 @@
 ﻿syntax = "proto3";
-package ticksdata;
+package provider.grpc;
 import "timestamp.proto";
 import "symbol.proto";
 

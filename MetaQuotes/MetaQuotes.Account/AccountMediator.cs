@@ -1,5 +1,5 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                        MetaQuotes.Account.Client |
+  |                                               MetaQuotes.Account |
   |                                               AccountMediator.cs |
   +------------------------------------------------------------------+*/
 
@@ -7,12 +7,13 @@ using System;
 using System.IO;
 using System.Reflection;
 
-namespace MetaQuotes.Account.Client;
+namespace MetaQuotes.Account;
 
 //This class is called by fxSolution.mq5 or console simulator
 public static class AccountMediator
 {
     private const string mt5lib = @"C:\forex.mt5\libraries";
+    private static AccountClient _accountClient;
 
     static AccountMediator()
     {
@@ -26,8 +27,9 @@ public static class AccountMediator
         return File.Exists(assemblyPath) ? Assembly.LoadFrom(assemblyPath) : null;
     }
 
-    public static string Init(string hello)
+    public static string SetAccountInfo(long accountNumber)
     {
-        return hello;
+        _accountClient = new AccountClient();
+        return _accountClient.SetAccountInfo(accountNumber);
     }
 }

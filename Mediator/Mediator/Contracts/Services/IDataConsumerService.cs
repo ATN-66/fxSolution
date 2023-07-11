@@ -1,13 +1,13 @@
 ﻿/*+------------------------------------------------------------------+
   |                                      Mediator.Contracts.Services |
-  |                                   IEaToMediatorService.cs |
+  |                                   IDataConsumerService.cs |
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
 
 namespace Mediator.Contracts.Services;
 
-internal interface IEaToMediatorService
+internal interface IDataConsumerService
 {
     Task StartAsync(Symbol symbol, CancellationToken token);
 }

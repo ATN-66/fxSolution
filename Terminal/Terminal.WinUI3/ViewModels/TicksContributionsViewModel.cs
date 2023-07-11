@@ -50,8 +50,8 @@ public partial class TicksContributionsViewModel : ObservableRecipient, INavigat
     [ObservableProperty] private bool _mediatorQuotationsIsLoading;
     [ObservableProperty] private int _mediatorQuotationsCount;
 
-    [ObservableProperty] private Provider _selectedProvider;
-    public IEnumerable<Provider> Providers
+    [ObservableProperty] private Common.Entities.Provider _selectedProvider;
+    public IEnumerable<Common.Entities.Provider> Providers
     {
         get;
     }
@@ -68,7 +68,7 @@ public partial class TicksContributionsViewModel : ObservableRecipient, INavigat
         _dispatcherService = dispatcherService;
 
         _selectedDate = Today;
-        Providers = Enum.GetValues(typeof(Provider)).Cast<Provider>().Where(p => p != Provider.Terminal);
+        Providers = Enum.GetValues(typeof(Common.Entities.Provider)).Cast<Common.Entities.Provider>().Where(p => p != Common.Entities.Provider.Terminal);
     }
 
     partial void OnSelectedDateChanged(DateTimeOffset oldValue, DateTimeOffset newValue)
@@ -110,7 +110,7 @@ public partial class TicksContributionsViewModel : ObservableRecipient, INavigat
 
     private async Task RefreshContributionsAsync()
     {
-        SelectedProvider = Provider.Mediator;
+        SelectedProvider = Common.Entities.Provider.Mediator;
         YearlyContributionsIsLoading = true;
         YearlyContributionsCount = 0;
         YearlyContributions.Clear();
@@ -155,9 +155,9 @@ public partial class TicksContributionsViewModel : ObservableRecipient, INavigat
         var dateTimeInclusive = SelectedDate.Date.AddHours(SelectedTime.Hours);
         var endDateTimeInclusive = SelectedDate.Date.AddHours(SelectedTime.Hours);
 
-        var fileServiceTask = _dataService.GetHistoricalDataAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.FileService);
-        var mediatorTask = _dataService.GetHistoricalDataAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.Mediator);
-        var terminalTask = _dataService.GetHistoricalDataAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Provider.Terminal);
+        var fileServiceTask = _dataService.GetHistoricalDataAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Common.Entities.Provider.FileService);
+        var mediatorTask = _dataService.GetHistoricalDataAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Common.Entities.Provider.Mediator);
+        var terminalTask = _dataService.GetHistoricalDataAsync(SelectedSymbol, dateTimeInclusive, endDateTimeInclusive, Common.Entities.Provider.Terminal);
 
         FileServiceQuotationsIsLoading = true;
         MediatorQuotationsIsLoading = true;

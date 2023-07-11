@@ -1,5 +1,5 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                           MetaQuotes.Data.Client |
+  |                                                  MetaQuotes.Data |
   |                                                  DataMediator.cs |
   +------------------------------------------------------------------+*/
 
@@ -8,7 +8,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace MetaQuotes.Data.Client;
+namespace MetaQuotes.Data;
 
 //This class is called by fxSolution.mq5 or console simulator
 public static class DataMediator

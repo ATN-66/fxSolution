@@ -4,8 +4,8 @@
   +------------------------------------------------------------------+*/
 
 using Grpc.Core;
-using Ticksdata;
-using DataRequest = Ticksdata.DataRequest;
+using Provider.Grpc;
+using DataRequest = Provider.Grpc.DataRequest;
 
 namespace Mediator.Contracts.Services;
 
