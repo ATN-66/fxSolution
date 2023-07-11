@@ -1,5 +1,5 @@
 ﻿syntax = "proto3";
-package provider.grpc;
+package fx.grpc;
 import "timestamp.proto";
 import "symbol.proto";
 

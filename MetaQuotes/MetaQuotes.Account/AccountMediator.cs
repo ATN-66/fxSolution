@@ -27,9 +27,10 @@ public static class AccountMediator
         return File.Exists(assemblyPath) ? Assembly.LoadFrom(assemblyPath) : null;
     }
 
-    public static string SetAccountInfo(long accountNumber)
+    public static string OpenSession(long accountNumber)
     {
-        _accountClient = new AccountClient();
-        return _accountClient.SetAccountInfo(accountNumber);
+        return "ok";
+        //_accountClient = new AccountClient();
+        //return _accountClient.SetAccountInfo(accountNumber);
     }
 }

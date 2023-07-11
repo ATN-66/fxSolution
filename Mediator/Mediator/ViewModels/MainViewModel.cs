@@ -27,13 +27,17 @@ public class MainViewModel : ObservableRecipient
     private static readonly int TotalIndicators = Enum.GetValues(typeof(Symbol)).Length;
     private Workplace _workplace;
 
-    private ServiceStatus _dataProviderStatus;
-    private ServiceStatus _executiveProviderStatus;
-    private ClientStatus _dataClientStatus;
-    private ClientStatus _executiveClientStatus;
-  
+    private ServiceStatus _dataProviderServiceStatus;
+    private ServiceStatus _executiveProviderServiceStatus;
+    private ServiceStatus _executiveSupplierServiceStatus;
+
+    private ClientStatus _dataProviderClientStatus;
+    private ClientStatus _executiveProviderClientStatus;
+    private ClientStatus _executiveSupplierClientStatus;
+
     private string _dataProviderServiceTitle = null!;
     private string _executiveProviderServiceTitle = null!;
+    private string _executiveSupplierServiceTitle = null!;
 
     public event Action InitializationComplete = null!;
     private bool _connecting;
@@ -61,76 +65,112 @@ public class MainViewModel : ObservableRecipient
             }
         }
 
-        _dataProviderStatus = ServiceStatus.Off;
-        _executiveProviderStatus = ServiceStatus.Off;
-        _dataClientStatus = ClientStatus.Off;
-        _executiveClientStatus = ClientStatus.Off;
+        _dataProviderServiceStatus = ServiceStatus.Off;
+        _executiveProviderServiceStatus = ServiceStatus.Off;
+        _executiveSupplierServiceStatus = ServiceStatus.Off;
+        _dataProviderClientStatus = ClientStatus.Off;
+        _executiveProviderClientStatus = ClientStatus.Off;
+        _executiveSupplierClientStatus = ClientStatus.Off;
 
         _logger.LogTrace("({Guid}) is ON.", _guid);
     }
     
-    public ServiceStatus DataProviderStatus
+    public ServiceStatus DataProviderServiceStatus
     {
-        get => _dataProviderStatus;
+        get => _dataProviderServiceStatus;
         internal set
         {
-            if (value == _dataProviderStatus)
+            if (value == _dataProviderServiceStatus)
             {
                 return;
             }
 
-            _dataProviderStatus = value;
+            _dataProviderServiceStatus = value;
             _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
                 OnPropertyChanged();
             }).ConfigureAwait(true);
         }
     }
-    public ServiceStatus ExecutiveProviderStatus
+    public ServiceStatus ExecutiveProviderServiceStatus
     {
-        get => _executiveProviderStatus;
+        get => _executiveProviderServiceStatus;
         internal set
         {
-            if (value == _executiveProviderStatus)
+            if (value == _executiveProviderServiceStatus)
             {
                 return;
             }
 
-            _executiveProviderStatus = value;
+            _executiveProviderServiceStatus = value;
             _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
                 OnPropertyChanged();
             }).ConfigureAwait(true);
         }
     }
-    public ClientStatus DataClientStatus
+    public ServiceStatus ExecutiveSupplierServiceStatus
     {
-        get => _dataClientStatus;
+        get => _executiveSupplierServiceStatus;
         internal set
         {
-            if (value == _dataClientStatus)
+            if (value == _executiveSupplierServiceStatus)
             {
                 return;
             }
 
-            _dataClientStatus = value;
+            _executiveSupplierServiceStatus = value;
             _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
                 OnPropertyChanged();
             }).ConfigureAwait(true);
         }
     }
-    public ClientStatus ExecutiveClientStatus
+    public ClientStatus DataProviderClientStatus
     {
-        get => _executiveClientStatus;
+        get => _dataProviderClientStatus;
         internal set
         {
-            if (value == _executiveClientStatus)
+            if (value == _dataProviderClientStatus)
             {
                 return;
             }
 
-            _executiveClientStatus = value;
+            _dataProviderClientStatus = value;
+            _dispatcherService.ExecuteOnUIThreadAsync(() =>
+            {
+                OnPropertyChanged();
+            }).ConfigureAwait(true);
+        }
+    }
+    public ClientStatus ExecutiveProviderClientStatus
+    {
+        get => _executiveProviderClientStatus;
+        internal set
+        {
+            if (value == _executiveProviderClientStatus)
+            {
+                return;
+            }
+
+            _executiveProviderClientStatus = value;
+            _dispatcherService.ExecuteOnUIThreadAsync(() =>
+            {
+                OnPropertyChanged();
+            }).ConfigureAwait(true);
+        }
+    }
+    public ClientStatus ExecutiveSupplierClientStatus
+    {
+        get => _executiveSupplierClientStatus;
+        internal set
+        {
+            if (value == _executiveSupplierClientStatus)
+            {
+                return;
+            }
+
+            _executiveSupplierClientStatus = value;
             _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
                 OnPropertyChanged();
@@ -167,6 +207,23 @@ public class MainViewModel : ObservableRecipient
             _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
                 _executiveProviderServiceTitle = value;
+                OnPropertyChanged();
+            });
+        }
+    }
+    public string ExecutiveSupplierServiceTitle
+    {
+        get => _executiveSupplierServiceTitle;
+        private set
+        {
+            if (value == _executiveSupplierServiceTitle)
+            {
+                return;
+            }
+
+            _dispatcherService.ExecuteOnUIThreadAsync(() =>
+            {
+                _executiveSupplierServiceTitle = value;
                 OnPropertyChanged();
             });
         }
@@ -215,8 +272,9 @@ public class MainViewModel : ObservableRecipient
             }
 
             _workplace = value;
-            DataProviderServiceTitle = $"Data ({Workplace})";
-            ExecutiveProviderServiceTitle = $"Execution ({Workplace})";
+            DataProviderServiceTitle = $"Data";
+            ExecutiveProviderServiceTitle = $"Terminal";
+            ExecutiveSupplierServiceTitle = $"MT5";
         }
     }
 

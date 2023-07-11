@@ -10,12 +10,14 @@ using Microsoft.Extensions.Logging;
 using Terminal.WinUI3.AI.Data;
 using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.Contracts.Services;
+using Terminal.WinUI3.Services;
 
 namespace Terminal.WinUI3.AI.Services;
 
 public class Processor : IProcessor
 {
     private readonly IDataService _dataService;
+    private readonly IExecutiveConsumerService _executiveConsumerService;
     private readonly IVisualService _visualService;
     private readonly ISplashScreenService _splashScreenService;
     private readonly ILogger<IProcessor> _logger;
@@ -25,14 +27,16 @@ public class Processor : IProcessor
 
     private readonly DateTime _startDateTime;
 
-    public Processor(IDataService dataService, IVisualService visualService, ISplashScreenService splashScreenService, ILogger<IProcessor> logger)
+    public Processor(IDataService dataService, IExecutiveConsumerService executiveConsumerService, IVisualService visualService, ISplashScreenService splashScreenService, ILogger<IProcessor> logger)
     {
         _dataService = dataService;
+        _executiveConsumerService = executiveConsumerService;
         _visualService = visualService;
         _splashScreenService = splashScreenService;
         _logger = logger;
 
-        _startDateTime = DateTime.Now.AddDays(-3).AddHours(1); // The minimum is 3 days
+        //_startDateTime = DateTime.Now.AddDays(0).AddHours(0);
+        _startDateTime = new DateTime(2023, 02, 19, 10, 0, 0);
     }
 
     public async Task StartAsync(CancellationToken token)
@@ -42,12 +46,20 @@ public class Processor : IProcessor
         _visualService.Initialize(_kernels);
         _splashScreenService.HideSplash();
 
-        var (receivingTask, channel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
-        var processingTask = ProcessingTaskAsync(token);
-        await Task.WhenAll(receivingTask, processingTask).ConfigureAwait(false);
-        await channel.ShutdownAsync().ConfigureAwait(false);
+        var (dataTask, dataChannel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
+        var dataProcessingTask = DataProcessingTaskAsync(token);
+
+        var (executiveTask, executiveChannel) = await _executiveConsumerService.StartAsync(token).ConfigureAwait(false);
+        //var processingTask = ExecutiveProcessingTaskAsync(token);
+
+        //await Task.WhenAll(dataTask, dataProcessingTask).ConfigureAwait(false);
+        await Task.WhenAll(dataTask, dataProcessingTask, executiveTask).ConfigureAwait(false);
+        //await Task.WhenAll(executiveTask).ConfigureAwait(false);
+
+        await dataChannel.ShutdownAsync().ConfigureAwait(false);
+        await executiveChannel.ShutdownAsync().ConfigureAwait(false);
     }
-    private Task ProcessingTaskAsync(CancellationToken token)
+    private Task DataProcessingTaskAsync(CancellationToken token)
     {
         var processingTask = Task.Run(async () =>
         {

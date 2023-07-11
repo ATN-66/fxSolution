@@ -581,7 +581,7 @@
                         </ScrollViewer>
                     </Grid>
                 </TabViewItem>
-                <TabViewItem Header="Provider (Mediator)">
+                <TabViewItem Header="Provider (DataConsumerService)">
                     <Grid>
                         <ProgressRing
                             Width="150"

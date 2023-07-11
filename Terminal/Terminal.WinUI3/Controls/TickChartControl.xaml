@@ -65,13 +65,13 @@
                             Command="{Binding DownCommand}"
                             Content="Down" />
 
-                        <TextBlock
+                        <!--<TextBlock
                             Grid.Row="3"
                             Grid.Column="0"
                             Text="{Binding S}"
                             Margin="0,0,10,10"
                             HorizontalAlignment="Right"
-                            VerticalAlignment="Bottom" />
+                            VerticalAlignment="Bottom" />-->
 
 
                         <Slider

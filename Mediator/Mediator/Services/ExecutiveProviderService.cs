@@ -1,5 +1,6 @@
 ﻿using Common.Entities;
 using Common.ExtensionsAndHelpers;
+using Fx.Grpc;
 using Grpc.Core;
 using Mediator.Contracts.Services;
 using Mediator.Models;
@@ -7,8 +8,6 @@ using Mediator.ViewModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Provider.Grpc;
-using System.Linq;
 
 namespace Mediator.Services;
 
@@ -35,8 +34,8 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
     public ExecutiveProviderService(IConfiguration configuration, IOptions<ExecutiveProviderSettings> executiveProviderSettings, MainViewModel mainViewModel, CancellationTokenSource cts, ILogger<IDataProviderService> logger)
     {
         _mainViewModel = mainViewModel;
-        ServiceStatusChanged += (_, e) => { _mainViewModel.ExecutiveProviderStatus = e.ServiceStatus; };
-        ClientStatusChanged += (_, e) => { _mainViewModel.ExecutiveClientStatus = e.ClientStatus; };
+        ServiceStatusChanged += (_, e) => { _mainViewModel.ExecutiveProviderServiceStatus = e.ServiceStatus; };
+        ClientStatusChanged += (_, e) => { _mainViewModel.ExecutiveProviderClientStatus = e.ClientStatus; };
         _cts = cts;
         _logger = logger;
 
@@ -110,7 +109,7 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
             }
             catch (OperationCanceledException)
             {
-                _logger.LogInformation("Operation cancelled, shutting down and restarting executive gRPC server...");
+                _logger.LogInformation("Operation cancelled, shutting down executive provider gRPC server...");
                 break;  // Break out of the loop on cancellation, assuming we don't want to retry in this case
             }
             catch (IOException ioException)
@@ -129,7 +128,7 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
                 {
                     ServiceStatus = ServiceStatus.Off;
                     await grpcServer.ShutdownAsync().ConfigureAwait(false);
-                    _logger.LogTrace("executive gRPC Server shutted down.");
+                    _logger.LogTrace("executive provider gRPC Server shutted down.");
                 }
             }
 
@@ -142,7 +141,7 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
         if (retryCount >= RetryCountLimit)
         {
             _mainViewModel.AtFault = true;
-            _logger.LogCritical("CRITICAL ERROR: The executive gRPC server has repeatedly failed to start after {retryCount} attempts. This indicates a severe underlying issue that needs immediate attention. The server will not try to restart again. Please check the error logs for more information and take necessary action immediately.", retryCount);
+            _logger.LogCritical("CRITICAL ERROR: The executive provider gRPC server has repeatedly failed to start after {retryCount} attempts. This indicates a severe underlying issue that needs immediate attention. The server will not try to restart again. Please check the error logs for more information and take necessary action immediately.", retryCount);
         }
     }
 
@@ -155,10 +154,22 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
 
         ClientStatus = ClientStatus.On;
 
-        while (await requestStream.MoveNext().ConfigureAwait(false))
+        try
         {
-            var message = requestStream.Current;
-            // Handle the received message...
+            while (await requestStream.MoveNext(context.CancellationToken).ConfigureAwait(false))
+            {
+                var message = requestStream.Current;
+                // Handle the received message...
+            }
+        }
+        catch (Exception exception)
+        {
+            var st0 = exception;
+            if (context.CancellationToken.IsCancellationRequested)
+            {
+                var st1 = true;
+            }
+            throw;
         }
 
         ClientStatus = ClientStatus.Off;

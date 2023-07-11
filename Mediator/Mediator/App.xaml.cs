@@ -83,7 +83,7 @@ public partial class App
             services.AddSingleton<CancellationTokenSource>();
             services.AddTransient<IDataConsumerService, DataConsumerService>();
             services.AddSingleton<IDataProviderService, DataProviderService>();
-            services.AddSingleton<IExecutiveSupplierService, ExecutiveSupplierService>();
+            services.AddSingleton<IExecutiveConsumerService, ExecutiveConsumerService>();
             services.AddSingleton<IExecutiveProviderService, ExecutiveProviderService>();
 
             services.AddSingleton<MainViewModel>();
@@ -93,6 +93,7 @@ public partial class App
             services.Configure<ProviderBackupSettings>(context.Configuration.GetSection(nameof(ProviderBackupSettings)));
             services.Configure<DataProviderSettings>(context.Configuration.GetSection(nameof(DataProviderSettings)));
             services.Configure<ExecutiveProviderSettings>(context.Configuration.GetSection(nameof(ExecutiveProviderSettings)));
+            services.Configure<ExecutiveConsumerSettings>(context.Configuration.GetSection(nameof(ExecutiveConsumerSettings)));
         }).UseSerilog().Build();
 
         DebugSettings.BindingFailed += DebugSettings_BindingFailed;
@@ -161,16 +162,19 @@ public partial class App
         await GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(false);
 
         using var scope = Host.Services.CreateScope();
-        var indicatorToMediatorTasks = (from Symbol symbol in Enum.GetValues(typeof(Symbol))
-            let serviceIndicatorToMediator = scope.ServiceProvider.GetService<IDataConsumerService>()
-            select Task.Run(() => serviceIndicatorToMediator.StartAsync(symbol, _cts.Token), _cts.Token)).ToList();
+        var dataConsumerTasks = (from Symbol symbol in Enum.GetValues(typeof(Symbol))
+                                        let serviceIndicatorToMediator = scope.ServiceProvider.GetService<IDataConsumerService>()
+                                        select Task.Run(() => serviceIndicatorToMediator.StartAsync(symbol, _cts.Token), _cts.Token)).ToList();
 
         var dataProviderService = scope.ServiceProvider.GetRequiredService<IDataProviderService>();
         var dataProviderServiceTask = dataProviderService.StartAsync();
 
+        var executiveConsumerService = scope.ServiceProvider.GetRequiredService<IExecutiveConsumerService>();
+        var executiveConsumerServiceTask = executiveConsumerService.StartAsync();
+
         var executiveProviderService = scope.ServiceProvider.GetRequiredService<IExecutiveProviderService>();
         var executiveProviderServiceTask = executiveProviderService.StartAsync();
 
-        await Task.WhenAll(Task.WhenAll(indicatorToMediatorTasks), dataProviderServiceTask, executiveProviderServiceTask).ConfigureAwait(false);
+        await Task.WhenAll(Task.WhenAll(dataConsumerTasks), dataProviderServiceTask, executiveProviderServiceTask, executiveConsumerServiceTask).ConfigureAwait(false);
     }
 }

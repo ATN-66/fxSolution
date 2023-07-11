@@ -1,5 +1,5 @@
 ﻿syntax = "proto3";
-package fx.grpc;
+package fx2.grpc;
 
 enum Symbol {
     EUR_USD = 0;

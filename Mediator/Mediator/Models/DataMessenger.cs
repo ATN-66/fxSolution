@@ -1,15 +1,18 @@
 ﻿/*+------------------------------------------------------------------+
   |                                Mediator.Services.PipeMethodCalls |
-  |                                  IndicatorToMediatorMessenger.cs |
+  |                                  DataMessenger.cs |
   +------------------------------------------------------------------+*/
 
-//The lifetime of this class is very short. It is instantiated by the Server and promptly discarded.
+// The lifetime of this class is very short. It is instantiated by the Server and promptly discarded.
+// The problem resolved: a private static field in the server class to hold the instance of DataMessenger was created.
+
+//using System.Diagnostics;
 using Common.MetaQuotes.Mediator;
 using Mediator.Contracts.Services;
 
-namespace Mediator.Services.PipeMethodCalls;
+namespace Mediator.Models;
 
-public class IndicatorToMediatorMessenger : ITicksMessenger//, IDisposable
+public class DataMessenger : IDataMessenger//, IDisposable
 {
     //private static int _instanceCount;
     //private static int _lastInstanceId;
@@ -17,7 +20,7 @@ public class IndicatorToMediatorMessenger : ITicksMessenger//, IDisposable
 
     private readonly IDataProviderService _dataProviderService;
 
-    public IndicatorToMediatorMessenger(IDataProviderService dataProviderService)
+    public DataMessenger(IDataProviderService dataProviderService)
     {
         //_instanceId = ++_lastInstanceId;
         //Interlocked.Increment(ref _instanceCount);
@@ -40,7 +43,7 @@ public class IndicatorToMediatorMessenger : ITicksMessenger//, IDisposable
         return _dataProviderService.Tick(id, symbol, datetime, ask, bid);
     }
 
-    //~QuotationsMessenger()
+    //~DataMessenger()
     //{
     //    Dispose(false);
     //}
@@ -60,6 +63,6 @@ public class IndicatorToMediatorMessenger : ITicksMessenger//, IDisposable
 
     //    //Free any unmanaged objects here if needed
     //    Interlocked.Decrement(ref _instanceCount);
-    //    Console.WriteLine($"QuotationsMessenger instance {_instanceId} disposed. Remaining instances: {_instanceCount}");
+    //    Console.WriteLine($@"QuotationsMessenger instance {_instanceId} disposed. Remaining instances: {_instanceCount}");
     //}
 }

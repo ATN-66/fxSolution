@@ -7,7 +7,7 @@ using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Common.MetaQuotes.Mediator;
 using Mediator.Contracts.Services;
-using Mediator.Services.PipeMethodCalls;
+using Mediator.Models;
 using Microsoft.Extensions.Logging;
 using PipeMethodCalls;
 using PipeMethodCalls.NetJson;
@@ -24,10 +24,14 @@ internal class DataConsumerService : IDataConsumerService
     private readonly ILogger<DataConsumerService> _logger;
     private readonly IPipeSerializer _pipeSerializer = new NetJsonPipeSerializer();
 
+    private static DataMessenger? _dataMessenger;
+
     public DataConsumerService(IDataProviderService dataProviderService, ILogger<DataConsumerService> logger) 
     {
         _dataProviderService = dataProviderService;
         _logger = logger;
+
+        _dataMessenger = null!;
     }
 
     public async Task StartAsync(Symbol symbol, CancellationToken token)
@@ -38,8 +42,8 @@ internal class DataConsumerService : IDataConsumerService
         {
             try
             {
-                PipeServer<ITicksMessenger> pipeServer;
-                using (pipeServer = new PipeServer<ITicksMessenger>(_pipeSerializer, _pipeName, () => new IndicatorToMediatorMessenger(_dataProviderService)))
+                PipeServer<IDataMessenger?> pipeServer;
+                using (pipeServer = new PipeServer<IDataMessenger?>(_pipeSerializer, _pipeName, () => _dataMessenger ??= new DataMessenger(_dataProviderService)))
                 {
                     _logger.LogTrace("pipeName:({_pipeName}).({_guid}) is ON.", _pipeName, _guid.ToString());
                     await pipeServer.WaitForConnectionAsync(token).ConfigureAwait(false);

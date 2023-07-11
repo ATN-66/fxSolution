@@ -1136,6 +1136,8 @@ public class TickChartControl : Control
 #endif
     public void Tick()
     {
+        return;
+
         try
         {
             _graphCanvas!.Invalidate();

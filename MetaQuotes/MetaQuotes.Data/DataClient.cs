@@ -19,7 +19,7 @@ internal sealed class DataClient : IDisposable
     private readonly Guid guid = Guid.NewGuid();
     private const string ok = "ok";
     private const string noConnection = "Unable to establish a connection with the server.";
-    private readonly PipeClient<ITicksMessenger> pipeClient;
+    private readonly PipeClient<IDataMessenger> pipeClient;
     private bool connected;
 
     private readonly BlockingCollection<(int id, int symbol, string datetime, double ask, double bid)> quotations = new();
@@ -30,7 +30,7 @@ internal sealed class DataClient : IDisposable
 
     internal DataClient(int symbol, bool enableLogging = false)
     {
-        pipeClient = new PipeClient<ITicksMessenger>(new NetJsonPipeSerializer(), $"EA.To.Mediator.{symbol}");
+        pipeClient = new PipeClient<IDataMessenger>(new NetJsonPipeSerializer(), $"EA.To.Mediator.{symbol}");
         if (enableLogging) pipeClient.SetLogger(Console.WriteLine);
 
         processQuotationsAction = () => Task.Run(() => ProcessAsync(cts.Token), cts.Token).ConfigureAwait(false);

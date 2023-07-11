@@ -139,7 +139,6 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         {
             return isReversed ? (secondCurrencyEnum, firstCurrencyEnum) : (firstCurrencyEnum, secondCurrencyEnum);
         }
-
         throw new Exception("Failed to parse currencies from symbol.");
     }
 }

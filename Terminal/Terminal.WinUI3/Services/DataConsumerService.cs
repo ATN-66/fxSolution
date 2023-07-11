@@ -1,43 +1,43 @@
 ﻿/*+------------------------------------------------------------------+
   |                                Terminal.WinUI3.Contracts.Services|
-  |                                                      Mediator.cs |
+  |                                                      DataConsumerService.cs |
   +------------------------------------------------------------------+*/
 
 using System.Collections.Concurrent;
 using Common.DataSource;
 using Common.Entities;
+using Fx.Grpc;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Terminal.WinUI3.Contracts.Services;
-using Provider.Grpc;
 using Quotation = Common.Entities.Quotation;
 using Symbol = Common.Entities.Symbol;
 
 namespace Terminal.WinUI3.Services;
 
-public class Mediator : DataSource, IMediator
+public class DataConsumerService : DataSource, IDataConsumerService
 {
     private const int Deadline = int.MaxValue;
     private readonly int _maxSendMessageSize;
     private readonly int _maxReceiveMessageSize;
-    private readonly string _grpcChannelAddress;
+    private readonly string _grpcDataChannelAddress;
     
-    private static readonly Dictionary<Provider.Grpc.Symbol, Symbol> SymbolMapping = new()
+    private static readonly Dictionary<Fx.Grpc.Symbol, Symbol> SymbolMapping = new()
     {
-        { Provider.Grpc.Symbol.EurGbp, Symbol.EURGBP },
-        { Provider.Grpc.Symbol.EurJpy , Symbol.EURJPY },
-        { Provider.Grpc.Symbol.EurUsd , Symbol.EURUSD },
-        { Provider.Grpc.Symbol.GbpJpy , Symbol.GBPJPY },
-        { Provider.Grpc.Symbol.GbpUsd , Symbol.GBPUSD },
-        { Provider.Grpc.Symbol.UsdJpy , Symbol.USDJPY }
+        { Fx.Grpc.Symbol.EurGbp, Symbol.EURGBP },
+        { Fx.Grpc.Symbol.EurJpy , Symbol.EURJPY },
+        { Fx.Grpc.Symbol.EurUsd , Symbol.EURUSD },
+        { Fx.Grpc.Symbol.GbpJpy , Symbol.GBPJPY },
+        { Fx.Grpc.Symbol.GbpUsd , Symbol.GBPUSD },
+        { Fx.Grpc.Symbol.UsdJpy , Symbol.USDJPY }
     };
 
-    public Mediator(IConfiguration configuration, ILogger<IMediator> logger, IAudioPlayer audioPlayer) : base(configuration, logger, audioPlayer)
+    public DataConsumerService(IConfiguration configuration, ILogger<IDataConsumerService> logger, IAudioPlayer audioPlayer) : base(configuration, logger, audioPlayer)
     {
-        _grpcChannelAddress = configuration.GetValue<string>($"{nameof(_grpcChannelAddress)}")!;
+        _grpcDataChannelAddress = configuration.GetValue<string>($"{nameof(_grpcDataChannelAddress)}")!;
         _maxSendMessageSize = configuration.GetValue<int>($"{nameof(_maxSendMessageSize)}");
         _maxReceiveMessageSize = configuration.GetValue<int>($"{nameof(_maxReceiveMessageSize)}");
     }
@@ -45,7 +45,7 @@ public class Mediator : DataSource, IMediator
     public async Task<(Task, GrpcChannel)> StartAsync(BlockingCollection<Quotation> quotations, CancellationToken token)
     {
         var channelOptions = new GrpcChannelOptions { MaxSendMessageSize = _maxSendMessageSize, MaxReceiveMessageSize = _maxReceiveMessageSize };
-        var channel = GrpcChannel.ForAddress(_grpcChannelAddress, channelOptions);
+        var channel = GrpcChannel.ForAddress(_grpcDataChannelAddress, channelOptions);
         var client = new DataProvider.DataProviderClient(channel);
         var callOptions = new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(Deadline)));
         var request = new DataRequest
@@ -91,6 +91,7 @@ public class Mediator : DataSource, IMediator
             {
                 if (rpcException.StatusCode == StatusCode.Cancelled)
                 {
+                    //ignore
                 }
                 else
                 {
@@ -133,7 +134,7 @@ public class Mediator : DataSource, IMediator
     private async Task<IList<Quotation>> GetStaticAsync(DataRequest request, CancellationToken token)
     {
         var channelOptions = new GrpcChannelOptions { MaxSendMessageSize = _maxSendMessageSize, MaxReceiveMessageSize = _maxReceiveMessageSize };
-        using var channel = GrpcChannel.ForAddress(_grpcChannelAddress, channelOptions);
+        using var channel = GrpcChannel.ForAddress(_grpcDataChannelAddress, channelOptions);
         var client = new DataProvider.DataProviderClient(channel);
         var callOptions = new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(Deadline)));
 
@@ -165,6 +166,11 @@ public class Mediator : DataSource, IMediator
 
             return quotations;
         }
+        catch (RpcException rpcException) when (rpcException.StatusCode == StatusCode.Unavailable)
+        {
+            LogException(rpcException, "Server unavailable");
+            throw;
+        }
         catch (RpcException rpcException)
         {
             LogException(rpcException, "");
@@ -176,7 +182,7 @@ public class Mediator : DataSource, IMediator
             throw;
         }
     }
-    private static Symbol ToEntitiesSymbol(Provider.Grpc.Symbol protoSymbol)
+    private static Symbol ToEntitiesSymbol(Fx.Grpc.Symbol protoSymbol)
     {
         if (!SymbolMapping.TryGetValue(protoSymbol, out var symbol))
         {

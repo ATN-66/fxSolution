@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                                Terminal.WinUI3.Contracts.Services|
-  |                                                     IMediator.cs |
+  |                                                     IDataConsumerService.cs |
   +------------------------------------------------------------------+*/
 
 using System.Collections.Concurrent;
@@ -10,7 +10,7 @@ using Grpc.Net.Client;
 
 namespace Terminal.WinUI3.Contracts.Services;
 
-public interface IMediator : IDataSource
+public interface IDataConsumerService : IDataSource
 {
     Task<(Task, GrpcChannel)> StartAsync(BlockingCollection<Quotation> quotations, CancellationToken token);
     Task<IList<Quotation>> GetBufferedDataAsync(CancellationToken token);

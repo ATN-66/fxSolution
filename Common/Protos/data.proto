@@ -1,0 +1,44 @@
+﻿syntax = "proto3";
+package fx2.grpc;
+import "timestamp.proto";
+import "symbol.proto";
+
+message Quotation {
+    int32 id = 1;
+    Symbol symbol = 2;
+    google.protobuf.Timestamp datetime = 3;
+    double ask = 4;
+    double bid = 5;
+}
+
+message DataRequest {
+    enum StatusCode {
+        HISTORICAL_DATA = 0;
+        BUFFERED_DATA = 1;
+        LIVE_DATA = 2;
+        STOP_DATA = 3;
+    }
+
+    google.protobuf.Timestamp startDateTime = 1;
+    StatusCode code = 2;
+}
+
+message DataResponseStatus {
+    enum StatusCode {
+        OK = 0;
+        NO_DATA = 1;
+        SERVER_ERROR = 2;
+    }
+
+    StatusCode code = 1;
+    string details = 2;
+}
+
+message DataResponse {
+    repeated Quotation quotations = 1;
+    DataResponseStatus status = 2; 
+}
+
+service DataProvider {
+    rpc GetDataAsync (stream DataRequest) returns (stream DataResponse);
+}

@@ -7,15 +7,15 @@ using System.Globalization;
 using Common.Entities;
 using System.Timers;
 using Common.ExtensionsAndHelpers;
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Mediator.Contracts.Services;
 using Mediator.Models;
 using Mediator.ViewModels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Provider.Grpc;
 using System.Collections.Concurrent;
+using Fx.Grpc;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Configuration;
 using Timer = System.Timers.Timer;
 using Enum = System.Enum;
@@ -63,21 +63,21 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     public event EventHandler<ServiceStatusChangedEventArgs> ServiceStatusChanged = null!;
     public event EventHandler<ClientStatusChangedEventArgs> IsClientActivatedChanged = null!;
 
-    private static readonly Dictionary<Symbol, Provider.Grpc.Symbol> SymbolMapping = new()
+    private static readonly Dictionary<Symbol, Fx.Grpc.Symbol> SymbolMapping = new()
     {
-        { Symbol.EURGBP, Provider.Grpc.Symbol.EurGbp },
-        { Symbol.EURJPY, Provider.Grpc.Symbol.EurJpy },
-        { Symbol.EURUSD, Provider.Grpc.Symbol.EurUsd },
-        { Symbol.GBPJPY, Provider.Grpc.Symbol.GbpJpy },
-        { Symbol.GBPUSD, Provider.Grpc.Symbol.GbpUsd },
-        { Symbol.USDJPY, Provider.Grpc.Symbol.UsdJpy }
+        { Symbol.EURGBP, Fx.Grpc.Symbol.EurGbp },
+        { Symbol.EURJPY, Fx.Grpc.Symbol.EurJpy },
+        { Symbol.EURUSD, Fx.Grpc.Symbol.EurUsd },
+        { Symbol.GBPJPY, Fx.Grpc.Symbol.GbpJpy },
+        { Symbol.GBPUSD, Fx.Grpc.Symbol.GbpUsd },
+        { Symbol.USDJPY, Fx.Grpc.Symbol.UsdJpy }
     };
 
     public DataProviderService(IConfiguration configuration, IOptions<DataProviderSettings> dataProviderSettings, MainViewModel mainViewModel, CancellationTokenSource cts, IDataBaseService dataBaseService, ILogger<IDataProviderService> logger)
     {
         _mainViewModel = mainViewModel;
-        ServiceStatusChanged += (_, e) => { _mainViewModel.DataProviderStatus = e.ServiceStatus; };
-        IsClientActivatedChanged += (_, e) => { _mainViewModel.DataClientStatus = e.ClientStatus; };
+        ServiceStatusChanged += (_, e) => { _mainViewModel.DataProviderServiceStatus = e.ServiceStatus; };
+        IsClientActivatedChanged += (_, e) => { _mainViewModel.DataProviderClientStatus = e.ClientStatus; };
         _logger = logger;
 
         _mT5DateTimeFormat = configuration.GetValue<string>($"{nameof(_mT5DateTimeFormat)}")!;
@@ -185,7 +185,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             }
             catch (OperationCanceledException)
             {
-                _logger.LogInformation("Operation cancelled, shutting down and restarting gRPC server...");
+                _logger.LogInformation("Operation cancelled, shutting down data provider gRPC server...");
                 break;  // Break out of the loop on cancellation, assuming we don't want to retry in this case
             }
             catch (IOException ioException)
@@ -204,7 +204,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                 {
                     ServiceStatus = ServiceStatus.Off;
                     await grpcServer.ShutdownAsync().ConfigureAwait(false);
-                    _logger.LogTrace("gRPC Server shutted down.");
+                    _logger.LogTrace("data provider gRPC Server shutted down.");
                 }
             }
 
@@ -217,7 +217,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         if (retryCount >= RetryCountLimit)
         {
             _mainViewModel.AtFault = true;
-            _logger.LogCritical("CRITICAL ERROR: The gRPC server has repeatedly failed to start after {retryCount} attempts. This indicates a severe underlying issue that needs immediate attention. The server will not try to restart again. Please check the error logs for more information and take necessary action immediately.", retryCount);
+            _logger.LogCritical("CRITICAL ERROR: The data provider gRPC server has repeatedly failed to start after {retryCount} attempts. This indicates a severe underlying issue that needs immediate attention. The server will not try to restart again. Please check the error logs for more information and take necessary action immediately.", retryCount);
         }
     }
 
@@ -436,7 +436,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                 var duplicates = count - result;
                 if (Enum.GetNames(typeof(Symbol)).Length != duplicates)
                 {
-                    throw new Exception("Not all data saved.");
+                    throw new Exception("DataProviderService: Not all data saved!");
                 }
             }
         }
@@ -583,7 +583,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                             }
                         };
 
-                        var q = new Provider.Grpc.Quotation { Id = quotation.ID, Symbol = ToProtoSymbol(quotation.Symbol), Datetime = Timestamp.FromDateTime(quotation.DateTime.ToUniversalTime()), Ask = quotation.Ask, Bid = quotation.Bid };
+                        var q = new Fx.Grpc.Quotation { Id = quotation.ID, Symbol = ToProtoSymbol(quotation.Symbol), Datetime = Timestamp.FromDateTime(quotation.DateTime.ToUniversalTime()), Ask = quotation.Ask, Bid = quotation.Bid };
                         response.Quotations.Add(q);
                         await responseStream.WriteAsync(response).ConfigureAwait(false);
                     }
@@ -641,7 +641,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
 
         foreach (var quotation in quotations)
         {
-            response.Quotations.Add(new Provider.Grpc.Quotation
+            response.Quotations.Add(new Fx.Grpc.Quotation
             {
                 Id = quotation.ID,
                 Symbol = ToProtoSymbol(quotation.Symbol),
@@ -680,7 +680,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             ServiceStatus = ServiceStatus.Fault;
         }
     }
-    private static Provider.Grpc.Symbol ToProtoSymbol(Symbol symbol)
+    private static Fx.Grpc.Symbol ToProtoSymbol(Symbol symbol)
     {
         if (!SymbolMapping.TryGetValue(symbol, out var protoSymbol))
         {

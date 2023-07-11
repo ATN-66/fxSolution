@@ -95,7 +95,8 @@ public partial class App
             // Business Services
             services.AddSingleton<IProcessor, Processor>();
             services.AddSingleton<IDataService, DataService>();
-            services.AddSingleton<IMediator, Services.Mediator>();
+            services.AddSingleton<IDataConsumerService, DataConsumerService>();
+            services.AddSingleton<IExecutiveConsumerService, ExecutiveConsumerService>();
             services.AddSingleton<IDataBaseService, DataBaseService>();
             services.AddSingleton<IVisualService, VisualService>();
 
@@ -187,7 +188,6 @@ public partial class App
         await GetService<IDashboardService>().InitializeAsync().ConfigureAwait(true);
         await GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(true);
 
-        return;
         using var scope = Host.Services.CreateScope();
         var processor = scope.ServiceProvider.GetRequiredService<IProcessor>();
         var processorTask = processor.StartAsync(_cts.Token);

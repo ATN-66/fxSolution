@@ -2,7 +2,7 @@
 //using Windows.Storage.Streams;
 //using Terminal.WinUI3.Helpers;
 
-//namespace Mediator.Helpers;
+//namespace DataConsumerService.Helpers;
 
 //// Use these extension methods to store and retrieve local and roaming app data
 //// More details regarding storing and retrieving app data at https://docs.microsoft.com/windows/apps/design/app-settings/store-and-retrieve-app-data

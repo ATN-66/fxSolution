@@ -24,7 +24,7 @@ public class DataService : ObservableRecipient, IDataService
 {
     private readonly IDataBaseService _dataBaseService;
     private readonly IFileService _fileService;
-    private readonly IMediator _mediator;
+    private readonly IDataConsumerService _dataConsumerService;
     private readonly CancellationToken _token;
     private IList<YearlyContribution>? _yearlyContributionsCache;
     private int _recalculateProcessedItems;
@@ -32,11 +32,11 @@ public class DataService : ObservableRecipient, IDataService
     private readonly HashSet<DateTime> _excludedHours;
     private readonly int _countOfSymbols = Enum.GetValues(typeof(Symbol)).Length;
 
-    public DataService(IConfiguration configuration, IDataBaseService dataBaseService, IFileService fileService, IMediator mediator, CancellationTokenSource cancellationTokenSource)
+    public DataService(IConfiguration configuration, IDataBaseService dataBaseService, IFileService fileService, IDataConsumerService dataConsumerService, CancellationTokenSource cancellationTokenSource)
     {
         _dataBaseService = dataBaseService;
         _fileService = fileService;
-        _mediator = mediator;
+        _dataConsumerService = dataConsumerService;
         _token = cancellationTokenSource.Token;
 
         _excludedDates = new HashSet<DateTime>(configuration.GetSection("ExcludedDates").Get<List<DateTime>>()!);
@@ -61,7 +61,7 @@ public class DataService : ObservableRecipient, IDataService
 
             if (quotations.Count == 0)
             {
-                quotations = await _mediator.GetHistoricalDataAsync(start, start, _token).ConfigureAwait(true);
+                quotations = await _dataConsumerService.GetHistoricalDataAsync(start, start, _token).ConfigureAwait(true);
 
                 if (quotations.Count == 0)
                 {
@@ -89,7 +89,7 @@ public class DataService : ObservableRecipient, IDataService
             start = start.Add(new TimeSpan(1, 0, 0));
         }
 
-        quotations = await _mediator.GetBufferedDataAsync(_token).ConfigureAwait(true);
+        quotations = await _dataConsumerService.GetBufferedDataAsync(_token).ConfigureAwait(true);
         if (quotations.Count == 0)
         {
             return kernels;
@@ -105,13 +105,13 @@ public class DataService : ObservableRecipient, IDataService
     }
     public Task<(Task, GrpcChannel)> StartAsync(BlockingCollection<Quotation> quotations, CancellationToken token)
     {
-        return _mediator.StartAsync(quotations, token);
+        return _dataConsumerService.StartAsync(quotations, token);
     }
     public async Task<IList<Quotation>> GetHistoricalDataAsync(Symbol symbol, DateTime startDateTimeInclusive, DateTime endDateTimeInclusive, Common.Entities.Provider provider)
     {
         var quotations = provider switch
         {
-            Common.Entities.Provider.Mediator => await _mediator.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
+            Common.Entities.Provider.Mediator => await _dataConsumerService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
             Common.Entities.Provider.FileService => await _fileService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
             Common.Entities.Provider.Terminal => await _dataBaseService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
             _ => throw new ArgumentOutOfRangeException(nameof(provider), provider, @"Unknown provider.")
@@ -124,10 +124,10 @@ public class DataService : ObservableRecipient, IDataService
     {
         var quotations = provider switch
         {
-            Common.Entities.Provider.Mediator => await _mediator.GetHistoricalDataAsync(dateTimes[0], dateTimes[^1].AddHours(1), _token).ConfigureAwait(true),
+            Common.Entities.Provider.Mediator => await _dataConsumerService.GetHistoricalDataAsync(dateTimes[0], dateTimes[^1].AddHours(1), _token).ConfigureAwait(true),
             Common.Entities.Provider.FileService => await _fileService.GetHistoricalDataAsync(dateTimes[0], dateTimes[^1].AddHours(1), _token).ConfigureAwait(true),
-            Common.Entities.Provider.Terminal => throw new ArgumentOutOfRangeException(nameof(provider), provider, @"Provider must be Mediator or FileService."),
-            _ => throw new ArgumentOutOfRangeException(nameof(provider), provider, @"Provider must be Mediator or FileService.")
+            Common.Entities.Provider.Terminal => throw new ArgumentOutOfRangeException(nameof(provider), provider, @"Provider must be DataConsumerService or FileService."),
+            _ => throw new ArgumentOutOfRangeException(nameof(provider), provider, @"Provider must be DataConsumerService or FileService.")
         };
 
         return quotations;

@@ -3,9 +3,8 @@
   |                                          IDataProviderService.cs |
   +------------------------------------------------------------------+*/
 
+using Fx.Grpc;
 using Grpc.Core;
-using Provider.Grpc;
-using DataRequest = Provider.Grpc.DataRequest;
 
 namespace Mediator.Contracts.Services;
 

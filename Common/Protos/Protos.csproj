@@ -1,11 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0-windows10.0.22621.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <PlatformTarget>x64</PlatformTarget>
-    <Platforms>x64</Platforms>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,15 +18,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0-preview.6.23329.7" />
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="executive.proto" GrpcServices="Both" />
-    <Protobuf Include="symbol.proto" GrpcServices="Both" />
-    <Protobuf Include="data.proto">
-      <GrpcServices>Both</GrpcServices>
-    </Protobuf>
+    <Protobuf Include="data.proto" />
+    <Protobuf Include="executive.proto" />
+    <Protobuf Include="symbol.proto" />
   </ItemGroup>
 
 </Project>
