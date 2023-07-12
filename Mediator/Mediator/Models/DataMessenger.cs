@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                Mediator.Services.PipeMethodCalls |
-  |                                  DataMessenger.cs |
+  |                                                  Mediator.Models |
+  |                                                 DataMessenger.cs |
   +------------------------------------------------------------------+*/
 
 // The lifetime of this class is very short. It is instantiated by the Server and promptly discarded.

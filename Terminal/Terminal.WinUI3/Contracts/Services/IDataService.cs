@@ -13,7 +13,7 @@ namespace Terminal.WinUI3.Contracts.Services;
 
 public interface IDataService
 {
-    Task<IDictionary<Symbol, Kernel>> LoadDataAsync(DateTime startDateTimeInclusive);
+    Task<IDictionary<Symbol, Kernel>> LoadDataAsync(DateTime startDateTimeInclusive, DateTime nowDateTimeInclusive);
     Task<(Task, GrpcChannel)> StartAsync(BlockingCollection<Quotation> quotations, CancellationToken token);
     Task<IList<Quotation>> GetHistoricalDataAsync(Symbol symbol, DateTime startDateTimeInclusive, DateTime endDateTimeInclusive, Common.Entities.Provider provider);
     Task<IList<YearlyContribution>> GetYearlyContributionsAsync();

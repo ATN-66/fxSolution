@@ -1,13 +1,13 @@
 ﻿syntax = "proto3";
 package fx.grpc;
-//import "timestamp.proto";
+import "timestamp.proto";
 //import "symbol.proto";
 
 enum MessageType {
     MAINTENANCE_COMMAND = 0;
-    ACCOUNT_INFO = 1;
-    TRADE_COMMAND = 3;
-    TRADE_INFO = 2;
+    //ACCOUNT_INFO = 1;
+    //TRADE_COMMAND = 3;
+    //TRADE_INFO = 2;
 }
 
 message GeneralRequest {
@@ -36,9 +36,11 @@ message MaintenanceRequest {
 message MaintenanceResponse {
      enum Code {
         DONE = 0;
+        FAILURE = 1;
     }
 
      Code code = 1;
+     google.protobuf.Timestamp datetime = 3;
 }
 
 service ExecutiveProvider  {

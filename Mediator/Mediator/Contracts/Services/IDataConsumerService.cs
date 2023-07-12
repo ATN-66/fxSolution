@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                                      Mediator.Contracts.Services |
-  |                                   IDataConsumerService.cs |
+  |                                          IDataConsumerService.cs |
   +------------------------------------------------------------------+*/
 
 using Common.Entities;

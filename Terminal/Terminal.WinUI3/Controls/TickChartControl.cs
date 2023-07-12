@@ -1136,21 +1136,16 @@ public class TickChartControl : Control
 #endif
     public void Tick()
     {
-        return;
+        if (_graphCanvas == null)
+        {
+            return;
+        }
 
-        try
-        {
-            _graphCanvas!.Invalidate();
-            _yAxisCanvas!.Invalidate();
-            _xAxisCanvas!.Invalidate();
+        _graphCanvas!.Invalidate();
+        _yAxisCanvas!.Invalidate();
+        _xAxisCanvas!.Invalidate();
 #if DEBUGWIN2DCanvasControl
-            _debugCanvas!.Invalidate();
+        _debugCanvas!.Invalidate();
 #endif
-        }
-        catch (Exception e)
-        {
-            Debug.WriteLine(e);
-            throw;
-        }
     }
 }

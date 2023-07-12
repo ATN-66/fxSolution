@@ -1,9 +1,4 @@
-﻿/*+------------------------------------------------------------------+
-  |                                                  MetaQuotes.Data |
-  |                                                    DataClient.cs |
-  +------------------------------------------------------------------+*/
-
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Text;
 using System.Threading;
@@ -12,25 +7,25 @@ using Common.MetaQuotes.Mediator;
 using PipeMethodCalls;
 using PipeMethodCalls.NetJson;
 
-namespace MetaQuotes.Data;
+namespace MetaQuotes.Executive;
 
-internal sealed class DataClient : IDisposable
+public class ExecutiveClient : IDisposable
 {
     private readonly Guid guid = Guid.NewGuid();
     private const string ok = "ok";
     private const string noConnection = "Unable to establish a connection with the server.";
-    private readonly PipeClient<IDataMessenger> pipeClient;
+    private readonly PipeClient<IExecutiveMessenger> pipeClient;
     private bool connected;
 
-    private readonly BlockingCollection<(int id, int symbol, string datetime, double ask, double bid)> quotations = new();
+    private readonly BlockingCollection<(string dateTime, int type, int code, string message)> messages = new();
 
     private readonly CancellationTokenSource cts = new();
     private event Action OnInitializationComplete;
     private readonly Action processQuotationsAction;
 
-    internal DataClient(int symbol, bool enableLogging = false)
+    internal ExecutiveClient(bool enableLogging = false)
     {
-        pipeClient = new PipeClient<IDataMessenger>(new NetJsonPipeSerializer(), $"DATA.{symbol}");
+        pipeClient = new PipeClient<IExecutiveMessenger>(new NetJsonPipeSerializer(), $"EXECUTIVE");
         if (enableLogging) pipeClient.SetLogger(Console.WriteLine);
 
         processQuotationsAction = () => Task.Run(() => ProcessAsync(cts.Token), cts.Token).ConfigureAwait(false);
@@ -44,13 +39,13 @@ internal sealed class DataClient : IDisposable
         pipeClient.Dispose();
     }
 
-    internal void DeInit(int symbol, int reason)
+    internal void DeInit(string dateTime)
     {
         try
         {
-            if (!quotations.IsAddingCompleted) quotations.CompleteAdding();
-            while (!quotations.IsCompleted) Task.Delay(1000).ConfigureAwait(false).GetAwaiter();
-            pipeClient.InvokeAsync(x => x.DeInit(symbol, reason)).ConfigureAwait(false).GetAwaiter();
+            if (!messages.IsAddingCompleted) messages.CompleteAdding();
+            while (!messages.IsCompleted) Task.Delay(1000).ConfigureAwait(false).GetAwaiter();
+            pipeClient.InvokeAsync(x => x.DeInit(dateTime)).ConfigureAwait(false).GetAwaiter();
         }
         catch (Exception)
         {
@@ -58,15 +53,15 @@ internal sealed class DataClient : IDisposable
         }
     }
 
-    internal async Task<string> InitAsync(int id, int symbol, string datetime, double ask, double bid, int workplace)
+    internal async Task<string> InitAsync(string datetime)
     {
         connected = await InitializeClientAsync().ConfigureAwait(false);
         try
         {
             if (!connected) return noConnection;
-            var result = await pipeClient.InvokeAsync(x => x.InitAsync(id, symbol, datetime, ask, bid, workplace)).ConfigureAwait(false);
-            if (result == ok) OnInitializationComplete?.Invoke(); 
-            return $"{symbol}:{guid}:{ok}";
+            var result = await pipeClient.InvokeAsync(x => x.InitAsync(datetime)).ConfigureAwait(false);
+            if (result == ok) OnInitializationComplete?.Invoke();
+            return $"EXECUTIVE:{guid}:{ok}";
         }
         catch (Exception ex)
         {
@@ -96,18 +91,18 @@ internal sealed class DataClient : IDisposable
         return false;
     }
 
-    internal string Tick(int id, int symbol, string datetime, double ask, double bid)
+    public string Pulse(string dateTime, int type, int code, string message)
     {
-        quotations.Add((id, symbol, datetime, ask, bid));
+        messages.Add((dateTime, type, code, message));
         return ok;
     }
 
     private async Task ProcessAsync(CancellationToken ct)
     {
-        await foreach (var (id, symbol, datetime, ask, bid) in quotations.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
+        await foreach (var (dateTime, type, code, message) in messages.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
         {
             if (ct.IsCancellationRequested) break;
-            await pipeClient.InvokeAsync(x => x.Tick(id, symbol, datetime, ask, bid), cancellationToken: ct).ConfigureAwait(false);
+            await pipeClient.InvokeAsync(x => x.Pulse(dateTime, type, code, message), cancellationToken: ct).ConfigureAwait(false);
         }
     }
 

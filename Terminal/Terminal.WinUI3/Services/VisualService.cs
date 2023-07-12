@@ -14,8 +14,8 @@ public class VisualService : IVisualService
 {
     private readonly IDispatcherService _dispatcherService;
 
-    private readonly Dictionary<Symbol, TickChartControl> _tickCharts = new();
-    private readonly Dictionary<Symbol, TickChartControl> _tickChartsReversed = new();
+    private readonly Dictionary<Symbol, TickChartControl?> _tickCharts = new();
+    private readonly Dictionary<Symbol, TickChartControl?> _tickChartsReversed = new();
     private IDictionary<Symbol, Kernel> _kernels = null!;
 
     public VisualService(IDispatcherService dispatcherService)
@@ -39,11 +39,11 @@ public class VisualService : IVisualService
         if (isReversed)
         {
             _tickChartsReversed[symbol] = new TickChartControl(_kernels[symbol], symbol, true);
-            return _tickChartsReversed[symbol];
+            return _tickChartsReversed[symbol]!;
         }
 
         _tickCharts[symbol] = new TickChartControl(_kernels[symbol], symbol, false);
-        return _tickCharts[symbol];
+        return _tickCharts[symbol]!;
     }
 
     public void Tick(Symbol symbol)

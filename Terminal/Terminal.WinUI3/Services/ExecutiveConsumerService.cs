@@ -4,24 +4,29 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Fx.Grpc;
 using Terminal.WinUI3.Contracts.Services;
+using System.Collections.Concurrent;
+using Common.ExtensionsAndHelpers;
 
 namespace Terminal.WinUI3.Services;
 
 internal class ExecutiveConsumerService : IExecutiveConsumerService
 {
+    private readonly ILogger<ExecutiveConsumerService> _logger;
+
     private const int Deadline = int.MaxValue;
     private readonly int _maxSendMessageSize;
     private readonly int _maxReceiveMessageSize;
     private readonly string _grpcExecutiveChannelAddress;
 
-    public ExecutiveConsumerService(IConfiguration configuration, ILogger<IDataConsumerService> logger) 
+    public ExecutiveConsumerService(IConfiguration configuration, ILogger<ExecutiveConsumerService> logger) 
     {
+        _logger = logger;
         _grpcExecutiveChannelAddress = configuration.GetValue<string>($"{nameof(_grpcExecutiveChannelAddress)}")!;
         _maxSendMessageSize = configuration.GetValue<int>($"{nameof(_maxSendMessageSize)}");
         _maxReceiveMessageSize = configuration.GetValue<int>($"{nameof(_maxReceiveMessageSize)}");
     }
 
-    public async Task<(Task, GrpcChannel)> StartAsync(CancellationToken token)
+    public async Task<(Task, AsyncDuplexStreamingCall<GeneralRequest, GeneralResponse>, GrpcChannel)> StartAsync(BlockingCollection<GeneralResponse> responses, CancellationToken token)
     {
         var channelOptions = new GrpcChannelOptions { MaxSendMessageSize = _maxSendMessageSize, MaxReceiveMessageSize = _maxReceiveMessageSize };
         var channel = GrpcChannel.ForAddress(_grpcExecutiveChannelAddress, channelOptions);
@@ -33,30 +38,39 @@ internal class ExecutiveConsumerService : IExecutiveConsumerService
            MaintenanceRequest = new MaintenanceRequest { Code = MaintenanceRequest.Types.Code.OpenSession }
         };
 
-        var call = client.CommunicateAsync(callOptions);
-        await call.RequestStream.WriteAsync(request, token).ConfigureAwait(false);
+        AsyncDuplexStreamingCall<GeneralRequest, GeneralResponse> call = client.CommunicateAsync(callOptions);
+        var retryCount = 0;
+        const int maxRetryCount = 3; // Maximum number of retries
+        const int retryDelay = 50; // Retry delay in milliseconds
+
+        while (true)
+        {
+            try
+            {
+                await call.RequestStream.WriteAsync(request, token).ConfigureAwait(false);
+                break;
+            }
+            catch (RpcException rpcException) when (rpcException.StatusCode == StatusCode.Unavailable)
+            {
+                retryCount++;
+
+                if (retryCount > maxRetryCount)
+                {
+                    LogExceptionHelper.LogException(_logger, rpcException, "");
+                    throw;
+                }
+
+                await Task.Delay(retryDelay, token).ConfigureAwait(false);
+            }
+        }
 
         var executiveTask = Task.Run(async () =>
         {
             try
             {
-                int counter = default;
                 await foreach (var response in call.ResponseStream.ReadAllAsync(token).WithCancellation(token))
                 {
-                    switch (response.Type)
-                    {
-                        case MessageType.MaintenanceCommand:
-
-                            break;
-                        case MessageType.AccountInfo:
-                            break;
-                        case MessageType.TradeCommand:
-                            break;
-                        case MessageType.TradeInfo:
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException();
-                    }
+                    responses.Add(response, token);
                 }
             }
             catch (OperationCanceledException operationCanceledException)
@@ -65,14 +79,11 @@ internal class ExecutiveConsumerService : IExecutiveConsumerService
                 {
                     throw;
                 }
-                else
-                {
-                    throw;
-                }
+                throw;
             }
             catch (RpcException rpcException)
             {
-                if (rpcException.StatusCode == StatusCode.Cancelled)
+                if (rpcException.StatusCode is StatusCode.Cancelled or StatusCode.Unavailable)
                 {
                     //ignore
                 }
@@ -83,13 +94,11 @@ internal class ExecutiveConsumerService : IExecutiveConsumerService
             }
             catch (Exception exception)
             {
+                LogExceptionHelper.LogException(_logger, exception, "");
                 throw;
-            }
-            finally
-            {
             }
         }, token);
 
-        return (executiveTask, channel);
+        return (executiveTask, call, channel);
     }
 }

@@ -43,6 +43,8 @@ public class MainViewModel : ObservableRecipient
     private bool _connecting;
     private bool _atFault;
 
+    public DateTime CurrentDateTime;
+
     public MainViewModel(IConfiguration configuration, IAppNotificationService appNotificationService, IDispatcherService dispatcherService, ILogger<MainViewModel> logger)
     {
         _appNotificationService = appNotificationService;
@@ -307,7 +309,7 @@ public class MainViewModel : ObservableRecipient
         _dispatcherService.ExecuteOnUIThreadAsync(() =>
         {
             var index = (int)quotation.Symbol - 1;
-            IndicatorStatuses[index].DateTime = quotation.DateTime;
+            CurrentDateTime = IndicatorStatuses[index].DateTime = quotation.DateTime;
             IndicatorStatuses[index].Ask = quotation.Ask;
             IndicatorStatuses[index].Bid = quotation.Bid;
             IndicatorStatuses[index].Counter = counter;

@@ -19,19 +19,19 @@ internal class DataConsumerService : IDataConsumerService
 {
     private readonly Guid _guid = Guid.NewGuid();
     private Symbol _symbol;
-    private string _pipeName = "EA.To.Mediator";
+    private string _pipeName = "DATA";
     private readonly IDataProviderService _dataProviderService;
-    private readonly ILogger<DataConsumerService> _logger;
+    private readonly ILogger<IDataConsumerService> _logger;
     private readonly IPipeSerializer _pipeSerializer = new NetJsonPipeSerializer();
 
-    private static DataMessenger? _dataMessenger;
+    private static IDataMessenger? _dataMessenger;
 
-    public DataConsumerService(IDataProviderService dataProviderService, ILogger<DataConsumerService> logger) 
+    public DataConsumerService(IDataProviderService dataProviderService, ILogger<IDataConsumerService> logger) 
     {
         _dataProviderService = dataProviderService;
-        _logger = logger;
-
         _dataMessenger = null!;
+
+        _logger = logger;
     }
 
     public async Task StartAsync(Symbol symbol, CancellationToken token)

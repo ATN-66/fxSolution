@@ -20,6 +20,7 @@
     <None Remove="Styles\Borders.xaml" />
     <None Remove="Styles\Grids.xaml" />
     <None Remove="Styles\ProgressBars.xaml" />
+    <None Remove="Views\AppTitleBar.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -70,6 +71,9 @@
     <None Update="appsettings.production.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Page Update="Views\AppTitleBar.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Styles\Borders.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

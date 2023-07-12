@@ -14,12 +14,14 @@ using Terminal.WinUI3.Controls;
 using Binding = Microsoft.UI.Xaml.Data.Binding;
 using Microsoft.Extensions.Logging;
 using CommunityToolkit.Mvvm.Input;
+using Terminal.WinUI3.AI.Interfaces;
 
 namespace Terminal.WinUI3.ViewModels;
 
 public partial class SymbolViewModel : ObservableRecipient, INavigationAware
 {
     private readonly IVisualService _visualService;
+    private readonly IProcessor _processor;
     private readonly ILogger<SymbolViewModel> _logger;
 
     [ObservableProperty] private float _pipsPerChart = 100;// todo:settings
@@ -30,9 +32,10 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     [ObservableProperty] private int _minUnitsPerChart = 10;// todo:settings
     [ObservableProperty] private double _kernelShiftPercent = 100;
 
-    public SymbolViewModel(IVisualService visualService, ILogger<SymbolViewModel> logger)
+    public SymbolViewModel(IVisualService visualService, IProcessor processor, ILogger<SymbolViewModel> logger)
     {
         _visualService = visualService;
+        _processor = processor;
         _logger = logger;
     }
 
@@ -127,7 +130,7 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     [RelayCommand]
     private Task DownAsync()
     {
-        return Task.CompletedTask;
+        return _processor.DownAsync(Symbol, IsReversed);
     }
 
     private static (Currency upCurrency, Currency downCurrency) GetCurrenciesFromSymbol(Symbol symbol, bool isReversed)

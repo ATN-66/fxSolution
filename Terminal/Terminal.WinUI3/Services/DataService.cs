@@ -43,8 +43,14 @@ public class DataService : ObservableRecipient, IDataService
         _excludedHours = new HashSet<DateTime>(configuration.GetSection("ExcludedHours").Get<List<DateTime>>()!);
     }
 
-    public async Task<IDictionary<Symbol, Kernel>> LoadDataAsync(DateTime startDateTimeInclusive)
+    public async Task<IDictionary<Symbol, Kernel>> LoadDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
     {
+        var difference = Math.Ceiling((endDateTimeInclusive - startDateTimeInclusive).TotalHours);
+        if (difference < 0)
+        {
+            throw new InvalidOperationException("Start date cannot be later than end date.");
+        }
+
         IList<Quotation> quotations;
         IDictionary<Symbol, Kernel> kernels = new Dictionary<Symbol, Kernel>();
         foreach (var symbol in Enum.GetValues(typeof(Symbol)))
@@ -53,7 +59,7 @@ public class DataService : ObservableRecipient, IDataService
         }
 
         var start = startDateTimeInclusive.Date.AddHours(startDateTimeInclusive.Hour);
-        var end = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
+        var end = endDateTimeInclusive.Date.AddHours(endDateTimeInclusive.Hour);
 
         while (start <= end)
         {

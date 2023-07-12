@@ -1,6 +1,7 @@
 ﻿using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Fx.Grpc;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Mediator.Contracts.Services;
 using Mediator.Models;
@@ -145,6 +146,16 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
         }
     }
 
+    public void DeInitAsync(string dateTime)
+    {
+        
+    }
+
+    public Task<string> InitAsync(string datetime)
+    {
+        return Task.FromResult("hello from ExecutiveProviderService!");
+    }
+
     public async override Task CommunicateAsync(IAsyncStreamReader<GeneralRequest> requestStream, IServerStreamWriter<GeneralResponse> responseStream, ServerCallContext context)
     {
         if (ServiceStatus != ServiceStatus.On)
@@ -159,19 +170,51 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
             while (await requestStream.MoveNext(context.CancellationToken).ConfigureAwait(false))
             {
                 var message = requestStream.Current;
-                // Handle the received message...
+                switch (message.Type)
+                {
+                    case MessageType.MaintenanceCommand:
+                        switch (message.MaintenanceRequest.Code)
+                        {
+                            case MaintenanceRequest.Types.Code.OpenSession:
+                                if (context.CancellationToken.IsCancellationRequested)
+                                {
+                                    break;
+                                }
+                                var response = new GeneralResponse
+                                {
+                                    Type = MessageType.MaintenanceCommand,
+                                    MaintenanceResponse = new MaintenanceResponse { Code = MaintenanceResponse.Types.Code.Done, Datetime = Timestamp.FromDateTime(_mainViewModel.CurrentDateTime.ToUniversalTime()) }
+                                };
+                                await responseStream.WriteAsync(response).ConfigureAwait(false);
+                                break;
+                            case MaintenanceRequest.Types.Code.CloseSession:
+                                ClientStatus = ClientStatus.Off;
+                                return;
+                            default: 
+                                throw new ArgumentOutOfRangeException($"ExecutiveProviderService.CommunicateAsync.CloseSession: The provided maintenance request code is not supported.");
+                        }
+                        break;
+                    default: 
+                        throw new ArgumentOutOfRangeException($"ExecutiveProviderService.CommunicateAsync.CloseSession: The provided message type is not supported.");
+                }
             }
         }
         catch (Exception exception)
         {
-            var st0 = exception;
             if (context.CancellationToken.IsCancellationRequested)
             {
-                var st1 = true;
+                throw;
             }
             throw;
         }
 
         ClientStatus = ClientStatus.Off;
     }
+
+    public string Pulse(string dateTime, int type, int code, string message)
+    {
+        return "ok";
+    }
 }
+
+//throw new NotImplementedException("ExecutiveProviderService.CommunicateAsync.CloseSession: CloseSession functionality is not yet implemented.");

@@ -1,18 +1,16 @@
 MAKE IT ON DEVELOPER COMPUTER:
 
-3) Post-Build action in project "MetaQuotes.Account.Client":
+3) Post-Build action in project "MetaQuotes.Executive":
 
-xcopy "$(TargetDir)MetaQuotes.Account.dll" "C:\forex.mt5\dll\" /Y /R
-xcopy "$(TargetDir)MetaQuotes.Account.dll" "C:\Users\andre\AppData\Roaming\MetaQuotes\Terminal\9B101088254A9C260A9790D5079A7B11\MQL5\Libraries" /Y /R
+xcopy "$(TargetDir)MetaQuotes.Executive.dll" "C:\forex.mt5\dll\" /Y /R
+xcopy "$(TargetDir)MetaQuotes.Executive.dll" "C:\Users\andre\AppData\Roaming\MetaQuotes\Terminal\9B101088254A9C260A9790D5079A7B11\MQL5\Libraries" /Y /R
 xcopy "C:\forex.mt5\dll\*.*" "\\UNIT1068\forex.shared\mt5\dll\" /Y /R
 rem ----- !!!!! check new packages !!!!! -----
 
 rem ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 rem ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-xcopy "D:\forex\fxSolution\MetaQuotes\MetaQuotes.MQL5\MetaQuotes.Account.txt" "\\UNIT1068\forex.shared\" /Y /R
+xcopy "D:\forex\fxSolution\MetaQuotes\MetaQuotes.MQL5\MetaQuotes.Executive.txt" "\\UNIT1068\forex.shared\" /Y /R
 rem ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
 
 MAKE IT ON PRODUCTION COMPUTER:
 

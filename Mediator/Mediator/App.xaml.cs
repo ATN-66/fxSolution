@@ -93,7 +93,6 @@ public partial class App
             services.Configure<ProviderBackupSettings>(context.Configuration.GetSection(nameof(ProviderBackupSettings)));
             services.Configure<DataProviderSettings>(context.Configuration.GetSection(nameof(DataProviderSettings)));
             services.Configure<ExecutiveProviderSettings>(context.Configuration.GetSection(nameof(ExecutiveProviderSettings)));
-            services.Configure<ExecutiveConsumerSettings>(context.Configuration.GetSection(nameof(ExecutiveConsumerSettings)));
         }).UseSerilog().Build();
 
         DebugSettings.BindingFailed += DebugSettings_BindingFailed;
@@ -170,7 +169,7 @@ public partial class App
         var dataProviderServiceTask = dataProviderService.StartAsync();
 
         var executiveConsumerService = scope.ServiceProvider.GetRequiredService<IExecutiveConsumerService>();
-        var executiveConsumerServiceTask = executiveConsumerService.StartAsync();
+        var executiveConsumerServiceTask = executiveConsumerService.StartAsync(_cts.Token);
 
         var executiveProviderService = scope.ServiceProvider.GetRequiredService<IExecutiveProviderService>();
         var executiveProviderServiceTask = executiveProviderService.StartAsync();

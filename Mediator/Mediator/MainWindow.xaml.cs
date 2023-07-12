@@ -1,5 +1,4 @@
-﻿using CommunityToolkit.WinUI;
-using Mediator.Helpers;
+﻿using Mediator.Views;
 
 namespace Mediator;
 
@@ -8,9 +7,10 @@ public sealed partial class MainWindow
     public MainWindow()
     {
         InitializeComponent();
-
-        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets/WindowIcon.ico"));
+        //ExtendsContentIntoTitleBar = true; // doesn't work
+        //SetTitleBar(TitleBar); // doesn't work
         Content = null;
-        Title = "AppDisplayName".GetLocalized();
     }
+
+    //private AppTitleBar TitleBar => AppTitleBar; // doesn't work
 }

@@ -1,28 +1,29 @@
-﻿using Common.Entities;
-using Fx.Grpc;
-using Grpc.Core;
+﻿/*+------------------------------------------------------------------+
+  |                                                Mediator.Services |
+  |                                      ExecutiveConsumerService.cs |
+  +------------------------------------------------------------------+*/
+
+using Common.Entities;
+using Common.ExtensionsAndHelpers;
+using Common.MetaQuotes.Mediator;
 using Mediator.Contracts.Services;
 using Mediator.Models;
 using Mediator.ViewModels;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using PipeMethodCalls;
+using PipeMethodCalls.NetJson;
 
 namespace Mediator.Services;
 
 public class ExecutiveConsumerService : IExecutiveConsumerService
 {
     private readonly Guid _guid = Guid.NewGuid();
-    private readonly MainViewModel _mainViewModel;
-    private readonly CancellationTokenSource _cts;
-    private readonly ILogger<IDataProviderService> _logger;
-    private readonly ExecutiveConsumerSettings _executiveConsumerSettings;
+    private const string PipeName = "EXECUTIVE";
+    private readonly IExecutiveProviderService _executiveProviderService;
+    private readonly ILogger<IExecutiveConsumerService> _logger;
+    private readonly IPipeSerializer _pipeSerializer = new NetJsonPipeSerializer();
 
-    private const int RetryCountLimit = 5;
-    private const int Backoff = 5;
-    private readonly int _maxSendMessageSize;
-    private readonly int _maxReceiveMessageSize;
-    private static volatile bool _isFaulted;
+    private static IExecutiveMessenger? _executiveMessenger;
 
     private ServiceStatus _serviceStatus;
     private ClientStatus _clientStatus;
@@ -30,22 +31,18 @@ public class ExecutiveConsumerService : IExecutiveConsumerService
     public event EventHandler<ServiceStatusChangedEventArgs> ServiceStatusChanged = null!;
     public event EventHandler<ClientStatusChangedEventArgs> ClientStatusChanged = null!;
 
-    public ExecutiveConsumerService(IConfiguration configuration, IOptions<ExecutiveConsumerSettings> executiveConsumerSettings, MainViewModel mainViewModel, CancellationTokenSource cts, ILogger<IDataProviderService> logger)
+    public ExecutiveConsumerService(IExecutiveProviderService executiveProviderService, MainViewModel mainViewModel, ILogger<IExecutiveConsumerService> logger)
     {
-        _mainViewModel = mainViewModel;
-        ServiceStatusChanged += (_, e) => { _mainViewModel.ExecutiveSupplierServiceStatus = e.ServiceStatus; };
-        ClientStatusChanged += (_, e) => { _mainViewModel.ExecutiveSupplierClientStatus = e.ClientStatus; };
-        _cts = cts;
-        _logger = logger;
-
-        _maxSendMessageSize = configuration.GetValue<int>($"{nameof(_maxSendMessageSize)}");
-        _maxReceiveMessageSize = configuration.GetValue<int>($"{nameof(_maxReceiveMessageSize)}");
-        _executiveConsumerSettings = executiveConsumerSettings.Value;
-
+        var mainViewModel1 = mainViewModel;
+        ServiceStatusChanged += (_, e) => { mainViewModel1.ExecutiveSupplierServiceStatus = e.ServiceStatus; };
+        ClientStatusChanged += (_, e) => { mainViewModel1.ExecutiveSupplierClientStatus = e.ClientStatus; };
         _serviceStatus = ServiceStatus.Off;
         _clientStatus = ClientStatus.Off;
 
-        _logger.LogTrace("{_guid} is ON. {_executiveProviderHost}:{_executiveProviderPort}", _guid, _executiveConsumerSettings.Host, _executiveConsumerSettings.Port);
+        _executiveProviderService = executiveProviderService;
+        _executiveMessenger = null!;
+
+        _logger = logger;
     }
 
     private ServiceStatus ServiceStatus
@@ -77,13 +74,40 @@ public class ExecutiveConsumerService : IExecutiveConsumerService
         }
     }
 
-    public Task StartAsync()
+    public async Task StartAsync(CancellationToken token)
     {
-        return Task.CompletedTask;
-    }
+        while (!token.IsCancellationRequested)
+        {
+            try
+            {
+                PipeServer<IExecutiveMessenger?> pipeServer;
+                using (pipeServer = new PipeServer<IExecutiveMessenger?>(_pipeSerializer, PipeName, () => _executiveMessenger ??= new ExecutiveMessenger(_executiveProviderService)))
+                {
+                    ServiceStatus = ServiceStatus.On;
+                    _logger.LogTrace("pipeName:({_pipeName}).({_guid}) is ON.", PipeName, _guid.ToString());
+                    await pipeServer.WaitForConnectionAsync(token).ConfigureAwait(false);
+                    ClientStatus = ClientStatus.On;
+                    await pipeServer.WaitForRemotePipeCloseAsync(token).ConfigureAwait(false);
+                    ClientStatus = ClientStatus.Off;
+                }
 
-    public Task CommunicateAsync(IAsyncStreamReader<GeneralRequest> requestStream, IServerStreamWriter<GeneralResponse> responseStream, ServerCallContext context)
-    {
-       return Task.CompletedTask;
+                pipeServer.Dispose();
+                ServiceStatus = ServiceStatus.Off;
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception exception)
+            {
+                ServiceStatus = ServiceStatus.Fault;
+                LogExceptionHelper.LogException(_logger, exception, $"pipeName:({PipeName}).({_guid})");
+                throw;
+            }
+            finally
+            {
+                _logger.LogTrace("pipeName:({_pipeName}).({_guid}) is OFF.", PipeName, _guid.ToString());
+            }
+        }
     }
 }

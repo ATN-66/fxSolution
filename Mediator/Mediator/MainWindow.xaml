@@ -1,16 +1,23 @@
-﻿<windowex:WindowEx
+﻿<winUiEx:WindowEx
     x:Class="Mediator.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:windowex="using:WinUIEx"
-    MinWidth="10"
-    MinHeight="10"
-    IsTitleBarVisible="True"
-    PersistenceId="MainWindow"
+    xmlns:winUiEx="using:WinUIEx"
     mc:Ignorable="d">
-    <Window.SystemBackdrop>
-        <MicaBackdrop />
-    </Window.SystemBackdrop>
-</windowex:WindowEx>
+
+    <!--// doesn't work
+    <views:AppTitleBar
+        x:Name="AppTitleBar"
+        Icon="Assets/WindowIcon.ico"
+        Background="Yellow"
+        Text="Your Window Title"
+        IconWidth="32"
+        IconHeight="32"
+        IconMargin="8"
+        TextMargin="8"
+        TextWrapping="Wrap"
+        TextFontSize="16" />-->
+
+</winUiEx:WindowEx>

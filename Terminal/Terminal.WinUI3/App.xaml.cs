@@ -148,6 +148,8 @@ public partial class App
     }
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
+        GetService<IProcessor>().ExitAsync().ConfigureAwait(false);
+
         _cts.Cancel();
         GetService<IAudioPlayer>().Dispose();
         GetService<ILogger<App>>().LogInformation("<--- end --->");
@@ -192,5 +194,6 @@ public partial class App
         var processor = scope.ServiceProvider.GetRequiredService<IProcessor>();
         var processorTask = processor.StartAsync(_cts.Token);
         await Task.WhenAny(processorTask).ConfigureAwait(false);
+        Environment.Exit(0); // Process.GetCurrentProcess().Kill(); also works, but Current.Exit(); doesn't work.
     }
 }
