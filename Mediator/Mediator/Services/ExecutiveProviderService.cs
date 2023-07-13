@@ -1,4 +1,8 @@
-﻿using Common.Entities;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Globalization;
+using System.Text;
+using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Fx.Grpc;
 using Google.Protobuf.WellKnownTypes;
@@ -9,16 +13,28 @@ using Mediator.ViewModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using static Fx.Grpc.MaintenanceRequest.Types;
+using Enum = System.Enum;
 
 namespace Mediator.Services;
 
 public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase, IExecutiveProviderService
 {
+    private const string Ok = "ok";
     private readonly Guid _guid = Guid.NewGuid();
     private readonly MainViewModel _mainViewModel;
     private readonly CancellationTokenSource _cts;
     private readonly ILogger<IDataProviderService> _logger;
     private readonly ExecutiveProviderSettings _executiveProviderSettings;
+    private readonly StringBuilder _messageBuilder = new();
+
+    private readonly string _mT5DateTimeFormat;
+    private DateTime _currentDateTime;
+    private readonly ConcurrentQueue<string> _outcomeMessages = new();
+    private IServerStreamWriter<GeneralResponse> _responseStream = null!;
+
+    private static readonly string[] MessageTypeNames = Enum.GetNames(typeof(MessageType));
+    private static readonly string[] AccountInfoCodeNames = Enum.GetNames(typeof(AccountInfoCode));
 
     private const int RetryCountLimit = 5;
     private const int Backoff = 5;
@@ -40,6 +56,7 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
         _cts = cts;
         _logger = logger;
 
+        _mT5DateTimeFormat = configuration.GetValue<string>($"{nameof(_mT5DateTimeFormat)}")!;
         _maxSendMessageSize = configuration.GetValue<int>($"{nameof(_maxSendMessageSize)}");
         _maxReceiveMessageSize = configuration.GetValue<int>($"{nameof(_maxReceiveMessageSize)}");
         _executiveProviderSettings = executiveProviderSettings.Value;
@@ -148,12 +165,57 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
 
     public void DeInitAsync(string dateTime)
     {
-        
+        _currentDateTime = DateTime.ParseExact(dateTime, _mT5DateTimeFormat, CultureInfo.InvariantCulture);
     }
 
-    public Task<string> InitAsync(string datetime)
+    public Task<string> InitAsync(string dateTime)
     {
-        return Task.FromResult("hello from ExecutiveProviderService!");
+        _currentDateTime = DateTime.ParseExact(dateTime, _mT5DateTimeFormat, CultureInfo.InvariantCulture);
+        return Task.FromResult(Ok);
+    }
+
+    public async Task<string> PulseAsync(string dateTime, string type, string code, string ticket, string details)
+    {
+        try
+        {
+            _currentDateTime = DateTime.ParseExact(dateTime, _mT5DateTimeFormat, CultureInfo.InvariantCulture);
+            string? result;
+            switch (type)
+            {
+                case "0":
+                    switch (code)
+                    {
+                        case "0": return _outcomeMessages.TryDequeue(out result) ? result : Ok;
+                        default: throw new ArgumentOutOfRangeException(nameof(code), @"Pulse: The provided string code is not supported.");
+                    }
+                case "AccountInfo":
+                    var response = new GeneralResponse
+                    {
+                        Type = MessageType.AccountInfo,
+                        AccountInfoResponse = new AccountInfoResponse
+                        {
+                            Ticket = int.Parse(ticket),
+                            Details = details
+                        }
+                    };
+                    response.AccountInfoResponse.Code = code switch
+                    {
+                        "IntegerAccountProperties" => AccountInfoCode.IntegerAccountProperties,
+                        "DoubleAccountProperties" => AccountInfoCode.DoubleAccountProperties,
+                        "StringAccountProperties" => AccountInfoCode.StringAccountProperties,
+                        "MaxVolumes" => AccountInfoCode.MaxVolumes,
+                        _ => throw new ArgumentOutOfRangeException(nameof(code), @"PulseAsync: The provided string code is not supported.")
+                    };
+                    await _responseStream.WriteAsync(response).ConfigureAwait(false);
+                    return _outcomeMessages.TryDequeue(out result) ? result : Ok;
+                default: throw new ArgumentOutOfRangeException(nameof(type), @"PulseAsync: The provided string type is not supported.");
+            }
+        }
+        catch (RpcException)
+        {
+            // ignore
+        }
+        return Ok;
     }
 
     public async override Task CommunicateAsync(IAsyncStreamReader<GeneralRequest> requestStream, IServerStreamWriter<GeneralResponse> responseStream, ServerCallContext context)
@@ -162,40 +224,60 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
         {
             return;
         }
-
         ClientStatus = ClientStatus.On;
+
+        _responseStream = responseStream;
 
         try
         {
             while (await requestStream.MoveNext(context.CancellationToken).ConfigureAwait(false))
             {
-                var message = requestStream.Current;
-                switch (message.Type)
+                if (context.CancellationToken.IsCancellationRequested) { break; }
+                var request = requestStream.Current;
+                switch (request.Type)
                 {
                     case MessageType.MaintenanceCommand:
-                        switch (message.MaintenanceRequest.Code)
+                        switch (request.MaintenanceRequest.Code)
                         {
                             case MaintenanceRequest.Types.Code.OpenSession:
-                                if (context.CancellationToken.IsCancellationRequested)
+                                var response = new GeneralResponse { Type = MessageType.MaintenanceCommand, MaintenanceResponse = new MaintenanceResponse() };
+                                if (_mainViewModel.ConnectionStatus == ConnectionStatus.Connected)
                                 {
-                                    break;
+                                    response.MaintenanceResponse.Code = MaintenanceResponse.Types.Code.Done;
+                                    response.MaintenanceResponse.Datetime = Timestamp.FromDateTime(_currentDateTime.ToUniversalTime());
                                 }
-                                var response = new GeneralResponse
+                                else 
                                 {
-                                    Type = MessageType.MaintenanceCommand,
-                                    MaintenanceResponse = new MaintenanceResponse { Code = MaintenanceResponse.Types.Code.Done, Datetime = Timestamp.FromDateTime(_mainViewModel.CurrentDateTime.ToUniversalTime()) }
-                                };
+                                    response.MaintenanceResponse.Code = MaintenanceResponse.Types.Code.Failure;
+                                }
                                 await responseStream.WriteAsync(response).ConfigureAwait(false);
                                 break;
                             case MaintenanceRequest.Types.Code.CloseSession:
+                                // clean up
                                 ClientStatus = ClientStatus.Off;
                                 return;
                             default: 
                                 throw new ArgumentOutOfRangeException($"ExecutiveProviderService.CommunicateAsync.CloseSession: The provided maintenance request code is not supported.");
                         }
                         break;
-                    default: 
-                        throw new ArgumentOutOfRangeException($"ExecutiveProviderService.CommunicateAsync.CloseSession: The provided message type is not supported.");
+                    case MessageType.AccountInfo:
+                        switch (request.AccountInfoRequest.Code)
+                        {
+                            case AccountInfoCode.IntegerAccountProperties:
+                            case AccountInfoCode.DoubleAccountProperties:
+                            case AccountInfoCode.StringAccountProperties:
+                            case AccountInfoCode.MaxVolumes:
+                                var messageTypeName = MessageTypeNames[(int)request.Type];
+                                var accountInfoCodeName = AccountInfoCodeNames[(int)request.AccountInfoRequest.Code];
+                                var ticket = request.AccountInfoRequest.Ticket;
+                                _messageBuilder.Clear();
+                                _messageBuilder.Append("Type: ").Append(messageTypeName).Append(", Code: ").Append(accountInfoCodeName).Append(", Ticket: ").Append(ticket);
+                                _outcomeMessages.Enqueue(_messageBuilder.ToString());
+                                break;
+                            default: throw new ArgumentOutOfRangeException();
+                        }
+                        break;
+                    default: throw new ArgumentOutOfRangeException($"ExecutiveProviderService.CommunicateAsync.CloseSession: The provided message type is not supported.");
                 }
             }
         }
@@ -210,11 +292,4 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
 
         ClientStatus = ClientStatus.Off;
     }
-
-    public string Pulse(string dateTime, int type, int code, string message)
-    {
-        return "ok";
-    }
 }
-
-//throw new NotImplementedException("ExecutiveProviderService.CommunicateAsync.CloseSession: CloseSession functionality is not yet implemented.");

@@ -9,8 +9,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MetaQuotes", "MetaQuotes", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MetaQuotes.MQL5", "MetaQuotes.MQL5", "{18169FF4-5C33-49CD-BF92-BAF66E5BC2BA}"
 	ProjectSection(SolutionItems) = preProject
-		MetaQuotes\MetaQuotes.MQL5\Ea.mq4 = MetaQuotes\MetaQuotes.MQL5\Ea.mq4
-		MetaQuotes\MetaQuotes.MQL5\fxSolution.mq5 = MetaQuotes\MetaQuotes.MQL5\fxSolution.mq5
+		MetaQuotes\MetaQuotes.MQL5\Data.mq5 = MetaQuotes\MetaQuotes.MQL5\Data.mq5
+		MetaQuotes\MetaQuotes.MQL5\Executive.mq5 = MetaQuotes\MetaQuotes.MQL5\Executive.mq5
+		MetaQuotes\MetaQuotes.MQL5\forex.txt = MetaQuotes\MetaQuotes.MQL5\forex.txt
 		MetaQuotes\MetaQuotes.MQL5\InstallOnUnit1068.bat = MetaQuotes\MetaQuotes.MQL5\InstallOnUnit1068.bat
 		MetaQuotes\MetaQuotes.MQL5\MetaQuotes.Data.txt = MetaQuotes\MetaQuotes.MQL5\MetaQuotes.Data.txt
 		MetaQuotes\MetaQuotes.MQL5\MetaQuotes.Executive.txt = MetaQuotes\MetaQuotes.MQL5\MetaQuotes.Executive.txt

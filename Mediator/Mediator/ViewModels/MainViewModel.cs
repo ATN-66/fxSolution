@@ -43,8 +43,6 @@ public class MainViewModel : ObservableRecipient
     private bool _connecting;
     private bool _atFault;
 
-    public DateTime CurrentDateTime;
-
     public MainViewModel(IConfiguration configuration, IAppNotificationService appNotificationService, IDispatcherService dispatcherService, ILogger<MainViewModel> logger)
     {
         _appNotificationService = appNotificationService;
@@ -274,9 +272,9 @@ public class MainViewModel : ObservableRecipient
             }
 
             _workplace = value;
-            DataProviderServiceTitle = $"Data";
-            ExecutiveProviderServiceTitle = $"Terminal";
-            ExecutiveSupplierServiceTitle = $"MT5";
+            DataProviderServiceTitle = @$"Data {{{_workplace}}}";
+            ExecutiveProviderServiceTitle = $"Executive {{{_workplace}}}";
+            ExecutiveSupplierServiceTitle = $"MT5 {{{_workplace}}}";
         }
     }
 
@@ -309,7 +307,7 @@ public class MainViewModel : ObservableRecipient
         _dispatcherService.ExecuteOnUIThreadAsync(() =>
         {
             var index = (int)quotation.Symbol - 1;
-            CurrentDateTime = IndicatorStatuses[index].DateTime = quotation.DateTime;
+            IndicatorStatuses[index].DateTime = quotation.DateTime;
             IndicatorStatuses[index].Ask = quotation.Ask;
             IndicatorStatuses[index].Bid = quotation.Bid;
             IndicatorStatuses[index].Counter = counter;

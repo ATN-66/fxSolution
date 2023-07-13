@@ -11,6 +11,6 @@ namespace Common.MetaQuotes.Mediator
     {
         void DeInit(string dateTime);
         Task<string> InitAsync(string datetime);
-        string Pulse(string dateTime, int type, int code, string message);
+        Task<string> PulseAsync(string dateTime, string type, string code, string ticket, string details);
     }
 }

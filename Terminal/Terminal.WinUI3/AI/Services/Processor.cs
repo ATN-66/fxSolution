@@ -9,8 +9,6 @@ using Common.ExtensionsAndHelpers;
 using Fx.Grpc;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Xaml;
-using Newtonsoft.Json.Linq;
 using Terminal.WinUI3.AI.Data;
 using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.Contracts.Services;
@@ -23,6 +21,7 @@ public class Processor : IProcessor
 {
     private readonly IDataService _dataService;
     private readonly IExecutiveConsumerService _executiveConsumerService;
+    private readonly IAccountService _accountService;
     private readonly CancellationToken _token;
     private readonly IVisualService _visualService;
     private readonly IDispatcherService _dispatcherService;
@@ -33,16 +32,18 @@ public class Processor : IProcessor
     private IDictionary<Symbol, Kernel> _kernels = null!;
 
     private readonly BlockingCollection<GeneralResponse> _responses = new();
-    private AsyncDuplexStreamingCall<GeneralRequest, GeneralResponse>? _executiveCall;
+    private AsyncDuplexStreamingCall<GeneralRequest, GeneralResponse> _executiveCall = null!;
 
     private DateTime _startDateTime;
     private DateTime _nowDateTime;
     private readonly TaskCompletionSource<bool> _dateTimesReady = new();
 
-    public Processor(IDataService dataService, IExecutiveConsumerService executiveConsumerService, CancellationTokenSource cancellationTokenSource, IVisualService visualService, IDispatcherService dispatcherService, ISplashScreenService splashScreenService, ILogger<IProcessor> logger)
-    {
+    public Processor(IDataService dataService, IExecutiveConsumerService executiveConsumerService, IAccountService accountService, CancellationTokenSource cancellationTokenSource, IVisualService visualService, 
+        IDispatcherService dispatcherService, ISplashScreenService splashScreenService, ILogger<IProcessor> logger) {
+
         _dataService = dataService;
         _executiveConsumerService = executiveConsumerService;
+        _accountService = accountService;
         _token = cancellationTokenSource.Token;
         _visualService = visualService;
         _dispatcherService = dispatcherService;
@@ -59,21 +60,23 @@ public class Processor : IProcessor
             var (executiveTask, executiveCall, executiveChannel) = await _executiveConsumerService.StartAsync(_responses, token).ConfigureAwait(false);
             _executiveCall = executiveCall;
             var executiveProcessingTask = ExecutiveProcessingTaskAsync(token);
+            await RequestIntegerAccountPropertiesAsync().ConfigureAwait(false);
+            await RequestDoubleAccountPropertiesAsync().ConfigureAwait(false);
+            await RequestStringAccountPropertiesAsync().ConfigureAwait(false);
+            await RequestMaxVolumesAsync().ConfigureAwait(false);
             await _dateTimesReady.Task.ConfigureAwait(false);
 
             _kernels = await _dataService.LoadDataAsync(_startDateTime, _nowDateTime).ConfigureAwait(false);
             _visualService.Initialize(_kernels);
+            var (dataTask, dataChannel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
+            var dataProcessingTask = DataProcessingTaskAsync(token);
 
             await _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
                 _splashScreenService.HideSplash();
             }).ConfigureAwait(true);
 
-            var (dataTask, dataChannel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
-            var dataProcessingTask = DataProcessingTaskAsync(token);
-
             await Task.WhenAll(dataTask, dataProcessingTask, executiveTask, executiveProcessingTask).ConfigureAwait(false);
-
             await dataChannel.ShutdownAsync().ConfigureAwait(false);
             await executiveChannel.ShutdownAsync().ConfigureAwait(false);
         }
@@ -83,29 +86,6 @@ public class Processor : IProcessor
             throw;
         }
     }
-
-    public Task DownAsync(Symbol symbol, bool isReversed)
-    {
-        return Task.CompletedTask;
-        //var request = new GeneralRequest
-        //{
-        //    Type = MessageType.MaintenanceCommand,
-        //    MaintenanceRequest = new MaintenanceRequest { Code = MaintenanceRequest.Types.Code.OpenSession }
-        //};
-        //return _executiveCall!.RequestStream.WriteAsync(request, _token);
-    }
-
-    public Task ExitAsync()
-    {
-        var request = new GeneralRequest
-        {
-            Type = MessageType.MaintenanceCommand,
-            MaintenanceRequest = new MaintenanceRequest { Code = MaintenanceRequest.Types.Code.CloseSession }
-        };
-
-        return _executiveCall!.RequestStream.WriteAsync(request, _token);
-    }
-
     private Task DataProcessingTaskAsync(CancellationToken token)
     {
         var processingTask = Task.Run(async () =>
@@ -155,14 +135,23 @@ public class Processor : IProcessor
                                     _startDateTime = _nowDateTime.AddHours(0); // todo: business logic
                                     _dateTimesReady.SetResult(true);
                                     break;
-                                case MaintenanceResponse.Types.Code.Failure:
-                                    throw new NotImplementedException("Processor.ExecutiveProcessingTaskAsync.Failure: functionality is not yet implemented.");
-                                default:
-                                    throw new ArgumentOutOfRangeException(nameof(response.MaintenanceResponse.Code),@"Processor.ExecutiveProcessingTaskAsync: The provided response.MaintenanceResponse.Code is not supported.");
+                                case MaintenanceResponse.Types.Code.Failure: Environment.Exit(0); break;
+                                default: throw new ArgumentOutOfRangeException(nameof(response.MaintenanceResponse.Code),@"Processor.ExecutiveProcessingTaskAsync: The provided response.MaintenanceResponse.Code is not supported.");
                             }
                             break;
-                        default:
-                            throw new ArgumentOutOfRangeException(nameof(response.Type), @"Processor.ExecutiveProcessingTaskAsync: The provided response.Type is not supported.");
+                        case MessageType.AccountInfo:
+                            switch (response.AccountInfoResponse.Code)
+                            {
+                                case AccountInfoCode.IntegerAccountProperties:
+                                case AccountInfoCode.DoubleAccountProperties:
+                                case AccountInfoCode.StringAccountProperties:
+                                case AccountInfoCode.MaxVolumes:
+                                    _accountService.SetUpAccountInfo(response.AccountInfoResponse.Ticket, response.AccountInfoResponse.Details);
+                                    break;
+                                default: throw new ArgumentOutOfRangeException(nameof(response.AccountInfoResponse.Code), @"Processor.ExecutiveProcessingTaskAsync: The provided response.AccountInfoResponse.Code is not supported.");
+                            }
+                            break;
+                        default: throw new ArgumentOutOfRangeException(nameof(response.Type), @"Processor.ExecutiveProcessingTaskAsync: The provided response.Type is not supported.");
                     }
                 }
             }
@@ -179,5 +168,64 @@ public class Processor : IProcessor
         }, token);
 
         return processingTask;
+    }
+
+    private Task RequestIntegerAccountPropertiesAsync()
+    {
+        var request = new GeneralRequest
+        {
+            Type = MessageType.AccountInfo,
+            AccountInfoRequest = new AccountInfoRequest { Code = AccountInfoCode.IntegerAccountProperties, Ticket = 1 }
+        };
+        return _executiveCall.RequestStream.WriteAsync(request, _token);
+    }
+    private Task RequestDoubleAccountPropertiesAsync()
+    {
+        var request = new GeneralRequest
+        {
+            Type = MessageType.AccountInfo,
+            AccountInfoRequest = new AccountInfoRequest { Code = AccountInfoCode.DoubleAccountProperties, Ticket = 2 }
+        };
+        return _executiveCall.RequestStream.WriteAsync(request, _token);
+    }
+    private Task RequestStringAccountPropertiesAsync()
+    {
+        var request = new GeneralRequest
+        {
+            Type = MessageType.AccountInfo,
+            AccountInfoRequest = new AccountInfoRequest { Code = AccountInfoCode.StringAccountProperties, Ticket = 3 }
+        };
+        return _executiveCall.RequestStream.WriteAsync(request, _token);
+    }
+    private Task RequestMaxVolumesAsync()
+    {
+        var request = new GeneralRequest
+        {
+            Type = MessageType.AccountInfo,
+            AccountInfoRequest = new AccountInfoRequest { Code = AccountInfoCode.MaxVolumes, Ticket = 4 }
+        };
+        return _executiveCall.RequestStream.WriteAsync(request, _token);
+    }
+    public Task DownAsync(Symbol symbol, bool isReversed)
+    {
+
+
+        return Task.CompletedTask;
+        //var request = new GeneralRequest
+        //{
+        //    Type = MessageType.MaintenanceCommand,
+        //    MaintenanceRequest = new MaintenanceRequest { Code = MaintenanceRequest.Types.Code.OpenSession }
+        //};
+        //return _executiveCall!.RequestStream.WriteAsync(request, _token);
+    }
+    public Task ExitAsync()
+    {
+        var request = new GeneralRequest
+        {
+            Type = MessageType.MaintenanceCommand,
+            MaintenanceRequest = new MaintenanceRequest { Code = MaintenanceRequest.Types.Code.CloseSession }
+        };
+
+        return _executiveCall.RequestStream.WriteAsync(request, _token);
     }
 }

@@ -94,6 +94,7 @@ public partial class App
 
             // Business Services
             services.AddSingleton<IProcessor, Processor>();
+            services.AddSingleton<IAccountService, AccountService>();
             services.AddSingleton<IDataService, DataService>();
             services.AddSingleton<IDataConsumerService, DataConsumerService>();
             services.AddSingleton<IExecutiveConsumerService, ExecutiveConsumerService>();

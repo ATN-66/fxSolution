@@ -40,8 +40,29 @@ public static class ExecutiveMediator
         return Task.Run(() => _executiveClient.InitAsync(datetime)).GetAwaiter().GetResult();
     }
 
-    public static string Pulse(string dateTime, int type, int code, string message)
+    public static string Pulse(string dateTime, string type, string code, string ticket, string details)
     {
-        return _executiveClient.Pulse(dateTime, type, code, message);
+        return _executiveClient.Pulse(dateTime, type, code, ticket, details);
     }
+
+    public static string IntegerAccountProperties(string dateTime, string type, string code, string ticket, long login, int tradeMode, long leverage, int stopOutMode, int marginMode, bool tradeAllowed, bool tradeExpert, int limitOrders)
+    {
+        return _executiveClient.IntegerAccountProperties(dateTime, type, code, ticket, login, tradeMode, leverage, stopOutMode, marginMode, tradeAllowed, tradeExpert, limitOrders);
+    }
+
+    public static string DoubleAccountProperties(string dateTime, string type, string code, string ticket, double balance, double credit, double profit, double equity, double margin, double freeMargin, double marginLevel, double marginCall, double marginStopOut)
+    {
+        return _executiveClient.DoubleAccountProperties(dateTime, type, code, ticket, balance, credit, profit, equity, margin, freeMargin, marginLevel, marginCall, marginStopOut);
+    }
+
+    public static string StringAccountProperties(string dateTime, string type, string code, string ticket, string name, string server, string currency, string Company)
+    {
+        return _executiveClient.StringAccountProperties(dateTime, type, code, ticket, name, server, currency, Company);
+    }
+
+    public static string MaxVolumes(string dateTime, string type, string code, string ticket, string maxVolumes)
+    {
+        return _executiveClient.MaxVolumes(dateTime, type, code, ticket, maxVolumes);
+    }
+
 }
