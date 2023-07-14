@@ -125,6 +125,32 @@
       ]
     },
     {
+      "Id": "account_trades_terminal",
+      "Title": "Account, Trades, Terminal",
+      "Items": [
+        {
+          "Id": "account",
+          "Title": "Account",
+          "IsEnabled": true,
+          "IsSelected": false,
+          "MainItem": {
+            "Content": "Account Overview",
+            "Tag": "placeholder",
+            "Glyph": "\u25EF",
+            "NavigateTo": "AccountOverviewViewModel"
+          },
+          "NavigationItems": [
+            {
+              "Content": "Account Properties",
+              "Tag": "placeholder",
+              "Glyph": "\u003F",
+              "NavigateTo": "AccountPropertiesViewModel"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "Id": "data_source_maintenance",
       "Title": "Data Source Maintenance",
       "Items": [
@@ -143,7 +169,7 @@
             {
               "Content": "Ticks Conbtributions",
               "Tag": "placeholder",
-              "Glyph": "\u0445\u0443\u0439",
+              "Glyph": "\u2AA7\u2AA6",
               "NavigateTo": "TicksContributionsViewModel"
             }
           ]

@@ -62,8 +62,8 @@
                             Margin="0,0,10,10"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Bottom"
-                            Command="{Binding DownCommand}"
-                            Content="Down" />
+                            Command="{Binding OpenPositionCommand}"
+                            Content="Open Position" />
 
                         <!--<TextBlock
                             Grid.Row="3"

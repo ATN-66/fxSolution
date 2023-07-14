@@ -2,7 +2,7 @@
 
 namespace Terminal.WinUI3.Models.Account;
 
-internal enum TradeMode
+public enum TradeMode
 {
     [Description("Unknown trade account")]
     None = -1,

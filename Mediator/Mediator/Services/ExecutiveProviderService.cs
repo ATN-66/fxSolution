@@ -13,7 +13,6 @@ using Mediator.ViewModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using static Fx.Grpc.MaintenanceRequest.Types;
 using Enum = System.Enum;
 
 namespace Mediator.Services;
@@ -35,6 +34,7 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
 
     private static readonly string[] MessageTypeNames = Enum.GetNames(typeof(MessageType));
     private static readonly string[] AccountInfoCodeNames = Enum.GetNames(typeof(AccountInfoCode));
+    private static readonly string[] TradeCodeNames = Enum.GetNames(typeof(TradeCode));
 
     private const int RetryCountLimit = 5;
     private const int Backoff = 5;
@@ -176,46 +176,50 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
 
     public async Task<string> PulseAsync(string dateTime, string type, string code, string ticket, string details)
     {
-        try
+        _currentDateTime = DateTime.ParseExact(dateTime, _mT5DateTimeFormat, CultureInfo.InvariantCulture);
+        string? result;
+        switch (type)
         {
-            _currentDateTime = DateTime.ParseExact(dateTime, _mT5DateTimeFormat, CultureInfo.InvariantCulture);
-            string? result;
-            switch (type)
-            {
-                case "0":
-                    switch (code)
+            case "0":
+                return code switch
+                {
+                    "0" => _outcomeMessages.TryDequeue(out result) ? result : Ok,
+                    _ => throw new ArgumentOutOfRangeException(nameof(code), @"Pulse: The provided string code is not supported.")
+                };
+            case "AccountInfo":
+                var response = new GeneralResponse
+                {
+                    Type = MessageType.AccountInfo,
+                    AccountInfoResponse = new AccountInfoResponse
                     {
-                        case "0": return _outcomeMessages.TryDequeue(out result) ? result : Ok;
-                        default: throw new ArgumentOutOfRangeException(nameof(code), @"Pulse: The provided string code is not supported.");
-                    }
-                case "AccountInfo":
-                    var response = new GeneralResponse
-                    {
-                        Type = MessageType.AccountInfo,
-                        AccountInfoResponse = new AccountInfoResponse
+                        Ticket = int.Parse(ticket),
+                        Details = details,
+                        Code = code switch
                         {
-                            Ticket = int.Parse(ticket),
-                            Details = details
+                            "AccountProperties" => AccountInfoCode.AccountProperties,
+                            "MaxVolumes" => AccountInfoCode.MaxVolumes,
+                            "TickValues" => AccountInfoCode.TickValues,
+                            _ => throw new ArgumentOutOfRangeException(nameof(code), @"PulseAsync: The provided string code is not supported.")
                         }
-                    };
-                    response.AccountInfoResponse.Code = code switch
+                    }
+                };
+                try
+                {
+                    if (_responseStream == null)
                     {
-                        "IntegerAccountProperties" => AccountInfoCode.IntegerAccountProperties,
-                        "DoubleAccountProperties" => AccountInfoCode.DoubleAccountProperties,
-                        "StringAccountProperties" => AccountInfoCode.StringAccountProperties,
-                        "MaxVolumes" => AccountInfoCode.MaxVolumes,
-                        _ => throw new ArgumentOutOfRangeException(nameof(code), @"PulseAsync: The provided string code is not supported.")
-                    };
+                        var st = true;
+                    }
                     await _responseStream.WriteAsync(response).ConfigureAwait(false);
-                    return _outcomeMessages.TryDequeue(out result) ? result : Ok;
-                default: throw new ArgumentOutOfRangeException(nameof(type), @"PulseAsync: The provided string type is not supported.");
-            }
+                }
+                catch (Exception e)
+                {
+                    _responseStream = null!;
+                    Debug.WriteLine(e);
+                    throw;
+                }
+                return _outcomeMessages.TryDequeue(out result) ? result : Ok;
+            default: throw new ArgumentOutOfRangeException(nameof(type), @"PulseAsync: The provided string type is not supported.");
         }
-        catch (RpcException)
-        {
-            // ignore
-        }
-        return Ok;
     }
 
     public async override Task CommunicateAsync(IAsyncStreamReader<GeneralRequest> requestStream, IServerStreamWriter<GeneralResponse> responseStream, ServerCallContext context)
@@ -234,6 +238,9 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
             {
                 if (context.CancellationToken.IsCancellationRequested) { break; }
                 var request = requestStream.Current;
+                string typeName;
+                string codeName;
+                int ticket;
                 switch (request.Type)
                 {
                     case MessageType.MaintenanceCommand:
@@ -241,43 +248,37 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
                         {
                             case MaintenanceRequest.Types.Code.OpenSession:
                                 var response = new GeneralResponse { Type = MessageType.MaintenanceCommand, MaintenanceResponse = new MaintenanceResponse() };
-                                if (_mainViewModel.ConnectionStatus == ConnectionStatus.Connected)
-                                {
-                                    response.MaintenanceResponse.Code = MaintenanceResponse.Types.Code.Done;
-                                    response.MaintenanceResponse.Datetime = Timestamp.FromDateTime(_currentDateTime.ToUniversalTime());
-                                }
-                                else 
-                                {
-                                    response.MaintenanceResponse.Code = MaintenanceResponse.Types.Code.Failure;
-                                }
+                                response.MaintenanceResponse.Code = MaintenanceResponse.Types.Code.Done;
+                                response.MaintenanceResponse.Datetime = Timestamp.FromDateTime(_currentDateTime.ToUniversalTime());
                                 await responseStream.WriteAsync(response).ConfigureAwait(false);
                                 break;
                             case MaintenanceRequest.Types.Code.CloseSession:
                                 // clean up
                                 ClientStatus = ClientStatus.Off;
+                                _responseStream = null!;
                                 return;
                             default: 
-                                throw new ArgumentOutOfRangeException($"ExecutiveProviderService.CommunicateAsync.CloseSession: The provided maintenance request code is not supported.");
+                                throw new ArgumentOutOfRangeException($"{request.MaintenanceRequest.Code}", @"ExecutiveProviderService.CommunicateAsync.CloseSession: The provided maintenance request Code is not supported.");
                         }
                         break;
                     case MessageType.AccountInfo:
-                        switch (request.AccountInfoRequest.Code)
-                        {
-                            case AccountInfoCode.IntegerAccountProperties:
-                            case AccountInfoCode.DoubleAccountProperties:
-                            case AccountInfoCode.StringAccountProperties:
-                            case AccountInfoCode.MaxVolumes:
-                                var messageTypeName = MessageTypeNames[(int)request.Type];
-                                var accountInfoCodeName = AccountInfoCodeNames[(int)request.AccountInfoRequest.Code];
-                                var ticket = request.AccountInfoRequest.Ticket;
-                                _messageBuilder.Clear();
-                                _messageBuilder.Append("Type: ").Append(messageTypeName).Append(", Code: ").Append(accountInfoCodeName).Append(", Ticket: ").Append(ticket);
-                                _outcomeMessages.Enqueue(_messageBuilder.ToString());
-                                break;
-                            default: throw new ArgumentOutOfRangeException();
-                        }
+                        typeName = MessageTypeNames[(int)request.Type];
+                        codeName = AccountInfoCodeNames[(int)request.AccountInfoRequest.Code];
+                        ticket = request.AccountInfoRequest.Ticket;
+                        _messageBuilder.Clear();
+                        _messageBuilder.Append("Type: ").Append(typeName).Append(", Code: ").Append(codeName).Append(", Ticket: ").Append(ticket);
+                        _outcomeMessages.Enqueue(_messageBuilder.ToString());
                         break;
-                    default: throw new ArgumentOutOfRangeException($"ExecutiveProviderService.CommunicateAsync.CloseSession: The provided message type is not supported.");
+                    case MessageType.TradeCommand:
+                        typeName = MessageTypeNames[(int)request.Type];
+                        codeName = TradeCodeNames[(int)request.TradeRequest.Code];
+                        ticket = request.TradeRequest.Ticket;
+                        _messageBuilder.Clear();
+                        _messageBuilder.Append("Type: ").Append(typeName).Append(", Code: ").Append(codeName).Append(", Ticket: ").Append(ticket);
+                        _messageBuilder.Append(", Details: {").Append(request.TradeRequest.Details).Append('}');
+                        _outcomeMessages.Enqueue(_messageBuilder.ToString()); // "Type: TradeCommand, Code: OpenPosition, Ticket: 666, Details: {symbol>EURUSD;ordertype>OrderTypeSell;volume>1.50;stoplossinpips>25}"
+                        break;
+                    default: throw new ArgumentOutOfRangeException($"{request.Type}", @"ExecutiveProviderService.CommunicateAsync: The provided request Type is not supported.");
                 }
             }
         }

@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Common.MetaQuotes.Mediator;
 using PipeMethodCalls;
 using PipeMethodCalls.NetJson;
@@ -20,7 +19,6 @@ public class ExecutiveClient : IDisposable
 
     private readonly BlockingCollection<(string dateTime, string type, string code, string ticket, string details)> incomeMessages = new();
     private readonly ConcurrentQueue<string> outcomeMessages = new();
-    private readonly StringBuilder _detailsBuilder = new();
 
     private readonly CancellationTokenSource cts = new();
     private event Action OnInitializationComplete;
@@ -100,31 +98,8 @@ public class ExecutiveClient : IDisposable
         return outcomeMessages.TryDequeue(out var result) ? result : Ok;
     }
 
-    public string IntegerAccountProperties(string dateTime, string type, string code, string ticket, long login, int tradeMode, long leverage, int stopOutMode, int marginMode, bool tradeAllowed, bool tradeExpert, int limitOrders)
+    public string AccountProperties(string dateTime, string type, string code, string ticket, string details)
     {
-        _detailsBuilder.Clear();
-        _detailsBuilder.Append("Login: ").Append(login).Append(", TradeMode: ").Append(tradeMode).Append(", Leverage: ").Append(leverage).Append(", StopOutMode: ").Append(stopOutMode).Append(", MarginMode: ").Append(marginMode)
-            .Append(", TradeAllowed: ").Append(tradeAllowed).Append(", TradeExpert: ").Append(tradeExpert).Append(", LimitOrders: ").Append(limitOrders);
-        var details = _detailsBuilder.ToString();
-        incomeMessages.Add((dateTime, type, code, ticket, details));
-        return Ok;
-    }
-
-    public string DoubleAccountProperties(string dateTime, string type, string code, string ticket, double balance, double credit, double profit, double equity, double margin, double freeMargin, double marginLevel, double marginCall, double marginStopOut)
-    {
-        _detailsBuilder.Clear();
-        _detailsBuilder.Append("Balance: ").Append(balance).Append(", Credit: ").Append(credit).Append(", Profit: ").Append(profit).Append(", Equity: ").Append(equity).Append(", Margin: ").Append(margin).
-                        Append(", FreeMargin: ").Append(freeMargin).Append(", MarginLevel: ").Append(marginLevel).Append(", MarginCall: ").Append(marginCall).Append(", MarginStopOut: ").Append(marginStopOut);
-        var details = _detailsBuilder.ToString();
-        incomeMessages.Add((dateTime, type, code, ticket, details));
-        return Ok;
-    }
-
-    public string StringAccountProperties(string dateTime, string type, string code, string ticket, string name, string server, string currency, string company)
-    {
-        _detailsBuilder.Clear();
-        _detailsBuilder.Append("Name: ").Append(name).Append(", Server: ").Append(server).Append(", Currency: ").Append(currency).Append(", Company: ").Append(company);
-        var details = _detailsBuilder.ToString();
         incomeMessages.Add((dateTime, type, code, ticket, details));
         return Ok;
     }
@@ -132,6 +107,12 @@ public class ExecutiveClient : IDisposable
     public string MaxVolumes(string dateTime, string type, string code, string ticket, string maxVolumes)
     {
         incomeMessages.Add((dateTime, type, code, ticket, maxVolumes));
+        return Ok;
+    }
+
+    public string TickValues(string dateTime, string type, string code, string ticket, string tickValues)
+    {
+        incomeMessages.Add((dateTime, type, code, ticket, tickValues));
         return Ok;
     }
 

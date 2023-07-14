@@ -8,6 +8,7 @@ using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Fx.Grpc;
 using Grpc.Core;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Terminal.WinUI3.AI.Data;
 using Terminal.WinUI3.AI.Interfaces;
@@ -36,9 +37,10 @@ public class Processor : IProcessor
 
     private DateTime _startDateTime;
     private DateTime _nowDateTime;
-    private readonly TaskCompletionSource<bool> _dateTimesReady = new();
+    private readonly TimeSpan _distanceToThePast;
+    private readonly TaskCompletionSource<bool> _accountReady = new();
 
-    public Processor(IDataService dataService, IExecutiveConsumerService executiveConsumerService, IAccountService accountService, CancellationTokenSource cancellationTokenSource, IVisualService visualService, 
+    public Processor(IConfiguration configuration, IDataService dataService, IExecutiveConsumerService executiveConsumerService, IAccountService accountService, CancellationTokenSource cancellationTokenSource, IVisualService visualService, 
         IDispatcherService dispatcherService, ISplashScreenService splashScreenService, ILogger<IProcessor> logger) {
 
         _dataService = dataService;
@@ -49,6 +51,8 @@ public class Processor : IProcessor
         _dispatcherService = dispatcherService;
         _splashScreenService = splashScreenService;
         _logger = logger;
+
+        _distanceToThePast = TimeSpan.ParseExact(configuration.GetValue<string>($"{nameof(_distanceToThePast)}")!, @"dd\:hh\:mm\:ss", null);
     }
 
     public async Task StartAsync(CancellationToken token)
@@ -60,11 +64,10 @@ public class Processor : IProcessor
             var (executiveTask, executiveCall, executiveChannel) = await _executiveConsumerService.StartAsync(_responses, token).ConfigureAwait(false);
             _executiveCall = executiveCall;
             var executiveProcessingTask = ExecutiveProcessingTaskAsync(token);
-            await RequestIntegerAccountPropertiesAsync().ConfigureAwait(false);
-            await RequestDoubleAccountPropertiesAsync().ConfigureAwait(false);
-            await RequestStringAccountPropertiesAsync().ConfigureAwait(false);
+            await RequestAccountPropertiesAsync().ConfigureAwait(false);
             await RequestMaxVolumesAsync().ConfigureAwait(false);
-            await _dateTimesReady.Task.ConfigureAwait(false);
+            await RequestTickValuesAsync().ConfigureAwait(false);
+            await _accountReady.Task.ConfigureAwait(false);
 
             _kernels = await _dataService.LoadDataAsync(_startDateTime, _nowDateTime).ConfigureAwait(false);
             _visualService.Initialize(_kernels);
@@ -131,9 +134,8 @@ public class Processor : IProcessor
                             switch (response.MaintenanceResponse.Code)
                             {
                                 case MaintenanceResponse.Types.Code.Done:
-                                    _nowDateTime = response.MaintenanceResponse.Datetime.ToDateTime().ToUniversalTime(); // todo: business logic
-                                    _startDateTime = _nowDateTime.AddHours(0); // todo: business logic
-                                    _dateTimesReady.SetResult(true);
+                                    _nowDateTime = response.MaintenanceResponse.Datetime.ToDateTime().ToUniversalTime();
+                                    _startDateTime = _nowDateTime - _distanceToThePast;
                                     break;
                                 case MaintenanceResponse.Types.Code.Failure: Environment.Exit(0); break;
                                 default: throw new ArgumentOutOfRangeException(nameof(response.MaintenanceResponse.Code),@"Processor.ExecutiveProcessingTaskAsync: The provided response.MaintenanceResponse.Code is not supported.");
@@ -142,11 +144,15 @@ public class Processor : IProcessor
                         case MessageType.AccountInfo:
                             switch (response.AccountInfoResponse.Code)
                             {
-                                case AccountInfoCode.IntegerAccountProperties:
-                                case AccountInfoCode.DoubleAccountProperties:
-                                case AccountInfoCode.StringAccountProperties:
+                                case AccountInfoCode.AccountProperties:
+                                    _accountService.ProcessProperties(response.AccountInfoResponse.Details);
+                                    break;
                                 case AccountInfoCode.MaxVolumes:
-                                    _accountService.SetUpAccountInfo(response.AccountInfoResponse.Ticket, response.AccountInfoResponse.Details);
+                                    _accountService.ProcessMaxVolumes(response.AccountInfoResponse.Details);
+                                    break;
+                                case AccountInfoCode.TickValues:
+                                    _accountService.ProcessTickValues(response.AccountInfoResponse.Details);
+                                    _accountReady.SetResult(true);
                                     break;
                                 default: throw new ArgumentOutOfRangeException(nameof(response.AccountInfoResponse.Code), @"Processor.ExecutiveProcessingTaskAsync: The provided response.AccountInfoResponse.Code is not supported.");
                             }
@@ -170,30 +176,12 @@ public class Processor : IProcessor
         return processingTask;
     }
 
-    private Task RequestIntegerAccountPropertiesAsync()
+    private Task RequestAccountPropertiesAsync()
     {
         var request = new GeneralRequest
         {
             Type = MessageType.AccountInfo,
-            AccountInfoRequest = new AccountInfoRequest { Code = AccountInfoCode.IntegerAccountProperties, Ticket = 1 }
-        };
-        return _executiveCall.RequestStream.WriteAsync(request, _token);
-    }
-    private Task RequestDoubleAccountPropertiesAsync()
-    {
-        var request = new GeneralRequest
-        {
-            Type = MessageType.AccountInfo,
-            AccountInfoRequest = new AccountInfoRequest { Code = AccountInfoCode.DoubleAccountProperties, Ticket = 2 }
-        };
-        return _executiveCall.RequestStream.WriteAsync(request, _token);
-    }
-    private Task RequestStringAccountPropertiesAsync()
-    {
-        var request = new GeneralRequest
-        {
-            Type = MessageType.AccountInfo,
-            AccountInfoRequest = new AccountInfoRequest { Code = AccountInfoCode.StringAccountProperties, Ticket = 3 }
+            AccountInfoRequest = new AccountInfoRequest { Code = AccountInfoCode.AccountProperties, Ticket = 1 }
         };
         return _executiveCall.RequestStream.WriteAsync(request, _token);
     }
@@ -202,21 +190,23 @@ public class Processor : IProcessor
         var request = new GeneralRequest
         {
             Type = MessageType.AccountInfo,
-            AccountInfoRequest = new AccountInfoRequest { Code = AccountInfoCode.MaxVolumes, Ticket = 4 }
+            AccountInfoRequest = new AccountInfoRequest { Code = AccountInfoCode.MaxVolumes, Ticket = 2 }
         };
         return _executiveCall.RequestStream.WriteAsync(request, _token);
     }
-    public Task DownAsync(Symbol symbol, bool isReversed)
+    private Task RequestTickValuesAsync()
     {
-
-
-        return Task.CompletedTask;
-        //var request = new GeneralRequest
-        //{
-        //    Type = MessageType.MaintenanceCommand,
-        //    MaintenanceRequest = new MaintenanceRequest { Code = MaintenanceRequest.Types.Code.OpenSession }
-        //};
-        //return _executiveCall!.RequestStream.WriteAsync(request, _token);
+        var request = new GeneralRequest
+        {
+            Type = MessageType.AccountInfo,
+            AccountInfoRequest = new AccountInfoRequest { Code = AccountInfoCode.TickValues, Ticket = 3 }
+        };
+        return _executiveCall.RequestStream.WriteAsync(request, _token);
+    }
+    public Task OpenPositionAsync(Symbol symbol, bool isReversed)
+    {
+        var request = _accountService.GetOpenPositionRequest(symbol, isReversed); 
+        return _executiveCall.RequestStream.WriteAsync(request, _token);
     }
     public Task ExitAsync()
     {

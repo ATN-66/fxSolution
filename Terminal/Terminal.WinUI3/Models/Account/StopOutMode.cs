@@ -2,7 +2,7 @@
 
 namespace Terminal.WinUI3.Models.Account;
 
-internal enum StopOutMode
+public enum StopOutMode
 {
     [Description("Unknown stopout mode")]
     None = -1,

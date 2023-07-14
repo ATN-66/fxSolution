@@ -115,6 +115,10 @@ public partial class App
             services.AddTransient<HistoricalDataOverviewViewModel>(); services.AddTransient<HistoricalDataOverviewPage>();
             services.AddTransient<TicksContributionsViewModel>(); services.AddTransient<TicksContributionsPage>();
 
+            //Account
+            services.AddTransient<AccountOverviewViewModel>(); services.AddTransient<AccountOverviewPage>();
+            services.AddTransient<AccountPropertiesViewModel>(); services.AddTransient<AccountPropertiesPage>();
+
             services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
             services.Configure<ProviderBackupSettings>(context.Configuration.GetSection(nameof(ProviderBackupSettings)));
             services.Configure<SolutionDataBaseSettings>(context.Configuration.GetSection(nameof(SolutionDataBaseSettings)));

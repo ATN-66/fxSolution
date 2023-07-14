@@ -4,6 +4,7 @@
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
+using Microsoft.Extensions.Logging;
 using Terminal.WinUI3.AI.Data;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Controls;
@@ -38,11 +39,11 @@ public class VisualService : IVisualService
     {
         if (isReversed)
         {
-            _tickChartsReversed[symbol] = new TickChartControl(_kernels[symbol], symbol, true);
+            _tickChartsReversed[symbol] = new TickChartControl(_kernels[symbol], symbol, true, App.GetService<ILogger<TickChartControl>>());
             return _tickChartsReversed[symbol]!;
         }
 
-        _tickCharts[symbol] = new TickChartControl(_kernels[symbol], symbol, false);
+        _tickCharts[symbol] = new TickChartControl(_kernels[symbol], symbol, false, App.GetService<ILogger<TickChartControl>>());
         return _tickCharts[symbol]!;
     }
 

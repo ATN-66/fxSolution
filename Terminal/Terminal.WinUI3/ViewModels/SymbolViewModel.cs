@@ -128,9 +128,9 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     }
 
     [RelayCommand]
-    private Task DownAsync()
+    private Task OpenPositionAsync()
     {
-        return _processor.DownAsync(Symbol, IsReversed);
+        return _processor.OpenPositionAsync(Symbol, IsReversed);
     }
 
     private static (Currency upCurrency, Currency downCurrency) GetCurrenciesFromSymbol(Symbol symbol, bool isReversed)

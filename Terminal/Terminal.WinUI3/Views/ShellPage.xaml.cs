@@ -3,14 +3,12 @@
   |                                                     ShellPage.cs |
   +------------------------------------------------------------------+*/
 
-using System.Diagnostics;
 using Windows.System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.ViewModels;
-using Terminal.WinUI3.Helpers;
 
 namespace Terminal.WinUI3.Views;
 

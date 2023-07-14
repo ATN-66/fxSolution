@@ -10,6 +10,6 @@ namespace Terminal.WinUI3.AI.Interfaces;
 public interface IProcessor
 {
     Task StartAsync(CancellationToken token);
-    Task DownAsync(Symbol symbol, bool isReversed);
+    Task OpenPositionAsync(Symbol symbol, bool isReversed);
     Task ExitAsync();
 }

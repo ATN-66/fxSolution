@@ -33,6 +33,8 @@
     <None Remove="ItemTemplates.xaml" />
     <None Remove="Models\WorkflowInfoData.json" />
     <None Remove="Styles\CommandBar.xaml" />
+    <None Remove="Views\AccountOverviewPage.xaml" />
+    <None Remove="Views\AccountPropertiesPage.xaml" />
     <None Remove="Views\CurrenciesOverviewPage.xaml" />
     <None Remove="Views\CurrencyPage.xaml" />
     <None Remove="Views\HistoricalDataOverviewPage.xaml" />
@@ -124,6 +126,14 @@
   <ItemGroup>
     <Page Update="Styles\CommandBar.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="Views\AccountPropertiesPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\AccountOverviewPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
     </Page>
     <Page Update="Views\HistoricalDataOverviewPage.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>

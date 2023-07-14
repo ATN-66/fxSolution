@@ -6,22 +6,20 @@ import "timestamp.proto";
 enum MessageType {
     MAINTENANCE_COMMAND = 0;
     ACCOUNT_INFO = 1;
-    //TRADE_COMMAND = 3;
-    //TRADE_INFO = 2;
+    TRADE_COMMAND = 2;
 }
 
 message GeneralRequest {
     MessageType type = 1;
     MaintenanceRequest maintenanceRequest = 2;
     AccountInfoRequest accountInfoRequest = 3;
-    //CommandRequest command = 3;
+    TradeRequest tradeRequest = 4;
 }
 
 message GeneralResponse {
     MessageType type = 1;
     MaintenanceResponse maintenanceResponse = 2;
     AccountInfoResponse accountInfoResponse = 3;
-    //CommandResponse command = 3;
 }
 
 message MaintenanceRequest {
@@ -42,10 +40,9 @@ message MaintenanceResponse {
 }
 
  enum AccountInfoCode {
-    INTEGER_ACCOUNT_PROPERTIES = 0;
-    DOUBLE_ACCOUNT_PROPERTIES = 1;
-    STRING_ACCOUNT_PROPERTIES = 2;
-    MAX_VOLUMES = 3;
+    ACCOUNT_PROPERTIES = 0;
+    MAX_VOLUMES = 1;
+    TICK_VALUES = 2;
     }
 
 message AccountInfoRequest {
@@ -59,11 +56,26 @@ message AccountInfoResponse {
     string details = 3;
 }
 
-service ExecutiveProvider  {
-    rpc CommunicateAsync(stream GeneralRequest) returns (stream GeneralResponse);
+enum TradeCode {
+    OPEN_POSITION = 0;
+    CLOSE_POSITION = 1;
+    }
+
+message TradeRequest {
+    TradeCode code = 1;
+    int32 ticket = 2;
+    string details = 3;
 }
 
-service ExecutiveSupplier  {
+
+
+
+
+
+
+
+
+service ExecutiveProvider  {
     rpc CommunicateAsync(stream GeneralRequest) returns (stream GeneralResponse);
 }
 

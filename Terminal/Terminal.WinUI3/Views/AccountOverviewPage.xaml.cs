@@ -1,21 +1,21 @@
 ﻿/*+------------------------------------------------------------------+
   |                                             Terminal.WinUI3.Views|
-  |                                    HistoricalDataOverviewPage.cs |
+  |                                           AccountOverviewPage.cs |
   +------------------------------------------------------------------+*/
 
 using Terminal.WinUI3.ViewModels;
 
 namespace Terminal.WinUI3.Views;
 
-public sealed partial class HistoricalDataOverviewPage
+public sealed partial class AccountOverviewPage
 {
-    public HistoricalDataOverviewPage()
+    public AccountOverviewPage()
     {
-        ViewModel = App.GetService<HistoricalDataOverviewViewModel>();
+        ViewModel = App.GetService<AccountOverviewViewModel>();
         InitializeComponent();
     }
 
-    public HistoricalDataOverviewViewModel ViewModel
+    public AccountOverviewViewModel ViewModel
     {
         get;
     }
