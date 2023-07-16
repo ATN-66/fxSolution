@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using Terminal.WinUI3.Models.Account.Enums;
 
 namespace Terminal.WinUI3.Models.Account;
 
@@ -32,4 +33,9 @@ public class AccountInfo
     [Description("Account margin level in percents")] public double MarginLevel { get; set; }
     [Description("Margin call level.")] public double MarginCall { get; set; }
     [Description("Margin stop out level")] public double MarginStopOut { get; set; }
+
+    // Group 5: Rules and Regulations
+    [Description("How many percent of Free Margin to use to open position")] public double FreeMarginPercentToUse { get; set; }
+    [Description("How many percent of Free Margin trader is willing to lose")] public double FreeMarginPercentToRisk { get; set; }
+    [Description("Deviation")] public ulong Deviation { get; set; }
 }

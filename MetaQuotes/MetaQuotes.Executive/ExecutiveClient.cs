@@ -17,7 +17,7 @@ public class ExecutiveClient : IDisposable
     private readonly PipeClient<IExecutiveMessenger> pipeClient;
     private bool connected;
 
-    private readonly BlockingCollection<(string dateTime, string type, string code, string ticket, string details)> incomeMessages = new();
+    private readonly BlockingCollection<(string dateTime, string type, string code, string ticket, string result, string details)> incomeMessages = new();
     private readonly ConcurrentQueue<string> outcomeMessages = new();
 
     private readonly CancellationTokenSource cts = new();
@@ -92,37 +92,55 @@ public class ExecutiveClient : IDisposable
         return false;
     }
 
-    public string Pulse(string dateTime, string type, string code, string ticket, string details)
+    public string Pulse(string dateTime, string type, string code, string ticket, string result, string details)
     {
-        incomeMessages.Add((dateTime, type, code, ticket, details));
-        return outcomeMessages.TryDequeue(out var result) ? result : Ok;
+        incomeMessages.Add((dateTime, type, code, ticket, result, details));
+        return outcomeMessages.TryDequeue(out var outcomeResult) ? outcomeResult : Ok;
     }
 
-    public string AccountProperties(string dateTime, string type, string code, string ticket, string details)
+    public string AccountProperties(string dateTime, string type, string code, string ticket, string result, string details)
     {
-        incomeMessages.Add((dateTime, type, code, ticket, details));
+        incomeMessages.Add((dateTime, type, code, ticket, result, details));
         return Ok;
     }
 
-    public string MaxVolumes(string dateTime, string type, string code, string ticket, string maxVolumes)
+    public string TradingHistory(string dateTime, string type, string code, string ticket, string result, string details)
     {
-        incomeMessages.Add((dateTime, type, code, ticket, maxVolumes));
+        incomeMessages.Add((dateTime, type, code, ticket, result, details));
         return Ok;
     }
 
-    public string TickValues(string dateTime, string type, string code, string ticket, string tickValues)
+    public string MaxVolumes(string dateTime, string type, string code, string ticket, string result, string maxVolumes)
     {
-        incomeMessages.Add((dateTime, type, code, ticket, tickValues));
+        incomeMessages.Add((dateTime, type, code, ticket, result, maxVolumes));
+        return Ok;
+    }
+
+    public string TickValues(string dateTime, string type, string code, string ticket, string result, string tickValues)
+    {
+        incomeMessages.Add((dateTime, type, code, ticket, result, tickValues));
+        return Ok;
+    }
+
+    public string UpdatePosition(string dateTime, string type, string code, string ticket, string result, string details)
+    {
+        incomeMessages.Add((dateTime, type, code, ticket, result, details));
+        return Ok;
+    }
+
+    public string UpdateTransaction(string dateTime, string type, string code, string ticket, string result, string details)
+    {
+        incomeMessages.Add((dateTime, type, code, ticket, result, details));
         return Ok;
     }
 
     private async Task ProcessAsync(CancellationToken ct)
     {
-        await foreach (var (dateTime, type, code, ticket, details) in incomeMessages.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
+        await foreach (var (dateTime, type, code, ticket, result, details) in incomeMessages.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
         {
             if (ct.IsCancellationRequested) break;
-            var result = await pipeClient.InvokeAsync(x => x.PulseAsync(dateTime, type, code, ticket, details), cancellationToken: ct).ConfigureAwait(false);
-            outcomeMessages.Enqueue(result);
+            var callResult = await pipeClient.InvokeAsync(x => x.Pulse(dateTime, type, code, ticket, result, details), cancellationToken: ct).ConfigureAwait(false);
+            if (callResult != Ok) { outcomeMessages.Enqueue(callResult); }
         }
     }
 

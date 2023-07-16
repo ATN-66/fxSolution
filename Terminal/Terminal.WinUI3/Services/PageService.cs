@@ -18,6 +18,7 @@ public class PageService : IPageService
         Configure<SymbolViewModel, SymbolPage>();
         Configure<HistoricalDataOverviewViewModel, HistoricalDataOverviewPage>();
         Configure<AccountOverviewViewModel, AccountOverviewPage>();
+        Configure<TradingHistoryViewModel, TradingHistoryPage>();
         Configure<AccountPropertiesViewModel, AccountPropertiesPage>();
         Configure<TicksContributionsViewModel, TicksContributionsPage>();
         Configure<SettingsViewModel, SettingsPage>();
@@ -51,7 +52,7 @@ public class PageService : IPageService
             if (_pages.ContainsValue(type))
             {
                 throw new ArgumentException(
-                    $"This type is already configured with key {_pages.First(p => p.Value == type).Key}");
+                    $"This tradeType is already configured with key {_pages.First(p => p.Value == type).Key}");
             }
 
             _pages.Add(key, type);

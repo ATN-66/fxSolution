@@ -118,6 +118,7 @@ public partial class App
             //Account
             services.AddTransient<AccountOverviewViewModel>(); services.AddTransient<AccountOverviewPage>();
             services.AddTransient<AccountPropertiesViewModel>(); services.AddTransient<AccountPropertiesPage>();
+            services.AddTransient<TradingHistoryViewModel>(); services.AddTransient<TradingHistoryPage>();
 
             services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
             services.Configure<ProviderBackupSettings>(context.Configuration.GetSection(nameof(ProviderBackupSettings)));

@@ -3,6 +3,7 @@
   |                                               SymbolViewModel.cs |
   +------------------------------------------------------------------+*/
 
+using System.ComponentModel;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -15,6 +16,9 @@ using Binding = Microsoft.UI.Xaml.Data.Binding;
 using Microsoft.Extensions.Logging;
 using CommunityToolkit.Mvvm.Input;
 using Terminal.WinUI3.AI.Interfaces;
+using System.Windows.Input;
+using Terminal.WinUI3.Helpers;
+using Terminal.WinUI3.Models.Account.Enums;
 
 namespace Terminal.WinUI3.ViewModels;
 
@@ -22,6 +26,8 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
 {
     private readonly IVisualService _visualService;
     private readonly IProcessor _processor;
+    private readonly IAccountService _accountService;
+    private readonly IDispatcherService _dispatcherService;
     private readonly ILogger<SymbolViewModel> _logger;
 
     [ObservableProperty] private float _pipsPerChart = 100;// todo:settings
@@ -32,10 +38,16 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     [ObservableProperty] private int _minUnitsPerChart = 10;// todo:settings
     [ObservableProperty] private double _kernelShiftPercent = 100;
 
-    public SymbolViewModel(IVisualService visualService, IProcessor processor, ILogger<SymbolViewModel> logger)
+    private ICommand _operationalCommand = null!;
+    private string _operationalButtonContent = null!;
+
+    public SymbolViewModel(IVisualService visualService, IProcessor processor, IAccountService accountService, IDispatcherService dispatcherService, ILogger<SymbolViewModel> logger)
     {
         _visualService = visualService;
         _processor = processor;
+        _accountService = accountService;
+        _accountService.PropertyChanged += OnAccountServicePropertyChanged;
+        _dispatcherService = dispatcherService;
         _logger = logger;
     }
 
@@ -57,16 +69,14 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         set;
     }
 
-    public Currency UpCurrency
+    public string UpCurrency
     {
-        get;
-        set;
+        set => TickChartControl.UpCurrency = value;
     }
 
-    public Currency DownCurrency
+    public string DownCurrency
     {
-        get;
-        set;
+        set => TickChartControl.DownCurrency = value;
     }
 
     partial void OnPipsPerChartChanged(float value)
@@ -119,6 +129,8 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         }
 
         (UpCurrency, DownCurrency) = GetCurrenciesFromSymbol(Symbol, IsReversed);
+
+        UpdateOperationalProperties();
     }
 
     public void OnNavigatedFrom()
@@ -127,21 +139,88 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         TickChartControl = null!;
     }
 
-    [RelayCommand]
-    private Task OpenPositionAsync()
-    {
-        return _processor.OpenPositionAsync(Symbol, IsReversed);
-    }
-
-    private static (Currency upCurrency, Currency downCurrency) GetCurrenciesFromSymbol(Symbol symbol, bool isReversed)
+    private static (string upCurrency, string downCurrency) GetCurrenciesFromSymbol(Symbol symbol, bool isReversed)
     {
         var symbolName = symbol.ToString();
         var firstCurrency = symbolName[..3];
         var secondCurrency = symbolName.Substring(3, 3);
         if (Enum.TryParse<Currency>(firstCurrency, out var firstCurrencyEnum) && Enum.TryParse<Currency>(secondCurrency, out var secondCurrencyEnum))
         {
-            return isReversed ? (secondCurrencyEnum, firstCurrencyEnum) : (firstCurrencyEnum, secondCurrencyEnum);
+            return isReversed ? (secondCurrencyEnum.ToString(), firstCurrencyEnum.ToString()) : (firstCurrencyEnum.ToString(), secondCurrencyEnum.ToString());
         }
         throw new Exception("Failed to parse currencies from symbol.");
+    }
+
+    private void OnAccountServicePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != "ServiceState")
+        {
+            return;
+        }
+
+        UpdateOperationalProperties();
+    }
+
+    public ICommand OperationalCommand
+    {
+        get => _operationalCommand;
+        set
+        {
+            _operationalCommand = value;
+            _dispatcherService.ExecuteOnUIThreadAsync(() => OnPropertyChanged());
+        }
+    }
+
+    public string OperationalButtonContent
+    {
+        get => _operationalButtonContent;
+        set
+        {
+            _operationalButtonContent = value;
+            _dispatcherService.ExecuteOnUIThreadAsync(() => OnPropertyChanged());
+        }
+    }
+
+    private void UpdateOperationalProperties()
+    {
+        UpdateOperationalButtonContent();
+        UpdateOperationalCommand();
+    }
+
+    private void UpdateOperationalCommand()
+    {
+        switch (_accountService.ServiceState)
+        {
+            case ServiceState.Off or ServiceState.Busy:
+                OperationalCommand = new RelayCommand(execute: () => {}, canExecute: () => false);
+                break;
+            case ServiceState.ReadyToOpen:
+            {
+                async void ExecuteAsync()
+                {
+                    await _processor.OpenPositionAsync(Symbol, IsReversed).ConfigureAwait(true);
+                }
+
+                OperationalCommand = new RelayCommand(execute: ExecuteAsync, canExecute: () => true);
+                break;
+            }
+            case ServiceState.ReadyToClose:
+            {
+                async void ExecuteAsync()
+                {
+                    await _processor.ClosePositionAsync(Symbol, IsReversed).ConfigureAwait(true);
+                }
+
+                OperationalCommand = new RelayCommand(execute: ExecuteAsync, canExecute: () => true);
+                break;
+            }
+            default:
+                throw new InvalidOperationException($"{nameof(_accountService.ServiceState)} is not implemented.");
+        }
+    }
+
+    private void UpdateOperationalButtonContent()
+    {
+        OperationalButtonContent = _accountService.ServiceState.GetDescription();
     }
 }

@@ -1,0 +1,124 @@
+﻿<Page
+    x:Class="Terminal.WinUI3.Views.TradingHistoryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:Terminal.WinUI3.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <Style x:Key="TextBlockStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="Black" />
+        </Style>
+        <converters:BooleanToColorConverter x:Key="BooleanToColorConverter" />
+        <DataTemplate x:Key="TradeTemplate">
+            <Grid Background="{Binding IsProfitable, Converter={StaticResource BooleanToColorConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Background="LightGray" Margin="1">
+                    <TextBlock Text="{Binding Ticket}" Style="{StaticResource TextBlockStyle}" TextAlignment="Center" Padding="5" />
+                </Border>
+                <Border Grid.Column="1" Background="LightGray" Margin="1">
+                    <TextBlock Text="{Binding Symbol}" Style="{StaticResource TextBlockStyle}" TextAlignment="Center" Padding="5"/>
+                </Border>
+                <Border Grid.Column="2" Background="LightGray" Margin="1">
+                    <TextBlock Text="{Binding Type}" Style="{StaticResource TextBlockStyle}" TextAlignment="Center" Padding="5"/>
+                </Border>
+                <Border Grid.Column="3" Background="LightGray" Margin="1">
+                    <TextBlock Text="{Binding Start}" Style="{StaticResource TextBlockStyle}" TextAlignment="Center" Padding="5" />
+                </Border>
+            </Grid>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Border
+        Padding="3"
+        BorderBrush="White"
+        BorderThickness="1"
+        CornerRadius="5">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border
+                Grid.Row="0"
+                Grid.Column="0"
+                Margin="1,1,1,3"
+                BorderBrush="White"
+                BorderThickness="1"
+                CornerRadius="3">
+                <StackPanel Padding="1">
+                    <Grid>
+                        <Grid.Resources>
+                            <ResourceDictionary>
+                                <ResourceDictionary.ThemeDictionaries>
+                                    <ResourceDictionary x:Key="Light">
+                                        <SolidColorBrush x:Key="GridBackground" Color="{ThemeResource SystemAccentColorLight2}" />
+                                    </ResourceDictionary>
+                                    <ResourceDictionary x:Key="Dark">
+                                        <SolidColorBrush x:Key="GridBackground" Color="{ThemeResource SystemChromeMediumColor}" />
+                                    </ResourceDictionary>
+                                </ResourceDictionary.ThemeDictionaries>
+                            </ResourceDictionary>
+                        </Grid.Resources>
+                        <Grid.Background>
+                            <StaticResource ResourceKey="GridBackground" />
+                        </Grid.Background>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Margin="5,3,3,5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource BodyTextStyle}"
+                            Text="{x:Bind Path=ViewModel.HeaderContext}" />
+
+                        <CalendarDatePicker
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Margin="5,3,3,5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Date="{x:Bind Path=ViewModel.SelectedDate, Mode=TwoWay}"
+                            MaxDate="{x:Bind Path=ViewModel.Today}" />
+
+
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <ListView
+                Grid.Row="1"
+                Grid.Column="0"
+                IsEnabled="True"
+                IsItemClickEnabled="False"
+                IsTabStop="True"
+                ItemTemplate="{StaticResource TradeTemplate}"
+                ItemsSource="{x:Bind ViewModel.Positions, Mode=OneWay}"
+                SelectedItem="{x:Bind ViewModel.SelectedPosition, Mode=TwoWay}"
+                SelectionMode="None"
+                TabIndex="0" />
+        </Grid>
+    </Border>
+</Page>

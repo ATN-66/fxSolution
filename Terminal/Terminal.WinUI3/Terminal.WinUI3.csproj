@@ -40,6 +40,7 @@
     <None Remove="Views\HistoricalDataOverviewPage.xaml" />
     <None Remove="Views\SymbolPage.xaml" />
     <None Remove="Views\TicksContributionsPage.xaml" />
+    <None Remove="Views\TradingHistoryPage.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Page Remove="Generic.xaml" />
@@ -113,10 +114,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="AI\Models\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\Common\Common.DataSource\Common.DataSource.csproj" />
     <ProjectReference Include="..\..\Common\Common.Entities\Common.Entities.csproj" />
     <ProjectReference Include="..\..\Common\Common.ExtensionsAndHelpers\Common.ExtensionsAndHelpers.csproj" />
@@ -132,6 +129,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Views\AccountOverviewPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\TradingHistoryPage.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>

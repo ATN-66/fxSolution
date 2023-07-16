@@ -126,7 +126,7 @@
     },
     {
       "Id": "account_trades_terminal",
-      "Title": "Account, Trades, Terminal",
+      "Title": "MT5 Terminal, Account, Trading History",
       "Items": [
         {
           "Id": "account",
@@ -147,6 +147,18 @@
               "NavigateTo": "AccountPropertiesViewModel"
             }
           ]
+        },
+        {
+          "Id": "trading_history",
+          "Title": "Trading History",
+          "IsEnabled": true,
+          "IsSelected": false,
+          "MainItem": {
+            "Content": "Trading History",
+            "Tag": "placeholder",
+            "Glyph": "\u25EF",
+            "NavigateTo": "TradingHistoryViewModel"
+          }
         }
       ]
     },

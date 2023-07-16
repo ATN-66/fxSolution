@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using Common.Entities;
@@ -30,7 +29,7 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
     private readonly string _mT5DateTimeFormat;
     private DateTime _currentDateTime;
     private readonly ConcurrentQueue<string> _outcomeMessages = new();
-    private IServerStreamWriter<GeneralResponse> _responseStream = null!;
+    private IServerStreamWriter<GeneralResponse>? _responseStream;
 
     private static readonly string[] MessageTypeNames = Enum.GetNames(typeof(MessageType));
     private static readonly string[] AccountInfoCodeNames = Enum.GetNames(typeof(AccountInfoCode));
@@ -40,7 +39,9 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
     private const int Backoff = 5;
     private readonly int _maxSendMessageSize;
     private readonly int _maxReceiveMessageSize;
+#pragma warning disable CS0414
     private static volatile bool _isFaulted;
+#pragma warning restore CS0414
 
     private ServiceStatus _serviceStatus;
     private ClientStatus _clientStatus;
@@ -167,57 +168,98 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
     {
         _currentDateTime = DateTime.ParseExact(dateTime, _mT5DateTimeFormat, CultureInfo.InvariantCulture);
     }
-
     public Task<string> InitAsync(string dateTime)
     {
         _currentDateTime = DateTime.ParseExact(dateTime, _mT5DateTimeFormat, CultureInfo.InvariantCulture);
         return Task.FromResult(Ok);
     }
-
-    public async Task<string> PulseAsync(string dateTime, string type, string code, string ticket, string details)
+    public string Pulse(string dateTime, string type, string code, string ticket, string result, string details)
     {
         _currentDateTime = DateTime.ParseExact(dateTime, _mT5DateTimeFormat, CultureInfo.InvariantCulture);
-        string? result;
+        GeneralResponse response;
+        string? outcomeResult;
         switch (type)
         {
             case "0":
                 return code switch
                 {
-                    "0" => _outcomeMessages.TryDequeue(out result) ? result : Ok,
+                    "0" => _outcomeMessages.TryDequeue(out outcomeResult) ? outcomeResult : Ok,
                     _ => throw new ArgumentOutOfRangeException(nameof(code), @"Pulse: The provided string code is not supported.")
                 };
-            case "AccountInfo":
-                var response = new GeneralResponse
+            case "TradeCommand":
+                response = new GeneralResponse
                 {
-                    Type = MessageType.AccountInfo,
-                    AccountInfoResponse = new AccountInfoResponse
+                    Type = MessageType.TradeCommand,
+                    TradeResponse = new TradeResponse()
                     {
-                        Ticket = int.Parse(ticket),
-                        Details = details,
-                        Code = code switch
+                        TradeCode = code switch
                         {
-                            "AccountProperties" => AccountInfoCode.AccountProperties,
-                            "MaxVolumes" => AccountInfoCode.MaxVolumes,
-                            "TickValues" => AccountInfoCode.TickValues,
-                            _ => throw new ArgumentOutOfRangeException(nameof(code), @"PulseAsync: The provided string code is not supported.")
-                        }
+                            "OpenPosition" => TradeCode.OpenPosition,
+                            "ClosePosition" => TradeCode.ClosePosition,
+                            "OpenTransaction" => TradeCode.OpenTransaction,
+                            "CloseTransaction" => TradeCode.CloseTransaction,
+                            "UpdatePosition" => TradeCode.UpdatePosition,
+                            _ => throw new ArgumentOutOfRangeException(nameof(code), @"Pulse: The provided string TradeCode is not supported.")
+                        },
+                        Ticket = int.Parse(ticket),
+                        ResultCode = result switch
+                        {
+                            "FAILURE" => ResultCode.Failure,
+                            "SUCCESS" => ResultCode.Success,
+                            _ => throw new ArgumentOutOfRangeException(nameof(code), @"Pulse: The provided string ResultCode is not supported.")
+                        },
+                        Details = details
                     }
                 };
                 try
                 {
-                    if (_responseStream == null)
-                    {
-                        var st = true;
-                    }
-                    await _responseStream.WriteAsync(response).ConfigureAwait(false);
+                    _responseStream?.WriteAsync(response).ConfigureAwait(false);
                 }
-                catch (Exception e)
+                catch (RpcException)
                 {
-                    _responseStream = null!;
-                    Debug.WriteLine(e);
+                    _responseStream = null;
+                    // ignore
+                    var st = true;
+                }
+                catch (Exception exception)
+                {
+                    _responseStream = null;
+                    LogExceptionHelper.LogException(_logger, exception, "");
+                }
+                return _outcomeMessages.TryDequeue(out outcomeResult) ? outcomeResult : Ok;
+            case "AccountInfo":
+                response = new GeneralResponse
+                {
+                    Type = MessageType.AccountInfo,
+                    AccountInfoResponse = new AccountInfoResponse
+                    {
+                        AccountInfoCode = code switch
+                        {
+                            "AccountProperties" => AccountInfoCode.AccountProperties,
+                            "TradingHistory" => AccountInfoCode.TradingHistory,
+                            _ => throw new ArgumentOutOfRangeException(nameof(code), @"Pulse: The provided string AccountInfoCode is not supported.")
+                        },
+                        Ticket = int.Parse(ticket),
+                        ResultCode = result switch
+                        {
+                            "FAILURE" => ResultCode.Failure,
+                            "SUCCESS" => ResultCode.Success,
+                            _ => throw new ArgumentOutOfRangeException(nameof(code), @"Pulse: The provided string ResultCode is not supported.")
+                        },
+                        Details = details
+                    }
+                };
+                try
+                {
+                    _responseStream?.WriteAsync(response).ConfigureAwait(false);
+                }
+                catch (Exception exception)
+                {
+                    _responseStream = null;
+                    LogExceptionHelper.LogException(_logger, exception, "");
                     throw;
                 }
-                return _outcomeMessages.TryDequeue(out result) ? result : Ok;
+                return _outcomeMessages.TryDequeue(out outcomeResult) ? outcomeResult : Ok;
             default: throw new ArgumentOutOfRangeException(nameof(type), @"PulseAsync: The provided string type is not supported.");
         }
     }
@@ -244,45 +286,45 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
                 switch (request.Type)
                 {
                     case MessageType.MaintenanceCommand:
-                        switch (request.MaintenanceRequest.Code)
+                        switch (request.MaintenanceRequest.MaintenanceCode)
                         {
-                            case MaintenanceRequest.Types.Code.OpenSession:
+                            case MaintenanceCode.OpenSession:
                                 var response = new GeneralResponse { Type = MessageType.MaintenanceCommand, MaintenanceResponse = new MaintenanceResponse() };
-                                response.MaintenanceResponse.Code = MaintenanceResponse.Types.Code.Done;
+                                response.MaintenanceResponse.ResultCode = ResultCode.Success;
                                 response.MaintenanceResponse.Datetime = Timestamp.FromDateTime(_currentDateTime.ToUniversalTime());
                                 await responseStream.WriteAsync(response).ConfigureAwait(false);
                                 break;
-                            case MaintenanceRequest.Types.Code.CloseSession:
+                            case MaintenanceCode.CloseSession:
                                 // clean up
                                 ClientStatus = ClientStatus.Off;
                                 _responseStream = null!;
                                 return;
-                            default: 
-                                throw new ArgumentOutOfRangeException($"{request.MaintenanceRequest.Code}", @"ExecutiveProviderService.CommunicateAsync.CloseSession: The provided maintenance request Code is not supported.");
+                            default: throw new ArgumentOutOfRangeException($"{request.MaintenanceRequest.MaintenanceCode}", @"ExecutiveProviderService.CommunicateAsync.CloseSession: The provided request.MaintenanceRequest.MaintenanceCode is not supported.");
                         }
                         break;
                     case MessageType.AccountInfo:
                         typeName = MessageTypeNames[(int)request.Type];
-                        codeName = AccountInfoCodeNames[(int)request.AccountInfoRequest.Code];
+                        codeName = AccountInfoCodeNames[(int)request.AccountInfoRequest.AccountInfoCode];
                         ticket = request.AccountInfoRequest.Ticket;
                         _messageBuilder.Clear();
                         _messageBuilder.Append("Type: ").Append(typeName).Append(", Code: ").Append(codeName).Append(", Ticket: ").Append(ticket);
+                        _messageBuilder.Append(", Details: {").Append(request.AccountInfoRequest.Details).Append('}');
                         _outcomeMessages.Enqueue(_messageBuilder.ToString());
                         break;
                     case MessageType.TradeCommand:
                         typeName = MessageTypeNames[(int)request.Type];
-                        codeName = TradeCodeNames[(int)request.TradeRequest.Code];
+                        codeName = TradeCodeNames[(int)request.TradeRequest.TradeCode];
                         ticket = request.TradeRequest.Ticket;
                         _messageBuilder.Clear();
                         _messageBuilder.Append("Type: ").Append(typeName).Append(", Code: ").Append(codeName).Append(", Ticket: ").Append(ticket);
                         _messageBuilder.Append(", Details: {").Append(request.TradeRequest.Details).Append('}');
-                        _outcomeMessages.Enqueue(_messageBuilder.ToString()); // "Type: TradeCommand, Code: OpenPosition, Ticket: 666, Details: {symbol>EURUSD;ordertype>OrderTypeSell;volume>1.50;stoplossinpips>25}"
+                        _outcomeMessages.Enqueue(_messageBuilder.ToString()); 
                         break;
                     default: throw new ArgumentOutOfRangeException($"{request.Type}", @"ExecutiveProviderService.CommunicateAsync: The provided request Type is not supported.");
                 }
             }
         }
-        catch (Exception exception)
+        catch (Exception)
         {
             if (context.CancellationToken.IsCancellationRequested)
             {

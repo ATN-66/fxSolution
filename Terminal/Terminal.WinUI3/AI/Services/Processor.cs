@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Terminal.WinUI3.AI.Data;
 using Terminal.WinUI3.AI.Interfaces;
+using Terminal.WinUI3.AI.Models;
 using Terminal.WinUI3.Contracts.Services;
 using Quotation = Common.Entities.Quotation;
 using Symbol = Common.Entities.Symbol;
@@ -39,6 +40,7 @@ public class Processor : IProcessor
     private DateTime _nowDateTime;
     private readonly TimeSpan _distanceToThePast;
     private readonly TaskCompletionSource<bool> _accountReady = new();
+    public event EventHandler<PositionsEventArgs> PositionsUpdated = null!;
 
     public Processor(IConfiguration configuration, IDataService dataService, IExecutiveConsumerService executiveConsumerService, IAccountService accountService, CancellationTokenSource cancellationTokenSource, IVisualService visualService, 
         IDispatcherService dispatcherService, ISplashScreenService splashScreenService, ILogger<IProcessor> logger) {
@@ -65,8 +67,6 @@ public class Processor : IProcessor
             _executiveCall = executiveCall;
             var executiveProcessingTask = ExecutiveProcessingTaskAsync(token);
             await RequestAccountPropertiesAsync().ConfigureAwait(false);
-            await RequestMaxVolumesAsync().ConfigureAwait(false);
-            await RequestTickValuesAsync().ConfigureAwait(false);
             await _accountReady.Task.ConfigureAwait(false);
 
             _kernels = await _dataService.LoadDataAsync(_startDateTime, _nowDateTime).ConfigureAwait(false);
@@ -89,6 +89,22 @@ public class Processor : IProcessor
             throw;
         }
     }
+
+    public void RequestPositionsAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
+    {
+        var ordersHistoryRequest = new GeneralRequest
+        {
+            Type = MessageType.AccountInfo,
+            AccountInfoRequest = new AccountInfoRequest
+            {
+                AccountInfoCode = AccountInfoCode.TradingHistory, Ticket = 1,
+                Details = $"start>{startDateTimeInclusive.ToUniversalTime().Date:yyyy-MM-dd};end>{endDateTimeInclusive.AddDays(1).Date.ToUniversalTime():yyyy-MM-dd}"
+            }
+        };
+
+        _executiveCall.RequestStream.WriteAsync(ordersHistoryRequest, _token);
+    }
+
     private Task DataProcessingTaskAsync(CancellationToken token)
     {
         var processingTask = Task.Run(async () =>
@@ -131,33 +147,52 @@ public class Processor : IProcessor
                     switch (response.Type)
                     {
                         case MessageType.MaintenanceCommand:
-                            switch (response.MaintenanceResponse.Code)
+                            switch (response.MaintenanceResponse.ResultCode)
                             {
-                                case MaintenanceResponse.Types.Code.Done:
+                                case ResultCode.Success:
                                     _nowDateTime = response.MaintenanceResponse.Datetime.ToDateTime().ToUniversalTime();
                                     _startDateTime = _nowDateTime - _distanceToThePast;
                                     break;
-                                case MaintenanceResponse.Types.Code.Failure: Environment.Exit(0); break;
-                                default: throw new ArgumentOutOfRangeException(nameof(response.MaintenanceResponse.Code),@"Processor.ExecutiveProcessingTaskAsync: The provided response.MaintenanceResponse.Code is not supported.");
+                                case ResultCode.Failure: Environment.Exit(0); break;
+                                default: throw new ArgumentOutOfRangeException(nameof(response.MaintenanceResponse.ResultCode), @"Processor.ExecutiveProcessingTaskAsync: The provided response.MaintenanceResponse.ResultCode is not supported.");
+                            }
+                            break;
+                        case MessageType.TradeCommand:
+                            switch (response.TradeResponse.TradeCode)
+                            {
+                                case TradeCode.OpenPosition:
+                                    _accountService.OpenPosition(response.TradeResponse.Ticket, response.TradeResponse.ResultCode, response.TradeResponse.Details);
+                                    break;
+                                case TradeCode.ClosePosition:
+                                    _accountService.ClosePosition(response.TradeResponse.Ticket, response.TradeResponse.ResultCode, response.TradeResponse.Details);
+                                    break;
+                                case TradeCode.OpenTransaction:
+                                    _accountService.OpenTransaction(response.TradeResponse.Ticket, response.TradeResponse.ResultCode, response.TradeResponse.Details);
+                                    break;
+                                case TradeCode.CloseTransaction:
+                                    _accountService.CloseTransaction(response.TradeResponse.Ticket, response.TradeResponse.ResultCode, response.TradeResponse.Details);
+                                    break;
+                                case TradeCode.UpdatePosition:
+                                    _accountService.UpdatePosition(response.TradeResponse.Ticket, response.TradeResponse.ResultCode, response.TradeResponse.Details);
+                                    break;
+                                default: throw new ArgumentOutOfRangeException(nameof(response.AccountInfoResponse.AccountInfoCode), @"Processor.ExecutiveProcessingTaskAsync: The provided response.TradeResponse.TradeCode is not supported.");
                             }
                             break;
                         case MessageType.AccountInfo:
-                            switch (response.AccountInfoResponse.Code)
+                            switch (response.AccountInfoResponse.AccountInfoCode)
                             {
                                 case AccountInfoCode.AccountProperties:
                                     _accountService.ProcessProperties(response.AccountInfoResponse.Details);
-                                    break;
-                                case AccountInfoCode.MaxVolumes:
-                                    _accountService.ProcessMaxVolumes(response.AccountInfoResponse.Details);
-                                    break;
-                                case AccountInfoCode.TickValues:
-                                    _accountService.ProcessTickValues(response.AccountInfoResponse.Details);
                                     _accountReady.SetResult(true);
                                     break;
-                                default: throw new ArgumentOutOfRangeException(nameof(response.AccountInfoResponse.Code), @"Processor.ExecutiveProcessingTaskAsync: The provided response.AccountInfoResponse.Code is not supported.");
+                                case AccountInfoCode.TradingHistory:
+                                    var positions = _accountService.ProcessPositionsHistory(response.AccountInfoResponse.Details);
+                                    PositionsUpdated?.Invoke(this, new PositionsEventArgs(positions));
+                                    break;
+                                default: throw new ArgumentOutOfRangeException(nameof(response.AccountInfoResponse.AccountInfoCode), @"Processor.ExecutiveProcessingTaskAsync: The provided response.AccountInfoResponse.AccountInfoCode is not supported.");
                             }
                             break;
-                        default: throw new ArgumentOutOfRangeException(nameof(response.Type), @"Processor.ExecutiveProcessingTaskAsync: The provided response.Type is not supported.");
+                        default: throw new ArgumentOutOfRangeException(nameof(response.Type), @"Processor.ExecutiveProcessingTaskAsync: The provided response.TradeType is not supported.");
                     }
                 }
             }
@@ -181,25 +216,7 @@ public class Processor : IProcessor
         var request = new GeneralRequest
         {
             Type = MessageType.AccountInfo,
-            AccountInfoRequest = new AccountInfoRequest { Code = AccountInfoCode.AccountProperties, Ticket = 1 }
-        };
-        return _executiveCall.RequestStream.WriteAsync(request, _token);
-    }
-    private Task RequestMaxVolumesAsync()
-    {
-        var request = new GeneralRequest
-        {
-            Type = MessageType.AccountInfo,
-            AccountInfoRequest = new AccountInfoRequest { Code = AccountInfoCode.MaxVolumes, Ticket = 2 }
-        };
-        return _executiveCall.RequestStream.WriteAsync(request, _token);
-    }
-    private Task RequestTickValuesAsync()
-    {
-        var request = new GeneralRequest
-        {
-            Type = MessageType.AccountInfo,
-            AccountInfoRequest = new AccountInfoRequest { Code = AccountInfoCode.TickValues, Ticket = 3 }
+            AccountInfoRequest = new AccountInfoRequest { AccountInfoCode = AccountInfoCode.AccountProperties, Ticket = 1 }
         };
         return _executiveCall.RequestStream.WriteAsync(request, _token);
     }
@@ -208,12 +225,18 @@ public class Processor : IProcessor
         var request = _accountService.GetOpenPositionRequest(symbol, isReversed); 
         return _executiveCall.RequestStream.WriteAsync(request, _token);
     }
+    public Task ClosePositionAsync(Symbol symbol, bool isReversed)
+    {
+        var request = _accountService.GetClosePositionRequest(symbol, isReversed);
+        return _executiveCall.RequestStream.WriteAsync(request, _token);
+    }
+
     public Task ExitAsync()
     {
         var request = new GeneralRequest
         {
             Type = MessageType.MaintenanceCommand,
-            MaintenanceRequest = new MaintenanceRequest { Code = MaintenanceRequest.Types.Code.CloseSession }
+            MaintenanceRequest = new MaintenanceRequest { MaintenanceCode = MaintenanceCode.CloseSession }
         };
 
         return _executiveCall.RequestStream.WriteAsync(request, _token);

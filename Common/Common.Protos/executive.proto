@@ -9,6 +9,12 @@ enum MessageType {
     TRADE_COMMAND = 2;
 }
 
+enum ResultCode {
+    NONE = 0;
+    SUCCESS = 1;
+    FAILURE = 2;
+}
+
 message GeneralRequest {
     MessageType type = 1;
     MaintenanceRequest maintenanceRequest = 2;
@@ -20,92 +26,62 @@ message GeneralResponse {
     MessageType type = 1;
     MaintenanceResponse maintenanceResponse = 2;
     AccountInfoResponse accountInfoResponse = 3;
+    TradeResponse tradeResponse = 4;
+}
+
+enum MaintenanceCode {
+    OPEN_SESSION = 0;
+    CLOSE_SESSION = 1;
 }
 
 message MaintenanceRequest {
-    enum Code {
-        OPEN_SESSION = 0;
-        CLOSE_SESSION = 1;
-    }
-    Code code = 1;
+    MaintenanceCode maintenanceCode = 1;
 }
 
 message MaintenanceResponse {
-    enum Code {
-        DONE = 0;
-        FAILURE = 1;
-    }
-    Code code = 1;
-    google.protobuf.Timestamp datetime = 3;
+    ResultCode resultCode = 1;
+    google.protobuf.Timestamp datetime = 2;
 }
 
  enum AccountInfoCode {
     ACCOUNT_PROPERTIES = 0;
-    MAX_VOLUMES = 1;
-    TICK_VALUES = 2;
+    TRADING_HISTORY = 1;
     }
 
 message AccountInfoRequest {
-    AccountInfoCode code = 1;
+    AccountInfoCode accountInfoCode = 1;
     int32 ticket = 2;
+    string details = 3;
 }
 
 message AccountInfoResponse {
-    AccountInfoCode code = 1;
+    AccountInfoCode accountInfoCode = 1;
     int32 ticket = 2;
-    string details = 3;
+    ResultCode resultCode = 3;
+    string details = 4;
 }
 
 enum TradeCode {
     OPEN_POSITION = 0;
     CLOSE_POSITION = 1;
+    OPEN_TRANSACTION = 2;
+    CLOSE_TRANSACTION = 3;
+    UPDATE_POSITION = 4;
     }
 
 message TradeRequest {
-    TradeCode code = 1;
+    TradeCode tradeCode = 1;
     int32 ticket = 2;
     string details = 3;
 }
 
-
-
-
-
-
-
-
+message TradeResponse {
+    TradeCode tradeCode = 1;
+    int32 ticket = 2;
+    ResultCode resultCode = 3;
+    string details = 4;
+}
 
 service ExecutiveProvider  {
     rpc CommunicateAsync(stream GeneralRequest) returns (stream GeneralResponse);
 }
-
-
-
-
-
-
-//message CommandRequest {
-//     enum Code {
-//        ORDER_OPEN = 0;
-//        ORDER_CLOSE = 1;
-//        // any other actions...
-//    }
-
-    //ORDER DETAILS HERE
-
-//    int32 ticket = 1;
-//    string details = 2;
-//}
-
-//message CommandResponse {
-//     enum Code {
-//        ORDER_OPEN = 0;
-//        ORDER_CLOSE = 1;
-        // any other actions...
-//    }
-
-    //ORDER DETAILS HERE
-
-//    int32 ticket = 1;
-//    string details = 2;
-//}

@@ -21,9 +21,9 @@ public partial class AccountPropertiesViewModel : ObservableRecipient, INavigati
         _accountInfo = accountService.GetAccountInfo();
     }
 
-    public string? TradeModeDescription => AccountInfo.TradeMode.GetDescription();
-    public string? StopOutModeDescription => AccountInfo.StopOutMode.GetDescription();
-    public string? MarginModeDescription => AccountInfo.MarginMode.GetDescription();
+    public string TradeModeDescription => AccountInfo.TradeMode.GetDescription();
+    public string StopOutModeDescription => AccountInfo.StopOutMode.GetDescription();
+    public string MarginModeDescription => AccountInfo.MarginMode.GetDescription();
 
     public static string GetDescription(string propertyName)
     {

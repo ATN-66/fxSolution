@@ -49,11 +49,11 @@ public class DashboardItem
         set;
     }
 
-    public ObservableCollection<NavigationItem> NavigationItems
+    public ObservableCollection<NavigationItem>? NavigationItems
     {
         get;
         set;
-    } = null!;
+    } = null;
 
     public override string ToString() => Title;
 }

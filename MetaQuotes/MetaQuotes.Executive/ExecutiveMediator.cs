@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                                             MetaQuotes.Executive |
-  |                                               ExecutiveMediator.cs |
+  |                                             ExecutiveMediator.cs |
   +------------------------------------------------------------------+*/
 
 using System;
@@ -40,23 +40,38 @@ public static class ExecutiveMediator
         return Task.Run(() => _executiveClient.InitAsync(datetime)).GetAwaiter().GetResult();
     }
 
-    public static string Pulse(string dateTime, string type, string code, string ticket, string details)
+    public static string Pulse(string dateTime, string type, string code, string ticket, string result, string details)
     {
-        return _executiveClient.Pulse(dateTime, type, code, ticket, details);
+        return _executiveClient.Pulse(dateTime, type, code, ticket, result, details);
     }
 
-    public static string AccountProperties(string dateTime, string type, string code, string ticket, string details)
+    public static string AccountProperties(string dateTime, string type, string code, string ticket, string result, string details)
     {
-        return _executiveClient.AccountProperties(dateTime, type, code, ticket, details);
+        return _executiveClient.AccountProperties(dateTime, type, code, ticket, result, details);
     }
 
-    public static string MaxVolumes(string dateTime, string type, string code, string ticket, string maxVolumes)
+    public static string TradingHistory(string dateTime, string type, string code, string ticket, string result, string details)
     {
-        return _executiveClient.MaxVolumes(dateTime, type, code, ticket, maxVolumes);
+        return _executiveClient.TradingHistory(dateTime, type, code, ticket, result, details);
     }
 
-    public static string TickValues(string dateTime, string type, string code, string ticket, string tickValues)
+    public static string MaxVolumes(string dateTime, string type, string code, string ticket, string result, string maxVolumes)
     {
-        return _executiveClient.TickValues(dateTime, type, code, ticket, tickValues);
+        return _executiveClient.MaxVolumes(dateTime, type, code, ticket, result, maxVolumes);
+    }
+
+    public static string TickValues(string dateTime, string type, string code, string ticket, string result, string tickValues)
+    {
+        return _executiveClient.TickValues(dateTime, type, code, ticket, result, tickValues);
+    }
+
+    public static string UpdatePosition(string dateTime, string type, string code, string ticket, string result,  string details)
+    {
+        return _executiveClient.UpdatePosition(dateTime, type, code, ticket, result, details);
+    }
+
+    public static string UpdateTransaction(string dateTime, string type, string code, string ticket, string result, string details)
+    {
+        return _executiveClient.UpdateTransaction(dateTime, type, code, ticket, result, details);
     }
 }

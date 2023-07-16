@@ -4,9 +4,9 @@ namespace Terminal.WinUI3.Models.Trade;
 internal record struct TradeRequestResult
 {
     [Description("Return code of a trade server")] private uint retcode;
-    [Description("Deal ticket,  if a deal has been performed. It is available for a trade operation of TRADE_ACTION_DEAL type")] ulong deal;
-    [Description("Order ticket, if a ticket has been placed. It is available for a trade operation of TRADE_ACTION_PENDING type")] ulong order;
-    [Description("Deal volume, confirmed by broker. It depends on the order filling type")] double volume;
+    [Description("Deal ticket,  if a deal has been performed. It is available for a trade operation of TRADE_ACTION_DEAL tradeType")] ulong deal;
+    [Description("OpeningOrder ticket, if a ticket has been placed. It is available for a trade operation of TRADE_ACTION_PENDING tradeType")] ulong order;
+    [Description("Deal volume, confirmed by broker. It depends on the order filling tradeType")] double volume;
     [Description("Deal price, confirmed by broker. It depends on the deviation field of the trade request and/or on the trade operation")] double price;
     [Description("The current market Bid price (requote price)")] double bid;
     [Description("The current market Ask price (requote price)")] double ask;

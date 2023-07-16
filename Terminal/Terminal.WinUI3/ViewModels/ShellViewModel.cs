@@ -107,36 +107,39 @@ public partial class ShellViewModel : ObservableRecipient
                 NavigationHelper.SetNavigateTo(mainViewItem, mainPage!);
                 NavigationItems.Add(mainViewItem);
 
-                foreach (var navigationItem in item.NavigationItems)
+                if (item.NavigationItems != null)
                 {
-                    var navigationViewItem = new NavigationViewItem
+                    foreach (var navigationItem in item.NavigationItems)
                     {
-                        Content = navigationItem.Content,
-                        Tag = navigationItem.Tag,
-                        Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = navigationItem.Glyph }
-                    };
-
-                    var navigationPage = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{navigationItem.NavigateTo}")!.FullName;
-                    NavigationHelper.SetNavigateTo(navigationViewItem, navigationPage!);
-                    NavigationItems.Add(navigationViewItem);
-
-                    if (navigationItem.MenuItems == null)
-                    {
-                        continue;
-                    }
-
-                    foreach (var menuItem in navigationItem.MenuItems)
-                    {
-                        var menuViewItem = new NavigationViewItem
+                        var navigationViewItem = new NavigationViewItem
                         {
-                            Content = menuItem.Content,
-                            Tag = menuItem.Tag,
-                            Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = menuItem.Glyph }
+                            Content = navigationItem.Content,
+                            Tag = navigationItem.Tag,
+                            Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = navigationItem.Glyph }
                         };
 
-                        var menuPage = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{menuItem.NavigateTo}")!.FullName;
-                        NavigationHelper.SetNavigateTo(menuViewItem, menuPage!);
-                        navigationViewItem.MenuItems.Add(menuViewItem);
+                        var navigationPage = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{navigationItem.NavigateTo}")!.FullName;
+                        NavigationHelper.SetNavigateTo(navigationViewItem, navigationPage!);
+                        NavigationItems.Add(navigationViewItem);
+
+                        if (navigationItem.MenuItems == null)
+                        {
+                            continue;
+                        }
+
+                        foreach (var menuItem in navigationItem.MenuItems)
+                        {
+                            var menuViewItem = new NavigationViewItem
+                            {
+                                Content = menuItem.Content,
+                                Tag = menuItem.Tag,
+                                Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = menuItem.Glyph }
+                            };
+
+                            var menuPage = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{menuItem.NavigateTo}")!.FullName;
+                            NavigationHelper.SetNavigateTo(menuViewItem, menuPage!);
+                            navigationViewItem.MenuItems.Add(menuViewItem);
+                        }
                     }
                 }
 

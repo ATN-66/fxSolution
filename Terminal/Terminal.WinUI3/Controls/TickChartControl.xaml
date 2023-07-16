@@ -18,7 +18,7 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
+                            <!--<RowDefinition Height="Auto" />-->
                             <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
@@ -39,43 +39,36 @@
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
                             Foreground="{TemplateBinding Foreground}" />
-                        <win2d:CanvasControl
+                        <!--<win2d:CanvasControl
                             x:Name="debugCanvas"
                             Grid.Row="2"
                             Grid.Column="0"
                             Margin="{TemplateBinding Margin}"
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
-                            Foreground="{TemplateBinding Foreground}" />
+                            Foreground="{TemplateBinding Foreground}" />-->
+
                         <win2d:CanvasControl
-                            x:Name="graphCanvas"
-                            Grid.Row="3"
+                            x:Name="textCanvas"
+                            Grid.Row="2"
                             Grid.Column="0"
                             Margin="{TemplateBinding Margin}"
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
+                            Foreground="{TemplateBinding Foreground}"
+                            IsHitTestVisible="False" />
+
+                        <win2d:CanvasControl
+                            x:Name="graphCanvas"
+                            Grid.Row="2"
+                            Grid.Column="0"
+                            Margin="{TemplateBinding Margin}"
+                            Padding="{TemplateBinding Padding}"
+                            Background="Transparent"
                             Foreground="{TemplateBinding Foreground}" />
 
-                        <Button
-                            Grid.Row="3"
-                            Grid.Column="0"
-                            Margin="0,0,10,10"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Bottom"
-                            Command="{Binding OpenPositionCommand}"
-                            Content="Open Position" />
-
-                        <!--<TextBlock
-                            Grid.Row="3"
-                            Grid.Column="0"
-                            Text="{Binding S}"
-                            Margin="0,0,10,10"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Bottom" />-->
-
-
                         <Slider
-                            Grid.Row="4"
+                            Grid.Row="3"
                             Grid.Column="0"
                             Maximum="100"
                             Minimum="0"
@@ -83,16 +76,26 @@
                             SmallChange="1"
                             StepFrequency="1"
                             Value="{Binding KernelShiftPercent, Mode=TwoWay}" />
+
+                        <Button
+                            Grid.Row="2"
+                            Grid.Column="0"
+                            Margin="0,0,10,10"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            Command="{Binding OperationalCommand, Mode=OneWay}"
+                            Content="{Binding OperationalButtonContent, Mode=OneWay}" />
+
                         <win2d:CanvasControl
                             x:Name="yAxisCanvas"
-                            Grid.Row="3"
+                            Grid.Row="2"
                             Grid.Column="1"
                             Margin="{TemplateBinding Margin}"
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
                             Foreground="{TemplateBinding Foreground}" />
                         <Slider
-                            Grid.Row="3"
+                            Grid.Row="2"
                             Grid.Column="2"
                             Maximum="{Binding MaxPipsPerChart, Mode=OneWay}"
                             Minimum="{Binding MinPipsPerChart, Mode=OneWay}"

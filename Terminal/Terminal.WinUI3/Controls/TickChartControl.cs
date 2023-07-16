@@ -2,7 +2,7 @@
   |                                         Terminal.WinUI3.Controls |
   |                                              TickChartControl.cs |
   +------------------------------------------------------------------+*/
-#define DEBUGWIN2DCanvasControl
+//#define DEBUGWIN2DCanvasControl
 
 using System.Numerics;
 using Windows.UI;
@@ -27,6 +27,7 @@ public class TickChartControl : Control
 {
     private readonly ILogger<TickChartControl> _logger;
     private CanvasControl? _graphCanvas;
+    private CanvasControl? _textCanvas;
     private CanvasControl? _yAxisCanvas;
     private CanvasControl? _xAxisCanvas;
 #if DEBUGWIN2DCanvasControl
@@ -57,7 +58,8 @@ public class TickChartControl : Control
     private const string XAxisTextSample = "HH:mm:ss";
 
     private const float GraphDataStrokeThickness = 1;
-    private readonly Color _graphBackgroundColor = Colors.Black;
+    private readonly Color _graphBackgroundColor = Colors.Transparent;
+    private readonly Color _textBackgroundColor = Colors.Black;
     private readonly Color _graphForegroundColor = Colors.White;
     private readonly Color _yxAxisForegroundColor = Colors.Gray;
     private readonly Color _yAxisAskBidForegroundColor = Colors.White;
@@ -69,7 +71,7 @@ public class TickChartControl : Control
         Convert.ToByte(HexCode.Substring(3, 2), 16),
         Convert.ToByte(HexCode.Substring(5, 2), 16)
     );
-
+    private readonly CanvasTextFormat _currencyFormat = new() { FontSize = 20, WordWrapping = CanvasWordWrapping.NoWrap };
     private const int MinTicks = 2;
     private const int MaxTicks = 20;
 
@@ -83,15 +85,15 @@ public class TickChartControl : Control
     private const float ArrowheadWidth = 5;
 
     private readonly IList<(Vector2 startPoint, Vector2 endPoint)> _arrowLines = new List<(Vector2, Vector2)>()
-    {
+    { 
         new(new Vector2(10, 10), new Vector2(110, 10)),
-        new(new Vector2(110, 10), new Vector2(110, 110)),
-        new(new Vector2(110, 110), new Vector2(10, 110)),
-        new(new Vector2(10, 110), new Vector2(10, 10)),
-        new(new Vector2(10, 10), new Vector2(60, 60)),
-        new(new Vector2(110, 10), new Vector2(60, 60)),
-        new( new Vector2(110, 110), new Vector2(60, 60)),
-        new(new Vector2(10, 110), new Vector2(60, 60))
+        //new(new Vector2(110, 10), new Vector2(110, 110)),
+        //new(new Vector2(110, 110), new Vector2(10, 110)),
+        //new(new Vector2(10, 110), new Vector2(10, 10)),
+        //new(new Vector2(10, 10), new Vector2(60, 60)),
+        //new(new Vector2(110, 10), new Vector2(60, 60)),
+        //new( new Vector2(110, 110), new Vector2(60, 60)),
+        //new(new Vector2(10, 110), new Vector2(60, 60))
     };
 
     private float GraphWidth
@@ -228,6 +230,17 @@ public class TickChartControl : Control
         }
     }
 
+    public string UpCurrency
+    {
+        get;
+        set;
+    } = string.Empty;
+    public string DownCurrency
+    {
+        get;
+        set;
+    } = string.Empty;
+
     public TickChartControl(Kernel kernel, Symbol symbol, bool isReversed, ILogger<TickChartControl> logger)
     {
         _logger = logger;
@@ -258,13 +271,14 @@ public class TickChartControl : Control
         base.OnApplyTemplate();
 
         _graphCanvas = GetTemplateChild("graphCanvas") as CanvasControl;
+        _textCanvas = GetTemplateChild("textCanvas") as CanvasControl;
         _yAxisCanvas = GetTemplateChild("yAxisCanvas") as CanvasControl;
         _xAxisCanvas = GetTemplateChild("xAxisCanvas") as CanvasControl;
 #if DEBUGWIN2DCanvasControl
         _debugCanvas = GetTemplateChild("debugCanvas") as CanvasControl;
         if (_graphCanvas is null || _yAxisCanvas is null || _xAxisCanvas is null || _debugCanvas is null)
 #else
-        if (_graphCanvas is null || _yAxisCanvas is null || _xAxisCanvas is null)
+        if (_graphCanvas is null || _textCanvas is null || _yAxisCanvas is null || _xAxisCanvas is null)
 #endif
 
         {
@@ -276,6 +290,9 @@ public class TickChartControl : Control
         _graphCanvas.PointerPressed += GraphCanvas_OnPointerPressed;
         _graphCanvas.PointerMoved += GraphCanvas_OnPointerMoved;
         _graphCanvas.PointerReleased += GraphCanvas_OnPointerReleased;
+
+        _textCanvas.SizeChanged += TextCanvas_OnSizeChanged;
+        _textCanvas.Draw += TextCanvas_OnDraw;
 
         _yAxisCanvas.SizeChanged += YAxisCanvas_OnSizeChanged;
         _yAxisCanvas.Draw += YAxisCanvas_OnDraw;
@@ -323,6 +340,19 @@ public class TickChartControl : Control
         catch (Exception exception)
         {
             LogExceptionHelper.LogException(_logger, exception, "GraphCanvas_OnSizeChanged");
+            throw;
+        }
+    }
+
+    private void TextCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        try
+        {
+            
+        }
+        catch (Exception exception)
+        {
+            LogExceptionHelper.LogException(_logger, exception, "TextCanvas_OnSizeChanged");
             throw;
         }
     }
@@ -538,6 +568,24 @@ public class TickChartControl : Control
         }
     }
 
+    private void TextCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
+    {
+        args.DrawingSession.Clear(_textBackgroundColor);
+        args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
+
+        DrawCurrenciesLabel();
+
+        void DrawCurrenciesLabel()
+        {
+            using var upCurrencyLayout = new CanvasTextLayout(args.DrawingSession, UpCurrency, _currencyFormat, 0.0f, 0.0f);
+            using var downCurrencyLayout = new CanvasTextLayout(args.DrawingSession, DownCurrency, _currencyFormat, 0.0f, 0.0f);
+            var upCurrencyPosition = new Vector2((float)(sender.Size.Width - upCurrencyLayout.DrawBounds.Width - 10), 0);
+            var downCurrencyPosition = new Vector2((float)(sender.Size.Width - downCurrencyLayout.DrawBounds.Width - 10), (float)upCurrencyLayout.DrawBounds.Height + 10);
+            args.DrawingSession.DrawText(UpCurrency, upCurrencyPosition, Colors.Yellow, _currencyFormat);
+            args.DrawingSession.DrawText(DownCurrency, downCurrencyPosition, Colors.Yellow, _currencyFormat);
+        }
+    }
+
     private void YAxisCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
         try
@@ -746,13 +794,12 @@ public class TickChartControl : Control
 
             if (range == 0)
             {
-                if (value.Equals(100d))
+                if (!value.Equals(100d))
                 {
-                    return;
+                    throw new InvalidOperationException("!value.Equals(100d)");
                 }
 
-                KernelShiftPercent = 100;
-                return;    
+                return;
             }
 
             _graphCanvas!.Invalidate();
@@ -1099,6 +1146,12 @@ public class TickChartControl : Control
                 _graphCanvas.PointerMoved -= GraphCanvas_OnPointerMoved;
                 _graphCanvas.PointerReleased -= GraphCanvas_OnPointerReleased;
 
+            }
+
+            if (_textCanvas != null)
+            {
+                _textCanvas.SizeChanged -= TextCanvas_OnSizeChanged;
+                _textCanvas.Draw -= TextCanvas_OnDraw;
             }
 
             if (_yAxisCanvas != null)

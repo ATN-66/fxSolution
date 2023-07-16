@@ -5,5 +5,5 @@ public interface IExecutiveProviderService
     Task StartAsync();
     void DeInitAsync(string dateTime);
     Task<string> InitAsync(string datetime);
-    Task<string> PulseAsync(string dateTime, string type, string code, string ticket, string details);
+    string Pulse(string dateTime, string type, string code, string ticket, string result, string details);
 }

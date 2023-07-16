@@ -137,7 +137,7 @@ public class DataBaseService : DataBaseSource, IDataBaseService
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation("Operation cancelled...");
+            _logger.LogInformation("Position cancelled...");
             return 0;
         }
         catch (Exception exception)

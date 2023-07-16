@@ -27,8 +27,8 @@ public class ExecutiveMessenger : IExecutiveMessenger
         return _executiveProviderService.InitAsync(datetime);
     }
 
-    public Task<string> PulseAsync(string dateTime, string type, string code, string ticket, string details)
+    public string Pulse(string dateTime, string type, string code, string ticket, string result, string details)
     {
-        return _executiveProviderService.PulseAsync(dateTime, type, code, ticket, details);
+        return _executiveProviderService.Pulse(dateTime, type, code, ticket, result, details);
     }
 }

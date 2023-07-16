@@ -35,7 +35,7 @@ internal class ExecutiveConsumerService : IExecutiveConsumerService
         var request = new GeneralRequest
         {
            Type = MessageType.MaintenanceCommand,
-           MaintenanceRequest = new MaintenanceRequest { Code = MaintenanceRequest.Types.Code.OpenSession }
+           MaintenanceRequest = new MaintenanceRequest { MaintenanceCode = MaintenanceCode.OpenSession }
         };
 
         AsyncDuplexStreamingCall<GeneralRequest, GeneralResponse> call = client.CommunicateAsync(callOptions);
@@ -73,11 +73,11 @@ internal class ExecutiveConsumerService : IExecutiveConsumerService
                     responses.Add(response, token);
                 }
             }
-            catch (OperationCanceledException operationCanceledException)
+            catch (OperationCanceledException)
             {
                 if (token.IsCancellationRequested)
                 {
-                    throw;
+                    // ignore
                 }
                 throw;
             }

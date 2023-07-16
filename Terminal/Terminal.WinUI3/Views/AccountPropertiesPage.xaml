@@ -476,6 +476,73 @@
                             Text="{x:Bind Path=ViewModel.AccountInfo.MarginStopOut, Mode=OneWay}" />
                     </Grid>
                 </Border>
+                <TextBlock
+                    Margin="0,0,0,10"
+                    Style="{StaticResource ListSubTitleStyle}"
+                    Text="Rules and Regulations" />
+                <Border
+                    Margin="0,0,0,3"
+                    Padding="5,3,0,3"
+                    BorderBrush="Gray"
+                    BorderThickness="1"
+                    CornerRadius="5">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            Grid.Column="0"
+                            Style="{StaticResource DetailBodyBaseMediumStyle}"
+                            Text="{x:Bind Path=viewModels:AccountPropertiesViewModel.GetDescription('FreeMarginPercentToUse'), Mode=OneWay}" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Style="{StaticResource DetailBodyStyle}"
+                            Text="{x:Bind Path=ViewModel.AccountInfo.FreeMarginPercentToUse, Mode=OneWay}" />
+                    </Grid>
+                </Border>
+                <Border
+                    Margin="0,0,0,3"
+                    Padding="5,3,0,3"
+                    BorderBrush="Gray"
+                    BorderThickness="1"
+                    CornerRadius="5">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            Grid.Column="0"
+                            Style="{StaticResource DetailBodyBaseMediumStyle}"
+                            Text="{x:Bind Path=viewModels:AccountPropertiesViewModel.GetDescription('FreeMarginPercentToRisk'), Mode=OneWay}" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Style="{StaticResource DetailBodyStyle}"
+                            Text="{x:Bind Path=ViewModel.AccountInfo.FreeMarginPercentToRisk, Mode=OneWay}" />
+                    </Grid>
+                </Border>
+                <Border
+                    Margin="0,0,0,3"
+                    Padding="5,3,0,3"
+                    BorderBrush="Gray"
+                    BorderThickness="1"
+                    CornerRadius="5">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            Grid.Column="0"
+                            Style="{StaticResource DetailBodyBaseMediumStyle}"
+                            Text="{x:Bind Path=viewModels:AccountPropertiesViewModel.GetDescription('Deviation'), Mode=OneWay}" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Style="{StaticResource DetailBodyStyle}"
+                            Text="{x:Bind Path=ViewModel.AccountInfo.Deviation, Mode=OneWay}" />
+                    </Grid>
+                </Border>
             </StackPanel>
         </ScrollViewer>
     </Grid>
