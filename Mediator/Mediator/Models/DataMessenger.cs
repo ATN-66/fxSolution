@@ -33,14 +33,14 @@ public class DataMessenger : IDataMessenger//, IDisposable
         _dataProviderService.DeInitAsync(symbol, reason);
     }
 
-    public Task<string> InitAsync(int id, int symbol, string datetime, double ask, double bid, int environment)
+    public Task<string> InitAsync(int symbol, string datetime, double ask, double bid, int environment)
     {
-        return _dataProviderService.InitAsync(id, symbol, datetime, ask, bid, environment);
+        return _dataProviderService.InitAsync(symbol, datetime, ask, bid, environment);
     }
 
-    public string Tick(int id, int symbol, string datetime, double ask, double bid)
+    public string Tick(int symbol, string datetime, double ask, double bid)
     {
-        return _dataProviderService.Tick(id, symbol, datetime, ask, bid);
+        return _dataProviderService.Tick(symbol, datetime, ask, bid);
     }
 
     //~DataMessenger()

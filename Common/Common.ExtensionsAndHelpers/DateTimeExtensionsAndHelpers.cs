@@ -11,9 +11,14 @@ public static class DateTimeExtensionsAndHelpers
 {
     public static readonly DateTime EpochStartDateTimeUtc = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-    public static int ElapsedSecondsFromJanuaryFirstOf1970(this DateTime dt)
+    public static long ElapsedSecondsFromJanuaryFirstOf1970(this DateTime dt)
     {
         return Convert.ToInt32((double)(dt.Ticks - EpochStartDateTimeUtc.Ticks) / TimeSpan.TicksPerSecond);
+    }
+
+    public static long ElapsedMinutesFromJanuaryFirstOf1970(this DateTime dt)
+    {
+        return (dt.Ticks - EpochStartDateTimeUtc.Ticks) / TimeSpan.TicksPerMinute;
     }
 
     public static int ElapsedMinutesSinceTheStartOfTheWeek(this DateTime dt)

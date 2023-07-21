@@ -40,7 +40,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     private readonly ReaderWriterLockSlim _queueLock = new();
 
     private readonly Quotation[] _lastKnownQuotations = new Quotation[TotalIndicators];
-    private BlockingCollection<(int id, int symbol, string datetime, double ask, double bid)> _quotations = new();
+    private BlockingCollection<(int symbol, string datetime, double ask, double bid)> _quotations = new();
     private BlockingCollection<Quotation>? _quotationsToSend;
     private readonly ConcurrentQueue<Quotation> _quotationsToSave = new();
     private int[] _counter = new int[TotalIndicators];
@@ -272,7 +272,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             _mutex.Release();
         }
     }
-    public async Task<string> InitAsync(int id, int symbol, string datetime, double ask, double bid, int workplace)
+    public async Task<string> InitAsync(int symbol, string datetime, double ask, double bid, int workplace)
     {
         const int maxRetries = 5;
         var retryCount = 0;
@@ -296,9 +296,9 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                 await _mainViewModel.IndicatorConnectedAsync((Symbol)symbol, (Workplace)workplace).ConfigureAwait(false);
                 var resultSymbol = (Symbol)symbol;
                 var resultDateTime = DateTime.ParseExact(datetime, _mT5DateTimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
-                var quotation = new Quotation(id, resultSymbol, resultDateTime, ask, bid);
+                var quotation = new Quotation(resultSymbol, resultDateTime, ask, bid);
                 _lastKnownQuotations[symbol - 1] = quotation;
-                _quotations.Add((id, symbol, datetime, ask, bid));
+                _quotations.Add((symbol, datetime, ask, bid));
                 _mainViewModel.SetIndicator(quotation, 0);
             }
             else
@@ -319,13 +319,13 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
 
         return Ok;
     }
-    public string Tick(int id, int symbol, string datetime, double ask, double bid)
+    public string Tick(int symbol, string datetime, double ask, double bid)
     {
         try
         {
             if (!_quotations.IsAddingCompleted)
             {
-                _quotations.Add((id, symbol, datetime, ask, bid));
+                _quotations.Add((symbol, datetime, ask, bid));
             }
         }
         catch (Exception exception)
@@ -340,9 +340,9 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
     {
         try
         {
-            await foreach (var (id, symbol, datetime, ask, bid) in _quotations.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
+            await foreach (var (symbol, datetime, ask, bid) in _quotations.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
             {
-                Process(id, symbol, datetime, ask, bid);
+                Process(symbol, datetime, ask, bid);
                 if (!ct.IsCancellationRequested)
                 {
                     continue;
@@ -359,7 +359,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             throw;
         }
     }
-    private void Process(int id, int symbol, string datetime, double ask, double bid)
+    private void Process(int symbol, string datetime, double ask, double bid)
     {
         try
         {
@@ -371,7 +371,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             }
             _counter[symbol - 1] += 1;
 
-            var quotation = new Quotation(id, resultSymbol, resultDateTime, ask, bid);
+            var quotation = new Quotation(resultSymbol, resultDateTime, ask, bid);
             _tick(quotation, _counter[symbol - 1]);
 
             bool shouldSave;
@@ -583,7 +583,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                             }
                         };
 
-                        var q = new Fx.Grpc.Quotation { Id = quotation.ID, Symbol = ToProtoSymbol(quotation.Symbol), Datetime = Timestamp.FromDateTime(quotation.DateTime.ToUniversalTime()), Ask = quotation.Ask, Bid = quotation.Bid };
+                        var q = new Fx.Grpc.Quotation { Symbol = ToProtoSymbol(quotation.Symbol), Datetime = Timestamp.FromDateTime(quotation.DateTime.ToUniversalTime()), Ask = quotation.Ask, Bid = quotation.Bid };
                         response.Quotations.Add(q);
                         await responseStream.WriteAsync(response).ConfigureAwait(false);
                     }
@@ -643,7 +643,6 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         {
             response.Quotations.Add(new Fx.Grpc.Quotation
             {
-                Id = quotation.ID,
                 Symbol = ToProtoSymbol(quotation.Symbol),
                 Datetime = Timestamp.FromDateTime(quotation.DateTime.ToUniversalTime()),
                 Ask = quotation.Ask,

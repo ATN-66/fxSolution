@@ -370,7 +370,6 @@ async Task<IEnumerable<Quotation>> GetBufferedDataAsync()
         await call.RequestStream.WriteAsync(request).ConfigureAwait(false);
         await call.RequestStream.CompleteAsync().ConfigureAwait(false);
 
-        int counter = default;
         IList<Quotation> quotations = new List<Quotation>();
 
         await foreach (var response in call.ResponseStream.ReadAllAsync())
@@ -380,7 +379,7 @@ async Task<IEnumerable<Quotation>> GetBufferedDataAsync()
                 case DataResponseStatus.Types.StatusCode.Ok:
                     foreach (var item in response.Quotations)
                     {
-                        var quotation = new Quotation(counter++, ToEntitiesSymbol(item.Symbol), item.Datetime.ToDateTime().ToUniversalTime(), item.Ask, item.Bid);
+                        var quotation = new Quotation(ToEntitiesSymbol(item.Symbol), item.Datetime.ToDateTime().ToUniversalTime(), item.Ask, item.Bid);
                         quotations.Add(quotation);
                     }
                     break;
@@ -427,7 +426,6 @@ async Task<(Task, GrpcChannel)> GetLiveDataAsync(CancellationToken token)
     {
         try
         {
-            int counter = default;
             await foreach (var response in call.ResponseStream.ReadAllAsync().WithCancellation(token))
             {
                 switch (response.Status.Code)
@@ -435,7 +433,7 @@ async Task<(Task, GrpcChannel)> GetLiveDataAsync(CancellationToken token)
                     case DataResponseStatus.Types.StatusCode.Ok:
                         foreach (var item in response.Quotations)
                         {
-                            var quotation = new Quotation(counter++, ToEntitiesSymbol(item.Symbol), item.Datetime.ToDateTime().ToUniversalTime(), item.Ask, item.Bid);
+                            var quotation = new Quotation(ToEntitiesSymbol(item.Symbol), item.Datetime.ToDateTime().ToUniversalTime(), item.Ask, item.Bid);
                             liveDataQueue.Add(quotation, token);
                         }
                         break;

@@ -260,7 +260,7 @@ public partial class TicksContributionsViewModel : ObservableRecipient, INavigat
         {
             try
             {
-                await _dataService.ImportAsync(_cts.Token, SelectedProvider).ConfigureAwait(true);
+                await _dataService.ImportAsync(SelectedProvider, _cts.Token).ConfigureAwait(true);
             }
             catch (OperationCanceledException e)
             {

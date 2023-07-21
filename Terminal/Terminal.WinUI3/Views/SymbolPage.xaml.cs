@@ -24,12 +24,12 @@ public sealed partial class SymbolPage
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
-        ContentArea.Children.Add(ViewModel.TickChartControl);
+        ContentArea.Children.Add(ViewModel.ChartControlBase);
     } 
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         base.OnNavigatedFrom(e);
-        ContentArea.Children.Remove(ViewModel.TickChartControl);
+        ContentArea.Children.Remove(ViewModel.ChartControlBase);
     }
 }

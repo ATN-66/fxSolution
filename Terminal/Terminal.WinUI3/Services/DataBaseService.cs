@@ -5,7 +5,6 @@
 
 using System.Data;
 using System.Data.SqlClient;
-using System.Reflection;
 using Common.DataSource;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
@@ -90,7 +89,6 @@ public class DataBaseService : DataBaseSource, IDataBaseService
             command.Parameters.Add(new SqlParameter("@Week", SqlDbType.Int) { Value = weekNumber.ToString() });
             command.Parameters.Add(new SqlParameter("@DateTimes", SqlDbType.Structured) { Value = dataTable });
             command.CommandTimeout = 0;
-            int id = default;
             await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
@@ -98,7 +96,7 @@ public class DataBaseService : DataBaseSource, IDataBaseService
                 var resultDateTime = reader.GetDateTime(1).ToUniversalTime();
                 var resultAsk = reader.GetDouble(2);
                 var resultBid = reader.GetDouble(3);
-                var quotation = new Quotation(id++, resultSymbol, resultDateTime, resultAsk, resultBid);
+                var quotation = new Quotation(resultSymbol, resultDateTime, resultAsk, resultBid);
                 result.Add(quotation);
             }
         }

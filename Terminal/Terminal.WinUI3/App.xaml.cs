@@ -23,6 +23,7 @@ using UnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArg
 using Terminal.WinUI3.Models.Settings;
 using Microsoft.Extensions.Logging;
 using Common.DataSource;
+using Terminal.WinUI3.AI.Data;
 
 namespace Terminal.WinUI3;
 
@@ -94,6 +95,7 @@ public partial class App
 
             // Business Services
             services.AddSingleton<IProcessor, Processor>();
+            services.AddSingleton<IKernelManager, KernelManager>();
             services.AddSingleton<IAccountService, AccountService>();
             services.AddSingleton<IDataService, DataService>();
             services.AddSingleton<IDataConsumerService, DataConsumerService>();

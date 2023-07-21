@@ -1,47 +1,32 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                          Terminal.WinUI3.AI.Data |
+  |                                           Terminal.WinUI3.AI.Data|
   |                                                        Kernel.cs |
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
+using Quotation = Common.Entities.Quotation;
 
 namespace Terminal.WinUI3.AI.Data;
 
-public class Kernel
+public abstract class Kernel<TItem> : IKernel<TItem> where TItem : IChartItem
 {
-    private readonly Symbol _symbol;
-    private readonly List<Quotation> _quotations = new();
+    protected readonly List<TItem> Items = new();
 
-    //collection to keep candlesticks
-    //collection to keep any other data
+    public int Count => Items.Count;
 
-    public Kernel(Symbol symbol)
-    {
-        _symbol = symbol;
-    }
-
-    public void AddRange(IEnumerable<Quotation> quotations)
-    {
-        _quotations.AddRange(quotations);
-    }
-
-    public void Add(Quotation quotation)
-    {
-        _quotations.Add(quotation);
-    }
-
-    public int Count => _quotations.Count;
-
-    public Quotation this[int i]
+    public TItem this[int i]
     {
         get
         {
-            if (i < 0 || i >= _quotations.Count)
+            if (i < 0 || i >= Items.Count)
             {
-                throw new IndexOutOfRangeException($"Index {i} is out of range. There are only {_quotations.Count} quotations.");
+                throw new IndexOutOfRangeException($"Index {i} is out of range. There are only {Items.Count} items.");
             }
 
-            return _quotations[_quotations.Count - 1 - i];
+            return Items[Items.Count - 1 - i];
         }
     }
+
+    public abstract void AddRange(IEnumerable<Quotation> quotations);
+    public abstract void Add(Quotation quotation);
 }

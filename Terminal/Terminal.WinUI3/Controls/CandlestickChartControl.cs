@@ -1,32 +1,32 @@
 ﻿/*+------------------------------------------------------------------+
   |                                         Terminal.WinUI3.Controls |
-  |                                              TickChartControl.cs |
+  |                                       CandlestickChartControl.cs |
   +------------------------------------------------------------------+*/
-
-#define DEBUGWIN2DCanvasControl
+//#define DEBUGWIN2DCanvasControl
 
 using System.Numerics;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Microsoft.Extensions.Logging;
-using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Geometry;
-using Microsoft.Graphics.Canvas.Text;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Terminal.WinUI3.AI.Data;
+using WinRT;
+using Microsoft.Graphics.Canvas.Text;
 
 namespace Terminal.WinUI3.Controls;
 
-public class TickChartControl : ChartControl<Quotation, QuotationKernel>
+public sealed class CandlestickChartControl : ChartControl<Candlestick, CandlestickKernel>
 {
-    private Vector2[] _askData = null!;
-    private Vector2[] _bidData = null!;
+    private Vector2[] _highData = null!;
+    private Vector2[] _lowData = null!;
 
-    public TickChartControl(Symbol symbol, bool isReversed, QuotationKernel kernel, ILogger<ChartControlBase> logger) : base(symbol, isReversed, kernel, logger)
+    public CandlestickChartControl(Symbol symbol, bool isReversed, CandlestickKernel kernel, ILogger<ChartControlBase> logger) : base(symbol, isReversed, kernel, logger)
     {
-        DefaultStyleKey = typeof(TickChartControl);
+        DefaultStyleKey = typeof(CandlestickChartControl);
     }
 
     protected override void GraphCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
@@ -40,16 +40,16 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
             HorizontalScale = GraphWidth / (UnitsPerChart - 1);
             VerticalScale = HeightValue / PipsPerChart;
 
-            _askData = new Vector2[UnitsPerChart];
+            _highData = new Vector2[UnitsPerChart];
             for (var unit = 0; unit < UnitsPerChart; unit++)
             {
-                _askData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
+                _highData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
             }
 
-            _bidData = new Vector2[UnitsPerChart];
+            _lowData = new Vector2[UnitsPerChart];
             for (var unit = 0; unit < UnitsPerChart; unit++)
             {
-                _bidData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
+                _lowData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
             }
         }
         catch (Exception exception)
@@ -80,50 +80,21 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
 
         CanvasGeometry GetDrawDataGeometry(CanvasPathBuilder cpb)
         {
-            var offset = IsReversed ? HeightValue : 0;
-
-            var ask = (float)Kernel[KernelShiftValue].Ask;
+            var ask = (float)Kernel[KernelShiftValue].Close;
             var yZeroPrice = ask + PipsPerChart * Pip / 2f - VerticalShift * Pip;
 
             var unit = 0;
-            _askData[HorizontalShift].Y = IsReversed ? offset - (yZeroPrice - ask) / Pip * VerticalScale : (yZeroPrice - ask) / Pip * VerticalScale;
-
-            cpb.BeginFigure(_askData[HorizontalShift]);
-
-            try
+            while (unit < UnitsPerChart - HorizontalShift)
             {
-                while (unit < UnitsPerChart - HorizontalShift)
-                {
-                    _askData[unit + HorizontalShift].Y =
-                        IsReversed ? offset - (yZeroPrice - (float)Kernel[unit + KernelShiftValue].Ask) / Pip * VerticalScale : (yZeroPrice - (float)Kernel[unit + KernelShiftValue].Ask) / Pip * VerticalScale;
-                    cpb.AddLine(_askData[unit + HorizontalShift]);
-                    unit++;
-                }
-            }
-            catch (Exception exception)
-            {
-                LogExceptionHelper.LogException(Logger, exception, "GraphCanvas_OnDraw");
-                throw;
+                _highData[unit + HorizontalShift].Y = (yZeroPrice - (float)Kernel[unit + KernelShiftValue].High) / Pip * VerticalScale;
+                _lowData[unit + HorizontalShift].Y = (yZeroPrice - (float)Kernel[unit + KernelShiftValue].Low) / Pip * VerticalScale;
+
+                cpb.BeginFigure(_highData[unit]);
+                cpb.AddLine(_lowData[unit]);
+                cpb.EndFigure(CanvasFigureLoop.Open);
+                unit++;
             }
 
-            unit--;
-
-            try
-            {
-                while (unit >= 0)
-                {
-                    _bidData[unit + HorizontalShift].Y = IsReversed ? offset - (yZeroPrice - (float)Kernel[unit + KernelShiftValue].Bid) / Pip * VerticalScale : (yZeroPrice - (float)Kernel[unit + KernelShiftValue].Bid) / Pip * VerticalScale;
-                    cpb.AddLine(_bidData[unit + HorizontalShift]);
-                    unit--;
-                }
-            }
-            catch (Exception exception)
-            {
-                LogExceptionHelper.LogException(Logger, exception, "GraphCanvas_OnDraw");
-                throw;
-            }
-
-            cpb.EndFigure(CanvasFigureLoop.Open);
             var drawDataGeometry = CanvasGeometry.CreatePath(cpb);
             return drawDataGeometry;
         }
@@ -205,82 +176,10 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
 
     protected override void XAxisCanvas_OnPointerReleased(object sender, PointerRoutedEventArgs e)
     {
-        try
-        {
-            UnitsPerChart -= (int)Math.Floor(PendingUnitsPerChart);
-            UnitsPerChart = Math.Clamp(UnitsPerChart, MinUnitsPerChart, MaxUnitsPerChart);
-            HorizontalScale = GraphWidth / (UnitsPerChart - 1);
-
-            _askData = new Vector2[UnitsPerChart];
-            _bidData = new Vector2[UnitsPerChart];
-
-            for (var unit = 0; unit < UnitsPerChart; unit++)
-            {
-                _askData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
-            }
-
-            for (var unit = 0; unit < UnitsPerChart; unit++)
-            {
-                _bidData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
-            }
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "XAxisCanvas_OnPointerReleased");
-            throw;
-        }
-
-        IsMouseDown = false;
-        XAxisCanvas!.ReleasePointerCapture(e.Pointer);
-        PendingUnitsPerChart = 0;
-
-        GraphCanvas!.Invalidate();
-        YAxisCanvas!.Invalidate();
-        XAxisCanvas!.Invalidate();
-#if DEBUGWIN2DCanvasControl
-        DebugCanvas!.Invalidate();
-#endif
+        throw new NotImplementedException();
     }
 
     protected override void OnUnitsPerChartChanged()
     {
-        try
-        {
-            if (UnitsPerChart + KernelShift > Kernel.Count)
-            {
-                KernelShift = Kernel.Count - UnitsPerChart;
-            }
-
-            HorizontalScale = GraphWidth / (UnitsPerChart - 1);
-            _askData = new Vector2[UnitsPerChart];
-            for (var unit = 0; unit < UnitsPerChart; unit++)
-            {
-                _askData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
-            }
-
-            _bidData = new Vector2[UnitsPerChart];
-            for (var unit = 0; unit < UnitsPerChart; unit++)
-            {
-                _bidData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
-            }
-
-            var range = Kernel.Count - UnitsPerChart;
-            if (range == 0)
-            {
-                KernelShiftPercent = 100;
-            }
-
-            GraphCanvas!.Invalidate();
-            YAxisCanvas!.Invalidate();
-            XAxisCanvas!.Invalidate();
-#if DEBUGWIN2DCanvasControl
-            DebugCanvas!.Invalidate();
-#endif
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "OnUnitsPerChartChanged");
-            throw;
-        }
     }
 }

@@ -10,6 +10,6 @@ namespace Common.MetaQuotes.Mediator;
 public interface IDataMessenger
 {
     void DeInit(int symbol, int reason);
-    Task<string> InitAsync(int id, int symbol, string datetime, double ask, double bid, int workplace);
-    string Tick(int id, int symbol, string datetime, double ask, double bid);
+    Task<string> InitAsync(int symbol, string datetime, double ask, double bid, int workplace);
+    string Tick(int symbol, string datetime, double ask, double bid);
 }

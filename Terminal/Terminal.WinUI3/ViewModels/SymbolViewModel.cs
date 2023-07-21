@@ -5,7 +5,6 @@
 
 using System.ComponentModel;
 using Common.Entities;
-using Common.ExtensionsAndHelpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml;
@@ -13,12 +12,13 @@ using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
 using Terminal.WinUI3.Controls;
 using Binding = Microsoft.UI.Xaml.Data.Binding;
-using Microsoft.Extensions.Logging;
 using CommunityToolkit.Mvvm.Input;
 using Terminal.WinUI3.AI.Interfaces;
 using System.Windows.Input;
+using Terminal.WinUI3.AI.Data;
 using Terminal.WinUI3.Helpers;
 using Terminal.WinUI3.Models.Account.Enums;
+using Symbol = Common.Entities.Symbol;
 
 namespace Terminal.WinUI3.ViewModels;
 
@@ -28,7 +28,6 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     private readonly IProcessor _processor;
     private readonly IAccountService _accountService;
     private readonly IDispatcherService _dispatcherService;
-    private readonly ILogger<SymbolViewModel> _logger;
 
     [ObservableProperty] private float _pipsPerChart = 100;// todo:settings
     [ObservableProperty] private float _maxPipsPerChart = 200;// todo:settings
@@ -41,20 +40,19 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     private ICommand _operationalCommand = null!;
     private string _operationalButtonContent = null!;
 
-    public SymbolViewModel(IVisualService visualService, IProcessor processor, IAccountService accountService, IDispatcherService dispatcherService, ILogger<SymbolViewModel> logger)
+    public SymbolViewModel(IVisualService visualService, IProcessor processor, IAccountService accountService, IDispatcherService dispatcherService)
     {
         _visualService = visualService;
         _processor = processor;
         _accountService = accountService;
         _accountService.PropertyChanged += OnAccountServicePropertyChanged;
         _dispatcherService = dispatcherService;
-        _logger = logger;
     }
 
-    public TickChartControl TickChartControl
+    public ChartControlBase ChartControlBase
     {
         get;
-        private set;
+        set;
     } = null!;
 
     private Symbol Symbol
@@ -71,72 +69,65 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
 
     public string UpCurrency
     {
-        set => TickChartControl.UpCurrency = value;
+        set => ChartControlBase.UpCurrency = value;
     }
 
     public string DownCurrency
     {
-        set => TickChartControl.DownCurrency = value;
+        set => ChartControlBase.DownCurrency = value;
     }
 
     partial void OnPipsPerChartChanged(float value)
     {
-        TickChartControl.PipsPerChart = value;
+        ChartControlBase.PipsPerChart = value;
     }
 
     partial void OnUnitsPerChartChanged(int value)
     {
-        TickChartControl.UnitsPerChart = value;
+        ChartControlBase.UnitsPerChart = value;
     }
 
     partial void OnKernelShiftPercentChanged(double value)
     {
-        TickChartControl.KernelShiftPercent = value;
+        ChartControlBase.KernelShiftPercent = value;
     }
 
     public void OnNavigatedTo(object parameter)
     {
-        try
+        var parts = parameter.ToString()?.Split(',');
+        var symbolStr = parts?[0].Trim();
+        if (Enum.TryParse<Symbol>(symbolStr, out var symbol))
         {
-            var parts = parameter.ToString()?.Split(',');
-            var symbolStr = parts?[0].Trim();
-            if (Enum.TryParse<Symbol>(symbolStr, out var symbol))
-            {
-                Symbol = symbol;
-            }
-            else
-            {
-                throw new Exception($"Failed to parse '{symbolStr}' into a Symbol enum value.");
-            }
-
-            IsReversed = bool.Parse(parts?[1].Trim()!);
-
-            TickChartControl = _visualService.GetTickChartControl(Symbol, IsReversed)!;
-            TickChartControl.DataContext = this;
-
-            TickChartControl.SetBinding(TickChartControl.PipsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(PipsPerChart)), Mode = BindingMode.TwoWay });
-            TickChartControl.SetBinding(TickChartControl.MaxPipsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MaxPipsPerChart)), Mode = BindingMode.OneWay });
-            TickChartControl.SetBinding(TickChartControl.MinPipsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinPipsPerChart)), Mode = BindingMode.OneWay });
-            TickChartControl.SetBinding(TickChartControl.UnitsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(UnitsPerChart)), Mode = BindingMode.TwoWay });
-            TickChartControl.SetBinding(TickChartControl.MaxUnitsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MaxUnitsPerChart)), Mode = BindingMode.TwoWay });
-            TickChartControl.SetBinding(TickChartControl.MinUnitsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnitsPerChart)), Mode = BindingMode.OneWay });
-            TickChartControl.SetBinding(TickChartControl.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
+            Symbol = symbol;
         }
-        catch (Exception exception)
+        else
         {
-            LogExceptionHelper.LogException(_logger, exception, "");
-            throw;
+            throw new Exception($"Failed to parse '{symbolStr}' into a Symbol enum value.");
         }
+
+        IsReversed = bool.Parse(parts?[1].Trim()!);
+
+        //ChartControlBase = _visualService.GetChart<TickChartControl, Quotation, QuotationKernel>(Symbol, ChartType.Ticks, IsReversed);
+        ChartControlBase = _visualService.GetChart<CandlestickChartControl, Candlestick, CandlestickKernel>(Symbol, ChartType.Candlesticks, IsReversed);
+
+        ChartControlBase.DataContext = this;
+        ChartControlBase.SetBinding(ChartControlBase.PipsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(PipsPerChart)), Mode = BindingMode.TwoWay });
+        ChartControlBase.SetBinding(ChartControlBase.MaxPipsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MaxPipsPerChart)), Mode = BindingMode.OneWay });
+        ChartControlBase.SetBinding(ChartControlBase.MinPipsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinPipsPerChart)), Mode = BindingMode.OneWay });
+        ChartControlBase.SetBinding(ChartControlBase.UnitsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(UnitsPerChart)), Mode = BindingMode.TwoWay });
+        ChartControlBase.SetBinding(ChartControlBase.MaxUnitsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MaxUnitsPerChart)), Mode = BindingMode.TwoWay });
+        ChartControlBase.SetBinding(ChartControlBase.MinUnitsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnitsPerChart)), Mode = BindingMode.OneWay });
+        ChartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
 
         (UpCurrency, DownCurrency) = GetCurrenciesFromSymbol(Symbol, IsReversed);
-
         UpdateOperationalProperties();
     }
-
+    
     public void OnNavigatedFrom()
     {
-        TickChartControl.Detach();
-        TickChartControl = null!;
+        _visualService.DisposeChart<TickChartControl, Quotation, QuotationKernel>(Symbol, ChartType.Ticks, IsReversed);
+        ChartControlBase.Detach();
+        ChartControlBase = null!;
     }
 
     private static (string upCurrency, string downCurrency) GetCurrenciesFromSymbol(Symbol symbol, bool isReversed)

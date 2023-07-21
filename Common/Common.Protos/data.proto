@@ -4,11 +4,10 @@ import "timestamp.proto";
 import "symbol.proto";
 
 message Quotation {
-    int32 id = 1;
-    Symbol symbol = 2;
-    google.protobuf.Timestamp datetime = 3;
-    double ask = 4;
-    double bid = 5;
+    Symbol symbol = 1;
+    google.protobuf.Timestamp datetime = 2;
+    double ask = 3;
+    double bid = 4;
 }
 
 message DataRequest {

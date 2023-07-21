@@ -161,9 +161,10 @@ internal sealed class AccountService : IAccountService
         }
         else
         {
-            throw new NotImplementedException();
+            TurnOff(details);
         }
     }
+
     public void ClosePosition(int ticket, ResultCode code, string details)
     {
         if (code == ResultCode.Success)
@@ -173,7 +174,7 @@ internal sealed class AccountService : IAccountService
         }
         else
         {
-            throw new NotImplementedException();
+            TurnOff(details);
         }
     }
     public void OpenTransaction(int ticket, ResultCode code, string details)
@@ -184,7 +185,7 @@ internal sealed class AccountService : IAccountService
         }
         else
         {
-            throw new NotImplementedException();
+            TurnOff(details);
         }
     }
     public void CloseTransaction(int ticket, ResultCode code, string details)
@@ -195,7 +196,7 @@ internal sealed class AccountService : IAccountService
         }
         else
         {
-            throw new NotImplementedException();
+            TurnOff(details);
         }
     }
     private void UpdateOpen(string details)
@@ -330,12 +331,18 @@ internal sealed class AccountService : IAccountService
 
         if (positions.Count * 2 != orders.Count)
         {
-            throw new InvalidOperationException("positions.Count * 2 != orders.Count");
+            throw new InvalidOperationException("positions.TicksCount * 2 != orders.TicksCount");
         }
 
         return positions;
     }
 
+    private void TurnOff(string details)
+    {
+        Debug.WriteLine($"details: {details}");
+        ServiceState = ServiceState.Off;
+        _position = null;
+    }
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {

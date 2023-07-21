@@ -61,7 +61,6 @@ public class DataConsumerService : DataSource, IDataConsumerService
         {
             try
             {
-                int counter = default;
                 await foreach (var response in call.ResponseStream.ReadAllAsync(token).WithCancellation(token))
                 {
                     switch (response.Status.Code)
@@ -69,7 +68,7 @@ public class DataConsumerService : DataSource, IDataConsumerService
                         case DataResponseStatus.Types.StatusCode.Ok:
                             foreach (var item in response.Quotations)
                             {
-                                var quotation = new Quotation(counter++, ToEntitiesSymbol(item.Symbol), item.Datetime.ToDateTime().ToUniversalTime(), item.Ask, item.Bid);
+                                var quotation = new Quotation(ToEntitiesSymbol(item.Symbol), item.Datetime.ToDateTime().ToUniversalTime(), item.Ask, item.Bid);
                                 quotations.Add(quotation, token);
                             }
                             break;
@@ -144,7 +143,6 @@ public class DataConsumerService : DataSource, IDataConsumerService
             await call.RequestStream.WriteAsync(request, token).ConfigureAwait(false);
             await call.RequestStream.CompleteAsync().ConfigureAwait(false);
 
-            int counter = default;
             IList<Quotation> quotations = new List<Quotation>();
 
             await foreach (var response in call.ResponseStream.ReadAllAsync(token).WithCancellation(token))
@@ -154,7 +152,7 @@ public class DataConsumerService : DataSource, IDataConsumerService
                     case DataResponseStatus.Types.StatusCode.Ok:
                         foreach (var item in response.Quotations)
                         {
-                            var quotation = new Quotation(counter++, ToEntitiesSymbol(item.Symbol), item.Datetime.ToDateTime().ToUniversalTime(), item.Ask, item.Bid);
+                            var quotation = new Quotation(ToEntitiesSymbol(item.Symbol), item.Datetime.ToDateTime().ToUniversalTime(), item.Ask, item.Bid);
                             quotations.Add(quotation);
                         }
                         break;

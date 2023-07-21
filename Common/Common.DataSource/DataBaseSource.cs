@@ -2,7 +2,6 @@
 using Common.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System.Data;
 using System.Data.SqlClient;
 
@@ -132,14 +131,13 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
             command.Parameters.AddWithValue("@DayOfWeek", dayOfWeekNumber.ToString());
             command.Parameters.AddWithValue("@HourOfDay", hourNumber.ToString());
             await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
-            int id = default;
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 var resultSymbol = (Symbol)reader.GetInt32(0);
                 var resultDateTime = reader.GetDateTime(1).ToUniversalTime();
                 var resultAsk = reader.GetDouble(2);
                 var resultBid = reader.GetDouble(3);
-                var quotation = new Quotation(id++, resultSymbol, resultDateTime, resultAsk, resultBid);
+                var quotation = new Quotation(resultSymbol, resultDateTime, resultAsk, resultBid);
                 quotations.Add(quotation);
             }
         }

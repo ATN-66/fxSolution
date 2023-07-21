@@ -27,6 +27,7 @@
     <None Remove="Assets\SampleMedia\LandscapeImage6.jpg" />
     <None Remove="Assets\SampleMedia\LandscapeImage7.jpg" />
     <None Remove="Assets\SampleMedia\LandscapeImage8.jpg" />
+    <None Remove="Controls\CandlestickChartControl.xaml" />
     <None Remove="Controls\HomePageHeaderImage.xaml" />
     <None Remove="Controls\TickChartControl.xaml" />
     <None Remove="Generic.xaml" />
@@ -98,6 +99,10 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Page Update="Controls\CandlestickChartControl.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="ItemTemplates.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

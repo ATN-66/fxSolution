@@ -51,17 +51,16 @@ public class FileService : DataSource, IFileService
         var lines = await File.ReadAllLinesAsync(filePath, token).ConfigureAwait(false);
         var quotations = lines.AsParallel()
             .Select(line => line.Split('|').Select(str => str.Trim()).ToArray())
-            .Select((items, index) =>
+            .Select((items) =>
             {
                 try
                 {
-                    var quotationId = index + 1;
                     var symbolResult = _symbolsDict[items[0]];
                     var datetimeString = $"{items[1].Trim()}|{items[2].Trim()}|{items[3].Trim()}";
                     var dateTimeResult = DateTime.ParseExact(datetimeString, _fileServiceDateTimeFormat, new CultureInfo("en-US"), DateTimeStyles.AssumeUniversal).ToUniversalTime();
                     var askResult = double.Parse(items[4]);
                     var bidResult = double.Parse(items[5]);
-                    return new Quotation(quotationId, symbolResult, dateTimeResult, askResult, bidResult);
+                    return new Quotation(symbolResult, dateTimeResult, askResult, bidResult);
                 }
                 catch (FormatException formatException)
                 {

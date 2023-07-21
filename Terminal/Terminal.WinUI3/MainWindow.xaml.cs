@@ -1,5 +1,4 @@
 ﻿using CommunityToolkit.WinUI;
-using Terminal.WinUI3.Contracts.Services;
 
 namespace Terminal.WinUI3;
 

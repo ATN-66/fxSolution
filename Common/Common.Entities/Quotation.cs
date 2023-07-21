@@ -3,47 +3,24 @@
   |                                                     Quotation.cs |
   +------------------------------------------------------------------+*/
 
-using System.Globalization;
-
 namespace Common.Entities;
 
-public readonly record struct Quotation() : IComparable
+public readonly record struct Quotation() : IChartItem, IComparable
 {
-    public readonly int ID;
-
-    public Quotation(int id, Symbol symbol, DateTime dateTime, double ask, double bid) : this()
+    public Quotation(Symbol symbol, DateTime dateTime, double ask, double bid) : this()
     {
-        ID = id;
         Symbol = symbol;
         DateTime = dateTime;
         Ask = ask;
         Bid = bid;
     }
     
-    public Symbol Symbol { get; init; }
+    public Symbol Symbol { get; }
     public DateTime DateTime { get; }
     public double Ask { get; }
     public double Bid { get; }
 
-    public static Quotation Empty => new(default, default, default, default, default);
-
-    public int Week => CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(DateTime, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
-
-    public int Quarter
-    {
-        get
-        {
-            return Week switch
-            {
-                <= 0 => throw new InvalidOperationException(nameof(Week)),
-                <= 13 => 1,
-                <= 26 => 2,
-                <= 39 => 3,
-                <= 52 => 4,
-                _ => throw new InvalidOperationException(nameof(Week))
-            };
-        }
-    }
+    public static Quotation Empty => new(default, default, default, default);
 
     public int CompareTo(object? obj)
     {
@@ -60,18 +37,16 @@ public readonly record struct Quotation() : IComparable
     {
         get
         {
-            switch (Symbol)
+            return Symbol switch
             {
-                case Symbol.EURUSD:
-                case Symbol.EURGBP:
-                case Symbol.GBPUSD:
-                    return Ask.ToString("0.00000");
-                case Symbol.USDJPY:
-                case Symbol.EURJPY:
-                case Symbol.GBPJPY:
-                    return Ask.ToString("000.000");
-                default: throw new Exception(nameof(Symbol));
-            }
+                Symbol.EURUSD => Ask.ToString("0.00000"),
+                Symbol.EURGBP => Ask.ToString("0.00000"),
+                Symbol.GBPUSD => Ask.ToString("0.00000"),
+                Symbol.USDJPY => Ask.ToString("000.000"),
+                Symbol.EURJPY => Ask.ToString("000.000"),
+                Symbol.GBPJPY => Ask.ToString("000.000"),
+                _ => throw new Exception(nameof(Symbol))
+            };
         }
     }
 
@@ -79,18 +54,16 @@ public readonly record struct Quotation() : IComparable
     {
         get
         {
-            switch (Symbol)
+            return Symbol switch
             {
-                case Symbol.EURUSD:
-                case Symbol.EURGBP:
-                case Symbol.GBPUSD:
-                    return Bid.ToString("0.00000");
-                case Symbol.USDJPY:
-                case Symbol.EURJPY:
-                case Symbol.GBPJPY:
-                    return Bid.ToString("000.000");
-                default: throw new Exception(nameof(Symbol));
-            }
+                Symbol.EURUSD => Bid.ToString("0.00000"),
+                Symbol.EURGBP => Bid.ToString("0.00000"),
+                Symbol.GBPUSD => Bid.ToString("0.00000"),
+                Symbol.USDJPY => Bid.ToString("000.000"),
+                Symbol.EURJPY => Bid.ToString("000.000"),
+                Symbol.GBPJPY => Bid.ToString("000.000"),
+                _ => throw new Exception(nameof(Symbol))
+            };
         }
     }
 
@@ -109,4 +82,3 @@ public readonly record struct Quotation() : IComparable
         //};
     }
 }
-

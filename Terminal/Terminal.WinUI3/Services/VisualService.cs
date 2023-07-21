@@ -15,44 +15,108 @@ public class VisualService : IVisualService
 {
     private readonly IDispatcherService _dispatcherService;
 
-    private readonly Dictionary<Symbol, TickChartControl?> _tickCharts = new();
+    private Dictionary<Symbol, Dictionary<ChartType, IKernel>> _kernels = null!;
+
     private readonly Dictionary<Symbol, TickChartControl?> _tickChartsReversed = new();
-    private IDictionary<Symbol, Kernel> _kernels = null!;
+    private readonly Dictionary<Symbol, TickChartControl?> _tickCharts = new();
+    private readonly Dictionary<Symbol, CandlestickChartControl?> _candlestickChartsReversed = new();
+    private readonly Dictionary<Symbol, CandlestickChartControl?> _candlestickCharts = new();
 
     public VisualService(IDispatcherService dispatcherService)
     {
         _dispatcherService = dispatcherService;
     }
 
-    public void Initialize(IDictionary<Symbol, Kernel> kernels)
+    public void Initialize(Dictionary<Symbol, Dictionary<ChartType, IKernel>> kernels)
     {
         _kernels = kernels;
 
         foreach (var symbol in Enum.GetValues(typeof(Symbol)))
         {
-            _tickChartsReversed[(Symbol)symbol] = null!;
-            _tickCharts[(Symbol)symbol] = null!;
+            _tickChartsReversed[(Symbol)symbol] = null;
+            _tickCharts[(Symbol)symbol] = null;
+            _candlestickChartsReversed[(Symbol)symbol] = null;
+            _candlestickCharts[(Symbol)symbol] = null;
         }
     }
 
-    public TickChartControl GetTickChartControl(Symbol symbol, bool isReversed)
-    {
-        if (isReversed)
+    public T GetChart<T, TItem, TK>(Symbol symbol, ChartType chartType, bool isReversed) where T : ChartControl<TItem, TK> where TItem : IChartItem where TK : IKernel<TItem>
+{
+        switch (chartType)
         {
-            _tickChartsReversed[symbol] = new TickChartControl(_kernels[symbol], symbol, true, App.GetService<ILogger<TickChartControl>>());
-            return _tickChartsReversed[symbol]!;
+            case ChartType.Ticks:
+                var quotationKernel = _kernels[symbol][ChartType.Ticks] as QuotationKernel ?? throw new InvalidCastException();
+                if (isReversed)
+                {
+                    _tickChartsReversed[symbol] = new TickChartControl(symbol, true, quotationKernel, App.GetService<ILogger<ChartControlBase>>());
+                    var result = _tickChartsReversed[symbol] as T;
+                    return result!;
+                }
+                else
+                {
+                    _tickCharts[symbol] = new TickChartControl(symbol, false, quotationKernel, App.GetService<ILogger<ChartControlBase>>());
+                    var result = _tickCharts[symbol] as T;
+                    return result!;
+                }
+            case ChartType.Candlesticks:
+                var candlestickKernel = _kernels[symbol][ChartType.Candlesticks] as CandlestickKernel ?? throw new InvalidCastException();
+                if (isReversed)
+                {
+                    _candlestickChartsReversed[symbol] = new CandlestickChartControl(symbol, true, candlestickKernel, App.GetService<ILogger<ChartControlBase>>());
+                    var result = _candlestickChartsReversed[symbol] as T;
+                    return result!;
+                }
+                else
+                {
+                    _candlestickCharts[symbol] = new CandlestickChartControl(symbol, false, candlestickKernel, App.GetService<ILogger<ChartControlBase>>());
+                    var result = _candlestickCharts[symbol] as T;
+                    return result!;
+                }
+            default: throw new ArgumentException($@"Unsupported chart type {chartType}", nameof(chartType));
         }
+    }
 
-        _tickCharts[symbol] = new TickChartControl(_kernels[symbol], symbol, false, App.GetService<ILogger<TickChartControl>>());
-        return _tickCharts[symbol]!;
+    public void DisposeChart<T, TItem, TK>(Symbol symbol, ChartType chartType, bool isReversed)
+    {
+        switch (chartType)
+        {
+            case ChartType.Ticks:
+                if (isReversed)
+                {
+                    _tickChartsReversed[symbol]?.Dispose();
+                    _tickChartsReversed[symbol] = null;
+                }
+                else
+                {
+                    _tickCharts[symbol]?.Dispose();
+                    _tickCharts[symbol] = null;
+                }
+                break;
+            case ChartType.Candlesticks:
+                if (isReversed)
+                {
+                    _candlestickChartsReversed[symbol]?.Dispose();
+                    _candlestickChartsReversed[symbol] = null;
+                     
+                }
+                else
+                {
+                    _candlestickCharts[symbol]?.Dispose();
+                    _candlestickCharts[symbol] = null;
+                }
+                break;
+            default: throw new ArgumentException($@"Unsupported chart type {chartType}", nameof(chartType));
+        }
     }
 
     public void Tick(Symbol symbol)
     {
         _dispatcherService.ExecuteOnUIThreadAsync(() =>
         {
-            _tickCharts[symbol]?.Tick();
             _tickChartsReversed[symbol]?.Tick();
+            _tickCharts[symbol]?.Tick();
+            _candlestickChartsReversed[symbol]?.Tick();
+            _candlestickCharts[symbol]?.Tick();
         });
     }
 }

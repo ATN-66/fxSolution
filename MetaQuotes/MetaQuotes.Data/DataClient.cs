@@ -22,7 +22,7 @@ internal sealed class DataClient : IDisposable
     private readonly PipeClient<IDataMessenger> pipeClient;
     private bool connected;
 
-    private readonly BlockingCollection<(int id, int symbol, string datetime, double ask, double bid)> quotations = new();
+    private readonly BlockingCollection<(int symbol, string datetime, double ask, double bid)> quotations = new();
 
     private readonly CancellationTokenSource cts = new();
     private event Action OnInitializationComplete;
@@ -58,13 +58,13 @@ internal sealed class DataClient : IDisposable
         }
     }
 
-    internal async Task<string> InitAsync(int id, int symbol, string datetime, double ask, double bid, int workplace)
+    internal async Task<string> InitAsync(int symbol, string datetime, double ask, double bid, int workplace)
     {
         connected = await InitializeClientAsync().ConfigureAwait(false);
         try
         {
             if (!connected) return noConnection;
-            var result = await pipeClient.InvokeAsync(x => x.InitAsync(id, symbol, datetime, ask, bid, workplace)).ConfigureAwait(false);
+            var result = await pipeClient.InvokeAsync(x => x.InitAsync(symbol, datetime, ask, bid, workplace)).ConfigureAwait(false);
             if (result == ok) OnInitializationComplete?.Invoke(); 
             return $"{symbol}:{guid}:{ok}";
         }
@@ -96,18 +96,18 @@ internal sealed class DataClient : IDisposable
         return false;
     }
 
-    internal string Tick(int id, int symbol, string datetime, double ask, double bid)
+    internal string Tick(int symbol, string datetime, double ask, double bid)
     {
-        quotations.Add((id, symbol, datetime, ask, bid));
+        quotations.Add((symbol, datetime, ask, bid));
         return ok;
     }
 
     private async Task ProcessAsync(CancellationToken ct)
     {
-        await foreach (var (id, symbol, datetime, ask, bid) in quotations.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
+        await foreach (var (symbol, datetime, ask, bid) in quotations.GetConsumingAsyncEnumerable(ct).WithCancellation(ct))
         {
             if (ct.IsCancellationRequested) break;
-            await pipeClient.InvokeAsync(x => x.Tick(id, symbol, datetime, ask, bid), cancellationToken: ct).ConfigureAwait(false);
+            await pipeClient.InvokeAsync(x => x.Tick(symbol, datetime, ask, bid), cancellationToken: ct).ConfigureAwait(false);
         }
     }
 

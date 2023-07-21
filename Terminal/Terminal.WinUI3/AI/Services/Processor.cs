@@ -10,7 +10,6 @@ using Fx.Grpc;
 using Grpc.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Terminal.WinUI3.AI.Data;
 using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.AI.Models;
 using Terminal.WinUI3.Contracts.Services;
@@ -25,13 +24,12 @@ public class Processor : IProcessor
     private readonly IExecutiveConsumerService _executiveConsumerService;
     private readonly IAccountService _accountService;
     private readonly CancellationToken _token;
-    private readonly IVisualService _visualService;
+    private readonly IKernelManager _kernelManager;
     private readonly IDispatcherService _dispatcherService;
     private readonly ISplashScreenService _splashScreenService;
     private readonly ILogger<IProcessor> _logger;
 
     private readonly BlockingCollection<Quotation> _liveDataQueue = new();
-    private IDictionary<Symbol, Kernel> _kernels = null!;
 
     private readonly BlockingCollection<GeneralResponse> _responses = new();
     private AsyncDuplexStreamingCall<GeneralRequest, GeneralResponse> _executiveCall = null!;
@@ -42,14 +40,14 @@ public class Processor : IProcessor
     private readonly TaskCompletionSource<bool> _accountReady = new();
     public event EventHandler<PositionsEventArgs> PositionsUpdated = null!;
 
-    public Processor(IConfiguration configuration, IDataService dataService, IExecutiveConsumerService executiveConsumerService, IAccountService accountService, CancellationTokenSource cancellationTokenSource, IVisualService visualService, 
-        IDispatcherService dispatcherService, ISplashScreenService splashScreenService, ILogger<IProcessor> logger) {
+    public Processor(IConfiguration configuration, IDataService dataService, IExecutiveConsumerService executiveConsumerService, IAccountService accountService, IKernelManager kernelManager,
+        IDispatcherService dispatcherService, ISplashScreenService splashScreenService, ILogger<IProcessor> logger, CancellationTokenSource cancellationTokenSource) {
 
         _dataService = dataService;
         _executiveConsumerService = executiveConsumerService;
         _accountService = accountService;
         _token = cancellationTokenSource.Token;
-        _visualService = visualService;
+        _kernelManager = kernelManager;
         _dispatcherService = dispatcherService;
         _splashScreenService = splashScreenService;
         _logger = logger;
@@ -69,8 +67,9 @@ public class Processor : IProcessor
             await RequestAccountPropertiesAsync().ConfigureAwait(false);
             await _accountReady.Task.ConfigureAwait(false);
 
-            _kernels = await _dataService.LoadDataAsync(_startDateTime, _nowDateTime).ConfigureAwait(false);
-            _visualService.Initialize(_kernels);
+            var historicalData = await _dataService.LoadDataAsync(_startDateTime, _nowDateTime).ConfigureAwait(false);
+            _kernelManager.Initialize(historicalData);
+
             var (dataTask, dataChannel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
             var dataProcessingTask = DataProcessingTaskAsync(token);
 
@@ -118,8 +117,7 @@ public class Processor : IProcessor
                         break;
                     }
 
-                    _kernels[quotation.Symbol].Add(quotation);
-                    _visualService.Tick(quotation.Symbol);
+                    _kernelManager.Add(quotation);
                 }
             }
             catch (OperationCanceledException operationCanceledException)

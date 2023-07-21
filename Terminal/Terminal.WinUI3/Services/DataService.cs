@@ -11,7 +11,6 @@ using Common.ExtensionsAndHelpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Configuration;
-using Terminal.WinUI3.AI.Data;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Models.Maintenance;
 using Terminal.WinUI3.Services.Messenger.Messages;
@@ -43,7 +42,7 @@ public class DataService : ObservableRecipient, IDataService
         _excludedHours = new HashSet<DateTime>(configuration.GetSection("ExcludedHours").Get<List<DateTime>>()!);
     }
 
-    public async Task<IDictionary<Symbol, Kernel>> LoadDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
+    public async Task<IDictionary<Symbol, List<Quotation>>> LoadDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
     {
         var difference = Math.Ceiling((endDateTimeInclusive - startDateTimeInclusive).TotalHours);
         if (difference < 0)
@@ -52,10 +51,10 @@ public class DataService : ObservableRecipient, IDataService
         }
 
         IList<Quotation> quotations;
-        IDictionary<Symbol, Kernel> kernels = new Dictionary<Symbol, Kernel>();
+        var result = new Dictionary<Symbol, List<Quotation>>();
         foreach (var symbol in Enum.GetValues(typeof(Symbol)))
         {
-            kernels[(Symbol)symbol] = new Kernel((Symbol)symbol);
+            result[(Symbol)symbol] = new List<Quotation>();
         }
 
         var start = startDateTimeInclusive.Date.AddHours(startDateTimeInclusive.Hour);
@@ -87,8 +86,8 @@ public class DataService : ObservableRecipient, IDataService
             {
                 foreach (var symbol in Enum.GetValues(typeof(Symbol)))
                 {
-                    var filteredQuotations = quotations.Where(quotation => quotation.Symbol == (Symbol)symbol).ToList();
-                    kernels[(Symbol)symbol].AddRange(filteredQuotations);
+                    var filteredQuotations = quotations.Where(quotation => quotation.Symbol == (Symbol)symbol).OrderBy(quotation => quotation.DateTime).ToList();
+                    result[(Symbol)symbol].AddRange(filteredQuotations);
                 }
             }
 
@@ -98,41 +97,41 @@ public class DataService : ObservableRecipient, IDataService
         quotations = await _dataConsumerService.GetBufferedDataAsync(_token).ConfigureAwait(true);
         if (quotations.Count == 0)
         {
-            return kernels;
+            return result;
         }
         
         foreach (var symbol in Enum.GetValues(typeof(Symbol)))
         {
-            var filteredQuotations = quotations.Where(quotation => quotation.Symbol == (Symbol)symbol).ToList();
-            kernels[(Symbol)symbol].AddRange(filteredQuotations);
+            var filteredQuotations = quotations.Where(quotation => quotation.Symbol == (Symbol)symbol).OrderBy(quotation => quotation.DateTime).ToList();
+            result[(Symbol)symbol].AddRange(filteredQuotations);
         }
 
-        return kernels;
+        return result;
     }
     public Task<(Task, GrpcChannel)> StartAsync(BlockingCollection<Quotation> quotations, CancellationToken token)
     {
         return _dataConsumerService.StartAsync(quotations, token);
     }
-    public async Task<IList<Quotation>> GetHistoricalDataAsync(Symbol symbol, DateTime startDateTimeInclusive, DateTime endDateTimeInclusive, Common.Entities.Provider provider)
+    public async Task<IList<Quotation>> GetHistoricalDataAsync(Symbol symbol, DateTime startDateTimeInclusive, DateTime endDateTimeInclusive, Provider provider)
     {
         var quotations = provider switch
         {
-            Common.Entities.Provider.Mediator => await _dataConsumerService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
-            Common.Entities.Provider.FileService => await _fileService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
-            Common.Entities.Provider.Terminal => await _dataBaseService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
+            Provider.Mediator => await _dataConsumerService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
+            Provider.FileService => await _fileService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
+            Provider.Terminal => await _dataBaseService.GetHistoricalDataAsync(startDateTimeInclusive, endDateTimeInclusive, _token).ConfigureAwait(true),
             _ => throw new ArgumentOutOfRangeException(nameof(provider), provider, @"Unknown provider.")
         };
 
         var filteredQuotations = quotations.Where(quotation => quotation.Symbol == symbol);
         return filteredQuotations.ToList();
     }
-    private async Task<IList<Quotation>> GetHistoricalDataAsync(List<DateTime> dateTimes, Common.Entities.Provider provider)
+    private async Task<IList<Quotation>> GetHistoricalDataAsync(List<DateTime> dateTimes, Provider provider)
     {
         var quotations = provider switch
         {
-            Common.Entities.Provider.Mediator => await _dataConsumerService.GetHistoricalDataAsync(dateTimes[0], dateTimes[^1].AddHours(1), _token).ConfigureAwait(true),
-            Common.Entities.Provider.FileService => await _fileService.GetHistoricalDataAsync(dateTimes[0], dateTimes[^1].AddHours(1), _token).ConfigureAwait(true),
-            Common.Entities.Provider.Terminal => throw new ArgumentOutOfRangeException(nameof(provider), provider, @"Provider must be DataConsumerService or FileService."),
+            Provider.Mediator => await _dataConsumerService.GetHistoricalDataAsync(dateTimes[0], dateTimes[^1].AddHours(1), _token).ConfigureAwait(true),
+            Provider.FileService => await _fileService.GetHistoricalDataAsync(dateTimes[0], dateTimes[^1].AddHours(1), _token).ConfigureAwait(true),
+            Provider.Terminal => throw new ArgumentOutOfRangeException(nameof(provider), provider, @"Provider must be DataConsumerService or FileService."),
             _ => throw new ArgumentOutOfRangeException(nameof(provider), provider, @"Provider must be DataConsumerService or FileService.")
         };
 
@@ -335,7 +334,7 @@ public class DataService : ObservableRecipient, IDataService
             Debug.Assert(result == 1);
         }
     }
-    public async Task<string> ReImportSelectedAsync(DateTime dateTime, Common.Entities.Provider provider)
+    public async Task<string> ReImportSelectedAsync(DateTime dateTime, Provider provider)
     {
         var contributions = await GetYearlyContributionsAsync().ConfigureAwait(true);
 
@@ -399,7 +398,7 @@ public class DataService : ObservableRecipient, IDataService
 
                     if (quotations.Count != counter)
                     {
-                        throw new InvalidOperationException("quotations.Count != counter");
+                        throw new InvalidOperationException("quotations.TicksCount != counter");
                     }
 
                     monthlyContribution.DailyContributions[d].Contribution = DetermineDailyContributionStatus(dailyContribution);
@@ -412,7 +411,7 @@ public class DataService : ObservableRecipient, IDataService
 
         throw new InvalidOperationException("Must never be here!");
     }
-    public async Task ImportAsync(CancellationToken cancellationToken, Common.Entities.Provider provider)
+    public async Task ImportAsync(Provider provider, CancellationToken cancellationToken)
     {
         var processedItems = 0;
         var totalItems = _yearlyContributionsCache!.SelectMany(y => y.MonthlyContributions!.SelectMany(m => m.DailyContributions.SelectMany(d => d.HourlyContributions))).Count();
@@ -499,7 +498,7 @@ public class DataService : ObservableRecipient, IDataService
 
                     if (quotations.Count != counter)
                     {
-                        throw new Exception("quotations.Count != counter");
+                        throw new Exception("quotations.TicksCount != counter");
                     }
 
                     if (cancellationToken.IsCancellationRequested) { return; }

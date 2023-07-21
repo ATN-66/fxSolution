@@ -34,14 +34,14 @@ public static class DataMediator
         _dataClient.Dispose();
     }
 
-    public static string Init(int id, int symbol, string datetime, double ask, double bid, int environment)
+    public static string Init(int symbol, string datetime, double ask, double bid, int environment)
     {
         _dataClient = new DataClient(symbol, enableLogging: false);
-        return Task.Run(() => _dataClient.InitAsync(id, symbol, datetime, ask, bid, environment)).GetAwaiter().GetResult();
+        return Task.Run(() => _dataClient.InitAsync(symbol, datetime, ask, bid, environment)).GetAwaiter().GetResult();
     }
 
-    public static string Tick(int id, int symbol, string datetime, double ask, double bid)
+    public static string Tick(int symbol, string datetime, double ask, double bid)
     {
-        return _dataClient.Tick(id, symbol, datetime, ask, bid);
+        return _dataClient.Tick(symbol, datetime, ask, bid);
     }
 }
