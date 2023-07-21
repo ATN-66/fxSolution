@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Fx.Grpc;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Helpers;
@@ -21,20 +20,17 @@ namespace Terminal.WinUI3.Services;
 
 internal sealed class AccountService : IAccountService
 {
-    private readonly ILogger<IAccountService> _logger;
     private readonly AccountInfo _accountInfo = new();
-    private readonly List<Position> _positions = new();
+    private Position? _position;
     private readonly StringBuilder _detailsBuilder = new();
     private ServiceState _serviceState = ServiceState.Off;
     private readonly string _mT5DateTimeFormat;
 
-    public AccountService(IConfiguration configuration, ILogger<IAccountService> logger)
+    public AccountService(IConfiguration configuration)
     {
-        _logger = logger;
         _accountInfo.FreeMarginPercentToUse = double.Parse(configuration.GetValue<string>("FreeMarginPercentToUse")!);
         _accountInfo.FreeMarginPercentToRisk = double.Parse(configuration.GetValue<string>("FreeMarginPercentToRisk")!);
         _accountInfo.Deviation = ulong.Parse(configuration.GetValue<string>("Deviation")!);
-
         _mT5DateTimeFormat = configuration.GetValue<string>($"{nameof(_mT5DateTimeFormat)}")!;
     }
 
@@ -108,14 +104,7 @@ internal sealed class AccountService : IAccountService
 
     private void CreatePosition(Symbol symbol, TradeType tradeType)
     {
-        if (_positions.Count == 0 || _positions[^1].PositionState == PositionState.Closed)
-        {
-            _positions.Add(new Position(symbol, tradeType, _accountInfo.Deviation, _accountInfo.FreeMarginPercentToUse, _accountInfo.FreeMarginPercentToRisk, 7077, "Order opened by EXECUTIVE EA"));
-        }
-        else 
-        {
-            throw new InvalidOperationException("_positions.Count != 0 || _positions[^1].PositionState != PositionState.Closed");
-        }
+        _position = new Position(symbol, tradeType, _accountInfo.Deviation, 666, _accountInfo.FreeMarginPercentToUse, _accountInfo.FreeMarginPercentToRisk);
     }
     public GeneralRequest GetOpenPositionRequest(Symbol symbol, bool isReversed)
     {
@@ -129,26 +118,25 @@ internal sealed class AccountService : IAccountService
         };
 
         _detailsBuilder.Clear();
-        _detailsBuilder.Append($"{nameof(Symbol)}>").Append(_positions[^1].Symbol);
-        _detailsBuilder.Append($";{nameof(TradeType)}>").Append(_positions[^1].OpeningOrder.TradeType);
-        _detailsBuilder.Append(";Deviation>").Append(_positions[^1].OpeningOrder.Deviation);
-        _detailsBuilder.Append(";FreeMarginPercentToUse>").Append(_positions[^1].OpeningOrder.FreeMarginPercentToUse);
-        _detailsBuilder.Append(";FreeMarginPercentToRisk>").Append(_positions[^1].OpeningOrder.FreeMarginPercentToRisk);
-        _detailsBuilder.Append(";MagicNumber>").Append(_positions[^1].MagicNumber);
-        _detailsBuilder.Append(";Comment>").Append(_positions[^1].OpeningOrder.Comment);
+        _detailsBuilder.Append($"{nameof(Symbol)}>").Append(_position!.Symbol);
+        _detailsBuilder.Append($";{nameof(TradeType)}>").Append(_position.StartOrder.TradeType);
+        _detailsBuilder.Append(";Deviation>").Append(_position.Deviation);
+        _detailsBuilder.Append(";FreeMarginPercentToUse>").Append(_position.FreeMarginPercentToUse);
+        _detailsBuilder.Append(";FreeMarginPercentToRisk>").Append(_position.FreeMarginPercentToRisk);
+        _detailsBuilder.Append(";MagicNumber>").Append(_position.MagicNumber);
+        _detailsBuilder.Append(";Comment>").Append(_position.StartOrder.Comment);
         var details = _detailsBuilder.ToString();
         request.TradeRequest.Details = details;
         return request;
     }
-    public GeneralRequest GetClosePositionRequest(Symbol symbol, bool isReversed)// todo: Symbol symbol, bool isReversed ???
+    public GeneralRequest GetClosePositionRequest(Symbol symbol, bool isReversed)// todo: Symbol symbol, bool isReversed // keep or remove???
     {
-        if (_positions[^1].PositionState != PositionState.Opened)
+        if (_position!.PositionState != PositionState.Opened)
         {
             throw new InvalidOperationException("PositionState != PositionState.Opened");
         }
 
-        _positions[^1].PositionState = PositionState.ToBeClosed;
-        _positions[^1].ClosingOrder = new ClosingOrder(_positions[^1].Ticket, _accountInfo.Deviation);
+        _position.PositionState = PositionState.ToBeClosed;
         ServiceState = ServiceState.Busy;
 
         var request = new GeneralRequest
@@ -158,17 +146,17 @@ internal sealed class AccountService : IAccountService
         };
 
         _detailsBuilder.Clear();
-        _detailsBuilder.Append("ticket>").Append(_positions[^1].ClosingOrder.TicketToClose);
-        _detailsBuilder.Append(";deviation>").Append(_positions[^1].ClosingOrder.Deviation);
+        _detailsBuilder.Append("ticket>").Append(_position.Ticket);
+        _detailsBuilder.Append(";deviation>").Append(_position.Deviation);
         var details = _detailsBuilder.ToString();
-        request.TradeRequest.Details = details; 
+        request.TradeRequest.Details = details;
         return request;
     }
     public void OpenPosition(int ticket, ResultCode code, string details)
     {
         if (code == ResultCode.Success)
         {
-            _positions[^1].PositionState = PositionState.Opened;
+            _position!.PositionState = PositionState.Opened;
             ServiceState = ServiceState.ReadyToClose;
         }
         else
@@ -180,7 +168,7 @@ internal sealed class AccountService : IAccountService
     {
         if (code == ResultCode.Success)
         {
-            _positions[^1].PositionState = PositionState.Closed;
+            _position!.PositionState = PositionState.Closed;
             ServiceState = ServiceState.ReadyToOpen;
         }
         else
@@ -212,131 +200,91 @@ internal sealed class AccountService : IAccountService
     }
     private void UpdateOpen(string details)
     {
-        var detailsDictionary = details.Split(',').Select(part => part.Split('>')).ToDictionary(split => split[0].Trim(), split => split[1].Trim());
-        switch (_positions[^1].PositionState)
+        if (_position!.PositionState != PositionState.Opened)
         {
-            case PositionState.Opened:
-                _positions[^1].OpeningDeal = new Deal();
-                if (Enum.TryParse<Symbol>(detailsDictionary["PositionSymbol"], out var symbol))
-                {
-                    if (symbol != _positions[^1].Symbol)
-                    {
-                        throw new ArgumentException("symbol != Symbol");
-                    }
-                }
-                else
-                {
-                    throw new Exception("Enum.TryParse<Symbol>");
-                }
-
-                var positionTradeType = detailsDictionary["PositionTradeType"].GetEnumValueFromDescription<TradeType>();
-                if (_positions[^1].TradeType != positionTradeType)
-                {
-                    throw new ArgumentException("TradeType != tradeType");
-                }
-
-                _positions[^1].Ticket = ulong.Parse(detailsDictionary["OpeningOrderTicket"]); // OpeningOrderTicket>19926499
-                _positions[^1].OpeningOrder.Ticket = ulong.Parse(detailsDictionary["OpeningOrderTicket"]); // OpeningOrderTicket>19926499
-                _positions[^1].OpeningDeal.Ticket = ulong.Parse(detailsDictionary["OpeningDealTicket"]); // OpeningDealTicket>17797372
-                _positions[^1].OpeningDeal.OrderAction = detailsDictionary["OpeningDealOrderAction"].GetEnumValueFromDescription<OrderAction>(); // DealOrderAction>TRADE_ACTION_DEAL
-                _positions[^1].OpeningDeal.OrderFilling = detailsDictionary["OpeningDealFilling"].GetEnumValueFromDescription<OrderFilling>(); // OpeningDealFilling>ORDER_FILLING_FOK
-                _positions[^1].OpeningDeal.DealType = detailsDictionary["DealType"].GetEnumValueFromDescription<DealType>(); // DealType>DEAL_TYPE_SELL
-                _positions[^1].OpeningDeal.TimeType = detailsDictionary["OpeningDealTimeType"].GetEnumValueFromDescription<TimeType>(); // OpeningDealTimeType>ORDER_TIME_GTC
-
-                if (int.TryParse(detailsDictionary["OpeningDealRetcode"], out var retcode) && Enum.IsDefined(typeof(TradeServerReturnCode), retcode))
-                {
-                    _positions[^1].OpeningDeal.TradeServerReturnCode = (TradeServerReturnCode)retcode;
-                }
-                else
-                {
-                    throw new Exception("Enum.TryParse<TradeServerReturnCode>");
-                }
-
-                _positions[^1].OpeningDeal.Price = double.Parse(detailsDictionary["OpeningDealPrice"]); // OpeningDealPrice>1.12004
-                _positions[^1].OpeningDeal.StopLoss = double.Parse(detailsDictionary["OpeningDealStopLoss"]); // OpeningDealStopLoss>1.12255
-                _positions[^1].OpeningDeal.TakeProfit = double.Parse(detailsDictionary["OpeningDealTakeProfit"]); // OpeningDealTakeProfit>1.11753
-                _positions[^1].OpeningDeal.Ask = double.Parse(detailsDictionary["OpeningDealAsk"]); // OpeningDealAsk>1.1201
-                _positions[^1].OpeningDeal.Bid = double.Parse(detailsDictionary["OpeningDealBid"]); // OpeningDealBid>1.12004
-                _positions[^1].OpeningDeal.Volume = double.Parse(detailsDictionary["OpeningDealVolume"]); // OpeningDealVolume>1.01
-                _positions[^1].OpeningDeal.Time = DateTime.ParseExact(detailsDictionary["OpeningDealTime"], _mT5DateTimeFormat, CultureInfo.InvariantCulture); // OpeningDealTime>2023.07.19 22:02:29
-                break;
-           
-            case PositionState.ToBeOpened:
-            case PositionState.ToBeClosed:
-            case PositionState.RejectedToBeOpened:
-            case PositionState.NaN:
-            case PositionState.Closed:
-            default: throw new ArgumentOutOfRangeException($"{_positions[^1].PositionState}");
+            throw new InvalidOperationException("PositionState != PositionState.Opened");
         }
+        var detailsDictionary = details.Split(',').Select(part => part.Split('>')).ToDictionary(split => split[0].Trim(), split => split[1].Trim());
+
+        if (Enum.TryParse<Symbol>(detailsDictionary["PositionSymbol"], out var symbol))
+        {
+            if (symbol != _position.Symbol)
+            {
+                throw new ArgumentException("symbol != Symbol");
+            }
+        }
+        else
+        {
+            throw new Exception("Enum.TryParse<Symbol>");
+        }
+
+        var orderTradeType = detailsDictionary["StartOrderTradeType"].GetEnumValueFromDescription<TradeType>();
+        if (_position.StartOrder.TradeType != orderTradeType)
+        {
+            throw new ArgumentException("_position.StartOrder.TradeType != orderTradeType");
+        }
+
+        _position.Ticket = ulong.Parse(detailsDictionary["StartOrderTicket"]);
+        _position.StartOrder.Ticket = ulong.Parse(detailsDictionary["StartOrderTicket"]);
+        _position.StartOrder.Price = double.Parse(detailsDictionary["StartOrderPrice"]);
+        _position.StartOrder.StopLoss = double.Parse(detailsDictionary["StartOrderStopLoss"]);
+        _position.StartOrder.TakeProfit = double.Parse(detailsDictionary["StartOrderTakeProfit"]);
+        _position.StartOrder.Ask = double.Parse(detailsDictionary["StartOrderAsk"]);
+        _position.StartOrder.Bid = double.Parse(detailsDictionary["StartOrderBid"]);
+        _position.StartOrder.Volume = double.Parse(detailsDictionary["StartOrderVolume"]);
+        _position.StartOrder.Time = DateTime.ParseExact(detailsDictionary["StartOrderTime"], _mT5DateTimeFormat, CultureInfo.InvariantCulture);
     }
     private void UpdateClose(string details)
     {
-        if (_positions[^1].PositionState == PositionState.Opened)
+        if (_position!.PositionState == PositionState.Opened)
         {
-            _positions[^1].PositionState = PositionState.Closed;
+            _position.PositionState = PositionState.Closed;
             ServiceState = ServiceState.ReadyToOpen;
-            _positions[^1].ClosingOrder = new ClosingOrder(_positions[^1].Ticket, _accountInfo.Deviation);
         }
 
         var detailsDictionary = details.Split(',').Select(part => part.Split('>')).ToDictionary(split => split[0].Trim(), split => split[1].Trim());
-        switch (_positions[^1].PositionState)
+        if (Enum.TryParse<Symbol>(detailsDictionary["PositionSymbol"], out var symbol))
         {
-            case PositionState.Closed:
-                _positions[^1].ClosingDeal = new Deal
-                {
-                    DealType = detailsDictionary["DealType"].GetEnumValueFromDescription<DealType>() // DealType > DEAL_TYPE_BUY
-                };
-                if (_positions[^1].OpeningDeal.DealType == _positions[^1].ClosingDeal.DealType)
-                {
-                    throw new InvalidOperationException("_positions[^1].OpeningDeal.DealType == _positions[^1].ClosingDeal.DealType");
-                }
-                if (int.TryParse(detailsDictionary["ClosingDealRetcode"], out var retcode) && Enum.IsDefined(typeof(TradeServerReturnCode), retcode)) // ClosingDealRetcode > 10009
-                {
-                    _positions[^1].ClosingDeal.TradeServerReturnCode = (TradeServerReturnCode)retcode;
-                }
-                else
-                {
-                    throw new Exception("Enum.TryParse<TradeServerReturnCode>");
-                }
-
-                _positions[^1].ClosingOrder.Ticket = ulong.Parse(detailsDictionary["ClosingOrderTicket"]); // ClosingDealTicket > 17798280
-                _positions[^1].ClosingDeal.Ticket = ulong.Parse(detailsDictionary["ClosingDealTicket"]); // ClosingDealTicket>17798131
-                _positions[^1].ClosingDeal.Price = double.Parse(detailsDictionary["ClosingDealPrice"]); // ClosingDealPrice>1.12044
-                _positions[^1].ClosingDeal.Ask = double.Parse(detailsDictionary["ClosingDealAsk"]); // ClosingDealAsk>1.12044
-                _positions[^1].ClosingDeal.Bid = double.Parse(detailsDictionary["ClosingDealBid"]); // ClosingDealBid>1.12038
-                _positions[^1].ClosingDeal.Time = DateTime.ParseExact(detailsDictionary["ClosingDealTime"], _mT5DateTimeFormat, CultureInfo.InvariantCulture); // ClosingDealTime>2023.07.20 00:04:04
-                var magicNumber = ulong.Parse(detailsDictionary["PositionMagic"]); // PositionMagic > 7077
-                if (magicNumber != _positions[^1].MagicNumber)
-                {
-                    //position closed manually in MT5 Terminal
-                    //throw new InvalidOperationException("magicNumber != _positions[^1].MagicNumber");
-                }
-                break;
-            case PositionState.Opened:
-            case PositionState.ToBeOpened:
-            case PositionState.ToBeClosed:
-            case PositionState.RejectedToBeOpened:
-            case PositionState.NaN:
-            default: throw new ArgumentOutOfRangeException();
+            if (symbol != _position.Symbol)
+            {
+                throw new ArgumentException("symbol != Symbol");
+            }
         }
+        else
+        {
+            throw new Exception("Enum.TryParse<Symbol>");
+        }
+
+        var orderTradeType = detailsDictionary["EndOrderTradeType"].GetEnumValueFromDescription<TradeType>();
+        if (_position.EndOrder.TradeType != orderTradeType)
+        {
+            throw new ArgumentException("_position.EndOrder.TradeType != orderTradeType");
+        }
+
+        _position.EndOrder.Ticket = ulong.Parse(detailsDictionary["EndOrderTicket"]);
+        _position.EndOrder.Price = double.Parse(detailsDictionary["EndOrderPrice"]);
+        _position.EndOrder.Ask = double.Parse(detailsDictionary["EndOrderAsk"]);
+        _position.EndOrder.Bid = double.Parse(detailsDictionary["EndOrderBid"]);
+        _position.EndOrder.Time = DateTime.ParseExact(detailsDictionary["EndOrderTime"], _mT5DateTimeFormat, CultureInfo.InvariantCulture);
+        _position = null;
     }
     public void UpdatePosition(int ticket, ResultCode code, string details)
     {
         if (code == ResultCode.Success)
         {
             var detailsDictionary = details.Split(',').Select(part => part.Split('>')).ToDictionary(split => split[0].Trim(), split => split[1].Trim());
-            if (_positions[^1].PositionState != PositionState.Opened)
+            if (_position!.PositionState != PositionState.Opened)
             {
-                throw new InvalidOperationException("_positions[^1].PositionState != PositionState.Opened");
+                throw new InvalidOperationException("_position.PositionState != PositionState.Opened");
             }
 
-            var positionTicket = ulong.Parse(detailsDictionary["PositionTicket"]); // PositionTicket>19928000
-            if (positionTicket != _positions[^1].Ticket)
+            var positionTicket = ulong.Parse(detailsDictionary["PositionTicket"]); 
+            if (positionTicket != _position.Ticket)
             {
-                throw new InvalidOperationException("positionTicket != _positions[^1].Ticket");
+                throw new InvalidOperationException("positionTicket != _position.Ticket");
             }
-            _positions[^1].OpeningDeal.StopLoss = double.Parse(detailsDictionary["OpeningDealStopLoss"]); // OpeningDealStopLoss>1.12255
-            _positions[^1].OpeningDeal.TakeProfit = double.Parse(detailsDictionary["OpeningDealTakeProfit"]); // OpeningDealTakeProfit>1.11753
+            _position.StartOrder.StopLoss = double.Parse(detailsDictionary["StartOrderStopLoss"]);
+            _position.StartOrder.TakeProfit = double.Parse(detailsDictionary["StartOrderTakeProfit"]);
         }
         else
         {
@@ -387,7 +335,6 @@ internal sealed class AccountService : IAccountService
 
         return positions;
     }
-
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

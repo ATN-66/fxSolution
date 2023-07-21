@@ -217,12 +217,12 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
                 }
                 catch (RpcException)
                 {
-                    _responseStream = null;
                     // ignore
-                    var st = true;
+                    _responseStream = null;
                 }
                 catch (Exception exception)
                 {
+                    // ignore
                     _responseStream = null;
                     LogExceptionHelper.LogException(_logger, exception, "");
                 }
@@ -255,9 +255,9 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
                 }
                 catch (Exception exception)
                 {
+                    // ignore
                     _responseStream = null;
                     LogExceptionHelper.LogException(_logger, exception, "");
-                    throw;
                 }
                 return _outcomeMessages.TryDequeue(out outcomeResult) ? outcomeResult : Ok;
             default: throw new ArgumentOutOfRangeException(nameof(type), @"PulseAsync: The provided string type is not supported.");

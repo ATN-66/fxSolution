@@ -1,5 +1,4 @@
-﻿using Common.Entities;
-using Terminal.WinUI3.Models.Trade.Enums;
+﻿using Terminal.WinUI3.Models.Trade.Enums;
 
 namespace Terminal.WinUI3.Models.Trade;
 

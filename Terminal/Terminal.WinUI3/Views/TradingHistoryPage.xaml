@@ -21,17 +21,45 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Background="LightGray" Margin="1">
-                    <TextBlock Text="{Binding Ticket}" Style="{StaticResource TextBlockStyle}" TextAlignment="Center" Padding="5" />
+                <Border
+                    Grid.Column="0"
+                    Margin="1"
+                    Background="LightGray">
+                    <TextBlock
+                        Padding="5"
+                        Style="{StaticResource TextBlockStyle}"
+                        Text="{Binding Ticket}"
+                        TextAlignment="Center" />
                 </Border>
-                <Border Grid.Column="1" Background="LightGray" Margin="1">
-                    <TextBlock Text="{Binding Symbol}" Style="{StaticResource TextBlockStyle}" TextAlignment="Center" Padding="5"/>
+                <Border
+                    Grid.Column="1"
+                    Margin="1"
+                    Background="LightGray">
+                    <TextBlock
+                        Padding="5"
+                        Style="{StaticResource TextBlockStyle}"
+                        Text="{Binding Symbol}"
+                        TextAlignment="Center" />
                 </Border>
-                <Border Grid.Column="2" Background="LightGray" Margin="1">
-                    <TextBlock Text="{Binding Type}" Style="{StaticResource TextBlockStyle}" TextAlignment="Center" Padding="5"/>
+                <Border
+                    Grid.Column="2"
+                    Margin="1"
+                    Background="LightGray">
+                    <TextBlock
+                        Padding="5"
+                        Style="{StaticResource TextBlockStyle}"
+                        Text="{Binding Type}"
+                        TextAlignment="Center" />
                 </Border>
-                <Border Grid.Column="3" Background="LightGray" Margin="1">
-                    <TextBlock Text="{Binding Start}" Style="{StaticResource TextBlockStyle}" TextAlignment="Center" Padding="5" />
+                <Border
+                    Grid.Column="3"
+                    Margin="1"
+                    Background="LightGray">
+                    <TextBlock
+                        Padding="5"
+                        Style="{StaticResource TextBlockStyle}"
+                        Text="{Binding Start}"
+                        TextAlignment="Center" />
                 </Border>
             </Grid>
         </DataTemplate>

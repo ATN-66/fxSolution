@@ -6,25 +6,30 @@ namespace Terminal.WinUI3.Models.Trade;
 
 public class Position
 {
-    public Position(Symbol symbol, TradeType tradeType, ulong deviation, double freeMarginPercentToUse, double freeMarginPercentToRisk, ulong magicNumber, string comment)
+    public Position(Symbol symbol, TradeType tradeType, ulong deviation, ulong magicNumber, double freeMarginPercentToUse, double freeMarginPercentToRisk)
     {
-        PositionState = PositionState.ToBeOpened;
+        StartOrder = new Order(tradeType)
+        {
+            Comment = "Order opened by EXECUTIVE EA"
+        };
+        EndOrder = new Order(StartOrder.OppositeTradeType);
+
         Symbol = symbol;
-        TradeType = tradeType;
         MagicNumber = magicNumber;
-        OpeningOrder = new OpeningOrder(TradeType, deviation, freeMarginPercentToUse, freeMarginPercentToRisk, comment);
+        Deviation = deviation;
+        FreeMarginPercentToUse = freeMarginPercentToUse;
+        FreeMarginPercentToRisk = freeMarginPercentToRisk;
+        PositionState = PositionState.ToBeOpened;
     }
 
-    public OpeningOrder OpeningOrder { get; set; }
-    public ClosingOrder ClosingOrder { get; set; } = null!;
-    public Deal OpeningDeal { get; set; } = null!;
-    public Deal ClosingDeal { get; set; } = null!;
+    [Description("Order to start position")] public Order StartOrder { get; }
+    [Description("Order to end position")] public Order EndOrder { get; }
 
     [Description("PositionState (ToBeOpened, Opened, ToBeClosed, Closed, RejectedToBeOpened)")] public PositionState PositionState { get; set; }
-    [Description("Unique identifier for the position")] public ulong Ticket { get; set; }
     [Description("The symbol of the security to operate")] public Symbol Symbol { get; }
-    [Description("TradeType (Buy, Sell)")] public TradeType TradeType { get; }
+    [Description("Unique identifier for the position")] public ulong Ticket { get; set; }
     [Description("A unique identifier for the EA (magic number)")] public ulong MagicNumber { get; set; }
-    [Description("Whether the position was profitable")] public bool IsProfitable => Profit > 0;
-    [Description("profit/loss")] public double Profit { get; set; } = double.NaN;
+    [Description("Maximal possible deviation from the requested price")] public ulong Deviation { get; }
+    [Description("How many percent of Free Margin to use.")] public double FreeMarginPercentToUse { get; }
+    [Description("How many percent of Free Margin trader is willing to lose.")] public double FreeMarginPercentToRisk { get; }
 }
