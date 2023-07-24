@@ -230,12 +230,12 @@
 //        }
 //    }
 
-//    public string UpCurrency
+//    public string BaseCurrency
 //    {
 //        get;
 //        set;
 //    } = string.Empty;
-//    public string DownCurrency
+//    public string QuoteCurrency
 //    {
 //        get;
 //        set;
@@ -577,12 +577,12 @@
 
 //        void DrawCurrenciesLabel()
 //        {
-//            using var upCurrencyLayout = new CanvasTextLayout(args.DrawingSession, UpCurrency, _currencyFormat, 0.0f, 0.0f);
-//            using var downCurrencyLayout = new CanvasTextLayout(args.DrawingSession, DownCurrency, _currencyFormat, 0.0f, 0.0f);
+//            using var upCurrencyLayout = new CanvasTextLayout(args.DrawingSession, BaseCurrency, _currencyFormat, 0.0f, 0.0f);
+//            using var downCurrencyLayout = new CanvasTextLayout(args.DrawingSession, QuoteCurrency, _currencyFormat, 0.0f, 0.0f);
 //            var upCurrencyPosition = new Vector2((float)(sender.Size.Width - upCurrencyLayout.DrawBounds.Width - 10), 0);
 //            var downCurrencyPosition = new Vector2((float)(sender.Size.Width - downCurrencyLayout.DrawBounds.Width - 10), (float)upCurrencyLayout.DrawBounds.Height + 10);
-//            args.DrawingSession.DrawText(UpCurrency, upCurrencyPosition, Colors.Yellow, _currencyFormat);
-//            args.DrawingSession.DrawText(DownCurrency, downCurrencyPosition, Colors.Yellow, _currencyFormat);
+//            args.DrawingSession.DrawText(BaseCurrency, upCurrencyPosition, Colors.Yellow, _currencyFormat);
+//            args.DrawingSession.DrawText(QuoteCurrency, downCurrencyPosition, Colors.Yellow, _currencyFormat);
 //        }
 //    }
 

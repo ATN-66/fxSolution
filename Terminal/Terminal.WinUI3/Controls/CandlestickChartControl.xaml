@@ -6,6 +6,8 @@
     xmlns:win2d="using:Microsoft.Graphics.Canvas.UI.Xaml">
 
     <Style TargetType="controls:CandlestickChartControl">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="controls:CandlestickChartControl">
@@ -85,6 +87,15 @@
                             VerticalAlignment="Bottom"
                             Command="{Binding OperationalCommand, Mode=OneWay}"
                             Content="{Binding OperationalButtonContent, Mode=OneWay}" />
+
+                        <Button
+                            Grid.Row="3"
+                            Grid.Column="0"
+                            Margin="0,0,10,10"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Bottom"
+                            Command="{Binding TicksCommand, Mode=OneWay}"
+                            Content="Ticks" />
 
                         <win2d:CanvasControl
                             x:Name="yAxisCanvas"

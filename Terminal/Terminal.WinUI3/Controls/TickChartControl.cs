@@ -6,12 +6,12 @@
 #define DEBUGWIN2DCanvasControl
 
 using System.Numerics;
+using Windows.UI;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Geometry;
-using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
@@ -24,7 +24,7 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
     private Vector2[] _askData = null!;
     private Vector2[] _bidData = null!;
 
-    public TickChartControl(Symbol symbol, bool isReversed, QuotationKernel kernel, ILogger<ChartControlBase> logger) : base(symbol, isReversed, kernel, logger)
+    public TickChartControl(Symbol symbol, bool isReversed, QuotationKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(symbol, isReversed, kernel, baseColor, quoteColor, logger)
     {
         DefaultStyleKey = typeof(TickChartControl);
     }
@@ -34,11 +34,11 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
         try
         {
             GraphWidth = (float)e.NewSize.Width;
-            HeightValue = (float)e.NewSize.Height;
+            GraphHeight = (float)e.NewSize.Height;
             UnitsPerChart = Math.Clamp(UnitsPerChart, MinUnitsPerChart, MaxUnitsPerChart);
 
             HorizontalScale = GraphWidth / (UnitsPerChart - 1);
-            VerticalScale = HeightValue / PipsPerChart;
+            VerticalScale = GraphHeight / PipsPerChart;
 
             _askData = new Vector2[UnitsPerChart];
             for (var unit = 0; unit < UnitsPerChart; unit++)
@@ -80,7 +80,7 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
 
         CanvasGeometry GetDrawDataGeometry(CanvasPathBuilder cpb)
         {
-            var offset = IsReversed ? HeightValue : 0;
+            var offset = IsReversed ? GraphHeight : 0;
 
             var ask = (float)Kernel[KernelShiftValue].Ask;
             var yZeroPrice = ask + PipsPerChart * Pip / 2f - VerticalShift * Pip;
@@ -149,8 +149,8 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
 
         CanvasGeometry GetDrawLineGeometry(CanvasPathBuilder cpb, (Vector2 startPoint, Vector2 endPoint) line)
         {
-            var startPointToDraw = IsReversed ? line.startPoint with { Y = HeightValue - line.startPoint.Y } : line.startPoint;
-            var endPointToDraw = IsReversed ? line.endPoint with { Y = HeightValue - line.endPoint.Y } : line.endPoint;
+            var startPointToDraw = IsReversed ? line.startPoint with { Y = GraphHeight - line.startPoint.Y } : line.startPoint;
+            var endPointToDraw = IsReversed ? line.endPoint with { Y = GraphHeight - line.endPoint.Y } : line.endPoint;
 
             cpb.BeginFigure(startPointToDraw);
             cpb.AddLine(endPointToDraw);
@@ -161,8 +161,8 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
 
         CanvasGeometry GetFillLineGeometry(CanvasPathBuilder cpb, (Vector2 startPoint, Vector2 endPoint) line)
         {
-            var startPointToDraw = IsReversed ? line.startPoint with { Y = HeightValue - line.startPoint.Y } : line.startPoint;
-            var endPointToDraw = IsReversed ? line.endPoint with { Y = HeightValue - line.endPoint.Y } : line.endPoint;
+            var startPointToDraw = IsReversed ? line.startPoint with { Y = GraphHeight - line.startPoint.Y } : line.startPoint;
+            var endPointToDraw = IsReversed ? line.endPoint with { Y = GraphHeight - line.endPoint.Y } : line.endPoint;
 
             var (arrowHeadLeftPoint, arrowHeadRightPoint) = GetArrowPoints(endPointToDraw, startPointToDraw, ArrowheadLength, ArrowheadWidth);
             cpb.BeginFigure(endPointToDraw);

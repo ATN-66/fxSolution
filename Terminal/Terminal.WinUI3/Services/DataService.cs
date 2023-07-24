@@ -94,17 +94,18 @@ public class DataService : ObservableRecipient, IDataService
             start = start.Add(new TimeSpan(1, 0, 0));
         }
 
-        quotations = await _dataConsumerService.GetBufferedDataAsync(_token).ConfigureAwait(true);
-        if (quotations.Count == 0)
-        {
-            return result;
-        }
+        //todo: remove
+        //quotations = await _dataConsumerService.GetBufferedDataAsync(_token).ConfigureAwait(true);
+        //if (quotations.Count == 0)
+        //{
+        //    return result;
+        //}
         
-        foreach (var symbol in Enum.GetValues(typeof(Symbol)))
-        {
-            var filteredQuotations = quotations.Where(quotation => quotation.Symbol == (Symbol)symbol).OrderBy(quotation => quotation.DateTime).ToList();
-            result[(Symbol)symbol].AddRange(filteredQuotations);
-        }
+        //foreach (var symbol in Enum.GetValues(typeof(Symbol)))
+        //{
+        //    var filteredQuotations = quotations.Where(quotation => quotation.Symbol == (Symbol)symbol).OrderBy(quotation => quotation.DateTime).ToList();
+        //    result[(Symbol)symbol].AddRange(filteredQuotations);
+        //}
 
         return result;
     }

@@ -6,6 +6,7 @@
 #define DEBUGWIN2DCanvasControl
 
 using System.Numerics;
+using Windows.UI;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Microsoft.Extensions.Logging;
@@ -20,7 +21,7 @@ namespace Terminal.WinUI3.Controls;
 
 public abstract class ChartControl<TItem, TKernel> : ChartControlBase where TItem : IChartItem where TKernel : IKernel<TItem>
 {
-    protected ChartControl(Symbol symbol, bool isReversed, TKernel kernel, ILogger<ChartControlBase> logger) : base(symbol, isReversed, logger)
+    protected ChartControl(Symbol symbol, bool isReversed, TKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(symbol, isReversed, baseColor, quoteColor, logger)
     {
         Kernel = kernel;
     }
@@ -38,7 +39,7 @@ public abstract class ChartControl<TItem, TKernel> : ChartControlBase where TIte
             using var cpb = new CanvasPathBuilder(args.DrawingSession);
             args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 
-            var offset = IsReversed ? HeightValue : 0;
+            var offset = IsReversed ? GraphHeight : 0;
 
             var ask = (float)Kernel[KernelShiftValue].Ask;
             var yZeroPrice = ask + Pip * PipsPerChart / 2f - VerticalShift * Pip;
@@ -193,6 +194,7 @@ public abstract class ChartControl<TItem, TKernel> : ChartControlBase where TIte
     protected override void AdjustMaxUnitsPerChart()
     {
         MaxUnitsPerChart = Math.Min((int)Math.Floor(GraphWidth), Kernel.Count);
+
         if (MaxUnitsPerChart < MinUnitsPerChart)
         {
             MaxUnitsPerChart = MinUnitsPerChart;
@@ -225,7 +227,7 @@ public abstract class ChartControl<TItem, TKernel> : ChartControlBase where TIte
             args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
             var output1 =
                 $"width:{GraphWidth:0000}, max units per chart:{MaxUnitsPerChart:0000}, units per chart:{UnitsPerChart:0000}, horizontal shift:{HorizontalShift:0000}, kernel shift:{KernelShiftValue:000000}, kernel.Count:{Kernel.Count:000000}";
-            var output2 = $"height:{HeightValue:0000}, pips per chart:{PipsPerChart:0000}, vertical shift:{VerticalShift:###,##}";
+            var output2 = $"height:{GraphHeight:0000}, pips per chart:{PipsPerChart:0000}, vertical shift:{VerticalShift:###,##}";
             var output3 = $"start Time:{DebugInfoStruct.StartTime}, end time:{DebugInfoStruct.EndTime}, time span:{DebugInfoStruct.TimeSpan:g}, time step:{DebugInfoStruct.TimeStep}, new start time:{DebugInfoStruct.NewStartTime}";
 
             var textLayout1 = new CanvasTextLayout(args.DrawingSession, output1, YxAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);

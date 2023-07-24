@@ -8,6 +8,7 @@
 using System.Diagnostics;
 using System.Numerics;
 using Windows.UI;
+using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas;
@@ -68,7 +69,7 @@ public abstract class ChartControlBase : Control
     protected readonly bool IsReversed;
     protected readonly ILogger<ChartControlBase> Logger;
     protected readonly float Pip;
-    protected float HeightValue;
+    protected float GraphHeight;
     protected bool IsMouseDown;
     private float _previousMouseX;
     private float _previousMouseY;
@@ -85,7 +86,7 @@ public abstract class ChartControlBase : Control
     protected CanvasControl? YAxisCanvas;
     protected float YAxisWidth;
 
-    protected ChartControlBase(Symbol symbol, bool isReversed, ILogger<ChartControlBase> logger)
+    protected ChartControlBase(Symbol symbol, bool isReversed, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger)
     {
         Logger = logger;
 
@@ -106,6 +107,10 @@ public abstract class ChartControlBase : Control
                 break;
             default: throw new ArgumentOutOfRangeException(nameof(symbol), symbol, null);
         }
+
+        BaseColor = baseColor;
+        QuoteColor = quoteColor;
+        (BaseCurrency, QuoteCurrency) = GetCurrenciesFromSymbol(symbol);
     }
 
     public int MaxUnitsPerChart
@@ -198,24 +203,36 @@ public abstract class ChartControlBase : Control
         }
     }
 
-    public string UpCurrency
+    public string BaseCurrency
     {
         get;
         set;
-    } = string.Empty;
+    }
 
-    public string DownCurrency
+    public string QuoteCurrency
     {
         get;
         set;
-    } = string.Empty;
+    }
+
+    protected Color BaseColor
+    {
+        get;
+        set;
+    }
+
+    protected Color QuoteColor
+    {
+        get;
+        set;
+    }
 
     protected abstract void OnUnitsPerChartChanged();
     private void OnPipsPerChartChanged()
     {
         try
         {
-            VerticalScale = HeightValue / PipsPerChart;
+            VerticalScale = GraphHeight / PipsPerChart;
             GraphCanvas!.Invalidate();
             YAxisCanvas!.Invalidate();
             XAxisCanvas!.Invalidate();
@@ -268,13 +285,13 @@ public abstract class ChartControlBase : Control
         YAxisCanvas.PointerMoved += YAxisCanvas_OnPointerMoved;
         YAxisCanvas.PointerReleased += YAxisCanvas_OnPointerReleased;
 
-        XAxisCanvas.SizeChanged += XAxisCanvas_OnSizeChanged;
-        XAxisCanvas.Draw += XAxisCanvas_OnDraw;
-        XAxisCanvas.PointerEntered += XAxisCanvas_OnPointerEntered;
-        XAxisCanvas.PointerExited += XAxisCanvas_OnPointerExited;
-        XAxisCanvas.PointerPressed += XAxisCanvas_OnPointerPressed;
-        XAxisCanvas.PointerMoved += XAxisCanvas_OnPointerMoved;
-        XAxisCanvas.PointerReleased += XAxisCanvas_OnPointerReleased;
+        //XAxisCanvas.SizeChanged += XAxisCanvas_OnSizeChanged;
+        //XAxisCanvas.Draw += XAxisCanvas_OnDraw;
+        //XAxisCanvas.PointerEntered += XAxisCanvas_OnPointerEntered;
+        //XAxisCanvas.PointerExited += XAxisCanvas_OnPointerExited;
+        //XAxisCanvas.PointerPressed += XAxisCanvas_OnPointerPressed;
+        //XAxisCanvas.PointerMoved += XAxisCanvas_OnPointerMoved;
+        //XAxisCanvas.PointerReleased += XAxisCanvas_OnPointerReleased;
 #if DEBUGWIN2DCanvasControl
         DebugCanvas.SizeChanged += DebugCanvas_OnSizeChanged;
         DebugCanvas.Draw += DebugCanvas_OnDraw;
@@ -471,18 +488,13 @@ public abstract class ChartControlBase : Control
     {
         args.DrawingSession.Clear(_textBackgroundColor);
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
-
-        DrawCurrenciesLabel();
-
-        void DrawCurrenciesLabel()
-        {
-            using var upCurrencyLayout = new CanvasTextLayout(args.DrawingSession, UpCurrency, _currencyFormat, 0.0f, 0.0f);
-            using var downCurrencyLayout = new CanvasTextLayout(args.DrawingSession, DownCurrency, _currencyFormat, 0.0f, 0.0f);
-            var upCurrencyPosition = new Vector2((float)(sender.Size.Width - upCurrencyLayout.DrawBounds.Width - 10), 0);
-            var downCurrencyPosition = new Vector2((float)(sender.Size.Width - downCurrencyLayout.DrawBounds.Width - 10), (float)upCurrencyLayout.DrawBounds.Height + 10);
-            args.DrawingSession.DrawText(UpCurrency, upCurrencyPosition, Colors.Yellow, _currencyFormat);
-            args.DrawingSession.DrawText(DownCurrency, downCurrencyPosition, Colors.Yellow, _currencyFormat);
-        }
+        var (upCurrency, downCurrency, upColor, downColor) = IsReversed ? (QuoteCurrency, BaseCurrency, QuoteColor, BaseColor) : (BaseCurrency, QuoteCurrency, BaseColor, QuoteColor);
+        using var upCurrencyLayout = new CanvasTextLayout(args.DrawingSession, upCurrency, _currencyFormat, 0.0f, 0.0f);
+        using var downCurrencyLayout = new CanvasTextLayout(args.DrawingSession, downCurrency, _currencyFormat, 0.0f, 0.0f);
+        var upCurrencyPosition = new Vector2((float)(sender.Size.Width - upCurrencyLayout.DrawBounds.Width - 10), 0);
+        var downCurrencyPosition = new Vector2((float)(sender.Size.Width - downCurrencyLayout.DrawBounds.Width - 10), (float)upCurrencyLayout.DrawBounds.Height + 10);
+        args.DrawingSession.DrawText(upCurrency, upCurrencyPosition, upColor, _currencyFormat);
+        args.DrawingSession.DrawText(downCurrency, downCurrencyPosition, downColor, _currencyFormat);
     }
 
     private void YAxisCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
@@ -570,7 +582,7 @@ public abstract class ChartControlBase : Control
 
             PipsPerChart += pipsChange;
             PipsPerChart = Math.Clamp(PipsPerChart, MinPipsPerChart, MaxPipsPerChart);
-            VerticalScale = HeightValue / (PipsPerChart - 1);
+            VerticalScale = GraphHeight / (PipsPerChart - 1);
 
             GraphCanvas!.Invalidate();
             YAxisCanvas!.Invalidate();
@@ -725,6 +737,18 @@ public abstract class ChartControlBase : Control
             LogExceptionHelper.LogException(Logger, exception, "RoundDateTime");
             throw;
         }
+    }
+
+    private static (string baseCurrency, string quoteCurrency) GetCurrenciesFromSymbol(Symbol symbol)
+    {
+        var symbolName = symbol.ToString();
+        var first = symbolName[..3];
+        var second = symbolName.Substring(3, 3);
+        if (Enum.TryParse<Currency>(first, out var baseCurrency) && Enum.TryParse<Currency>(second, out var quoteCurrency))
+        {
+            return (baseCurrency.ToString(), quoteCurrency.ToString());
+        }
+        throw new Exception("Failed to parse currencies from symbol.");
     }
 
     public void Tick()
