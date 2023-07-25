@@ -12,9 +12,9 @@ public interface IKernel
     int Count { get; }
 }
 
-public interface IKernel<TItem> : IKernel where TItem : IChartItem // todo:
+public interface IKernel<TItem> : IKernel where TItem : IChartItem 
 {
     TItem this[int i] { get; }
-    void AddRange(IEnumerable<Quotation> quotations); // todo:
+    void AddRange(IEnumerable<Quotation> quotations); 
     void Add(Quotation quotation);
 }

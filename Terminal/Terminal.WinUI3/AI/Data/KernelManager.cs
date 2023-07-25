@@ -41,7 +41,6 @@ public class KernelManager : IKernelManager
 
     public void Add(Quotation quotation)
     {
-        return;
         var symbol = quotation.Symbol;
         ((IKernel<Candlestick>)_kernels[symbol][ChartType.Candlesticks]).Add(quotation);
         ((IKernel<Quotation>)_kernels[symbol][ChartType.Ticks]).Add(quotation);

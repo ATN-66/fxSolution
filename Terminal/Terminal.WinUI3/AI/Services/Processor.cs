@@ -67,9 +67,6 @@ public class Processor : IProcessor
             await RequestAccountPropertiesAsync().ConfigureAwait(false);
             await _accountReady.Task.ConfigureAwait(false);
 
-            _startDateTime = new DateTime(2023, 7, 11, 6, 0, 0, DateTimeKind.Utc);//todo
-            _nowDateTime = new DateTime(2023, 7, 11, 18, 0, 0, DateTimeKind.Utc);//todo
-
             var historicalData = await _dataService.LoadDataAsync(_startDateTime, _nowDateTime).ConfigureAwait(false);
             _kernelManager.Initialize(historicalData);
 

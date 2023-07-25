@@ -15,6 +15,8 @@ using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Terminal.WinUI3.AI.Data;
+using Microsoft.Graphics.Canvas.Text;
+using Microsoft.UI;
 
 namespace Terminal.WinUI3.Controls;
 
@@ -25,10 +27,10 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
     private Vector2[] _openData = null!;
     private Vector2[] _closeData = null!;
 
-    private const float MinOcThickness = 2f;
-    private float _ocThickness = MinOcThickness;
-    private float _hlThickness = MinOcThickness / 2;
-    private const float Space = 1f;
+    private const int MinOcThickness = 3;
+    private int _ocThickness = MinOcThickness;
+    private int _hlThickness = (MinOcThickness - 1) / 2;
+    private const int Space = 1;
 
     public CandlestickChartControl(Symbol symbol, bool isReversed, CandlestickKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(symbol, isReversed, kernel, baseColor, quoteColor, logger)
     {
@@ -39,31 +41,18 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
     {
         GraphWidth = (float)e.NewSize.Width;
         GraphHeight = (float)e.NewSize.Height;
-        UnitsPerChart = Math.Clamp(UnitsPerChart, MinUnitsPerChart, MaxUnitsPerChart);
 
-        AdjustThickness();
-
-        HorizontalScale = GraphWidth / (UnitsPerChart - 1);
-        VerticalScale = GraphHeight / PipsPerChart;
-
-        _highData = new Vector2[UnitsPerChart];
-        _lowData = new Vector2[UnitsPerChart];
-        _openData = new Vector2[UnitsPerChart];
-        _closeData = new Vector2[UnitsPerChart];
-
-        for (var unit = 0; unit < UnitsPerChart; unit++)
-        {
-            _highData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
-            _lowData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
-            _openData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
-            _closeData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
-        }
+        var availableMaxUnitsPerChart = (int)Math.Floor((GraphWidth - Space) / (MinOcThickness + Space));
+        availableMaxUnitsPerChart = Math.Min(availableMaxUnitsPerChart, Kernel.Count);
+        SetValue(MaxUnitsPerChartProperty, availableMaxUnitsPerChart);
+        SetValue(UnitsPerChartProperty, MaxUnitsPerChart);
+        OnUnitsPerChartChanged();
     }
     
     protected override void GraphCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
         args.DrawingSession.Clear(GraphBackgroundColor);
-        args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
+        args.DrawingSession.Antialiasing = CanvasAntialiasing.Antialiased;
         CanvasGeometry highLowUpGeometries;
         CanvasGeometry highLowDownGeometries;
         CanvasGeometry openCloseUpGeometries;
@@ -151,66 +140,83 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
 
     protected override void OnUnitsPerChartChanged()
     {
-        try
+        if (UnitsPerChart + KernelShift > Kernel.Count)
         {
-            if (UnitsPerChart + KernelShift > Kernel.Count)
+            KernelShift = Kernel.Count - UnitsPerChart;
+            if (KernelShift < 0)
             {
-                KernelShift = Kernel.Count - UnitsPerChart;
+                throw new Exception("OnUnitsPerChartChanged: KernelShift < 0");
             }
+        }
 
-            AdjustThickness();
+        AdjustThickness();
 
-            HorizontalScale = GraphWidth / (UnitsPerChart - 1);
+        HorizontalScale = GraphWidth / (UnitsPerChart - 1);
+        VerticalScale = GraphHeight / PipsPerChart;
 
-            _highData = new Vector2[UnitsPerChart];
-            _lowData = new Vector2[UnitsPerChart];
-            _openData= new Vector2[UnitsPerChart];
-            _closeData = new Vector2[UnitsPerChart];
+        _highData = new Vector2[UnitsPerChart];
+        _lowData = new Vector2[UnitsPerChart];
+        _openData = new Vector2[UnitsPerChart];
+        _closeData = new Vector2[UnitsPerChart];
 
-            for (var unit = 0; unit < UnitsPerChart; unit++)
-            {
-                _highData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
-                _lowData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
-                _openData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
-                _closeData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
-            }
+        for (var unit = 0; unit < UnitsPerChart; unit++)
+        {
+            _highData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
+            _lowData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
+            _openData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
+            _closeData[unit] = new Vector2 { X = (UnitsPerChart - 1 - unit) * HorizontalScale };
+        }
 
-            var range = Kernel.Count - UnitsPerChart;
-            if (range == 0)
-            {
-                KernelShiftPercent = 100;
-            }
+        var range = Kernel.Count - UnitsPerChart;
+        if (range == 0)
+        {
+            KernelShiftPercent = 100;
+        }
 
-            GraphCanvas!.Invalidate();
-            YAxisCanvas!.Invalidate();
-            XAxisCanvas!.Invalidate();
+        GraphCanvas!.Invalidate();
+        YAxisCanvas!.Invalidate();
+        XAxisCanvas!.Invalidate();
 #if DEBUGWIN2DCanvasControl
-            DebugCanvas!.Invalidate();
+        DebugCanvas!.Invalidate();
 #endif
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "OnUnitsPerChartChanged");
-            throw;
-        }
     }
 
     private void AdjustThickness()
     {
-        _ocThickness = (GraphWidth / UnitsPerChart) - 2f;
+        _ocThickness = (int)Math.Floor((GraphWidth - UnitsPerChart * Space) / UnitsPerChart);
 
         if (_ocThickness < MinOcThickness)
         {
             _ocThickness = MinOcThickness;
         }
 
-        _hlThickness = MinOcThickness / 2f;
+        _hlThickness = (int)Math.Sqrt(_ocThickness);
+
+        if (_hlThickness < (MinOcThickness - 1) / 2)
+        {
+            _hlThickness = (MinOcThickness - 1) / 2;
+        }
     }
 
-    protected override void AdjustMaxUnitsPerChart()
+#if DEBUGWIN2DCanvasControl
+    protected override void DebugCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
-        MaxUnitsPerChart = (int)Math.Floor(GraphWidth / (MinOcThickness + Space));
-        MaxUnitsPerChart = Math.Min(MaxUnitsPerChart, Kernel.Count);
-        MaxUnitsPerChart = Math.Max(MaxUnitsPerChart, MinUnitsPerChart);
-    }   
+        args.DrawingSession.Clear(GraphBackgroundColor);
+        args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
+        var output1 = $"width:{GraphWidth:0000}, max units:{MaxUnitsPerChart:0000}, units:{UnitsPerChart:0000}, horizontal shift:{HorizontalShift:0000}, kernel shift:{KernelShiftValue:000000}, kernel.Count:{Kernel.Count:000000}";
+        var output2 = $"_ocThickness:{_ocThickness:###,##}, _hlThickness:{_hlThickness:###,##}";
+
+        //var output2 = $"height:{GraphHeight:0000}, pips per chart:{PipsPerChart:0000}, vertical shift:{VerticalShift:###,##}";
+        //var output3 = $"start Time:{DebugInfoStruct.StartTime}, end time:{DebugInfoStruct.EndTime}, time span:{DebugInfoStruct.TimeSpan:g}, time step:{DebugInfoStruct.TimeStep}, new start time:{DebugInfoStruct.NewStartTime}";
+
+        var textLayout1 = new CanvasTextLayout(args.DrawingSession, output1, YxAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
+        args.DrawingSession.DrawTextLayout(textLayout1, 0, 0, Colors.White);
+
+        var textLayout2 = new CanvasTextLayout(args.DrawingSession, output2, YxAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
+        args.DrawingSession.DrawTextLayout(textLayout2, 0, (float)textLayout1.LayoutBounds.Height, Colors.White);
+
+        //var textLayout3 = new CanvasTextLayout(args.DrawingSession, output3, YxAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
+        //args.DrawingSession.DrawTextLayout(textLayout3, 0, (float)textLayout1.LayoutBounds.Height * 2, Colors.White);
+    }
+#endif
 }

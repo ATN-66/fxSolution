@@ -8,7 +8,7 @@ using Common.Entities;
 
 namespace Terminal.WinUI3.AI.Data;
 
-public readonly record struct Candlestick: IChartItem
+public class Candlestick: IChartItem
 {
     public Symbol Symbol
     {
@@ -20,11 +20,11 @@ public readonly record struct Candlestick: IChartItem
     }
     public double Ask
     {
-        get; init;
+        get; set;
     }
     public double Bid
     {
-        get; init;
+        get; set;
     }
 
     [Description("Elapsed Minutes From January First Of 1970")]
@@ -38,14 +38,14 @@ public readonly record struct Candlestick: IChartItem
     }
     public double Close
     {
-        get; init;
+        get; set;
     }
     public double High
     {
-        get; init;
+        get; set;
     }
     public double Low
     {
-        get; init;
+        get; set;
     }
 }

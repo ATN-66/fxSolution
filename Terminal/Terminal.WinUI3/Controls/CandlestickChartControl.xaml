@@ -6,8 +6,8 @@
     xmlns:win2d="using:Microsoft.Graphics.Canvas.UI.Xaml">
 
     <Style TargetType="controls:CandlestickChartControl">
-        <Setter Property="HorizontalAlignment" Value="Stretch"/>
-        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="controls:CandlestickChartControl">
@@ -27,7 +27,7 @@
                         <Slider
                             Grid.Row="0"
                             Grid.Column="0"
-                            Maximum="{Binding MaxUnitsPerChart, Mode=TwoWay}"
+                            Maximum="{Binding MaxUnitsPerChart, Mode=OneWay}"
                             Minimum="{Binding MinUnitsPerChart, Mode=OneWay}"
                             Orientation="Horizontal"
                             SmallChange="5"

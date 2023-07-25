@@ -14,7 +14,6 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
-using Microsoft.UI;
 using Terminal.WinUI3.AI.Data;
 
 namespace Terminal.WinUI3.Controls;
@@ -191,16 +190,6 @@ public abstract class ChartControl<TItem, TKernel> : ChartControlBase where TIte
         return value;
     }
 
-    protected override void AdjustMaxUnitsPerChart()
-    {
-        MaxUnitsPerChart = Math.Min((int)Math.Floor(GraphWidth), Kernel.Count);
-
-        if (MaxUnitsPerChart < MinUnitsPerChart)
-        {
-            MaxUnitsPerChart = MinUnitsPerChart;
-        }
-    }
-
     protected override void AdjustKernelShift()
     {
         KernelShiftValue = Math.Clamp(KernelShiftValue, 0, Kernel.Count - UnitsPerChart);
@@ -217,33 +206,4 @@ public abstract class ChartControl<TItem, TKernel> : ChartControlBase where TIte
 
         EnableDrawing = true;
     }
-
-#if DEBUGWIN2DCanvasControl
-    protected override void DebugCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
-    {
-        try
-        {
-            args.DrawingSession.Clear(GraphBackgroundColor);
-            args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
-            var output1 =
-                $"width:{GraphWidth:0000}, max units per chart:{MaxUnitsPerChart:0000}, units per chart:{UnitsPerChart:0000}, horizontal shift:{HorizontalShift:0000}, kernel shift:{KernelShiftValue:000000}, kernel.Count:{Kernel.Count:000000}";
-            var output2 = $"height:{GraphHeight:0000}, pips per chart:{PipsPerChart:0000}, vertical shift:{VerticalShift:###,##}";
-            var output3 = $"start Time:{DebugInfoStruct.StartTime}, end time:{DebugInfoStruct.EndTime}, time span:{DebugInfoStruct.TimeSpan:g}, time step:{DebugInfoStruct.TimeStep}, new start time:{DebugInfoStruct.NewStartTime}";
-
-            var textLayout1 = new CanvasTextLayout(args.DrawingSession, output1, YxAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
-            args.DrawingSession.DrawTextLayout(textLayout1, 0, 0, Colors.White);
-
-            var textLayout2 = new CanvasTextLayout(args.DrawingSession, output2, YxAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
-            args.DrawingSession.DrawTextLayout(textLayout2, 0, (float)textLayout1.LayoutBounds.Height, Colors.White);
-
-            var textLayout3 = new CanvasTextLayout(args.DrawingSession, output3, YxAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
-            args.DrawingSession.DrawTextLayout(textLayout3, 0, (float)textLayout1.LayoutBounds.Height * 2, Colors.White);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "DebugCanvas_OnDraw");
-            throw;
-        }
-    }
 }
-#endif

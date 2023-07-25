@@ -1,4 +1,9 @@
-﻿using Common.Entities;
+﻿/*+------------------------------------------------------------------+
+  |                                           Terminal.WinUI3.AI.Data|
+  |                                             CandlestickKernel.cs |
+  +------------------------------------------------------------------+*/
+
+using Common.Entities;
 using Common.ExtensionsAndHelpers;
 
 namespace Terminal.WinUI3.AI.Data;
@@ -33,8 +38,44 @@ public class CandlestickKernel : Kernel<Candlestick>
 
         Items.AddRange(candlesticks);
     }
+
     public override void Add(Quotation quotation)
     {
-        
+        if (Items[^1].DateTime.AddMinutes(1) > quotation.DateTime)
+        {
+            var lastCandle = Items[^1];
+            lastCandle.Ask = quotation.Ask;
+            lastCandle.Bid = quotation.Bid;
+
+            if (quotation.Ask > lastCandle.High)
+            {
+                lastCandle.High = quotation.Ask;
+            }
+
+            if (quotation.Ask < lastCandle.Low)
+            {
+                lastCandle.Low = quotation.Ask;
+            }
+
+            lastCandle.Close = quotation.Ask;
+        }
+        else
+        {
+            var newCandlestick = new Candlestick
+            {
+                Symbol = quotation.Symbol,
+                Ask = quotation.Ask,
+                Bid = quotation.Bid,
+                DateTime = new DateTime(quotation.DateTime.Year, quotation.DateTime.Month, quotation.DateTime.Day, quotation.DateTime.Hour, quotation.DateTime.Minute, 0),
+
+                Minutes = new DateTime(quotation.DateTime.Year, quotation.DateTime.Month, quotation.DateTime.Day, quotation.DateTime.Hour, quotation.DateTime.Minute, 0).ElapsedMinutesFromJanuaryFirstOf1970(),
+                Open = quotation.Ask,
+                Close = quotation.Ask,
+                High = quotation.Ask,
+                Low = quotation.Ask,
+            };
+
+            Items.Add(newCandlestick);
+        }
     }
 }

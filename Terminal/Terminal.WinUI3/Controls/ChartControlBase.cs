@@ -31,7 +31,7 @@ public abstract class ChartControlBase : Control
     private const string YAxisTextSample = "0.12345";
     private const string XAxisTextSample = "HH:mm:ss";
     protected const float GraphDataStrokeThickness = 1;
-    private const string HexCode = "#202020"; // Raisin Black color
+    private const string HexCode = "#202020";
     protected const int MinTicks = 2;
     protected const int MaxTicks = 20;
     protected const float ArrowheadLength = 10;
@@ -771,23 +771,11 @@ public abstract class ChartControlBase : Control
        
     }
 
-    #region GraphWidth
-
-    private float _graphWidth;
-
     protected float GraphWidth
     {
-        get => _graphWidth;
-        set
-        {
-            _graphWidth = value;
-            AdjustMaxUnitsPerChart();
-        }
+        get;
+        set;
     }
-
-    protected abstract void AdjustMaxUnitsPerChart();
-
-    #endregion GraphWidth
 
     #region KernelShift
 

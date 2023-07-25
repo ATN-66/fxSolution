@@ -4,7 +4,6 @@
   +------------------------------------------------------------------+*/
 
 using System.ComponentModel;
-using System.Windows.Forms;
 using Common.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Xaml.Data;
@@ -16,7 +15,6 @@ using Binding = Microsoft.UI.Xaml.Data.Binding;
 using CommunityToolkit.Mvvm.Input;
 using Terminal.WinUI3.AI.Interfaces;
 using System.Windows.Input;
-using Windows.UI;
 using Terminal.WinUI3.AI.Data;
 using Terminal.WinUI3.Helpers;
 using Terminal.WinUI3.Models.Account.Enums;
@@ -31,11 +29,11 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     private readonly IAccountService _accountService;
     private readonly IDispatcherService _dispatcherService;
 
-    [ObservableProperty] private float _pipsPerChart = 100;// todo:settings
+    [ObservableProperty] private float _pipsPerChart = 50;// todo:settings
     [ObservableProperty] private float _maxPipsPerChart = 200;// todo:settings
     [ObservableProperty] private float _minPipsPerChart = 10;// todo:settings
-    [ObservableProperty] private int _unitsPerChart = 500;// todo:settings
-    [ObservableProperty] private int _maxUnitsPerChart = int.MaxValue;
+    [ObservableProperty] private int _unitsPerChart;
+    [ObservableProperty] private int _maxUnitsPerChart;
     [ObservableProperty] private int _minUnitsPerChart = 10;// todo:settings
     [ObservableProperty] private double _kernelShiftPercent = 100;
 
