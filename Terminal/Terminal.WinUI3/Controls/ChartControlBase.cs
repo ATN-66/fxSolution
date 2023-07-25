@@ -37,10 +37,11 @@ public abstract class ChartControlBase : Control
     protected const float ArrowheadLength = 10;
     protected const float ArrowheadWidth = 5;
 
+    public static readonly DependencyProperty PipsPerChartProperty = DependencyProperty.Register(nameof(PipsPerChart), typeof(double), typeof(TickChartControl), new PropertyMetadata(10d));
+
     public static readonly DependencyProperty MaxUnitsPerChartProperty = DependencyProperty.Register(nameof(MaxUnitsPerChart), typeof(int), typeof(ChartControlBase), new PropertyMetadata(500));
     public static readonly DependencyProperty MinUnitsPerChartProperty = DependencyProperty.Register(nameof(MinUnitsPerChart), typeof(int), typeof(TickChartControl), new PropertyMetadata(10));
     public static readonly DependencyProperty UnitsPerChartProperty = DependencyProperty.Register(nameof(UnitsPerChart), typeof(int), typeof(TickChartControl), new PropertyMetadata(100));
-    public static readonly DependencyProperty PipsPerChartProperty = DependencyProperty.Register(nameof(PipsPerChart), typeof(float), typeof(TickChartControl), new PropertyMetadata(10f));
     public static readonly DependencyProperty MaxPipsPerChartProperty = DependencyProperty.Register(nameof(MaxPipsPerChart), typeof(float), typeof(TickChartControl), new PropertyMetadata(200f));
     public static readonly DependencyProperty MinPipsPerChartProperty = DependencyProperty.Register(nameof(MinPipsPerChart), typeof(float), typeof(TickChartControl), new PropertyMetadata(10f));
     public static readonly DependencyProperty KernelShiftPercentProperty = DependencyProperty.Register(nameof(KernelShiftPercent), typeof(double), typeof(TickChartControl), new PropertyMetadata(0d));
@@ -156,9 +157,9 @@ public abstract class ChartControlBase : Control
         }
     }
 
-    public float PipsPerChart
+    public double PipsPerChart
     {
-        get => (float)GetValue(PipsPerChartProperty);
+        get => (double)GetValue(PipsPerChartProperty);
         set
         {
             if (value.Equals(PipsPerChart))
@@ -232,7 +233,7 @@ public abstract class ChartControlBase : Control
     {
         try
         {
-            VerticalScale = GraphHeight / PipsPerChart;
+            VerticalScale = GraphHeight / (float)PipsPerChart;
             GraphCanvas!.Invalidate();
             YAxisCanvas!.Invalidate();
             XAxisCanvas!.Invalidate();
@@ -582,7 +583,7 @@ public abstract class ChartControlBase : Control
 
             PipsPerChart += pipsChange;
             PipsPerChart = Math.Clamp(PipsPerChart, MinPipsPerChart, MaxPipsPerChart);
-            VerticalScale = GraphHeight / (PipsPerChart - 1);
+            VerticalScale = GraphHeight / (float)(PipsPerChart - 1);
 
             GraphCanvas!.Invalidate();
             YAxisCanvas!.Invalidate();

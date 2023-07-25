@@ -5,27 +5,66 @@
 
 using Common.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
 
 namespace Terminal.WinUI3.ViewModels;
 
 public class CurrencyViewModel : ObservableRecipient, INavigationAware
 {
-    public Currency Currency
+    private Currency Currency { get; set; }
+    private List<Symbol> Symbols { get; set; } = new();
+    private List<bool> IsReversed { get; set; } = new();
+    private readonly ISymbolOfCurrencyViewModelFactory _symbolViewModelFactory;
+    public List<SymbolOfCurrencyViewModel> SymbolViewModels { get; set; } = new();
+
+    public CurrencyViewModel(ISymbolOfCurrencyViewModelFactory symbolViewModelFactory)
     {
-        get;
-        private set;
+        _symbolViewModelFactory = symbolViewModelFactory;
     }
 
     public void OnNavigatedTo(object parameter)
     {
-        if (Enum.TryParse<Currency>((string)parameter, out var currency))
+        SymbolViewModels.Clear();
+        var input = parameter.ToString();
+        var parts = input!.Split(',').Select(part => part.Trim()).ToArray();
+
+        if (Enum.TryParse(parts[0], out Currency currency))
         {
             Currency = currency;
+        }
+        else
+        {
+            throw new Exception($"Invalid currency: {parts[0]}");
+        }
+
+        for (var i = 1; i < parts.Length; i++)
+        {
+            var symbolParts = parts[i].Trim('(', ')').Split(':');
+            if (Enum.TryParse(symbolParts[0], out Symbol symbol))
+            {
+                var isReversed = bool.Parse(symbolParts[1]);
+                Symbols.Add(symbol);
+                IsReversed.Add(isReversed);
+            }
+            else
+            {
+                throw new Exception($"Invalid symbol: {symbolParts[0]}");
+            }
+        }
+
+        for (var i = 0; i < Symbols.Count; i++)
+        {
+            var symbolViewModel = _symbolViewModelFactory.Create();
+            symbolViewModel.Symbol = Symbols[i];
+            symbolViewModel.IsReversed = IsReversed[i];
+            symbolViewModel.LoadChart();
+            SymbolViewModels.Add(symbolViewModel);
         }
     }
 
     public void OnNavigatedFrom()
     {
+        // todo: dispose charts
     }
 }

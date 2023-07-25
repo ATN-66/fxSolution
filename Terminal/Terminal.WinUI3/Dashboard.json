@@ -18,7 +18,7 @@
           "NavigationItems": [
             {
               "Content": "USD",
-              "Tag": "USD",
+              "Tag": "USD, (EURUSD:false), (GBPUSD:false), (USDJPY:true)",
               "Glyph": "\u0024",
               "NavigateTo": "CurrencyViewModel",
               "MenuItems": [
@@ -44,7 +44,7 @@
             },
             {
               "Content": "EUR",
-              "Tag": "EUR",
+              "Tag": "EUR, (EURUSD:true), (EURGBP:true), (EURJPY:true)",
               "Glyph": "\u20AC",
               "NavigateTo": "CurrencyViewModel",
               "MenuItems": [
@@ -70,7 +70,7 @@
             },
             {
               "Content": "GBP",
-              "Tag": "GBP",
+              "Tag": "GBP, (GBPUSD:true), (EURGBP:false), (GBPJPY:true)",
               "Glyph": "\u00A3",
               "NavigateTo": "CurrencyViewModel",
               "MenuItems": [
@@ -96,7 +96,7 @@
             },
             {
               "Content": "JPY",
-              "Tag": "JPY",
+              "Tag": "JPY, (USDJPY:false), (EURJPY:false), (GBPJPY:false)",
               "Glyph": "\u00A5",
               "NavigateTo": "CurrencyViewModel",
               "MenuItems": [

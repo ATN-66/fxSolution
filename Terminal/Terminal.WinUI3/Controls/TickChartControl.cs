@@ -65,7 +65,7 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
             var offset = IsReversed ? GraphHeight : 0;
 
             var ask = (float)Kernel[KernelShiftValue].Ask;
-            var yZeroPrice = ask + PipsPerChart * Pip / 2f - VerticalShift * Pip;
+            var yZeroPrice = ask + (float)PipsPerChart * Pip / 2f - VerticalShift * Pip;
 
             var unit = 0;
             _askData[HorizontalShift].Y = IsReversed ? offset - (yZeroPrice - ask) / Pip * VerticalScale : (yZeroPrice - ask) / Pip * VerticalScale;
@@ -236,7 +236,7 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
         }
 
         HorizontalScale = GraphWidth / (UnitsPerChart - 1);
-        VerticalScale = GraphHeight / PipsPerChart;
+        VerticalScale = GraphHeight / (float)PipsPerChart;
 
         _askData = new Vector2[UnitsPerChart];
         _bidData = new Vector2[UnitsPerChart];

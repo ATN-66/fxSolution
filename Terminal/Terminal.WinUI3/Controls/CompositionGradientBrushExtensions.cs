@@ -8,9 +8,6 @@ namespace Terminal.WinUI3.Controls;
 
 public static class CompositionGradientBrushExtensions
 {
-    /// <summary>
-    ///     Create color stops by using easing function
-    /// </summary>
     public static void CreateColorStopsWithEasingFunction(this CompositionGradientBrush compositionGradientBrush, EasingType easingType, EasingMode easingMode, float colorStopBegin, float colorStopEnd, float gap = 0.05f)
     {
         var compositor = compositionGradientBrush.Compositor;

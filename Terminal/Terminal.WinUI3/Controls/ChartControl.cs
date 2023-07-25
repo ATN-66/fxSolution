@@ -41,7 +41,7 @@ public abstract class ChartControl<TItem, TKernel> : ChartControlBase where TIte
             var offset = IsReversed ? GraphHeight : 0;
 
             var ask = (float)Kernel[KernelShiftValue].Ask;
-            var yZeroPrice = ask + Pip * PipsPerChart / 2f - VerticalShift * Pip;
+            var yZeroPrice = ask + Pip * (float)PipsPerChart / 2f - VerticalShift * Pip;
             var y = Math.Abs(offset - (yZeroPrice - ask) / Pip * VerticalScale);
             cpb.BeginFigure(new Vector2(0, y));
             cpb.AddLine(new Vector2(YAxisWidth, y));

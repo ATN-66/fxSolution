@@ -65,7 +65,7 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
         {
             var offset = IsReversed ? GraphHeight : 0;
             var ask = (float)Kernel[KernelShiftValue].Ask;
-            var yZeroPrice = ask + PipsPerChart * Pip / 2f - VerticalShift * Pip;
+            var yZeroPrice = ask + (float)PipsPerChart * Pip / 2f - VerticalShift * Pip;
             var unit = 0;
 
             using var highLowUpCpb = new CanvasPathBuilder(args.DrawingSession);
@@ -152,7 +152,7 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
         AdjustThickness();
 
         HorizontalScale = GraphWidth / (UnitsPerChart - 1);
-        VerticalScale = GraphHeight / PipsPerChart;
+        VerticalScale = GraphHeight / (float)PipsPerChart;
 
         _highData = new Vector2[UnitsPerChart];
         _lowData = new Vector2[UnitsPerChart];
