@@ -13,8 +13,8 @@ namespace Terminal.WinUI3.ViewModels;
 public class CurrencyViewModel : ObservableRecipient, INavigationAware
 {
     private Currency Currency { get; set; }
-    private List<Symbol> Symbols { get; set; } = new();
-    private List<bool> IsReversed { get; set; } = new();
+    private List<Symbol> Symbols { get; } = new();
+    private List<bool> IsReversed { get; } = new();
     private readonly ISymbolOfCurrencyViewModelFactory _symbolViewModelFactory;
     public List<SymbolOfCurrencyViewModel> SymbolViewModels { get; set; } = new();
 
@@ -65,6 +65,9 @@ public class CurrencyViewModel : ObservableRecipient, INavigationAware
 
     public void OnNavigatedFrom()
     {
-        // todo: dispose charts
+        for (var i = 0; i < Symbols.Count; i++)
+        {
+            SymbolViewModels[i].OnNavigatedFrom();
+        }
     }
 }

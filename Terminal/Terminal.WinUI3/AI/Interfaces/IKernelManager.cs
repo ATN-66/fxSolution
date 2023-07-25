@@ -4,6 +4,6 @@ namespace Terminal.WinUI3.AI.Interfaces;
 
 public interface IKernelManager
 {
-    void Initialize(IDictionary<Symbol, List<Quotation>> quotations);
+    Task InitializeAsync(IDictionary<Symbol, List<Quotation>> quotations);
     void Add(Quotation quotation);
 }

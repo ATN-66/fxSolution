@@ -11,8 +11,9 @@ namespace Terminal.WinUI3.Contracts.Services;
 
 public interface IVisualService
 {
-    void Initialize(Dictionary<Symbol, Dictionary<ChartType, IKernel>> kernels);
+    Task InitializeAsync(Dictionary<Symbol, Dictionary<ChartType, IKernel>> kernels);
     T GetChart<T, TItem, TK>(Symbol symbol, ChartType chartType, bool isReversed) where T : ChartControl<TItem, TK> where TItem : IChartItem where TK : IKernel<TItem>;
-    void DisposeChart<T, TItem, TK>(Symbol symbol, ChartType ticks, bool isReversed);
+    void DisposeChart(ChartControlBase chartControlBase);
     void Tick(Symbol symbol);
+    ChartControlBase GetDefaultChart(Symbol symbol, bool isReversed);
 }

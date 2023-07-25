@@ -18,7 +18,7 @@ using Terminal.WinUI3.AI.Data;
 
 namespace Terminal.WinUI3.Controls;
 
-public abstract class ChartControl<TItem, TKernel> : ChartControlBase where TItem : IChartItem where TKernel : IKernel<TItem>
+public abstract partial class ChartControl<TItem, TKernel> : ChartControlBase where TItem : IChartItem where TKernel : IKernel<TItem>
 {
     protected ChartControl(Symbol symbol, bool isReversed, TKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(symbol, isReversed, baseColor, quoteColor, logger)
     {
@@ -40,34 +40,34 @@ public abstract class ChartControl<TItem, TKernel> : ChartControlBase where TIte
 
             var offset = IsReversed ? GraphHeight : 0;
 
-            var ask = (float)Kernel[KernelShiftValue].Ask;
-            var yZeroPrice = ask + Pip * (float)PipsPerChart / 2f - VerticalShift * Pip;
-            var y = Math.Abs(offset - (yZeroPrice - ask) / Pip * VerticalScale);
-            cpb.BeginFigure(new Vector2(0, y));
-            cpb.AddLine(new Vector2(YAxisWidth, y));
+            var ask = (float)Kernel[KernelShift].Ask;
+            var yZeroPrice = ask + Digits * (float)Pips / 2f - VerticalShift * Digits;
+            var y = Math.Abs(offset - (yZeroPrice - ask) / Digits * VerticalScale);
+            cpb.BeginFigure(new Vector2(0, (float)y));
+            cpb.AddLine(new Vector2((float)YAxisWidth, (float)y));
             cpb.EndFigure(CanvasFigureLoop.Open);
-            var textLayout = new CanvasTextLayout(args.DrawingSession, ask.ToString(YxAxisLabelFormat), YxAxisTextFormat, YAxisWidth, YAxisFontSize);
-            args.DrawingSession.DrawTextLayout(textLayout, 0, y - (float)textLayout.LayoutBounds.Height, YAxisAskBidForegroundColor);
+            var textLayout = new CanvasTextLayout(args.DrawingSession, ask.ToString(YxAxisLabelFormat), YxAxisTextFormat, (float)YAxisWidth, (float)YAxisFontSize);
+            args.DrawingSession.DrawTextLayout(textLayout, 0f, (float)(y - textLayout.LayoutBounds.Height), YAxisAskBidForegroundColor);
 
-            var bid = (float)Kernel[KernelShiftValue].Bid;
-            y = Math.Abs(offset - (yZeroPrice - bid) / Pip * VerticalScale);
-            cpb.BeginFigure(new Vector2(0, y));
-            cpb.AddLine(new Vector2(YAxisWidth, y));
+            var bid = (float)Kernel[KernelShift].Bid;
+            y = Math.Abs(offset - (yZeroPrice - bid) / Digits * VerticalScale);
+            cpb.BeginFigure(new Vector2(0f, (float)y));
+            cpb.AddLine(new Vector2((float)YAxisWidth, (float)y));
             cpb.EndFigure(CanvasFigureLoop.Open);
-            textLayout = new CanvasTextLayout(args.DrawingSession, bid.ToString(YxAxisLabelFormat), YxAxisTextFormat, YAxisWidth, YAxisFontSize);
-            args.DrawingSession.DrawTextLayout(textLayout, 0, y, YAxisAskBidForegroundColor);
+            textLayout = new CanvasTextLayout(args.DrawingSession, bid.ToString(YxAxisLabelFormat), YxAxisTextFormat, (float)YAxisWidth, (float)YAxisFontSize);
+            args.DrawingSession.DrawTextLayout(textLayout, 0f, (float)y, YAxisAskBidForegroundColor);
 
-            var divisor = 1f / (YAxisStepInPips * Pip);
+            var divisor = 1f / (YAxisStepInPips * Digits);
             var firstPriceDivisibleBy10Pips = (float)Math.Floor(yZeroPrice * divisor) / divisor;
 
-            for (var price = firstPriceDivisibleBy10Pips; price >= yZeroPrice - PipsPerChart * Pip; price -= Pip * YAxisStepInPips)
+            for (var price = firstPriceDivisibleBy10Pips; price >= yZeroPrice - Pips * Digits; price -= Digits * YAxisStepInPips)
             {
-                y = Math.Abs(offset - (yZeroPrice - price) / Pip * VerticalScale);
-                textLayout = new CanvasTextLayout(args.DrawingSession, price.ToString(YxAxisLabelFormat), YxAxisTextFormat, YAxisWidth, YAxisFontSize);
-                args.DrawingSession.DrawTextLayout(textLayout, 0, y - (float)textLayout.LayoutBounds.Height, YxAxisForegroundColor);
+                y = Math.Abs(offset - (yZeroPrice - price) / Digits * VerticalScale);
+                textLayout = new CanvasTextLayout(args.DrawingSession, price.ToString(YxAxisLabelFormat), YxAxisTextFormat, (float)YAxisWidth, (float)YAxisFontSize);
+                args.DrawingSession.DrawTextLayout(textLayout, 0f, (float)(y - textLayout.LayoutBounds.Height), YxAxisForegroundColor);
 
-                cpb.BeginFigure(new Vector2(0, y));
-                cpb.AddLine(new Vector2(YAxisWidth, y));
+                cpb.BeginFigure(new Vector2(0f, (float)y));
+                cpb.AddLine(new Vector2((float)YAxisWidth, (float)y));
                 cpb.EndFigure(CanvasFigureLoop.Open);
             }
 
@@ -88,8 +88,8 @@ public abstract class ChartControl<TItem, TKernel> : ChartControlBase where TIte
             using var cpb = new CanvasPathBuilder(args.DrawingSession);
             args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 
-            var startUnit = KernelShiftValue;
-            var endUnit = UnitsPerChart - HorizontalShift + KernelShiftValue - 1;
+            var startUnit = KernelShift;
+            var endUnit = UnitsPercent - HorizontalShift + KernelShift - 1;
 
             var endTime = Kernel[startUnit].DateTime;
             var startTime = Kernel[endUnit].DateTime; //todo
@@ -101,11 +101,11 @@ public abstract class ChartControl<TItem, TKernel> : ChartControlBase where TIte
             }
 
             var pixelsPerSecond = GraphWidth / totalSeconds;
-#if DEBUGWIN2DCanvasControl
-            DebugInfoStruct.StartTime = startTime;
-            DebugInfoStruct.EndTime = endTime;
-            DebugInfoStruct.TimeSpan = timeSpan;
-#endif
+//#if DEBUGWIN2DCanvasControl
+//            DebugInfoStruct.StartTime = startTime;
+//            DebugInfoStruct.EndTime = endTime;
+//            DebugInfoStruct.TimeSpan = timeSpan;
+//#endif
             var minTimeStep = totalSeconds / MaxTicks;
             var maxTimeStep = totalSeconds / MinTicks;
 
@@ -117,17 +117,17 @@ public abstract class ChartControl<TItem, TKernel> : ChartControlBase where TIte
             }
 
             startTime = RoundDateTime(startTime, timeStep);
-#if DEBUGWIN2DCanvasControl
-            DebugInfoStruct.TimeStep = timeStep;
-            DebugInfoStruct.NewStartTime = startTime;
-#endif
+//#if DEBUGWIN2DCanvasControl
+//            DebugInfoStruct.TimeStep = timeStep;
+//            DebugInfoStruct.NewStartTime = startTime;
+//#endif
             for (double tickTime = 0; tickTime <= totalSeconds; tickTime += timeStep)
             {
                 var tickDateTime = startTime.AddSeconds(tickTime);
                 var x = (float)(tickTime * pixelsPerSecond);
 
                 cpb.BeginFigure(new Vector2(x, 0));
-                cpb.AddLine(new Vector2(x, XAxisHeight));
+                cpb.AddLine(new Vector2(x, (float)XAxisHeight));
                 cpb.EndFigure(CanvasFigureLoop.Open);
 
                 var textLayout = new CanvasTextLayout(args.DrawingSession, $"{tickDateTime:t}", YxAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
@@ -143,67 +143,13 @@ public abstract class ChartControl<TItem, TKernel> : ChartControlBase where TIte
         }
     }
 
-    protected override void OnKernelShiftPercentChanged(double value)
+    protected override int CalculateKernelShift()
     {
-        try
-        {
-            if (HorizontalShift > 0)
-            {
-                HorizontalShift = 0;
-            }
-
-            var range = Kernel.Count - UnitsPerChart;
-            KernelShiftValue = (int)(range - value / 100d * range);
-
-            if (range == 0)
-            {
-                if (!value.Equals(100d))
-                {
-                    throw new InvalidOperationException("!value.Equals(100d)");
-                }
-
-                return;
-            }
-
-            GraphCanvas!.Invalidate();
-            YAxisCanvas!.Invalidate();
-            XAxisCanvas!.Invalidate();
-#if DEBUGWIN2DCanvasControl
-            DebugCanvas!.Invalidate();
-#endif
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "OnKernelShiftPercentChanged");
-            throw;
-        }
+        return (int)Math.Max(0, ((Kernel.Count - Units) / 100d) * (100d - KernelShiftPercent));
     }
 
-    protected override double AdjustRangeOnKernelShiftPercent(double value)
+    protected override int CalculateKernelShiftPercent()
     {
-        var range = Kernel.Count - UnitsPerChart;
-        if (range == 0)
-        {
-            value = 100;
-        }
-
-        return value;
-    }
-
-    protected override void AdjustKernelShift()
-    {
-        KernelShiftValue = Math.Clamp(KernelShiftValue, 0, Kernel.Count - UnitsPerChart);
-        EnableDrawing = false;
-        var range = Kernel.Count - UnitsPerChart;
-        if (range != 0)
-        {
-            KernelShiftPercent = (range - KernelShiftValue) / (double)range * 100;
-        }
-        else
-        {
-            KernelShiftPercent = 100;
-        }
-
-        EnableDrawing = true;
+        return (int)(100d - (KernelShift * 100d) / (Kernel.Count - Units));
     }
 }

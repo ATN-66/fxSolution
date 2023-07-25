@@ -4,6 +4,7 @@
   +------------------------------------------------------------------+*/
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Fx.Grpc;
@@ -67,19 +68,26 @@ public class Processor : IProcessor
             await RequestAccountPropertiesAsync().ConfigureAwait(false);
             await _accountReady.Task.ConfigureAwait(false);
 
-            var historicalData = await _dataService.LoadDataAsync(_startDateTime, _nowDateTime).ConfigureAwait(false);
-            _kernelManager.Initialize(historicalData);
+            //todo: remove this
+            _startDateTime = new DateTime(2023, 7, 4, 0, 0, 0);
+            _nowDateTime = new DateTime(2023, 7, 4, 11, 0, 0);
+            var diff = (_nowDateTime - _startDateTime).Hours + 1;
 
-            var (dataTask, dataChannel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
-            var dataProcessingTask = DataProcessingTaskAsync(token);
+            Debug.WriteLine($"Processor.StartAsync: difference = {diff} hours");
+            var historicalData = await _dataService.LoadDataAsync(_startDateTime, _nowDateTime).ConfigureAwait(false);
+            await _kernelManager.InitializeAsync(historicalData).ConfigureAwait(false);
+
+            //var (dataTask, dataChannel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
+            //var dataProcessingTask = DataProcessingTaskAsync(token);
 
             await _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
                 _splashScreenService.HideSplash();
             }).ConfigureAwait(true);
 
-            await Task.WhenAll(dataTask, dataProcessingTask, executiveTask, executiveProcessingTask).ConfigureAwait(false);
-            await dataChannel.ShutdownAsync().ConfigureAwait(false);
+            await Task.WhenAll(executiveTask, executiveProcessingTask).ConfigureAwait(false);
+            //await Task.WhenAll(dataTask, dataProcessingTask, executiveTask, executiveProcessingTask).ConfigureAwait(false);
+            //await dataChannel.ShutdownAsync().ConfigureAwait(false);
             await executiveChannel.ShutdownAsync().ConfigureAwait(false);
         }
         catch (Exception exception)

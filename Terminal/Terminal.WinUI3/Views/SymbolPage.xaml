@@ -8,16 +8,47 @@
     mc:Ignorable="d">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <ContentControl
+        <Slider
             Grid.Row="0"
+            Grid.Column="0"
+            Maximum="100"
+            Minimum="0"
+            Orientation="Horizontal"
+            SmallChange="1"
+            StepFrequency="1"
+            Value="{x:Bind Path=ViewModel.UnitsPercent, Mode=TwoWay}" />
+        <ContentControl
+            Grid.Row="1"
             Grid.Column="0"
             HorizontalContentAlignment="Stretch"
             VerticalContentAlignment="Stretch"
             Content="{x:Bind ViewModel.ChartControlBase, Mode=OneWay}" />
+        <Slider
+            Grid.Row="2"
+            Grid.Column="0"
+            Maximum="100"
+            Minimum="0"
+            Orientation="Horizontal"
+            SmallChange="1"
+            StepFrequency="1"
+            Value="{x:Bind Path=ViewModel.KernelShiftPercent, Mode=TwoWay}" />
+        <Slider
+            Grid.Row="1"
+            Grid.Column="1"
+            Maximum="100"
+            Minimum="0"
+            Orientation="Vertical"
+            SmallChange="1"
+            StepFrequency="1"
+            Value="{x:Bind Path=ViewModel.PipsPercent, Mode=TwoWay}" />
     </Grid>
 </Page>

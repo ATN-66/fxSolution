@@ -22,13 +22,13 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
     private readonly IAccountService _accountService;
     private readonly IDispatcherService _dispatcherService;
 
-    [ObservableProperty] private double _pipsPerChart = 50;// todo:settings
-    [ObservableProperty] private float _maxPipsPerChart = 200;// todo:settings
-    [ObservableProperty] private float _minPipsPerChart = 10;// todo:settings
-    [ObservableProperty] private int _unitsPerChart;
-    [ObservableProperty] private int _maxUnitsPerChart;
-    [ObservableProperty] private int _minUnitsPerChart = 10;// todo:settings
-    [ObservableProperty] private double _kernelShiftPercent = 100;
+    [ObservableProperty] private int _minPips = 20; // todo:settings
+    [ObservableProperty] private int _maxPips = 200; // todo:settings
+    [ObservableProperty] private int _pipsPercent = 50; // todo:settings
+
+    [ObservableProperty] private int _minUnits;// todo:settings
+    [ObservableProperty] private int _unitsPercent = 100; // todo:settings
+    [ObservableProperty] private int _kernelShiftPercent = 100; //todo:settings
 
     private string _operationalButtonContent = null!;
     private ICommand _operationalCommand = null!;
@@ -45,27 +45,35 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
     [RelayCommand]
     private Task TicksAsync()
     {
-        VisualService.DisposeChart<CandlestickChartControl, Candlestick, CandlestickKernel>(Symbol, ChartType.Candlesticks, IsReversed);
-        ChartControlBase.Detach();
-        ChartControlBase = null!;
-
+        DisposeChart();
         ChartControlBase = VisualService.GetChart<TickChartControl, Quotation, QuotationKernel>(Symbol, ChartType.Ticks, IsReversed);
         UpdateProperties();
-
         return Task.CompletedTask;
     }
 
     [RelayCommand]
     private Task CandlesticksAsync()
     {
-        VisualService.DisposeChart<TickChartControl, Quotation, QuotationKernel>(Symbol, ChartType.Ticks, IsReversed);
-        ChartControlBase.Detach();
-        ChartControlBase = null!;
-
+        DisposeChart();
         ChartControlBase = VisualService.GetChart<CandlestickChartControl, Candlestick, CandlestickKernel>(Symbol, ChartType.Candlesticks, IsReversed);
         UpdateProperties();
-
         return Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    private Task ThresholdBarsAsync()
+    {
+        DisposeChart();
+        ChartControlBase = VisualService.GetChart<ThresholdBarChartControl, ThresholdBar, ThresholdBarKernel>(Symbol, ChartType.ThresholdBar, IsReversed);
+        UpdateProperties();
+        return Task.CompletedTask;
+    }
+
+    private void DisposeChart()
+    {
+        VisualService.DisposeChart(ChartControlBase);
+        ChartControlBase.Detach();
+        ChartControlBase = null!;
     }
 
     protected SymbolViewModelBase(IVisualService visualService, IProcessor processor, IAccountService accountService, IDispatcherService dispatcherService)
@@ -115,17 +123,17 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
         UpdateOperationalProperties();
     }
 
-    partial void OnPipsPerChartChanged(double value)
+    partial void OnPipsPercentChanged(int value)
     {
-        ChartControlBase.PipsPerChart = value;
+        ChartControlBase.PipsPercent = value;
     }
 
-    partial void OnUnitsPerChartChanged(int value)
+    partial void OnUnitsPercentChanged(int value)
     {
-        ChartControlBase.UnitsPerChart = value;
+        ChartControlBase.UnitsPercent = value;
     }
 
-    partial void OnKernelShiftPercentChanged(double value)
+    partial void OnKernelShiftPercentChanged(int value)
     {
         ChartControlBase.KernelShiftPercent = value;
     }
@@ -133,14 +141,12 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
     protected void UpdateProperties()
     {
         ChartControlBase.DataContext = this;
-        ChartControlBase.SetBinding(ChartControlBase.PipsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(PipsPerChart)), Mode = BindingMode.TwoWay });
-        ChartControlBase.SetBinding(ChartControlBase.MaxPipsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MaxPipsPerChart)), Mode = BindingMode.OneWay });
-        ChartControlBase.SetBinding(ChartControlBase.MinPipsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinPipsPerChart)), Mode = BindingMode.OneWay });
-        ChartControlBase.SetBinding(ChartControlBase.UnitsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(UnitsPerChart)), Mode = BindingMode.TwoWay });
-        ChartControlBase.SetBinding(ChartControlBase.MaxUnitsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MaxUnitsPerChart)), Mode = BindingMode.TwoWay });
-        ChartControlBase.SetBinding(ChartControlBase.MinUnitsPerChartProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnitsPerChart)), Mode = BindingMode.OneWay });
+        ChartControlBase.SetBinding(ChartControlBase.MinPipsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinPips)), Mode = BindingMode.OneWay });
+        ChartControlBase.SetBinding(ChartControlBase.MaxPipsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MaxPips)), Mode = BindingMode.OneWay });
+        ChartControlBase.SetBinding(ChartControlBase.PipsPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(PipsPercent)), Mode = BindingMode.TwoWay });
+        ChartControlBase.SetBinding(ChartControlBase.UnitsPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(UnitsPercent)), Mode = BindingMode.TwoWay });
+        ChartControlBase.SetBinding(ChartControlBase.MinUnitsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnits)), Mode = BindingMode.OneWay });
         ChartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
-
         UpdateOperationalProperties();
     }
 

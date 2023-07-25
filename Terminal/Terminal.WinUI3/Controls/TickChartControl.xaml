@@ -12,108 +12,77 @@
             <Setter.Value>
                 <ControlTemplate TargetType="controls:TickChartControl">
                     <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Slider
-                            Grid.Row="0"
-                            Grid.Column="0"
-                            Maximum="{Binding MaxUnitsPerChart, Mode=OneWay}"
-                            Minimum="{Binding MinUnitsPerChart, Mode=OneWay}"
-                            Orientation="Horizontal"
-                            SmallChange="5"
-                            StepFrequency="10"
-                            Value="{Binding UnitsPerChart, Mode=TwoWay}" />
                         <win2d:CanvasControl
                             x:Name="xAxisCanvas"
-                            Grid.Row="1"
+                            Grid.Row="0"
                             Grid.Column="0"
+                            Margin="{TemplateBinding Margin}"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            Foreground="{TemplateBinding Foreground}" />
+                        <win2d:CanvasControl
+                            x:Name="yAxisCanvas"
+                            Grid.Row="1"
+                            Grid.Column="1"
                             Margin="{TemplateBinding Margin}"
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
                             Foreground="{TemplateBinding Foreground}" />
                         <win2d:CanvasControl
                             x:Name="debugCanvas"
-                            Grid.Row="2"
-                            Grid.Column="0"
-                            Margin="{TemplateBinding Margin}"
-                            Padding="{TemplateBinding Padding}"
-                            Background="{TemplateBinding Background}"
-                            Foreground="{TemplateBinding Foreground}" />
-
-                        <win2d:CanvasControl
-                            x:Name="textCanvas"
-                            Grid.Row="3"
+                            Grid.Row="1"
                             Grid.Column="0"
                             Margin="{TemplateBinding Margin}"
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
                             Foreground="{TemplateBinding Foreground}"
                             IsHitTestVisible="False" />
-
+                        <win2d:CanvasControl
+                            x:Name="textCanvas"
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Margin="{TemplateBinding Margin}"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            Foreground="{TemplateBinding Foreground}"
+                            IsHitTestVisible="False" />
                         <win2d:CanvasControl
                             x:Name="graphCanvas"
-                            Grid.Row="3"
+                            Grid.Row="1"
                             Grid.Column="0"
                             Margin="{TemplateBinding Margin}"
                             Padding="{TemplateBinding Padding}"
                             Background="Transparent"
                             Foreground="{TemplateBinding Foreground}" />
 
-                        <Slider
-                            Grid.Row="4"
-                            Grid.Column="0"
-                            Maximum="100"
-                            Minimum="0"
-                            Orientation="Horizontal"
-                            SmallChange="1"
-                            StepFrequency="1"
-                            Value="{Binding KernelShiftPercent, Mode=TwoWay}" />
 
-                        <Button
+                        <!--<Button
                             Grid.Row="3"
                             Grid.Column="0"
-                            Margin="0,0,10,10"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Bottom"
-                            Command="{Binding OperationalCommand, Mode=OneWay}"
-                            Content="{Binding OperationalButtonContent, Mode=OneWay}" />
-
-                        <Button
-                            Grid.Row="3"
-                            Grid.Column="0"
-                            Margin="0,0,10,10"
+                            Margin="0,0,0,0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Bottom"
-                            Command="{Binding CandlesticksCommand, Mode=OneWay}"
-                            Content="Candlesticks" />
+                            Command="{Binding TicksCommand, Mode=OneWay}"
+                            Content="Ticks" />-->
+                        <!--<Button
+                            Grid.Row="3"
+                            Grid.Column="0"
+                            Margin="0,0,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Bottom"
+                            Command="{Binding ThresholdBarsCommand, Mode=OneWay}"
+                            Content="ThresholdBars" />-->
 
-                        <win2d:CanvasControl
-                            x:Name="yAxisCanvas"
-                            Grid.Row="3"
-                            Grid.Column="1"
-                            Margin="{TemplateBinding Margin}"
-                            Padding="{TemplateBinding Padding}"
-                            Background="{TemplateBinding Background}"
-                            Foreground="{TemplateBinding Foreground}" />
-                        <Slider
-                            Grid.Row="3"
-                            Grid.Column="2"
-                            Maximum="{Binding MaxPipsPerChart, Mode=OneWay}"
-                            Minimum="{Binding MinPipsPerChart, Mode=OneWay}"
-                            Orientation="Vertical"
-                            SmallChange="2"
-                            StepFrequency="10"
-                            Value="{Binding PipsPerChart, Mode=TwoWay}" />
+
+
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>

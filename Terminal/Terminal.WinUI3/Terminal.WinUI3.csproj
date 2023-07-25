@@ -29,6 +29,7 @@
     <None Remove="Assets\SampleMedia\LandscapeImage8.jpg" />
     <None Remove="Controls\CandlestickChartControl.xaml" />
     <None Remove="Controls\HomePageHeaderImage.xaml" />
+    <None Remove="Controls\ThresholdBarChartControl.xaml" />
     <None Remove="Controls\TickChartControl.xaml" />
     <None Remove="Generic.xaml" />
     <None Remove="ItemTemplates.xaml" />
@@ -61,7 +62,7 @@
     <PackageReference Include="CommunityToolkit.WinUI.UI.Animations" Version="7.1.2" />
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls" Version="7.1.2" />
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
-    <PackageReference Include="Google.Protobuf" Version="3.24.0-rc1" />
+    <PackageReference Include="Google.Protobuf" Version="3.24.0-rc2" />
     <PackageReference Include="Grpc" Version="2.46.6" />
     <PackageReference Include="Grpc.Core.Api" Version="2.55.0" />
     <PackageReference Include="Grpc.Net.Client" Version="2.55.0" />
@@ -99,6 +100,10 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Page Update="Controls\ThresholdBarChartControl.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="Controls\CandlestickChartControl.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>

@@ -19,5 +19,10 @@ public sealed class SymbolOfCurrencyViewModel : SymbolViewModelBase
 
     public override void OnNavigatedTo(object parameter) => throw new NotImplementedException("SymbolOfCurrencyViewModel: OnNavigatedTo");
 
-    public override void OnNavigatedFrom() => throw new NotImplementedException("SymbolOfCurrencyViewModel: OnNavigatedFrom");
+    public override void OnNavigatedFrom()
+    {
+        VisualService.DisposeChart(ChartControlBase);
+        ChartControlBase.Detach();
+        ChartControlBase = null!;
+    }
 }

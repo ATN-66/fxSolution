@@ -18,15 +18,6 @@ public class Candlestick: IChartItem
     {
         get; init;
     }
-    public double Ask
-    {
-        get; set;
-    }
-    public double Bid
-    {
-        get; set;
-    }
-
     [Description("Elapsed Minutes From January First Of 1970")]
     public long Minutes
     {
@@ -45,6 +36,14 @@ public class Candlestick: IChartItem
         get; set;
     }
     public double Low
+    {
+        get; set;
+    }
+    public double Ask
+    {
+        get; set;
+    }
+    public double Bid
     {
         get; set;
     }
