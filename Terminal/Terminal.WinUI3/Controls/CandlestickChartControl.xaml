@@ -69,9 +69,13 @@
                                 Command="{Binding TicksCommand, Mode=OneWay}"
                                 Content="Ticks" />
                             <Button
-                                Margin="3,0,0,3"
+                                Margin="3,0,3,3"
                                 Command="{Binding ThresholdBarsCommand, Mode=OneWay}"
                                 Content="ThresholdBars" />
+                            <Button
+                                Margin="3,0,3,3"
+                                Command="{Binding ResetShiftsCommand, Mode=OneWay}"
+                                Content="Reset Shifts" />
                         </StackPanel>
                         <StackPanel
                             Grid.Row="2"

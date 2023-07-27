@@ -29,6 +29,7 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
     [ObservableProperty] private int _minUnits;// todo:settings
     [ObservableProperty] private int _unitsPercent = 100; // todo:settings
     [ObservableProperty] private int _kernelShiftPercent = 100; //todo:settings
+    [ObservableProperty] private int _horizontalShift = 3; //todo:settings
 
     private string _operationalButtonContent = null!;
     private ICommand _operationalCommand = null!;
@@ -66,6 +67,14 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
         DisposeChart();
         ChartControlBase = VisualService.GetChart<ThresholdBarChartControl, ThresholdBar, ThresholdBarKernel>(Symbol, ChartType.ThresholdBar, IsReversed);
         UpdateProperties();
+        return Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    private Task ResetShiftsAsync()
+    {
+        ChartControlBase.HorizontalShift = HorizontalShift;
+        ChartControlBase.ResetShifts();
         return Task.CompletedTask;
     }
 
@@ -152,6 +161,7 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
         ChartControlBase.SetBinding(ChartControlBase.UnitsPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(UnitsPercent)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.MinUnitsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnits)), Mode = BindingMode.OneWay });
         ChartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
+        ChartControlBase.SetBinding(ChartControlBase.HorizontalShiftProperty, new Binding { Source = this, Path = new PropertyPath(nameof(HorizontalShift)), Mode = BindingMode.OneWay });
         UpdateOperationalProperties();
         Currency = IsReversed ? ChartControlBase.BaseCurrency : ChartControlBase.QuoteCurrency; 
     }

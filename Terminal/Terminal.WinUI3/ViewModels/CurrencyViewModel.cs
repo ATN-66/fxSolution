@@ -10,7 +10,7 @@ using Terminal.WinUI3.Contracts.ViewModels;
 
 namespace Terminal.WinUI3.ViewModels;
 
-public class CurrencyViewModel : ObservableRecipient, INavigationAware
+public partial class CurrencyViewModel : ObservableRecipient, INavigationAware
 {
     private Currency Currency { get; set; }
     private List<Symbol> Symbols { get; } = new();
@@ -18,9 +18,37 @@ public class CurrencyViewModel : ObservableRecipient, INavigationAware
     private readonly ISymbolOfCurrencyViewModelFactory _symbolViewModelFactory;
     public List<SymbolOfCurrencyViewModel> SymbolViewModels { get; set; } = new();
 
+    [ObservableProperty] private int _pipsPercent = 50; // todo:settings
+    [ObservableProperty] private int _unitsPercent = 100; // todo:settings
+    [ObservableProperty] private int _kernelShiftPercent = 100; //todo:settings
+
     public CurrencyViewModel(ISymbolOfCurrencyViewModelFactory symbolViewModelFactory)
     {
         _symbolViewModelFactory = symbolViewModelFactory;
+    }
+
+    partial void OnPipsPercentChanged(int value)
+    {
+        foreach (var model in SymbolViewModels)
+        {
+            model.PipsPercent = value;
+        }
+    }
+
+    partial void OnUnitsPercentChanged(int value)
+    {
+        foreach (var model in SymbolViewModels)
+        {
+            model.UnitsPercent = value;
+        }
+    }
+
+    partial void OnKernelShiftPercentChanged(int value)
+    {
+        foreach (var model in SymbolViewModels)
+        {
+            model.KernelShiftPercent = value;
+        }
     }
 
     public void OnNavigatedTo(object parameter)

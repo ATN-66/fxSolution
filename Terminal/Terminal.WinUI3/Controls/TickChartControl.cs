@@ -58,48 +58,38 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
         CanvasGeometry GetDrawDataGeometry(CanvasPathBuilder cpb)
         {
             var offset = IsReversed ? GraphHeight : 0;
-            var ask = (float)Kernel[KernelShift].Ask;
-            var yZeroPrice = ask + (float)Pips * Digits / 2f - VerticalShift * Digits;
+            var ask = Kernel[KernelShift].Ask;
+            var bid = Kernel[KernelShift].Bid;
+            var yZeroPrice = ask + Pips * Digits / 2f - VerticalShift * Digits;
 
             _askData[HorizontalShift].Y = IsReversed ? (float)(offset - (yZeroPrice - ask) / Digits * VerticalScale) : (float)((yZeroPrice - ask) / Digits * VerticalScale);
-            cpb.BeginFigure(_askData[HorizontalShift]);
+            _bidData[HorizontalShift].Y = IsReversed ? (float)(offset - (yZeroPrice - bid) / Digits * VerticalScale) : (float)((yZeroPrice - bid) / Digits * VerticalScale);
+            cpb.BeginFigure(_bidData[HorizontalShift]);
+            cpb.AddLine(_askData[HorizontalShift]);
 
             try
             {
                 var end = Math.Min(Units - HorizontalShift, Kernel.Count);
-                for (var unit = 0; unit < end; unit++)
+                for (var unit = 1; unit < end; unit++)
                 {
-                    _askData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - (yZeroPrice - Kernel[unit + KernelShift].Ask) / Digits * VerticalScale) : (float)((yZeroPrice - Kernel[unit + KernelShift].Ask) / Digits * VerticalScale);
+                    var yAsk = (yZeroPrice - Kernel[unit + KernelShift].Ask) / Digits * VerticalScale;
+                    _askData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - yAsk) : (float)yAsk;
                     cpb.AddLine(_askData[unit + HorizontalShift]);
                 }
 
+                for (var unit = end - 1; unit >= 1; unit--)
+                {
+                    var yBid = (yZeroPrice - Kernel[unit + KernelShift].Bid) / Digits * VerticalScale;
+                    _bidData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - yBid) : (float)yBid;
+                    cpb.AddLine(_bidData[unit + HorizontalShift]);
+                }
 
-
-
-               
             }
             catch (Exception exception)
             {
                 LogExceptionHelper.LogException(Logger, exception, "GraphCanvas_OnDraw");
                 throw;
             }
-
-            //unit--;
-
-            //try
-            //{
-            //    while (unit >= 0)
-            //    {
-            //        _bidData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - (yZeroPrice - Kernel[unit + KernelShiftValue].Bid) / Digits * VerticalScale) : (float)((yZeroPrice - Kernel[unit + KernelShiftValue].Bid) / Digits * VerticalScale);
-            //        cpb.AddLine(_bidData[unit + HorizontalShift]);
-            //        unit--;
-            //    }
-            //}
-            //catch (Exception exception)
-            //{
-            //    LogExceptionHelper.LogException(Logger, exception, "GraphCanvas_OnDraw");
-            //    throw;
-            //}
 
             cpb.EndFigure(CanvasFigureLoop.Open);
             var drawDataGeometry = CanvasGeometry.CreatePath(cpb);
@@ -236,11 +226,6 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
             _askData[unit] = new Vector2 { X = x };
             _bidData[unit] = new Vector2 { X = x };
         }
-
-        EnqueueMessage(MessageType.Trace, $"width:{GraphWidth:0000}, max units:{MaxUnits:0000}, units:{Units:0000}, units percent:{UnitsPercent:00}");
-        EnqueueMessage(MessageType.Trace, $"height:{GraphHeight:0000}, max pips:{MaxPips:0000}, pips:{Pips:0000}, pips percent:{PipsPercent:00}");
-        EnqueueMessage(MessageType.Trace, $"horizontal shift:{HorizontalShift:0000}, kernel shift percent:{KernelShiftPercent:00}, kernel shift:{KernelShift:000000}, kernel.Count:{Kernel.Count:000000}");
-        EnqueueMessage(MessageType.Trace, $"----- <> -----");
 
         GraphCanvas!.Invalidate();
         YAxisCanvas!.Invalidate();

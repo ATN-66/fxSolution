@@ -70,7 +70,7 @@ public class Processor : IProcessor
 
             //todo: remove this
             _startDateTime = new DateTime(2023, 7, 4, 0, 0, 0);
-            _nowDateTime = new DateTime(2023, 7, 4, 11, 0, 0);
+            _nowDateTime = new DateTime(2023, 7, 6, 23, 0, 0);
             var diff = (_nowDateTime - _startDateTime).Hours + 1;
 
             Debug.WriteLine($"Processor.StartAsync: difference = {diff} hours");

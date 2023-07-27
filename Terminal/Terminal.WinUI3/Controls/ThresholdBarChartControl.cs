@@ -134,11 +134,6 @@ public sealed class ThresholdBarChartControl : ChartControl<ThresholdBar, Thresh
             _closeData[unit] = new Vector2 { X = x };
         }
 
-        EnqueueMessage(MessageType.Trace, $"width:{GraphWidth:0000}, max units:{MaxUnits:0000}, units:{Units:0000}, units percent:{UnitsPercent:00}");
-        EnqueueMessage(MessageType.Trace, $"height:{GraphHeight:0000}, max pips:{MaxPips:0000}, pips:{Pips:0000}, pips percent:{PipsPercent:00}");
-        EnqueueMessage(MessageType.Trace, $"horizontal shift:{HorizontalShift:0000}, kernel shift percent:{KernelShiftPercent:00}, kernel shift:{KernelShift:000000}, kernel.Count:{Kernel.Count:000000}");
-        EnqueueMessage(MessageType.Trace, $"----- <> -----");
-
         GraphCanvas!.Invalidate();
         YAxisCanvas!.Invalidate();
         XAxisCanvas!.Invalidate();

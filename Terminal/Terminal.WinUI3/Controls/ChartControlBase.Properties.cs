@@ -13,7 +13,7 @@ public abstract partial class ChartControlBase
     protected double GraphHeight;
     protected double HorizontalScale;
     protected double VerticalScale;
-    protected int HorizontalShift;
+    
     protected double VerticalShift;
 
     public static readonly DependencyProperty MinPipsProperty = DependencyProperty.Register(nameof(MinPips), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
@@ -125,11 +125,10 @@ public abstract partial class ChartControlBase
                 return;
             }
             _kernelShift = value;
-            var x = CalculateKernelShiftPercent();
-            SetValue(KernelShiftPercentProperty, x);
+            SetValue(KernelShiftPercentProperty, CalculateKernelShiftPercent());
         }
     }
-    public static readonly DependencyProperty KernelShiftPercentProperty = DependencyProperty.Register(nameof(KernelShiftPercent), typeof(int), typeof(TickChartControl), new PropertyMetadata(0));
+    public static readonly DependencyProperty KernelShiftPercentProperty = DependencyProperty.Register(nameof(KernelShiftPercent), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
     public int KernelShiftPercent
     {
         get => (int)GetValue(KernelShiftPercentProperty);
@@ -151,4 +150,12 @@ public abstract partial class ChartControlBase
     }
     protected abstract int CalculateKernelShift();
     protected abstract int CalculateKernelShiftPercent();
+
+
+    public static readonly DependencyProperty HorizontalShiftProperty = DependencyProperty.Register(nameof(HorizontalShift), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
+    public int HorizontalShift
+    {
+        get => (int)GetValue(HorizontalShiftProperty);
+        set => SetValue(HorizontalShiftProperty, value);
+    }
 }

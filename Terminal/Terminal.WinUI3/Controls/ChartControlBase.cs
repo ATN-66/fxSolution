@@ -165,6 +165,10 @@ public abstract partial class ChartControlBase : Control
 
     private void DebugCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
+        //EnqueueMessage(MessageType.Trace, $"width:{GraphWidth:0000}, max units:{MaxUnits:0000}, units:{Units:0000}, units percent:{UnitsPercent:00}");
+        //EnqueueMessage(MessageType.Trace, $"height:{GraphHeight:0000}, max pips:{MaxPips:0000}, pips:{Pips:0000}, pips percent:{PipsPercent:00}");
+        //EnqueueMessage(MessageType.Trace, $"horizontal shift:{HorizontalShift:0000}, kernel shift percent:{KernelShiftPercent:00}, kernel shift:{KernelShift:000000}, kernel.Count:{Kernel.Count:000000}");
+
         args.DrawingSession.Clear(_textBackgroundColor);
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 
@@ -179,5 +183,15 @@ public abstract partial class ChartControlBase : Control
                 y += (float)textLayout.LayoutBounds.Height;
             }
         }
+    }
+
+    public void ResetShifts()
+    {
+        VerticalShift = 0;
+        KernelShift = 0;
+        GraphCanvas!.Invalidate();
+        YAxisCanvas!.Invalidate();
+        XAxisCanvas!.Invalidate();
+        DebugCanvas!.Invalidate();
     }
 }
