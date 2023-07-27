@@ -6,6 +6,7 @@ using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media.Animation;
+using Terminal.WinUI3.Helpers;
 
 namespace Terminal.WinUI3.Controls;
 

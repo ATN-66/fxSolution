@@ -100,13 +100,13 @@ public abstract partial class ChartControlBase
         YAxisCanvas.PointerMoved += YAxisCanvas_OnPointerMoved;
         YAxisCanvas.PointerReleased += YAxisCanvas_OnPointerReleased;
 
-        //XAxisCanvas.SizeChanged += XAxisCanvas_OnSizeChanged;
-        //XAxisCanvas.Draw += XAxisCanvas_OnDraw;
-        //XAxisCanvas.PointerEntered += XAxisCanvas_OnPointerEntered;
-        //XAxisCanvas.PointerExited += XAxisCanvas_OnPointerExited;
-        //XAxisCanvas.PointerPressed += XAxisCanvas_OnPointerPressed;
-        //XAxisCanvas.PointerMoved += XAxisCanvas_OnPointerMoved;
-        //XAxisCanvas.PointerReleased += XAxisCanvas_OnPointerReleased;
+        XAxisCanvas.SizeChanged += XAxisCanvas_OnSizeChanged;
+        XAxisCanvas.Draw += XAxisCanvas_OnDraw;
+        XAxisCanvas.PointerEntered += XAxisCanvas_OnPointerEntered;
+        XAxisCanvas.PointerExited += XAxisCanvas_OnPointerExited;
+        XAxisCanvas.PointerPressed += XAxisCanvas_OnPointerPressed;
+        XAxisCanvas.PointerMoved += XAxisCanvas_OnPointerMoved;
+        XAxisCanvas.PointerReleased += XAxisCanvas_OnPointerReleased;
 
         DebugCanvas.SizeChanged += DebugCanvas_OnSizeChanged;
         DebugCanvas.Draw += DebugCanvas_OnDraw;
@@ -236,7 +236,7 @@ public abstract partial class ChartControlBase
                 throw new InvalidOperationException("Canvas control has no parent grid.");
             }
 
-            var axisColumn = grid.ColumnDefinitions[1];
+            var axisColumn = grid.ColumnDefinitions[2];
             axisColumn.Width = new GridLength(YAxisWidth);
         }
         catch (Exception exception)
@@ -302,9 +302,9 @@ public abstract partial class ChartControlBase
                 return;
             }
 
-            PipsPercent += (int)pipsChange;
-            PipsPercent = Math.Clamp(PipsPercent, MinPips, MaxPips);
-            VerticalScale = GraphHeight / (PipsPercent - 1);
+            Pips += (int)pipsChange;
+            Pips = Math.Clamp(PipsPercent, MinPips, MaxPips);
+            VerticalScale = GraphHeight / (Pips - 1);
 
             GraphCanvas!.Invalidate();
             YAxisCanvas!.Invalidate();
@@ -344,7 +344,7 @@ public abstract partial class ChartControlBase
                 throw new InvalidOperationException("Canvas control has no parent grid.");
             }
 
-            var axisRow = grid.RowDefinitions[1];
+            var axisRow = grid.RowDefinitions[0];
             axisRow.Height = new GridLength(XAxisHeight);
         }
         catch (Exception exception)

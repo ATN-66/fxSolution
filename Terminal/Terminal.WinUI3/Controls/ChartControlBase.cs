@@ -2,8 +2,6 @@
   |                                         Terminal.WinUI3.Controls |
   |                                              ChartControlBase.cs |
   +------------------------------------------------------------------+*/
-using System.Diagnostics;
-using System.Numerics;
 using Windows.UI;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
@@ -12,10 +10,8 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
-using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
 using Symbol = Common.Entities.Symbol;
 
 namespace Terminal.WinUI3.Controls;
@@ -88,9 +84,7 @@ public abstract partial class ChartControlBase : Control
         GraphCanvas!.Invalidate();
         YAxisCanvas!.Invalidate();
         XAxisCanvas!.Invalidate();
-#if DEBUGWIN2DCanvasControl
         DebugCanvas!.Invalidate();
-#endif
     }
     public void Dispose()
     {

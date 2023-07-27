@@ -2,7 +2,6 @@
   |                                         Terminal.WinUI3.Controls |
   |                                       CandlestickChartControl.cs |
   +------------------------------------------------------------------+*/
-#define DEBUGWIN2DCanvasControl
 
 using System.Diagnostics;
 using System.Numerics;
@@ -15,10 +14,6 @@ using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Terminal.WinUI3.AI.Data;
-#if DEBUGWIN2DCanvasControl
-using Microsoft.Graphics.Canvas.Text;
-using Microsoft.UI;
-#endif
 
 namespace Terminal.WinUI3.Controls;
 

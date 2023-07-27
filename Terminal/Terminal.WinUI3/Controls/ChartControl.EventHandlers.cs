@@ -2,7 +2,6 @@
   |                                         Terminal.WinUI3.Controls |
   |                                    ChartControl.EventHandlers.cs |
   +------------------------------------------------------------------+*/
-#define DEBUGWIN2DCanvasControl
 
 using System.Diagnostics;
 using Common.Entities;
@@ -84,9 +83,7 @@ public abstract partial class ChartControl<TItem, TKernel> where TItem : IChartI
             GraphCanvas!.Invalidate();
             YAxisCanvas!.Invalidate();
             XAxisCanvas!.Invalidate();
-#if DEBUGWIN2DCanvasControl
             DebugCanvas!.Invalidate();
-#endif
             PreviousMouseY = currentMouseY;
             PreviousMouseX = currentMouseX;
         }

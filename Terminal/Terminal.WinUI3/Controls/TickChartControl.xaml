@@ -64,22 +64,7 @@
                             Foreground="{TemplateBinding Foreground}" />
 
 
-                        <!--<Button
-                            Grid.Row="3"
-                            Grid.Column="0"
-                            Margin="0,0,0,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Bottom"
-                            Command="{Binding TicksCommand, Mode=OneWay}"
-                            Content="Ticks" />-->
-                        <!--<Button
-                            Grid.Row="3"
-                            Grid.Column="0"
-                            Margin="0,0,0,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Bottom"
-                            Command="{Binding ThresholdBarsCommand, Mode=OneWay}"
-                            Content="ThresholdBars" />-->
+                       
 
 
 

@@ -3,8 +3,6 @@
   |                                                  ChartControl.cs |
   +------------------------------------------------------------------+*/
 
-#define DEBUGWIN2DCanvasControl
-
 using System.Numerics;
 using Windows.UI;
 using Common.Entities;
@@ -14,6 +12,7 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
+using Microsoft.UI;
 using Terminal.WinUI3.AI.Data;
 
 namespace Terminal.WinUI3.Controls;
@@ -84,57 +83,48 @@ public abstract partial class ChartControl<TItem, TKernel> : ChartControlBase wh
     {
         try
         {
-            args.DrawingSession.Clear(YxAxisBackgroundColor);
-            using var cpb = new CanvasPathBuilder(args.DrawingSession);
-            args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
+            args.DrawingSession.Clear(Colors.BlueViolet);
+            //using var cpb = new CanvasPathBuilder(args.DrawingSession);
+            //args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 
-            var startUnit = KernelShift;
-            var endUnit = UnitsPercent - HorizontalShift + KernelShift - 1;
+            //var startUnit = KernelShift;
+            //var endUnit = UnitsPercent - HorizontalShift + KernelShift - 1;
 
-            var endTime = Kernel[startUnit].DateTime;
-            var startTime = Kernel[endUnit].DateTime; //todo
-            var timeSpan = endTime - startTime;
-            var totalSeconds = timeSpan.TotalSeconds;
-            if (totalSeconds <= 0)
-            {
-                return;
-            }
+            //var endTime = Kernel[startUnit].DateTime;
+            //var startTime = Kernel[endUnit].DateTime; //todo
+            //var timeSpan = endTime - startTime;
+            //var totalSeconds = timeSpan.TotalSeconds;
+            //if (totalSeconds <= 0)
+            //{
+            //    return;
+            //}
 
-            var pixelsPerSecond = GraphWidth / totalSeconds;
-//#if DEBUGWIN2DCanvasControl
-//            DebugInfoStruct.StartTime = startTime;
-//            DebugInfoStruct.EndTime = endTime;
-//            DebugInfoStruct.TimeSpan = timeSpan;
-//#endif
-            var minTimeStep = totalSeconds / MaxTicks;
-            var maxTimeStep = totalSeconds / MinTicks;
+            //var pixelsPerSecond = GraphWidth / totalSeconds;
+            //var minTimeStep = totalSeconds / MaxTicks;
+            //var maxTimeStep = totalSeconds / MinTicks;
 
-            var timeSteps = new List<double> { 1, 5, 10, 30, 60, 5 * 60, 10 * 60, 15 * 60, 30 * 60, 60 * 60 };
-            var timeStep = timeSteps.First(t => t >= minTimeStep);
-            if (timeStep > maxTimeStep)
-            {
-                timeStep = maxTimeStep;
-            }
+            //var timeSteps = new List<double> { 1, 5, 10, 30, 60, 5 * 60, 10 * 60, 15 * 60, 30 * 60, 60 * 60 };
+            //var timeStep = timeSteps.First(t => t >= minTimeStep);
+            //if (timeStep > maxTimeStep)
+            //{
+            //    timeStep = maxTimeStep;
+            //}
 
-            startTime = RoundDateTime(startTime, timeStep);
-//#if DEBUGWIN2DCanvasControl
-//            DebugInfoStruct.TimeStep = timeStep;
-//            DebugInfoStruct.NewStartTime = startTime;
-//#endif
-            for (double tickTime = 0; tickTime <= totalSeconds; tickTime += timeStep)
-            {
-                var tickDateTime = startTime.AddSeconds(tickTime);
-                var x = (float)(tickTime * pixelsPerSecond);
+            //startTime = RoundDateTime(startTime, timeStep);
+            //for (double tickTime = 0; tickTime <= totalSeconds; tickTime += timeStep)
+            //{
+            //    var tickDateTime = startTime.AddSeconds(tickTime);
+            //    var x = (float)(tickTime * pixelsPerSecond);
 
-                cpb.BeginFigure(new Vector2(x, 0));
-                cpb.AddLine(new Vector2(x, (float)XAxisHeight));
-                cpb.EndFigure(CanvasFigureLoop.Open);
+            //    cpb.BeginFigure(new Vector2(x, 0));
+            //    cpb.AddLine(new Vector2(x, (float)XAxisHeight));
+            //    cpb.EndFigure(CanvasFigureLoop.Open);
 
-                var textLayout = new CanvasTextLayout(args.DrawingSession, $"{tickDateTime:t}", YxAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
-                args.DrawingSession.DrawTextLayout(textLayout, x + 3, 0, YxAxisForegroundColor);
-            }
+            //    var textLayout = new CanvasTextLayout(args.DrawingSession, $"{tickDateTime:t}", YxAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
+            //    args.DrawingSession.DrawTextLayout(textLayout, x + 3, 0, YxAxisForegroundColor);
+            //}
 
-            args.DrawingSession.DrawGeometry(CanvasGeometry.CreatePath(cpb), YxAxisForegroundColor, 1);
+            //args.DrawingSession.DrawGeometry(CanvasGeometry.CreatePath(cpb), YxAxisForegroundColor, 1);
         }
         catch (Exception exception)
         {

@@ -4,7 +4,7 @@ using Microsoft.UI;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml.Media.Animation;
 
-namespace Terminal.WinUI3.Controls;
+namespace Terminal.WinUI3.Helpers;
 
 public static class CompositionGradientBrushExtensions
 {

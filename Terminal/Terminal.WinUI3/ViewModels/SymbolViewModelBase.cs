@@ -96,6 +96,11 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
         get;
         set;
     }
+    public string Currency
+    {
+        get;
+        set;
+    } = null!;
 
     private ChartControlBase _chartControlBase = null!;
     public ChartControlBase ChartControlBase
@@ -148,6 +153,7 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
         ChartControlBase.SetBinding(ChartControlBase.MinUnitsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnits)), Mode = BindingMode.OneWay });
         ChartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
         UpdateOperationalProperties();
+        Currency = IsReversed ? ChartControlBase.BaseCurrency : ChartControlBase.QuoteCurrency; 
     }
 
     public string OperationalButtonContent
