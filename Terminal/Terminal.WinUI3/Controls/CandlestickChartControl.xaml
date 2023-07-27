@@ -65,11 +65,11 @@
                             VerticalAlignment="Center"
                             Orientation="Horizontal">
                             <Button
-                                Margin="0,0,0,0"
+                                Margin="3,0,3,3"
                                 Command="{Binding TicksCommand, Mode=OneWay}"
                                 Content="Ticks" />
                             <Button
-                                Margin="0,0,0,0"
+                                Margin="3,0,0,3"
                                 Command="{Binding ThresholdBarsCommand, Mode=OneWay}"
                                 Content="ThresholdBars" />
                         </StackPanel>
@@ -80,10 +80,11 @@
                             VerticalAlignment="Center"
                             Orientation="Horizontal">
                             <Button
-                                Margin="0,0,0,0"
+                                Margin="0,0,3,3"
                                 Background="{Binding Currency, Converter={StaticResource CurrencyToColor}}"
                                 Command="{Binding OperationalCommand, Mode=OneWay}"
-                                Content="{Binding OperationalButtonContent, Mode=OneWay}" />
+                                Content="{Binding OperationalButtonContent, Mode=OneWay}" >
+                            </Button>
                         </StackPanel>
                     </Grid>
                 </ControlTemplate>
