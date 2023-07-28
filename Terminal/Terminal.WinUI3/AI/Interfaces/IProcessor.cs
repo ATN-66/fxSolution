@@ -12,7 +12,7 @@ public interface IProcessor
 {
     event EventHandler<PositionsEventArgs> PositionsUpdated;
     Task StartAsync(CancellationToken token);
-    void RequestPositionsAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive);
+    void RequestTradingHistoryAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive);
     Task OpenPositionAsync(Symbol symbol, bool isReversed);
     Task ClosePositionAsync(Symbol symbol, bool isReversed);
     Task ExitAsync();

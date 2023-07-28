@@ -13,9 +13,10 @@ public abstract partial class ChartControlBase
     protected double GraphHeight;
     protected double HorizontalScale;
     protected double VerticalScale;
-    
     protected double VerticalShift;
 
+    protected const double CenturyMarksInChart = 2d; // todo: settings
+    
     public static readonly DependencyProperty MinPipsProperty = DependencyProperty.Register(nameof(MinPips), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
     public static readonly DependencyProperty MaxPipsProperty = DependencyProperty.Register(nameof(MaxPips), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
     public static readonly DependencyProperty PipsPercentProperty = DependencyProperty.Register(nameof(PipsPercent), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
@@ -43,6 +44,7 @@ public abstract partial class ChartControlBase
             Pips = Math.Max(MinPips, MaxPips * PipsPercent / 100);
         }
     }
+
     private int _pips;
     protected int Pips
     {
@@ -61,10 +63,8 @@ public abstract partial class ChartControlBase
     private void OnPipsChanged()
     {
         VerticalScale = GraphHeight / Pips;
-        GraphCanvas!.Invalidate();
-        YAxisCanvas!.Invalidate();
-        XAxisCanvas!.Invalidate();
-        DebugCanvas!.Invalidate();
+        EnqueueMessage(MessageType.Trace, $"TickValue: {TickValue}, Pips: {Pips}");
+        Invalidate();
     }
 
     public static readonly DependencyProperty MinUnitsProperty = DependencyProperty.Register(nameof(MinUnits), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
@@ -142,15 +142,11 @@ public abstract partial class ChartControlBase
             HorizontalShift = 0;
             _kernelShift = CalculateKernelShift();
 
-            GraphCanvas!.Invalidate();
-            YAxisCanvas!.Invalidate();
-            XAxisCanvas!.Invalidate();
-            DebugCanvas!.Invalidate();
+            Invalidate();
         }
     }
     protected abstract int CalculateKernelShift();
     protected abstract int CalculateKernelShiftPercent();
-
 
     public static readonly DependencyProperty HorizontalShiftProperty = DependencyProperty.Register(nameof(HorizontalShift), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
     public int HorizontalShift

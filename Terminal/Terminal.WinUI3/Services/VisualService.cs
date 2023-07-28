@@ -29,6 +29,8 @@ public class VisualService : IVisualService
     private readonly Dictionary<Symbol, ThresholdBarChartControl?> _thresholdBarChartsReversed = new();
     private readonly Dictionary<Symbol, ThresholdBarChartControl?> _thresholdBarCharts = new();
 
+    private readonly Dictionary<Symbol, double> _tickValues = new();
+
     private readonly Dictionary<Symbol, CurrencyColors> _symbolColorsMap = new()
     {
         { Symbol.EURUSD, new CurrencyColors(Color.FromArgb(255, 108, 181, 255), Colors.LimeGreen) },
@@ -94,13 +96,13 @@ public class VisualService : IVisualService
                 var quotationKernel = _kernels[symbol][ChartType.Ticks] as QuotationKernel ?? throw new InvalidCastException();
                 if (isReversed)
                 {
-                    _tickChartsReversed[symbol] = new TickChartControl(symbol, true, quotationKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _tickChartsReversed[symbol] = new TickChartControl(symbol, true, _tickValues[symbol], quotationKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     var result = _tickChartsReversed[symbol] as T;
                     return result!;
                 }
                 else
                 {
-                    _tickCharts[symbol] = new TickChartControl(symbol, false, quotationKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _tickCharts[symbol] = new TickChartControl(symbol, false, _tickValues[symbol], quotationKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     var result = _tickCharts[symbol] as T;
                     return result!;
                 }
@@ -108,13 +110,13 @@ public class VisualService : IVisualService
                 var candlestickKernel = _kernels[symbol][ChartType.Candlesticks] as CandlestickKernel ?? throw new InvalidCastException();
                 if (isReversed)
                 {
-                    _candlestickChartsReversed[symbol] = new CandlestickChartControl(symbol, true, candlestickKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _candlestickChartsReversed[symbol] = new CandlestickChartControl(symbol, true, _tickValues[symbol], candlestickKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     var result = _candlestickChartsReversed[symbol] as T;
                     return result!;
                 }
                 else
                 {
-                    _candlestickCharts[symbol] = new CandlestickChartControl(symbol, false, candlestickKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _candlestickCharts[symbol] = new CandlestickChartControl(symbol, false, _tickValues[symbol], candlestickKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     var result = _candlestickCharts[symbol] as T;
                     return result!;
                 }
@@ -122,13 +124,13 @@ public class VisualService : IVisualService
                 var thresholdBarKernel = _kernels[symbol][ChartType.ThresholdBar] as ThresholdBarKernel ?? throw new InvalidCastException();
                 if (isReversed)
                 {
-                    _thresholdBarChartsReversed[symbol] = new ThresholdBarChartControl(symbol, true, thresholdBarKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _thresholdBarChartsReversed[symbol] = new ThresholdBarChartControl(symbol, true, _tickValues[symbol], thresholdBarKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     var result = _thresholdBarChartsReversed[symbol] as T;
                     return result!;
                 }
                 else
                 {
-                    _thresholdBarCharts[symbol] = new ThresholdBarChartControl(symbol, false, thresholdBarKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _thresholdBarCharts[symbol] = new ThresholdBarChartControl(symbol, false, _tickValues[symbol], thresholdBarKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     var result = _thresholdBarCharts[symbol] as T;
                     return result!;
                 }
@@ -138,6 +140,8 @@ public class VisualService : IVisualService
 
     public void DisposeChart(ChartControlBase chartControlBase)
     {
+        return;
+
         var symbol = chartControlBase.Symbol;
         var isReversed = chartControlBase.IsReversed;
         var name = chartControlBase.GetType().Name;
@@ -244,5 +248,32 @@ public class VisualService : IVisualService
     {
         var serializableSettings = _settings.ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value.ToDictionary(innerKvp => innerKvp.Key.ToString(), innerKvp => innerKvp.Value.ToString()));
         _localSettingsService.SaveSettingAsync("chartSettings", serializableSettings);
+    }
+
+    public void ProcessTickValues(string details)
+    {
+        var entries = details.Split(", ");
+        foreach (var entry in entries)
+        {
+            var parts = entry.Split(":");
+
+            if (parts.Length == 2)
+            {
+                var symbolStr = parts[0];
+                var symbol = (Symbol)Enum.Parse(typeof(Symbol), symbolStr);
+                if (double.TryParse(parts[1], out var tickValue))
+                {
+                    _tickValues[symbol] = tickValue;
+                }
+                else
+                {
+                    throw new Exception($"Invalid tick value entry:{entry}");
+                }
+            }
+            else
+            {
+                throw new Exception($"Invalid tick value entry:{entry}");
+            }
+        }
     }
 }

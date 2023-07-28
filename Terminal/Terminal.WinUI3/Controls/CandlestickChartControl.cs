@@ -9,7 +9,6 @@ using Windows.UI;
 using Common.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas.Geometry;
-using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
@@ -29,28 +28,38 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
     private int _hlThickness = (MinOcThickness - 1) / 2;
     private const int Space = 1;
 
-    public CandlestickChartControl(Symbol symbol, bool isReversed, CandlestickKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(symbol, isReversed, kernel, baseColor, quoteColor, logger)
+    public CandlestickChartControl(Symbol symbol, bool isReversed, double tickValue, CandlestickKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(symbol, isReversed, tickValue, kernel, baseColor, quoteColor, logger)
     {
         DefaultStyleKey = typeof(CandlestickChartControl);
     }
 
     protected override void GraphCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        GraphHeight = (float)e.NewSize.Height;
-        Pips = Math.Max(MinPips, MaxPips * PipsPercent / 100);
-        GraphWidth = (float)e.NewSize.Width;
+        base.GraphCanvas_OnSizeChanged(sender, e);
+
+        GraphHeight = e.NewSize.Height;
+        var pipsPerCenturyMark = Century / TickValue;
+        Pips = (int)(pipsPerCenturyMark * CenturyMarksInChart);
+        Pips = Math.Clamp(Pips, MinPips, MaxPips * PipsPercent / 100);
+
+        GraphWidth = e.NewSize.Width;
         MaxUnits = (int)Math.Floor((GraphWidth - Space) / (MinOcThickness + Space));
         Units = Math.Max(MinUnits, MaxUnits * UnitsPercent / 100);
+
+        EnqueueMessage(MessageType.Trace, $"width: {GraphWidth:0000}, max units: {MaxUnits:0000}, units: {Units:0000}, units percent: {UnitsPercent:00}");
     }
 
     protected override void GraphCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
-        args.DrawingSession.Clear(GraphBackgroundColor);
-        args.DrawingSession.Antialiasing = CanvasAntialiasing.Antialiased;
+        base.GraphCanvas_OnDraw(sender, args);
+
         CanvasGeometry highLowUpGeometries;
         CanvasGeometry highLowDownGeometries;
         CanvasGeometry openCloseUpGeometries;
         CanvasGeometry openCloseDownGeometries;
+       
+        var ask = Kernel[KernelShift].Ask;
+        var yZeroPrice = ask + Pips * Digits / 2d - VerticalShift * Digits;
 
         DrawData();
         Execute();
@@ -58,9 +67,6 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
         void DrawData()
         {
             var offset = IsReversed ? GraphHeight : 0;
-            var ask = Kernel[KernelShift].Ask;
-            var yZeroPrice = ask + Pips * Digits / 2d - VerticalShift * Digits;
-
             using var highLowUpCpb = new CanvasPathBuilder(args.DrawingSession);
             using var highLowDownCpb = new CanvasPathBuilder(args.DrawingSession);
             using var openCloseUpCpb = new CanvasPathBuilder(args.DrawingSession);
@@ -124,13 +130,13 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
             openCloseUpGeometries = CanvasGeometry.CreatePath(openCloseUpCpb);
             openCloseDownGeometries = CanvasGeometry.CreatePath(openCloseDownCpb);
         }
-
         void Execute()
         {
             args.DrawingSession.DrawGeometry(highLowUpGeometries, BaseColor, _hlThickness);
             args.DrawingSession.DrawGeometry(highLowDownGeometries, QuoteColor, _hlThickness);
             args.DrawingSession.DrawGeometry(openCloseUpGeometries, BaseColor, _ocThickness);
             args.DrawingSession.DrawGeometry(openCloseDownGeometries, QuoteColor, _ocThickness);
+            
         }
     }
 
@@ -163,10 +169,7 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
             _closeData[unit] = new Vector2 { X = x };
         }
 
-        GraphCanvas!.Invalidate();
-        YAxisCanvas!.Invalidate();
-        XAxisCanvas!.Invalidate();
-        DebugCanvas!.Invalidate();
+        Invalidate();
     }
 
     private void AdjustThickness()

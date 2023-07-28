@@ -236,6 +236,7 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
                         AccountInfoCode = code switch
                         {
                             "AccountProperties" => AccountInfoCode.AccountProperties,
+                            "TickValues" => AccountInfoCode.TickValues,
                             "TradingHistory" => AccountInfoCode.TradingHistory,
                             _ => throw new ArgumentOutOfRangeException(nameof(code), @"Pulse: The provided string AccountInfoCode is not supported.")
                         },

@@ -116,9 +116,9 @@ public class ExecutiveClient : IDisposable
         return Ok;
     }
 
-    public string TickValues(string dateTime, string type, string code, string ticket, string result, string tickValues)
+    public string TickValues(string dateTime, string type, string code, string ticket, string result, string details)
     {
-        incomeMessages.Add((dateTime, type, code, ticket, result, tickValues));
+        incomeMessages.Add((dateTime, type, code, ticket, result, details));
         return Ok;
     }
 

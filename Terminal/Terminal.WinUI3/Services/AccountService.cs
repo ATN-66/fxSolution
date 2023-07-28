@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Fx.Grpc;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Configuration;
 
 using Terminal.WinUI3.Contracts.Services;
@@ -101,7 +102,6 @@ internal sealed class AccountService : IAccountService
 
         ServiceState = ServiceState.ReadyToOpen;
     }
-
     private void CreatePosition(Symbol symbol, TradeType tradeType)
     {
         _position = new Position(symbol, tradeType, _accountInfo.Deviation, 666, _accountInfo.FreeMarginPercentToUse, _accountInfo.FreeMarginPercentToRisk);
@@ -164,7 +164,6 @@ internal sealed class AccountService : IAccountService
             TurnOff(details);
         }
     }
-
     public void ClosePosition(int ticket, ResultCode code, string details)
     {
         if (code == ResultCode.Success)
@@ -336,7 +335,6 @@ internal sealed class AccountService : IAccountService
 
         return positions;
     }
-
     private void TurnOff(string details)
     {
         Debug.WriteLine($"details: {details}");

@@ -5,7 +5,7 @@
 
 namespace Common.Entities;
 
-public enum Symbol
+public enum Symbol // currency pair 
 {
     EURUSD = 1, // 20 pips stop-loss // 100000
     GBPUSD = 2, // 30 pips stop-loss // 100000

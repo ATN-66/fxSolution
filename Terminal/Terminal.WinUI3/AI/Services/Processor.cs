@@ -26,6 +26,7 @@ public class Processor : IProcessor
     private readonly IAccountService _accountService;
     private readonly CancellationToken _token;
     private readonly IKernelManager _kernelManager;
+    private readonly IVisualService _visualService;
     private readonly IDispatcherService _dispatcherService;
     private readonly ISplashScreenService _splashScreenService;
     private readonly ILogger<IProcessor> _logger;
@@ -41,7 +42,7 @@ public class Processor : IProcessor
     private readonly TaskCompletionSource<bool> _accountReady = new();
     public event EventHandler<PositionsEventArgs> PositionsUpdated = null!;
 
-    public Processor(IConfiguration configuration, IDataService dataService, IExecutiveConsumerService executiveConsumerService, IAccountService accountService, IKernelManager kernelManager,
+    public Processor(IConfiguration configuration, IDataService dataService, IExecutiveConsumerService executiveConsumerService, IAccountService accountService, IKernelManager kernelManager, IVisualService visualService,
         IDispatcherService dispatcherService, ISplashScreenService splashScreenService, ILogger<IProcessor> logger, CancellationTokenSource cancellationTokenSource) {
 
         _dataService = dataService;
@@ -50,6 +51,7 @@ public class Processor : IProcessor
         _token = cancellationTokenSource.Token;
         _kernelManager = kernelManager;
         _dispatcherService = dispatcherService;
+        _visualService = visualService;
         _splashScreenService = splashScreenService;
         _logger = logger;
 
@@ -66,13 +68,14 @@ public class Processor : IProcessor
             _executiveCall = executiveCall;
             var executiveProcessingTask = ExecutiveProcessingTaskAsync(token);
             await RequestAccountPropertiesAsync().ConfigureAwait(false);
+            await RequestTickValuesAsync().ConfigureAwait(false);
             await _accountReady.Task.ConfigureAwait(false);
 
             //todo: remove this
             _startDateTime = new DateTime(2023, 7, 4, 0, 0, 0);
-            _nowDateTime = new DateTime(2023, 7, 6, 23, 0, 0);
+            _nowDateTime = new DateTime(2023, 7, 4, 23, 0, 0);
+            
             var diff = (_nowDateTime - _startDateTime).Hours + 1;
-
             Debug.WriteLine($"Processor.StartAsync: difference = {diff} hours");
             var historicalData = await _dataService.LoadDataAsync(_startDateTime, _nowDateTime).ConfigureAwait(false);
             await _kernelManager.InitializeAsync(historicalData).ConfigureAwait(false);
@@ -95,21 +98,6 @@ public class Processor : IProcessor
             LogExceptionHelper.LogException(_logger, exception, "");
             throw;
         }
-    }
-
-    public void RequestPositionsAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
-    {
-        var ordersHistoryRequest = new GeneralRequest
-        {
-            Type = MessageType.AccountInfo,
-            AccountInfoRequest = new AccountInfoRequest
-            {
-                AccountInfoCode = AccountInfoCode.TradingHistory, Ticket = 1,
-                Details = $"start>{startDateTimeInclusive.ToUniversalTime().Date:yyyy-MM-dd};end>{endDateTimeInclusive.AddDays(1).Date.ToUniversalTime():yyyy-MM-dd}"
-            }
-        };
-
-        _executiveCall.RequestStream.WriteAsync(ordersHistoryRequest, _token);
     }
 
     private Task DataProcessingTaskAsync(CancellationToken token)
@@ -189,6 +177,9 @@ public class Processor : IProcessor
                             {
                                 case AccountInfoCode.AccountProperties:
                                     _accountService.ProcessProperties(response.AccountInfoResponse.Details);
+                                    break;
+                                case AccountInfoCode.TickValues:
+                                    _visualService.ProcessTickValues(response.AccountInfoResponse.Details);
                                     _accountReady.SetResult(true);
                                     break;
                                 case AccountInfoCode.TradingHistory:
@@ -225,6 +216,30 @@ public class Processor : IProcessor
             AccountInfoRequest = new AccountInfoRequest { AccountInfoCode = AccountInfoCode.AccountProperties, Ticket = 1 }
         };
         return _executiveCall.RequestStream.WriteAsync(request, _token);
+    }
+    private Task RequestTickValuesAsync()
+    {
+        var request = new GeneralRequest
+        {
+            Type = MessageType.AccountInfo,
+            AccountInfoRequest = new AccountInfoRequest { AccountInfoCode = AccountInfoCode.TickValues, Ticket = 1 }
+        };
+        return _executiveCall.RequestStream.WriteAsync(request, _token);
+    }
+    public void RequestTradingHistoryAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
+    {
+        var ordersHistoryRequest = new GeneralRequest
+        {
+            Type = MessageType.AccountInfo,
+            AccountInfoRequest = new AccountInfoRequest
+            {
+                AccountInfoCode = AccountInfoCode.TradingHistory,
+                Ticket = 1,
+                Details = $"start>{startDateTimeInclusive.ToUniversalTime().Date:yyyy-MM-dd};end>{endDateTimeInclusive.AddDays(1).Date.ToUniversalTime():yyyy-MM-dd}"
+            }
+        };
+
+        _executiveCall.RequestStream.WriteAsync(ordersHistoryRequest, _token);
     }
     public Task OpenPositionAsync(Symbol symbol, bool isReversed)
     {

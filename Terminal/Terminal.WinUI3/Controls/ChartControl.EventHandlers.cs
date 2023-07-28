@@ -80,10 +80,7 @@ public abstract partial class ChartControl<TItem, TKernel> where TItem : IChartI
                     }
             }
 
-            GraphCanvas!.Invalidate();
-            YAxisCanvas!.Invalidate();
-            XAxisCanvas!.Invalidate();
-            DebugCanvas!.Invalidate();
+            Invalidate();
             PreviousMouseY = currentMouseY;
             PreviousMouseX = currentMouseX;
         }

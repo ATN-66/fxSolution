@@ -45,7 +45,9 @@ message MaintenanceResponse {
 
  enum AccountInfoCode {
     ACCOUNT_PROPERTIES = 0;
-    TRADING_HISTORY = 1;
+    TICK_VALUES = 1;
+    OPEN_POSITIONS = 2;
+    TRADING_HISTORY = 3;
     }
 
 message AccountInfoRequest {

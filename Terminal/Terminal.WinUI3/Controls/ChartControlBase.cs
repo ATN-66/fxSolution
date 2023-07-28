@@ -2,6 +2,8 @@
   |                                         Terminal.WinUI3.Controls |
   |                                              ChartControlBase.cs |
   +------------------------------------------------------------------+*/
+
+using Windows.Graphics.Display;
 using Windows.UI;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
@@ -13,6 +15,7 @@ using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Symbol = Common.Entities.Symbol;
+using System.Runtime.CompilerServices;
 
 namespace Terminal.WinUI3.Controls;
 
@@ -21,28 +24,38 @@ public abstract partial class ChartControlBase : Control
     protected readonly ILogger<ChartControlBase> Logger;
     public readonly bool IsReversed;
     protected readonly double Digits;
-    private readonly Queue<(MessageType Type, string Message)> _messageQueue = new();
+    protected const double Century = 100d; // todo: settings // one hundred dollars of the balance currency
+  
+    protected readonly Line AskLine = new();
+    protected readonly Line BidLine = new();
+    protected readonly Line CenturyZeroLine = new();
 
-    protected ChartControlBase(Symbol symbol, bool isReversed, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger)
+    private readonly Queue<(int ID, MessageType Type, string Message)> _messageQueue = new();
+    protected const int DebugMessageQueueSize = 10;
+    private int _debugMessageId = 0;
+
+    protected ChartControlBase(Symbol symbol, bool isReversed, double tickValue, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger)
     {
         Logger = logger;
 
         Symbol = symbol;
         IsReversed = isReversed;
-
+        
         switch (Symbol)
         {
             case Symbol.EURGBP:
             case Symbol.EURUSD:
             case Symbol.GBPUSD:
                 Digits = 0.0001d;
-                YxAxisLabelFormat = "f5";
+                PriceTextFormat = "f5";
+                PriceLabelTextFormat = "f3";
                 break;
             case Symbol.USDJPY:
             case Symbol.EURJPY:
             case Symbol.GBPJPY:
                 Digits = 0.01d;
-                YxAxisLabelFormat = "f3";
+                PriceTextFormat = "f3";
+                PriceLabelTextFormat = "f1";
                 break;
             default: throw new ArgumentOutOfRangeException(nameof(Symbol), Symbol, null);
         }
@@ -50,6 +63,8 @@ public abstract partial class ChartControlBase : Control
         BaseColor = baseColor;
         QuoteColor = quoteColor;
         (BaseCurrency, QuoteCurrency) = GetCurrenciesFromSymbol(Symbol);
+
+        TickValue = tickValue;
     }
 
     public Symbol  Symbol { get; }
@@ -73,6 +88,11 @@ public abstract partial class ChartControlBase : Control
         get;
         set;
     }
+    protected double TickValue
+    {
+        get;
+        set;
+    }
 
     public void Tick()
     {
@@ -81,10 +101,7 @@ public abstract partial class ChartControlBase : Control
             return;
         }
 
-        GraphCanvas!.Invalidate();
-        YAxisCanvas!.Invalidate();
-        XAxisCanvas!.Invalidate();
-        DebugCanvas!.Invalidate();
+        Invalidate();
     }
     public void Dispose()
     {
@@ -131,67 +148,24 @@ public abstract partial class ChartControlBase : Control
             throw;
         }
     }
-    public void EnqueueMessage(MessageType type, string message)
+    public void EnqueueMessage(MessageType type, string message, [CallerMemberName] string methodName = "")
     {
-        if (_messageQueue.Count >= 10) 
+        if (_messageQueue.Any(t => t.Message == $"{methodName}: {message}"))
         {
-            _messageQueue.Dequeue();   
+            return;
         }
 
-        _messageQueue.Enqueue((type, message));
-        DebugCanvas!.Invalidate();
-    }
-
-    private void DebugCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        //try
-        //{
-        //    var debugCanvas = sender as CanvasControl ?? throw new InvalidOperationException("Canvas controls not found.");
-        //    var grid = debugCanvas.Parent as Grid;
-        //    if (grid == null || grid.RowDefinitions.Count <= 1)
-        //    {
-        //        throw new InvalidOperationException("Canvas control has no parent grid.");
-        //    }
-
-        //    var debugRow = grid.RowDefinitions[2];
-        //    debugRow.Height = new GridLength(CalculateTextBounds(YAxisTextSample, YxAxisTextFormat).height * 3); //todo: 3 rows now
-        //}
-        //catch (Exception exception)
-        //{
-        //    LogExceptionHelper.LogException(Logger, exception, "DebugCanvas_OnSizeChanged");
-        //    throw;
-        //}
-    }
-
-    private void DebugCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
-    {
-        //EnqueueMessage(MessageType.Trace, $"width:{GraphWidth:0000}, max units:{MaxUnits:0000}, units:{Units:0000}, units percent:{UnitsPercent:00}");
-        //EnqueueMessage(MessageType.Trace, $"height:{GraphHeight:0000}, max pips:{MaxPips:0000}, pips:{Pips:0000}, pips percent:{PipsPercent:00}");
-        //EnqueueMessage(MessageType.Trace, $"horizontal shift:{HorizontalShift:0000}, kernel shift percent:{KernelShiftPercent:00}, kernel shift:{KernelShift:000000}, kernel.Count:{Kernel.Count:000000}");
-
-        args.DrawingSession.Clear(_textBackgroundColor);
-        args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
-
-        float y = 0;
-
-        foreach (var (type, message) in _messageQueue)
+        if (_messageQueue.Count > DebugMessageQueueSize)
         {
-            if (type >= MessageType.Trace) 
-            {
-                var textLayout = new CanvasTextLayout(args.DrawingSession, message, YxAxisTextFormat, float.PositiveInfinity, float.PositiveInfinity);
-                args.DrawingSession.DrawTextLayout(textLayout, 0, y, Colors.White);
-                y += (float)textLayout.LayoutBounds.Height;
-            }
+            _messageQueue.Dequeue();
         }
-    }
 
+        _messageQueue.Enqueue((++_debugMessageId, type, $"{methodName}: {message}"));
+    }
     public void ResetShifts()
     {
         VerticalShift = 0;
         KernelShift = 0;
-        GraphCanvas!.Invalidate();
-        YAxisCanvas!.Invalidate();
-        XAxisCanvas!.Invalidate();
-        DebugCanvas!.Invalidate();
+        Invalidate();
     }
 }

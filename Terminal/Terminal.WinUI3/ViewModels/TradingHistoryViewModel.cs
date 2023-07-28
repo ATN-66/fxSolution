@@ -41,7 +41,7 @@ public partial class TradingHistoryViewModel : ObservableRecipient, INavigationA
     {
         var end = DateTime.Now.Date;
         var start = end.AddDays(-31).Date;
-        _processor.RequestPositionsAsync(start, end);
+        _processor.RequestTradingHistoryAsync(start, end);
     }
 
     public void OnNavigatedFrom()

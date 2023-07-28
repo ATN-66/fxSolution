@@ -22,8 +22,8 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
     private readonly IAccountService _accountService;
     private readonly IDispatcherService _dispatcherService;
 
-    [ObservableProperty] private int _minPips = 20; // todo:settings
-    [ObservableProperty] private int _maxPips = 200; // todo:settings
+    [ObservableProperty] private int _minPips = 30; // todo:settings
+    [ObservableProperty] private int _maxPips = 450; // todo:settings
     [ObservableProperty] private int _pipsPercent = 50; // todo:settings
 
     [ObservableProperty] private int _minUnits;// todo:settings

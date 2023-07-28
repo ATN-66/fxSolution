@@ -26,7 +26,7 @@ public sealed class ThresholdBarChartControl : ChartControl<ThresholdBar, Thresh
     private int _ocThickness = MinOcThickness;
     private const int Space = 1;
 
-    public ThresholdBarChartControl(Symbol symbol, bool isReversed, ThresholdBarKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(symbol, isReversed, kernel, baseColor, quoteColor, logger)
+    public ThresholdBarChartControl(Symbol symbol, bool isReversed, double tickValue, ThresholdBarKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(symbol, isReversed, tickValue, kernel, baseColor, quoteColor, logger)
     {
         DefaultStyleKey = typeof(ThresholdBarChartControl);
     }
@@ -135,7 +135,7 @@ public sealed class ThresholdBarChartControl : ChartControl<ThresholdBar, Thresh
         }
 
         GraphCanvas!.Invalidate();
-        YAxisCanvas!.Invalidate();
+        PipsAxisCanvas!.Invalidate();
         XAxisCanvas!.Invalidate();
         DebugCanvas!.Invalidate();
     }

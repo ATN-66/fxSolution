@@ -22,7 +22,7 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
     private Vector2[] _askData = null!;
     private Vector2[] _bidData = null!;
 
-    public TickChartControl(Symbol symbol, bool isReversed, QuotationKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(symbol, isReversed, kernel, baseColor, quoteColor, logger)
+    public TickChartControl(Symbol symbol, bool isReversed, double tickValue, QuotationKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(symbol, isReversed, tickValue, kernel, baseColor, quoteColor, logger)
     {
         DefaultStyleKey = typeof(TickChartControl);
     }
@@ -204,7 +204,7 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
         XAxisCanvas!.ReleasePointerCapture(e.Pointer);
 
         GraphCanvas!.Invalidate();
-        YAxisCanvas!.Invalidate();
+        PipsAxisCanvas!.Invalidate();
         XAxisCanvas!.Invalidate();
         DebugCanvas!.Invalidate();
     }
@@ -228,7 +228,7 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
         }
 
         GraphCanvas!.Invalidate();
-        YAxisCanvas!.Invalidate();
+        PipsAxisCanvas!.Invalidate();
         XAxisCanvas!.Invalidate();
         DebugCanvas!.Invalidate();
     }

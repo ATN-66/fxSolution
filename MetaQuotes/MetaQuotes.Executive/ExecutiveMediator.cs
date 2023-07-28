@@ -55,14 +55,14 @@ public static class ExecutiveMediator
         return _executiveClient.TradingHistory(dateTime, type, code, ticket, result, details);
     }
 
+    public static string TickValues(string dateTime, string type, string code, string ticket, string result, string details)
+    {
+        return _executiveClient.TickValues(dateTime, type, code, ticket, result, details);
+    }
+
     public static string MaxVolumes(string dateTime, string type, string code, string ticket, string result, string maxVolumes)
     {
         return _executiveClient.MaxVolumes(dateTime, type, code, ticket, result, maxVolumes);
-    }
-
-    public static string TickValues(string dateTime, string type, string code, string ticket, string result, string tickValues)
-    {
-        return _executiveClient.TickValues(dateTime, type, code, ticket, result, tickValues);
     }
 
     public static string UpdatePosition(string dateTime, string type, string code, string ticket, string result,  string details)
