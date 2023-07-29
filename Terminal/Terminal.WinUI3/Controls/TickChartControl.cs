@@ -7,6 +7,7 @@ using System.Numerics;
 using Windows.UI;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Geometry;
@@ -22,18 +23,20 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
     private Vector2[] _askData = null!;
     private Vector2[] _bidData = null!;
 
-    public TickChartControl(Symbol symbol, bool isReversed, double tickValue, QuotationKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(symbol, isReversed, tickValue, kernel, baseColor, quoteColor, logger)
+    public TickChartControl(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, QuotationKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(configuration, symbol, isReversed, tickValue, kernel, baseColor, quoteColor, logger)
     {
         DefaultStyleKey = typeof(TickChartControl);
     }
 
     protected override void GraphCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        GraphHeight = (float)e.NewSize.Height;
-        Pips = Math.Max(MinPips, MaxPips * PipsPercent / 100);
-        GraphWidth = (float)e.NewSize.Width;
-        MaxUnits = (int)GraphWidth;
-        Units = Math.Max(MinUnits, MaxUnits * UnitsPercent / 100);
+        throw new NotImplementedException();
+
+        //GraphHeight = (float)e.NewSize.Height;
+        //Pips = Math.Max(MinPips, MaxPips * PipsPercent / 100);
+        //GraphWidth = (float)e.NewSize.Width;
+        //MaxUnits = (int)GraphWidth;
+        //Units = Math.Max(MinUnits, MaxUnits * UnitsPercent / 100);
     }
     protected override void GraphCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {

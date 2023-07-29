@@ -22,11 +22,11 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
     private readonly IAccountService _accountService;
     private readonly IDispatcherService _dispatcherService;
 
-    [ObservableProperty] private int _minPips = 30; // todo:settings
-    [ObservableProperty] private int _maxPips = 450; // todo:settings
-    [ObservableProperty] private int _pipsPercent = 50; // todo:settings
+    [ObservableProperty] private double _minCenturies = 0.2d; // todo:settings
+    [ObservableProperty] private double _maxCenturies = 3.0d; // todo:settings
+    [ObservableProperty] private int _centuriesPercent = 50; // todo:settings
 
-    [ObservableProperty] private int _minUnits;// todo:settings
+    [ObservableProperty] private int _minUnits = 10;// todo:settings
     [ObservableProperty] private int _unitsPercent = 100; // todo:settings
     [ObservableProperty] private int _kernelShiftPercent = 100; //todo:settings
     [ObservableProperty] private int _horizontalShift = 3; //todo:settings
@@ -67,6 +67,13 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
         DisposeChart();
         ChartControlBase = VisualService.GetChart<ThresholdBarChartControl, ThresholdBar, ThresholdBarKernel>(Symbol, ChartType.ThresholdBar, IsReversed);
         UpdateProperties();
+        return Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    private Task ClearMessagesAsync()
+    {
+        ChartControlBase.ClearMessages();
         return Task.CompletedTask;
     }
 
@@ -137,9 +144,9 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
         UpdateOperationalProperties();
     }
 
-    partial void OnPipsPercentChanged(int value)
+    partial void OnCenturiesPercentChanged(int value)
     {
-        ChartControlBase.PipsPercent = value;
+        ChartControlBase.CenturiesPercent = value;
     }
 
     partial void OnUnitsPercentChanged(int value)
@@ -155,9 +162,9 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
     protected void UpdateProperties()
     {
         ChartControlBase.DataContext = this;
-        ChartControlBase.SetBinding(ChartControlBase.MinPipsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinPips)), Mode = BindingMode.OneWay });
-        ChartControlBase.SetBinding(ChartControlBase.MaxPipsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MaxPips)), Mode = BindingMode.OneWay });
-        ChartControlBase.SetBinding(ChartControlBase.PipsPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(PipsPercent)), Mode = BindingMode.TwoWay });
+        ChartControlBase.SetBinding(ChartControlBase.MinCenturiesProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinCenturies)), Mode = BindingMode.OneWay });
+        ChartControlBase.SetBinding(ChartControlBase.MaxCenturiesProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MaxCenturies)), Mode = BindingMode.OneWay });
+        ChartControlBase.SetBinding(ChartControlBase.CenturiesPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(CenturiesPercent)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.UnitsPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(UnitsPercent)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.MinUnitsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnits)), Mode = BindingMode.OneWay });
         ChartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });

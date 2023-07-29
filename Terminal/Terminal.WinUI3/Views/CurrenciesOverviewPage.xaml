@@ -5,5 +5,60 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-    <TextBlock Foreground="MediumTurquoise" Text="Placeholder of Currencies Overview" />
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Slider
+            Grid.Row="0"
+            Grid.Column="0"
+            Maximum="100"
+            Minimum="0"
+            Orientation="Horizontal"
+            SmallChange="1"
+            StepFrequency="1"
+            Value="{x:Bind Path=ViewModel.UnitsPercent, Mode=TwoWay}" />
+        <Grid Column="0" Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock
+                Grid.Row="0"
+                Grid.Column="0"
+                Text="placeholder"
+                VerticalAlignment="Center" />
+
+        </Grid>
+        <Slider
+            Grid.Row="2"
+            Grid.Column="0"
+            Maximum="100"
+            Minimum="0"
+            Orientation="Horizontal"
+            SmallChange="1"
+            StepFrequency="1"
+            Value="{x:Bind Path=ViewModel.KernelShiftPercent, Mode=TwoWay}" />
+        <Slider
+            Grid.Row="1"
+            Grid.Column="1"
+            Maximum="100"
+            Minimum="0"
+            Orientation="Vertical"
+            SmallChange="1"
+            StepFrequency="1"
+            Value="{x:Bind Path=ViewModel.CenturiesPercent, Mode=TwoWay}" />
+    </Grid>
 </Page>

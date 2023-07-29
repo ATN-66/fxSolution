@@ -16,6 +16,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Symbol = Common.Entities.Symbol;
 using System.Runtime.CompilerServices;
+using Microsoft.Extensions.Configuration;
 
 namespace Terminal.WinUI3.Controls;
 
@@ -33,8 +34,9 @@ public abstract partial class ChartControlBase : Control
     private readonly Queue<(int ID, MessageType Type, string Message)> _messageQueue = new();
     protected const int DebugMessageQueueSize = 10;
     private int _debugMessageId = 0;
+    private readonly MessageType _messageTypeLevel;
 
-    protected ChartControlBase(Symbol symbol, bool isReversed, double tickValue, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger)
+    protected ChartControlBase(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger)
     {
         Logger = logger;
 
@@ -65,6 +67,9 @@ public abstract partial class ChartControlBase : Control
         (BaseCurrency, QuoteCurrency) = GetCurrenciesFromSymbol(Symbol);
 
         TickValue = tickValue;
+
+        var messageTypeStr = configuration.GetValue<string>($"{nameof(_messageTypeLevel)}")!;
+        _messageTypeLevel = Enum.TryParse(messageTypeStr, out MessageType parsedMessageType) ? parsedMessageType : MessageType.Trace;
     }
 
     public Symbol  Symbol { get; }
@@ -150,7 +155,11 @@ public abstract partial class ChartControlBase : Control
     }
     public void EnqueueMessage(MessageType type, string message, [CallerMemberName] string methodName = "")
     {
-        if (_messageQueue.Any(t => t.Message == $"{methodName}: {message}"))
+        var latestSameMethodMessage = _messageQueue
+            .Reverse()
+            .FirstOrDefault(t => t.Message.StartsWith($"{methodName}:"));
+
+        if (latestSameMethodMessage.Message == $"{methodName}: {message}")
         {
             return;
         }
@@ -161,6 +170,12 @@ public abstract partial class ChartControlBase : Control
         }
 
         _messageQueue.Enqueue((++_debugMessageId, type, $"{methodName}: {message}"));
+        DebugCanvas!.Invalidate();
+    }
+    public void ClearMessages()
+    {
+        _messageQueue.Clear();
+        DebugCanvas!.Invalidate();
     }
     public void ResetShifts()
     {

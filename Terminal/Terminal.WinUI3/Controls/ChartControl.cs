@@ -17,12 +17,13 @@ using Microsoft.UI;
 using Terminal.WinUI3.AI.Data;
 using Microsoft.UI.Xaml;
 using System.Drawing.Printing;
+using Microsoft.Extensions.Configuration;
 
 namespace Terminal.WinUI3.Controls;
 
 public abstract partial class ChartControl<TItem, TKernel> : ChartControlBase where TItem : IChartItem where TKernel : IKernel<TItem>
 {
-    protected ChartControl(Symbol symbol, bool isReversed, double tickValue, TKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(symbol, isReversed, tickValue, baseColor, quoteColor, logger)
+    protected ChartControl(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, TKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(configuration, symbol, isReversed, tickValue, baseColor, quoteColor, logger)
     {
         Kernel = kernel;
     }
@@ -90,25 +91,25 @@ public abstract partial class ChartControl<TItem, TKernel> : ChartControlBase wh
             var y = (yZeroPrice - ask) / Digits * VerticalScale;
             AskLine.StartPoint.Y = AskLine.EndPoint.Y = IsReversed ? (float)(offset - y) : (float)y;
 
-            var oneQuoterOfCenturyMarkHeight = GraphHeight / CenturyMarksInChart / 4d;
+            var oneTenthOfCenturiesHeight = GraphHeight / Centuries / 10d;
             var distanceToTop = AskLine.StartPoint.Y;
             var distanceToBottom = GraphHeight - AskLine.StartPoint.Y;
-            var quarterCenturyMarksAbove = (int)(distanceToTop / oneQuoterOfCenturyMarkHeight);
-            var quarterCenturyMarksBelow = (int)(distanceToBottom / oneQuoterOfCenturyMarkHeight);
+            var tenthCenturiesAbove = (int)(distanceToTop / oneTenthOfCenturiesHeight);
+            var tenthCenturiesBelow = (int)(distanceToBottom / oneTenthOfCenturiesHeight);
 
-            for (var i = 0; i <= quarterCenturyMarksAbove; i++)
+            for (var i = 0; i <= tenthCenturiesAbove; i++)
             {
-                var yPos = AskLine.StartPoint.Y - (float)(oneQuoterOfCenturyMarkHeight * i);
+                var yPos = AskLine.StartPoint.Y - (float)(oneTenthOfCenturiesHeight * i);
                 args.DrawingSession.DrawLine(0, yPos, (float)GraphWidth, yPos, Colors.Gray, 0.5f);
-                var labelValue = -25 * i;
+                var labelValue = -10 * i;
                 args.DrawingSession.DrawText(labelValue.ToString("###0"), 0, yPos, Colors.Gray, YAxisCanvasTextFormat);
             }
 
-            for (var i = 1; i <= quarterCenturyMarksBelow; i++)
+            for (var i = 1; i <= tenthCenturiesBelow; i++)
             {
-                var yPos = AskLine.StartPoint.Y + (float)(oneQuoterOfCenturyMarkHeight * i);
+                var yPos = AskLine.StartPoint.Y + (float)(oneTenthOfCenturiesHeight * i);
                 args.DrawingSession.DrawLine(0, yPos, (float)GraphWidth, yPos, Colors.Gray, 0.5f);
-                var labelValue = 25 * i;
+                var labelValue = 10 * i;
                 args.DrawingSession.DrawText(labelValue.ToString("###0"), 0, yPos, Colors.Gray, YAxisCanvasTextFormat);
             }
         }
@@ -170,7 +171,7 @@ public abstract partial class ChartControl<TItem, TKernel> : ChartControlBase wh
     {
         try
         {
-            args.DrawingSession.Clear(Colors.Gray);
+            args.DrawingSession.Clear(Colors.Transparent);
             //using var cpb = new CanvasPathBuilder(args.DrawingSession);
             //args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 

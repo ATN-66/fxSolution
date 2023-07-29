@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Numerics;
 using Windows.UI;
 using Common.Entities;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas.UI.Xaml;
@@ -28,7 +29,7 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
     private int _hlThickness = (MinOcThickness - 1) / 2;
     private const int Space = 1;
 
-    public CandlestickChartControl(Symbol symbol, bool isReversed, double tickValue, CandlestickKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(symbol, isReversed, tickValue, kernel, baseColor, quoteColor, logger)
+    public CandlestickChartControl(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, CandlestickKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(configuration, symbol, isReversed, tickValue, kernel, baseColor, quoteColor, logger)
     {
         DefaultStyleKey = typeof(CandlestickChartControl);
     }
@@ -38,15 +39,16 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
         base.GraphCanvas_OnSizeChanged(sender, e);
 
         GraphHeight = e.NewSize.Height;
-        var pipsPerCenturyMark = Century / TickValue;
-        Pips = (int)(pipsPerCenturyMark * CenturyMarksInChart);
-        Pips = Math.Clamp(Pips, MinPips, MaxPips * PipsPercent / 100);
+        Centuries = MinCenturies + (MaxCenturies - MinCenturies) * CenturiesPercent / 100d;
+
+        var pipsPerCentury = Century / TickValue;
+        Pips = (int)(pipsPerCentury * Centuries);
+        EnqueueMessage(MessageType.Trace, $"height: {GraphHeight}, tickValue: {TickValue}, centuries: {Centuries:0.000}, pips: {Pips}");
 
         GraphWidth = e.NewSize.Width;
         MaxUnits = (int)Math.Floor((GraphWidth - Space) / (MinOcThickness + Space));
         Units = Math.Max(MinUnits, MaxUnits * UnitsPercent / 100);
-
-        EnqueueMessage(MessageType.Trace, $"width: {GraphWidth:0000}, max units: {MaxUnits:0000}, units: {Units:0000}, units percent: {UnitsPercent:00}");
+        EnqueueMessage(MessageType.Trace, $"width: {GraphWidth}, max units: {MaxUnits}, units: {Units}, units percent: {UnitsPercent}");
     }
 
     protected override void GraphCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)

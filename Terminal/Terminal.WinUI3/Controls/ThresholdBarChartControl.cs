@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Numerics;
 using Windows.UI;
 using Common.Entities;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas;
@@ -26,20 +27,22 @@ public sealed class ThresholdBarChartControl : ChartControl<ThresholdBar, Thresh
     private int _ocThickness = MinOcThickness;
     private const int Space = 1;
 
-    public ThresholdBarChartControl(Symbol symbol, bool isReversed, double tickValue, ThresholdBarKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(symbol, isReversed, tickValue, kernel, baseColor, quoteColor, logger)
+    public ThresholdBarChartControl(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, ThresholdBarKernel kernel, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(configuration, symbol, isReversed, tickValue, kernel, baseColor, quoteColor, logger)
     {
         DefaultStyleKey = typeof(ThresholdBarChartControl);
     }
 
     protected override void GraphCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        GraphHeight = (float)e.NewSize.Height;
-        Pips = Math.Max(MinPips, MaxPips * PipsPercent / 100);
-        GraphWidth = (float)e.NewSize.Width;
-        MaxUnits = (int)Math.Floor((GraphWidth - Space) / (MinOcThickness + Space));
-        Units = Math.Max(MinUnits, MaxUnits * UnitsPercent / 100);
+        throw new NotImplementedException();
+
+        //GraphHeight = (float)e.NewSize.Height;
+        //Pips = Math.Max(MinPips, MaxPips * PipsPercent / 100);
+        //GraphWidth = (float)e.NewSize.Width;
+        //MaxUnits = (int)Math.Floor((GraphWidth - Space) / (MinOcThickness + Space));
+        //Units = Math.Max(MinUnits, MaxUnits * UnitsPercent / 100);
     }
-    
+
     protected override void GraphCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
         args.DrawingSession.Clear(GraphBackgroundColor);

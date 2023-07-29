@@ -5,6 +5,7 @@
 
 using Windows.UI;
 using Common.Entities;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
@@ -16,6 +17,7 @@ namespace Terminal.WinUI3.Services;
 
 public class VisualService : IVisualService
 {
+    private readonly IConfiguration _configuration;
     private readonly ILocalSettingsService _localSettingsService;
     private readonly IDispatcherService _dispatcherService;
 
@@ -42,8 +44,9 @@ public class VisualService : IVisualService
     };
 
     [Obsolete("Obsolete")]
-    public VisualService(ILocalSettingsService localSettingsService, IDispatcherService dispatcherService)
+    public VisualService(IConfiguration configuration, ILocalSettingsService localSettingsService, IDispatcherService dispatcherService)
     {
+        _configuration = configuration;
         _localSettingsService = localSettingsService;
         _dispatcherService = dispatcherService;
         App.MainWindow.GetAppWindow().Closing += OnClosing;
@@ -96,13 +99,13 @@ public class VisualService : IVisualService
                 var quotationKernel = _kernels[symbol][ChartType.Ticks] as QuotationKernel ?? throw new InvalidCastException();
                 if (isReversed)
                 {
-                    _tickChartsReversed[symbol] = new TickChartControl(symbol, true, _tickValues[symbol], quotationKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _tickChartsReversed[symbol] = new TickChartControl(_configuration, symbol, true, _tickValues[symbol], quotationKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     var result = _tickChartsReversed[symbol] as T;
                     return result!;
                 }
                 else
                 {
-                    _tickCharts[symbol] = new TickChartControl(symbol, false, _tickValues[symbol], quotationKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _tickCharts[symbol] = new TickChartControl(_configuration, symbol, false, _tickValues[symbol], quotationKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     var result = _tickCharts[symbol] as T;
                     return result!;
                 }
@@ -110,13 +113,13 @@ public class VisualService : IVisualService
                 var candlestickKernel = _kernels[symbol][ChartType.Candlesticks] as CandlestickKernel ?? throw new InvalidCastException();
                 if (isReversed)
                 {
-                    _candlestickChartsReversed[symbol] = new CandlestickChartControl(symbol, true, _tickValues[symbol], candlestickKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _candlestickChartsReversed[symbol] = new CandlestickChartControl(_configuration, symbol, true, _tickValues[symbol], candlestickKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     var result = _candlestickChartsReversed[symbol] as T;
                     return result!;
                 }
                 else
                 {
-                    _candlestickCharts[symbol] = new CandlestickChartControl(symbol, false, _tickValues[symbol], candlestickKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _candlestickCharts[symbol] = new CandlestickChartControl(_configuration, symbol, false, _tickValues[symbol], candlestickKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     var result = _candlestickCharts[symbol] as T;
                     return result!;
                 }
@@ -124,13 +127,13 @@ public class VisualService : IVisualService
                 var thresholdBarKernel = _kernels[symbol][ChartType.ThresholdBar] as ThresholdBarKernel ?? throw new InvalidCastException();
                 if (isReversed)
                 {
-                    _thresholdBarChartsReversed[symbol] = new ThresholdBarChartControl(symbol, true, _tickValues[symbol], thresholdBarKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _thresholdBarChartsReversed[symbol] = new ThresholdBarChartControl(_configuration, symbol, true, _tickValues[symbol], thresholdBarKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     var result = _thresholdBarChartsReversed[symbol] as T;
                     return result!;
                 }
                 else
                 {
-                    _thresholdBarCharts[symbol] = new ThresholdBarChartControl(symbol, false, _tickValues[symbol], thresholdBarKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _thresholdBarCharts[symbol] = new ThresholdBarChartControl(_configuration, symbol, false, _tickValues[symbol], thresholdBarKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     var result = _thresholdBarCharts[symbol] as T;
                     return result!;
                 }

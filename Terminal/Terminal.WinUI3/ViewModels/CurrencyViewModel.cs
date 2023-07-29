@@ -18,7 +18,7 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware
     private readonly ISymbolOfCurrencyViewModelFactory _symbolViewModelFactory;
     public List<SymbolOfCurrencyViewModel> SymbolViewModels { get; set; } = new();
 
-    [ObservableProperty] private int _pipsPercent = 50; // todo:settings
+    [ObservableProperty] private int _centuriesPercent = 50; // todo:settings
     [ObservableProperty] private int _unitsPercent = 100; // todo:settings
     [ObservableProperty] private int _kernelShiftPercent = 100; //todo:settings
 
@@ -27,11 +27,11 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware
         _symbolViewModelFactory = symbolViewModelFactory;
     }
 
-    partial void OnPipsPercentChanged(int value)
+    partial void OnCenturiesPercentChanged(int value)
     {
         foreach (var model in SymbolViewModels)
         {
-            model.PipsPercent = value;
+            model.CenturiesPercent = value;
         }
     }
 

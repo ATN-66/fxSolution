@@ -14,56 +14,56 @@ public abstract partial class ChartControlBase
     protected double HorizontalScale;
     protected double VerticalScale;
     protected double VerticalShift;
+    protected int Pips;
 
-    protected const double CenturyMarksInChart = 2d; // todo: settings
-    
-    public static readonly DependencyProperty MinPipsProperty = DependencyProperty.Register(nameof(MinPips), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
-    public static readonly DependencyProperty MaxPipsProperty = DependencyProperty.Register(nameof(MaxPips), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
-    public static readonly DependencyProperty PipsPercentProperty = DependencyProperty.Register(nameof(PipsPercent), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
-    public int MinPips
+    public static readonly DependencyProperty MinCenturiesProperty = DependencyProperty.Register(nameof(MinCenturies), typeof(double), typeof(ChartControlBase), new PropertyMetadata(0));
+    public double MinCenturies
     {
-        get => (int)GetValue(MinPipsProperty);
-        set => SetValue(MinPipsProperty, value);
+        get => (double)GetValue(MinCenturiesProperty);
+        set => throw new InvalidOperationException("The set method for MinCenturies should not be called.");
     }
-    public int MaxPips
+    public static readonly DependencyProperty MaxCenturiesProperty = DependencyProperty.Register(nameof(MaxCenturies), typeof(double), typeof(ChartControlBase), new PropertyMetadata(0));
+    public double MaxCenturies
     {
-        get => (int)GetValue(MaxPipsProperty);
-        set => SetValue(MaxPipsProperty, value);
+        get => (double)GetValue(MaxCenturiesProperty);
+        set => throw new InvalidOperationException("The set method for MaxCenturies should not be called.");
     }
-    public int PipsPercent
+    public static readonly DependencyProperty CenturiesPercentProperty = DependencyProperty.Register(nameof(CenturiesPercent), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
+    public int CenturiesPercent
     {
-        get => (int)GetValue(PipsPercentProperty);
+        get => (int)GetValue(CenturiesPercentProperty);
         set
         {
-            if (value.Equals(PipsPercent))
+            if (value.Equals(CenturiesPercent))
             {
                 return;
             }
 
-            SetValue(PipsPercentProperty, value);
-            Pips = Math.Max(MinPips, MaxPips * PipsPercent / 100);
+            SetValue(CenturiesPercentProperty, value);
+            Centuries = MinCenturies + (MaxCenturies - MinCenturies) * CenturiesPercent / 100d;
         }
     }
-
-    private int _pips;
-    protected int Pips
+    private double _centuries;
+    protected double Centuries
     {
-        get => _pips;
+        get => _centuries;
         set
         {
-            if (_units == value)
+            if (value.Equals(_centuries))
             {
                 return;
             }
 
-            _pips = value;
-            OnPipsChanged();
+            _centuries = value;
+            OnCenturiesChanged();
         }
     }
-    private void OnPipsChanged()
+    private void OnCenturiesChanged()
     {
+        var pipsPerCentury = Century / TickValue;
+        Pips = (int)(pipsPerCentury * Centuries);
         VerticalScale = GraphHeight / Pips;
-        EnqueueMessage(MessageType.Trace, $"TickValue: {TickValue}, Pips: {Pips}");
+        EnqueueMessage(MessageType.Trace, $"height: {GraphHeight}, tickValue: {TickValue}, centuries: {Centuries:0.000}, pips: {Pips}");
         Invalidate();
     }
 

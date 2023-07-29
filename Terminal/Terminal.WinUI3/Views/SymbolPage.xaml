@@ -49,6 +49,6 @@
             Orientation="Vertical"
             SmallChange="1"
             StepFrequency="1"
-            Value="{x:Bind Path=ViewModel.PipsPercent, Mode=TwoWay}" />
+            Value="{x:Bind Path=ViewModel.CenturiesPercent, Mode=TwoWay}" />
     </Grid>
 </Page>

@@ -314,26 +314,26 @@ public abstract partial class ChartControlBase
     {
         try
         {
-            if (!IsMouseDown)
-            {
-                return;
-            }
+            //if (!IsMouseDown)
+            //{
+            //    return;
+            //}
 
-            var currentMouseY = (float)e.GetCurrentPoint(PipsAxisCanvas).Position.Y;
-            var deltaY = PreviousMouseY - currentMouseY;
-            var pipsChange = deltaY / VerticalScale;
+            //var currentMouseY = (float)e.GetCurrentPoint(PipsAxisCanvas).Position.Y;
+            //var deltaY = PreviousMouseY - currentMouseY;
+            //var pipsChange = deltaY / VerticalScale;
 
-            if (Math.Abs(pipsChange) < 1)
-            {
-                return;
-            }
+            //if (Math.Abs(pipsChange) < 1)
+            //{
+            //    return;
+            //}
 
-            Pips += (int)pipsChange;
-            Pips = Math.Clamp(PipsPercent, MinPips, MaxPips);
-            VerticalScale = GraphHeight / (Pips - 1);
+            //Pips += (int)pipsChange;
+            //Pips = Math.Clamp(PipsPercent, MinPips, MaxPips);
+            //VerticalScale = GraphHeight / (Pips - 1);
 
-            Invalidate();
-            PreviousMouseY = currentMouseY;
+            //Invalidate();
+            //PreviousMouseY = currentMouseY;
         }
         catch (Exception exception)
         {
@@ -367,7 +367,7 @@ public abstract partial class ChartControlBase
                 throw new InvalidOperationException("Canvas control has no parent grid.");
             }
 
-            var axisRow = grid.RowDefinitions[0];
+            var axisRow = grid.RowDefinitions[2];
             axisRow.Height = new GridLength(XAxisHeight);
         }
         catch (Exception exception)
@@ -453,7 +453,7 @@ public abstract partial class ChartControlBase
 
         foreach (var (id, type, message) in _messageQueue.Reverse())
         {
-            if (type < MessageType.Trace)
+            if (type < _messageTypeLevel)
             {
                 continue;
             }
