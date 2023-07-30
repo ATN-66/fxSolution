@@ -28,19 +28,131 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-
-            <TextBlock
-                Grid.Row="0"
-                Grid.Column="0"
-                Text="placeholder"
-                VerticalAlignment="Center" />
-
+            <Grid Grid.Row="0" Column="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ContentControl
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Content="{x:Bind ViewModel.CurrencyViewModels[0].SymbolViewModels[0].ChartControlBase, Mode=OneWay}" />
+                    <ContentControl
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Content="{x:Bind ViewModel.CurrencyViewModels[0].SymbolViewModels[1].ChartControlBase, Mode=OneWay}" />
+                    <ContentControl
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Content="{x:Bind ViewModel.CurrencyViewModels[0].SymbolViewModels[2].ChartControlBase, Mode=OneWay}" />
+                </Grid>
+            </Grid>
+            <Grid Grid.Row="0" Column="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ContentControl
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Content="{x:Bind ViewModel.CurrencyViewModels[1].SymbolViewModels[0].ChartControlBase, Mode=OneWay}" />
+                    <ContentControl
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Content="{x:Bind ViewModel.CurrencyViewModels[1].SymbolViewModels[1].ChartControlBase, Mode=OneWay}" />
+                    <ContentControl
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Content="{x:Bind ViewModel.CurrencyViewModels[1].SymbolViewModels[2].ChartControlBase, Mode=OneWay}" />
+                </Grid>
+            </Grid>
+            <Grid Grid.Row="1" Column="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ContentControl
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Content="{x:Bind ViewModel.CurrencyViewModels[2].SymbolViewModels[0].ChartControlBase, Mode=OneWay}" />
+                    <ContentControl
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Content="{x:Bind ViewModel.CurrencyViewModels[2].SymbolViewModels[1].ChartControlBase, Mode=OneWay}" />
+                    <ContentControl
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Content="{x:Bind ViewModel.CurrencyViewModels[2].SymbolViewModels[2].ChartControlBase, Mode=OneWay}" />
+                </Grid>
+            </Grid>
+            <Grid Grid.Row="1" Column="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ContentControl
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Content="{x:Bind ViewModel.CurrencyViewModels[3].SymbolViewModels[0].ChartControlBase, Mode=OneWay}" />
+                    <ContentControl
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Content="{x:Bind ViewModel.CurrencyViewModels[3].SymbolViewModels[1].ChartControlBase, Mode=OneWay}" />
+                    <ContentControl
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Content="{x:Bind ViewModel.CurrencyViewModels[3].SymbolViewModels[2].ChartControlBase, Mode=OneWay}" />
+                </Grid>
+            </Grid>
         </Grid>
         <Slider
             Grid.Row="2"
@@ -61,4 +173,11 @@
             StepFrequency="1"
             Value="{x:Bind Path=ViewModel.CenturiesPercent, Mode=TwoWay}" />
     </Grid>
+
+
+
 </Page>
+
+
+
+

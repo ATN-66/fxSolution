@@ -3,8 +3,11 @@
   |                                         CurrencyViewModelBase.cs |
   +------------------------------------------------------------------+*/
 
+using System.Text.RegularExpressions;
 using Common.Entities;
+using Common.ExtensionsAndHelpers;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.Logging;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
 
@@ -12,22 +15,22 @@ namespace Terminal.WinUI3.ViewModels;
 
 public abstract partial class CurrencyViewModelBase : ObservableRecipient, INavigationAware
 {
-    private Currency Currency
-    {
-        get; set;
-    }
+    private readonly ISymbolOfCurrencyViewModelFactory _symbolViewModelFactory;
+    private readonly ILogger<CurrencyViewModelBase> _logger;
+
     private List<Symbol> Symbols { get; } = new();
     private List<bool> IsReversed { get; } = new();
-    private readonly ISymbolOfCurrencyViewModelFactory _symbolViewModelFactory;
+    
     public List<SymbolOfCurrencyViewModel> SymbolViewModels { get; set; } = new();
 
     [ObservableProperty] private int _centuriesPercent = 50; // todo:settings
     [ObservableProperty] private int _unitsPercent = 100; // todo:settings
     [ObservableProperty] private int _kernelShiftPercent = 100; //todo:settings
 
-    protected CurrencyViewModelBase(ISymbolOfCurrencyViewModelFactory symbolViewModelFactory)
+    protected CurrencyViewModelBase(ISymbolOfCurrencyViewModelFactory symbolViewModelFactory, ILogger<CurrencyViewModelBase> logger)
     {
         _symbolViewModelFactory = symbolViewModelFactory;
+        _logger = logger;
     }
 
     partial void OnCenturiesPercentChanged(int value)
@@ -56,41 +59,50 @@ public abstract partial class CurrencyViewModelBase : ObservableRecipient, INavi
 
     public void OnNavigatedTo(object parameter)
     {
-        SymbolViewModels.Clear();
-        var input = parameter.ToString();
-        var parts = input!.Split(',').Select(part => part.Trim()).ToArray();
+        try
+        {
+            SymbolViewModels.Clear();
+            var input = parameter.ToString();
+            CheckInput(input!);
 
-        if (Enum.TryParse(parts[0], out Currency currency))
-        {
-            Currency = currency;
-        }
-        else
-        {
-            throw new Exception($"Invalid currency: {parts[0]}");
-        }
+            var parts = input!.Split(',').Select(part => part.Trim()).ToArray();
 
-        for (var i = 1; i < parts.Length; i++)
-        {
-            var symbolParts = parts[i].Trim('(', ')').Split(':');
-            if (Enum.TryParse(symbolParts[0], out Symbol symbol))
+            if (Enum.TryParse(parts[0], out Currency _))
             {
-                var isReversed = bool.Parse(symbolParts[1]);
-                Symbols.Add(symbol);
-                IsReversed.Add(isReversed);
             }
             else
             {
-                throw new Exception($"Invalid symbol: {symbolParts[0]}");
+                throw new Exception($"Invalid currency: {parts[0]}");
+            }
+
+            for (var i = 1; i < parts.Length; i++)
+            {
+                var symbolParts = parts[i].Trim('(', ')').Split(':');
+                if (Enum.TryParse(symbolParts[0], out Symbol symbol))
+                {
+                    var isReversed = bool.Parse(symbolParts[1]);
+                    Symbols.Add(symbol);
+                    IsReversed.Add(isReversed);
+                }
+                else
+                {
+                    throw new Exception($"Invalid symbol: {symbolParts[0]}");
+                }
+            }
+
+            for (var i = 0; i < Symbols.Count; i++)
+            {
+                var symbolViewModel = _symbolViewModelFactory.Create();
+                symbolViewModel.Symbol = Symbols[i];
+                symbolViewModel.IsReversed = IsReversed[i];
+                symbolViewModel.LoadChart();
+                SymbolViewModels.Add(symbolViewModel);
             }
         }
-
-        for (var i = 0; i < Symbols.Count; i++)
+        catch (Exception exception)
         {
-            var symbolViewModel = _symbolViewModelFactory.Create();
-            symbolViewModel.Symbol = Symbols[i];
-            symbolViewModel.IsReversed = IsReversed[i];
-            symbolViewModel.LoadChart();
-            SymbolViewModels.Add(symbolViewModel);
+            LogExceptionHelper.LogException(_logger, exception, "");
+            throw;
         }
     }
 
@@ -99,6 +111,16 @@ public abstract partial class CurrencyViewModelBase : ObservableRecipient, INavi
         for (var i = 0; i < Symbols.Count; i++)
         {
             SymbolViewModels[i].OnNavigatedFrom();
+        }
+    }
+
+    [GeneratedRegex(@"^[A-Z]{3}, \(\w+:[\w\d]+\)(, \(\w+:[\w\d]+\))*$")]
+    private static partial Regex IsValidFormat();
+    private static void CheckInput(string input)
+    {
+        if (!IsValidFormat().IsMatch(input))
+        {
+            throw new ArgumentException("Invalid argument format. Expected format: 'Currency, (Symbol1:Bool), (Symbol2:Bool), (Symbol3:Bool)'");
         }
     }
 }

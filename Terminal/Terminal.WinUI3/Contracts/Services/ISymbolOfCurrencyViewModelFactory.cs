@@ -2,7 +2,7 @@
 
 namespace Terminal.WinUI3.Contracts.Services;
 
-public interface ISymbolOfCurrencyViewModelFactory
+public interface ICurrencyViewModelFactory
 {
-    SymbolOfCurrencyViewModel Create();
+    CurrencyViewModel Create();
 }

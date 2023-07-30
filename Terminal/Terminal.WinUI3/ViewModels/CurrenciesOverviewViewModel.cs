@@ -3,8 +3,9 @@
   |                                   CurrenciesOverviewViewModel.cs |
   +------------------------------------------------------------------+*/
 
-using Common.Entities;
+using Common.ExtensionsAndHelpers;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.Logging;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
 
@@ -12,37 +13,77 @@ namespace Terminal.WinUI3.ViewModels;
 
 public partial class CurrenciesOverviewViewModel : ObservableRecipient, INavigationAware
 {
-    private List<Symbol> Symbols { get; } = new();
-    private List<bool> IsReversed { get; } = new();
-    public List<SymbolOfCurrencyViewModel> SymbolViewModels { get; set; } = new();
-    private readonly ISymbolOfCurrencyViewModelFactory _symbolViewModelFactory;
+    private readonly ICurrencyViewModelFactory _currencyViewModelFactory;
+    private readonly ILogger<CurrenciesOverviewViewModel> _logger;
 
     [ObservableProperty] private int _centuriesPercent = 50; // todo:settings
     [ObservableProperty] private int _unitsPercent = 100; // todo:settings
     [ObservableProperty] private int _kernelShiftPercent = 100; //todo:settings
 
-    public CurrenciesOverviewViewModel(ISymbolOfCurrencyViewModelFactory symbolViewModelFactory)
+    public List<CurrencyViewModel> CurrencyViewModels { get; set; } = new();
+
+    public CurrenciesOverviewViewModel(ICurrencyViewModelFactory currencyViewModelFactory, ILogger<CurrenciesOverviewViewModel> logger)
     {
-        _symbolViewModelFactory = symbolViewModelFactory;
+        _currencyViewModelFactory = currencyViewModelFactory;
+        _logger = logger;
     }
 
     partial void OnCenturiesPercentChanged(int value)
     {
+        foreach (var model in CurrencyViewModels)
+        {
+            model.CenturiesPercent = value;
+        }
     }
 
     partial void OnUnitsPercentChanged(int value)
     {
+        foreach (var model in CurrencyViewModels)
+        {
+            model.UnitsPercent = value;
+        }
     }
 
     partial void OnKernelShiftPercentChanged(int value)
     {
+        foreach (var model in CurrencyViewModels)
+        {
+            model.KernelShiftPercent = value;
+        }
     }
 
     public void OnNavigatedTo(object parameter)
     {
+        try
+        {
+            CurrencyViewModels.Clear();
+            var input = parameter.ToString();
+            var sets = input!.Split(';');
+            for (var i = 0; i < sets.Length; i++)
+            {
+                sets[i] = sets[i].Trim('[', ']');
+            }
+
+            foreach (var set in sets)
+            {
+                var model = _currencyViewModelFactory.Create();
+                model.OnNavigatedTo(set);
+                CurrencyViewModels.Add(model);
+            }
+
+        }
+        catch (Exception exception)
+        {
+            LogExceptionHelper.LogException(_logger, exception, "");
+            throw;
+        }
     }
 
     public void OnNavigatedFrom()
     {
+        foreach (var model in CurrencyViewModels)
+        {
+            model.OnNavigatedFrom();
+        }
     }
 }

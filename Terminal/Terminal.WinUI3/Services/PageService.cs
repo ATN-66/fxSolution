@@ -16,6 +16,7 @@ public class PageService : IPageService
         Configure<CurrenciesOverviewViewModel, CurrenciesOverviewPage>();
         Configure<CurrencyViewModel, CurrencyPage>();
         Configure<SymbolViewModel, SymbolPage>();
+        Configure<SymbolPlusViewModel, SymbolPlusPage>();
         Configure<HistoricalDataOverviewViewModel, HistoricalDataOverviewPage>();
         Configure<AccountOverviewViewModel, AccountOverviewPage>();
         Configure<TradingHistoryViewModel, TradingHistoryPage>();

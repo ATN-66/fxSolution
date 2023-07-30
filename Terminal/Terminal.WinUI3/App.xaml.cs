@@ -112,8 +112,10 @@ public partial class App
             services.AddTransient<CurrenciesOverviewViewModel>(); services.AddTransient<CurrenciesOverviewPage>();
             services.AddTransient<CurrencyViewModel>(); services.AddTransient<CurrencyPage>();
             services.AddTransient<SymbolViewModel>(); services.AddTransient<SymbolPage>();
+            services.AddTransient<SymbolPlusViewModel>(); services.AddTransient<SymbolPlusPage>();
             services.AddTransient<ISymbolOfCurrencyViewModelFactory, SymbolOfCurrencyViewModelFactory>();
             services.AddTransient<SymbolOfCurrencyViewModel>();
+            services.AddTransient<ICurrencyViewModelFactory, CurrencyViewModelFactory>();
 
             // DatabaseMaintenance
             services.AddTransient<HistoricalDataOverviewViewModel>(); services.AddTransient<HistoricalDataOverviewPage>();
