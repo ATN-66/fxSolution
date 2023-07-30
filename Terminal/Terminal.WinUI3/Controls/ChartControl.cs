@@ -3,7 +3,6 @@
   |                                                  ChartControl.cs |
   +------------------------------------------------------------------+*/
 
-using System.Globalization;
 using System.Numerics;
 using Windows.UI;
 using Common.Entities;
@@ -16,7 +15,6 @@ using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
 using Terminal.WinUI3.AI.Data;
 using Microsoft.UI.Xaml;
-using System.Drawing.Printing;
 using Microsoft.Extensions.Configuration;
 
 namespace Terminal.WinUI3.Controls;
@@ -149,7 +147,7 @@ public abstract partial class ChartControl<TItem, TKernel> : ChartControlBase wh
             for (var price = firstPriceDivisibleBy10Pips; price >= yZeroPrice - Pips * Digits; price -= Digits * YAxisStepInPips)
             {
                 y = Math.Abs(offset - (yZeroPrice - price) / Digits * VerticalScale);
-                using var textLayout = new CanvasTextLayout(args.DrawingSession, price.ToString(PriceLabelTextFormat), YAxisCanvasTextFormat, (float)YAxisWidth, (float)AxisFontSize);
+                using var textLayout = new CanvasTextLayout(args.DrawingSession, price.ToString(PriceLabelTextFormat), YAxisCanvasTextFormat, (float)YAxisWidth, AxisFontSize);
                 args.DrawingSession.DrawTextLayout(textLayout, 0f, (float)(y - textLayout.LayoutBounds.Height), AxisForegroundColor);
                 textLayout.Dispose();
 

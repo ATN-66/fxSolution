@@ -43,12 +43,12 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
 
         var pipsPerCentury = Century / TickValue;
         Pips = (int)(pipsPerCentury * Centuries);
-        EnqueueMessage(MessageType.Trace, $"height: {GraphHeight}, tickValue: {TickValue}, centuries: {Centuries:0.000}, pips: {Pips}");
+        VerticalScale = GraphHeight / Pips;
 
         GraphWidth = e.NewSize.Width;
         MaxUnits = (int)Math.Floor((GraphWidth - Space) / (MinOcThickness + Space));
         Units = Math.Max(MinUnits, MaxUnits * UnitsPercent / 100);
-        EnqueueMessage(MessageType.Trace, $"width: {GraphWidth}, max units: {MaxUnits}, units: {Units}, units percent: {UnitsPercent}");
+        HorizontalScale = GraphWidth / (Units - 1);
     }
 
     protected override void GraphCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
@@ -155,7 +155,6 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
         KernelShift = (int)Math.Max(0, ((Kernel.Count - Units) / 100d) * (100 - KernelShiftPercent));
 
         HorizontalScale = GraphWidth / (Units - 1);
-        VerticalScale = GraphHeight / Pips;
 
         _highData = new Vector2[Units];
         _lowData = new Vector2[Units];
@@ -171,6 +170,7 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
             _closeData[unit] = new Vector2 { X = x };
         }
 
+        EnqueueMessage(MessageType.Trace, $"W: {GraphWidth}, maxU: {MaxUnits}, U%: {UnitsPercent}, U: {Units}, HS: {HorizontalShift}, KS: {KernelShift}, KS%: {KernelShiftPercent}");
         Invalidate();
     }
 

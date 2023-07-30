@@ -63,7 +63,8 @@ public abstract partial class ChartControlBase
         var pipsPerCentury = Century / TickValue;
         Pips = (int)(pipsPerCentury * Centuries);
         VerticalScale = GraphHeight / Pips;
-        EnqueueMessage(MessageType.Trace, $"height: {GraphHeight}, tickValue: {TickValue}, centuries: {Centuries:0.000}, pips: {Pips}");
+
+        EnqueueMessage(MessageType.Trace, $"H: {GraphHeight}, TV: {TickValue}, Cs: {Centuries:0.000}, Ps: {Pips}, VS: {VerticalShift}");
         Invalidate();
     }
 
