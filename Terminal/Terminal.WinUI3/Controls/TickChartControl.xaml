@@ -17,78 +17,87 @@
                 <ControlTemplate TargetType="controls:TickChartControl">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <win2d:CanvasControl
-                            x:Name="xAxisCanvas"
-                            Grid.Row="0"
-                            Grid.Column="0"
-                            Grid.ColumnSpan="2" />
-                        <win2d:CanvasControl
-                            x:Name="yAxisCanvas"
-                            Grid.Row="1"
-                            Grid.RowSpan="2"
-                            Grid.Column="2" />
-                        <win2d:CanvasControl
                             x:Name="graphCanvas"
-                            Grid.Row="1"
-                            Grid.RowSpan="2"
-                            Grid.Column="0"
+                            Grid.Row="0"
+                            Grid.RowSpan="3"
+                            Grid.Column="1"
                             Grid.ColumnSpan="2" />
                         <win2d:CanvasControl
                             x:Name="debugCanvas"
-                            Grid.Row="1"
-                            Grid.RowSpan="2"
-                            Grid.Column="0"
+                            Grid.Row="0"
+                            Grid.Column="1"
                             Grid.ColumnSpan="2"
                             Background="Transparent"
                             IsHitTestVisible="False" />
                         <win2d:CanvasControl
                             x:Name="textCanvas"
-                            Grid.Row="1"
-                            Grid.RowSpan="2"
-                            Grid.Column="0"
+                            Grid.Row="0"
+                            Grid.Column="1"
                             Grid.ColumnSpan="2"
                             Background="Transparent"
                             IsHitTestVisible="False" />
                         <StackPanel
-                            Grid.Row="2"
-                            Grid.Column="0"
+                            Grid.Row="1"
+                            Grid.Column="1"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             Orientation="Horizontal">
                             <Button
-                                Margin="3,0,3,3"
-                                Command="{Binding CandlesticksCommand, Mode=OneWay}"
-                                Content="Candlesticks" />
+                                Margin="3,3,3,3"
+                                Command="{Binding TicksCommand, Mode=OneWay}"
+                                Content="Ticks" />
                             <Button
-                                Margin="3,0,3,3"
+                                Margin="3,3,3,3"
                                 Command="{Binding ThresholdBarsCommand, Mode=OneWay}"
                                 Content="ThresholdBars" />
                             <Button
-                                Margin="3,0,3,3"
+                                Margin="3,3,3,3"
+                                Command="{Binding ClearMessagesCommand, Mode=OneWay}"
+                                Content="Clear" />
+                            <Button
+                                Margin="3,3,3,3"
                                 Command="{Binding ResetShiftsCommand, Mode=OneWay}"
                                 Content="Reset Shifts" />
                         </StackPanel>
                         <StackPanel
-                            Grid.Row="2"
-                            Grid.Column="1"
+                            Grid.Row="1"
+                            Grid.Column="2"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Orientation="Horizontal">
                             <Button
-                                Margin="0,0,3,3"
+                                Margin="3,3,3,3"
                                 Background="{Binding Currency, Converter={StaticResource CurrencyToColor}}"
                                 Command="{Binding OperationalCommand, Mode=OneWay}"
-                                Content="{Binding OperationalButtonContent, Mode=OneWay}" />
+                                Content="{Binding OperationalButtonContent, Mode=OneWay}"
+                                CornerRadius="10,0,10,0" />
                         </StackPanel>
+                        <win2d:CanvasControl
+                            x:Name="centuryAxisCanvas"
+                            Grid.Row="0"
+                            Grid.RowSpan="3"
+                            Grid.Column="0" />
+                        <win2d:CanvasControl
+                            x:Name="pipsAxisCanvas"
+                            Grid.Row="0"
+                            Grid.RowSpan="3"
+                            Grid.Column="3" />
+                        <win2d:CanvasControl
+                            x:Name="xAxisCanvas"
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Grid.ColumnSpan="2" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>

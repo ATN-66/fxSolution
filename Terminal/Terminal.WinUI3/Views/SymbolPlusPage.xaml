@@ -26,12 +26,27 @@
             SmallChange="1"
             StepFrequency="1"
             Value="{x:Bind Path=ViewModel.UnitsPercent, Mode=TwoWay}" />
-        <ContentControl
-            Grid.Row="1"
-            Grid.Column="0"
-            HorizontalContentAlignment="Stretch"
-            VerticalContentAlignment="Stretch"
-            Content="{x:Bind ViewModel.ChartControlBase, Mode=OneWay}" />
+        <Grid Grid.Row="1" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <ContentControl
+                Grid.Row="0"
+                Grid.Column="0"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch"
+                Content="{x:Bind ViewModel.ChartControlBaseFirst, Mode=OneWay}" />
+            <ContentControl
+                Grid.Row="0"
+                Grid.Column="1"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch"
+                Content="{x:Bind ViewModel.ChartControlBaseSecond, Mode=OneWay}" />
+        </Grid>
         <Slider
             Grid.Row="2"
             Grid.Column="0"

@@ -1,4 +1,5 @@
-﻿using Terminal.WinUI3.AI.Data;
+﻿using Microsoft.Extensions.Configuration;
+using Terminal.WinUI3.AI.Data;
 using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Controls;
@@ -7,13 +8,13 @@ namespace Terminal.WinUI3.ViewModels;
 
 public sealed class SymbolOfCurrencyViewModel : SymbolViewModelBase
 {
-    public SymbolOfCurrencyViewModel(IVisualService visualService, IProcessor processor, IAccountService accountService, IDispatcherService dispatcherService) : base(visualService, processor, accountService, dispatcherService)
+    public SymbolOfCurrencyViewModel(IConfiguration configuration, IChartService chartService, IProcessor processor, IAccountService accountService, IDispatcherService dispatcherService) : base(configuration, chartService, processor, accountService, dispatcherService)
     {
     }
 
-    public void LoadChart()
+    public async void LoadChart()
     {
-        ChartControlBase = VisualService.GetChart<CandlestickChartControl, Candlestick, CandlestickKernel>(Symbol, ChartType.Candlesticks, IsReversed);
+        ChartControlBase = await ChartService.GetChartAsync<CandlestickChartControl, Candlestick, CandlestickKernel>(Symbol, ChartType.Candlesticks, IsReversed).ConfigureAwait(false);
         UpdateProperties();
     }
 
@@ -21,7 +22,7 @@ public sealed class SymbolOfCurrencyViewModel : SymbolViewModelBase
 
     public override void OnNavigatedFrom()
     {
-        VisualService.DisposeChart(ChartControlBase);
+        ChartService.DisposeChart(ChartControlBase);
         ChartControlBase.Detach();
         ChartControlBase = null!;
     }

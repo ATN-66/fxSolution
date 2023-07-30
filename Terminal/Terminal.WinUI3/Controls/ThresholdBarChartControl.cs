@@ -32,19 +32,15 @@ public sealed class ThresholdBarChartControl : ChartControl<ThresholdBar, Thresh
         DefaultStyleKey = typeof(ThresholdBarChartControl);
     }
 
-    protected override void GraphCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
+    protected override int CalculateMaxUnits()
     {
-        throw new NotImplementedException();
-
-        //GraphHeight = (float)e.NewSize.Height;
-        //Pips = Math.Max(MinPips, MaxPips * PipsPercent / 100);
-        //GraphWidth = (float)e.NewSize.Width;
-        //MaxUnits = (int)Math.Floor((GraphWidth - Space) / (MinOcThickness + Space));
-        //Units = Math.Max(MinUnits, MaxUnits * UnitsPercent / 100);
+        return (int)Math.Floor((GraphWidth - Space) / (MinOcThickness + Space));
     }
 
     protected override void GraphCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
+        base.GraphCanvas_OnDraw(sender, args);
+
         args.DrawingSession.Clear(GraphBackgroundColor);
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Antialiased;
         CanvasGeometry openCloseUpGeometries;
@@ -57,7 +53,7 @@ public sealed class ThresholdBarChartControl : ChartControl<ThresholdBar, Thresh
         {
             var offset = IsReversed ? GraphHeight : 0;
             var ask = Kernel[KernelShift].Ask;
-            var yZeroPrice = ask + Pips * Digits / 2d - VerticalShift * Digits;
+            YZeroPrice = ask + Pips * Digits / 2d - VerticalShift * Digits;
             
             using var openCloseUpCpb = new CanvasPathBuilder(args.DrawingSession);
             using var openCloseDownCpb = new CanvasPathBuilder(args.DrawingSession);
@@ -71,8 +67,8 @@ public sealed class ThresholdBarChartControl : ChartControl<ThresholdBar, Thresh
                     var open = Kernel[unit + KernelShift].Open;
                     var close = Kernel[unit + KernelShift].Close;
 
-                    var yOpen = (yZeroPrice - open) / Digits * VerticalScale;
-                    var yClose = (yZeroPrice - close) / Digits * VerticalScale;
+                    var yOpen = (YZeroPrice - open) / Digits * VerticalScale;
+                    var yClose = (YZeroPrice - close) / Digits * VerticalScale;
 
                     _openData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - yOpen) : (float)yOpen;
                     _closeData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - yClose) : (float)yClose;
@@ -114,7 +110,7 @@ public sealed class ThresholdBarChartControl : ChartControl<ThresholdBar, Thresh
 
     protected override void XAxisCanvas_OnPointerReleased(object sender, PointerRoutedEventArgs e)
     {
-        throw new NotImplementedException();
+        throw new NotImplementedException("ThresholdBarChartControl: XAxisCanvas_OnPointerReleased");
     }
 
     protected override void OnUnitsChanged()
@@ -125,7 +121,6 @@ public sealed class ThresholdBarChartControl : ChartControl<ThresholdBar, Thresh
         KernelShift = (int)Math.Max(0, ((Kernel.Count - Units) / 100d) * (100 - KernelShiftPercent));
 
         HorizontalScale = GraphWidth / (Units - 1);
-        VerticalScale = GraphHeight / Pips;
 
         _openData = new Vector2[Units];
         _closeData = new Vector2[Units];
@@ -137,10 +132,8 @@ public sealed class ThresholdBarChartControl : ChartControl<ThresholdBar, Thresh
             _closeData[unit] = new Vector2 { X = x };
         }
 
-        GraphCanvas!.Invalidate();
-        PipsAxisCanvas!.Invalidate();
-        XAxisCanvas!.Invalidate();
-        DebugCanvas!.Invalidate();
+        EnqueueMessage(MessageType.Trace, $"W: {GraphWidth}, maxU: {MaxUnits}, U%: {UnitsPercent}, U: {Units}, HS: {HorizontalShift}, KS: {KernelShift}, KS%: {KernelShiftPercent}");
+        Invalidate();
     }
 
     private void AdjustThickness()

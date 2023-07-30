@@ -34,21 +34,9 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
         DefaultStyleKey = typeof(CandlestickChartControl);
     }
 
-    protected override void GraphCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
+    protected override int CalculateMaxUnits()
     {
-        base.GraphCanvas_OnSizeChanged(sender, e);
-
-        GraphHeight = e.NewSize.Height;
-        Centuries = MinCenturies + (MaxCenturies - MinCenturies) * CenturiesPercent / 100d;
-
-        var pipsPerCentury = Century / TickValue;
-        Pips = (int)(pipsPerCentury * Centuries);
-        VerticalScale = GraphHeight / Pips;
-
-        GraphWidth = e.NewSize.Width;
-        MaxUnits = (int)Math.Floor((GraphWidth - Space) / (MinOcThickness + Space));
-        Units = Math.Max(MinUnits, MaxUnits * UnitsPercent / 100);
-        HorizontalScale = GraphWidth / (Units - 1);
+        return (int) Math.Floor((GraphWidth - Space) / (MinOcThickness + Space));
     }
 
     protected override void GraphCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
@@ -61,7 +49,7 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
         CanvasGeometry openCloseDownGeometries;
        
         var ask = Kernel[KernelShift].Ask;
-        var yZeroPrice = ask + Pips * Digits / 2d - VerticalShift * Digits;
+        YZeroPrice = ask + Pips * Digits / 2d - VerticalShift * Digits;
 
         DrawData();
         Execute();
@@ -85,10 +73,10 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
                     var open = Kernel[unit + KernelShift].Open;
                     var close = Kernel[unit + KernelShift].Close;
 
-                    var yHigh = (yZeroPrice - high) / Digits * VerticalScale;
-                    var yLow = (yZeroPrice - low) / Digits * VerticalScale;
-                    var yOpen = (yZeroPrice - open) / Digits * VerticalScale;
-                    var yClose = (yZeroPrice - close) / Digits * VerticalScale;
+                    var yHigh = (YZeroPrice - high) / Digits * VerticalScale;
+                    var yLow = (YZeroPrice - low) / Digits * VerticalScale;
+                    var yOpen = (YZeroPrice - open) / Digits * VerticalScale;
+                    var yClose = (YZeroPrice - close) / Digits * VerticalScale;
 
                     _highData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - yHigh) : (float)yHigh;
                     _lowData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - yLow) : (float)yLow;
@@ -138,7 +126,6 @@ public sealed class CandlestickChartControl : ChartControl<Candlestick, Candlest
             args.DrawingSession.DrawGeometry(highLowDownGeometries, QuoteColor, _hlThickness);
             args.DrawingSession.DrawGeometry(openCloseUpGeometries, BaseColor, _ocThickness);
             args.DrawingSession.DrawGeometry(openCloseDownGeometries, QuoteColor, _ocThickness);
-            
         }
     }
 

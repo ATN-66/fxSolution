@@ -28,16 +28,11 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
         DefaultStyleKey = typeof(TickChartControl);
     }
 
-    protected override void GraphCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
+    protected override int CalculateMaxUnits()
     {
-        throw new NotImplementedException();
-
-        //GraphHeight = (float)e.NewSize.Height;
-        //Pips = Math.Max(MinPips, MaxPips * PipsPercent / 100);
-        //GraphWidth = (float)e.NewSize.Width;
-        //MaxUnits = (int)GraphWidth;
-        //Units = Math.Max(MinUnits, MaxUnits * UnitsPercent / 100);
+        return (int)GraphWidth;
     }
+
     protected override void GraphCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
         args.DrawingSession.Clear(GraphBackgroundColor);
@@ -63,10 +58,10 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
             var offset = IsReversed ? GraphHeight : 0;
             var ask = Kernel[KernelShift].Ask;
             var bid = Kernel[KernelShift].Bid;
-            var yZeroPrice = ask + Pips * Digits / 2f - VerticalShift * Digits;
+            YZeroPrice = ask + Pips * Digits / 2f - VerticalShift * Digits;
 
-            _askData[HorizontalShift].Y = IsReversed ? (float)(offset - (yZeroPrice - ask) / Digits * VerticalScale) : (float)((yZeroPrice - ask) / Digits * VerticalScale);
-            _bidData[HorizontalShift].Y = IsReversed ? (float)(offset - (yZeroPrice - bid) / Digits * VerticalScale) : (float)((yZeroPrice - bid) / Digits * VerticalScale);
+            _askData[HorizontalShift].Y = IsReversed ? (float)(offset - (YZeroPrice - ask) / Digits * VerticalScale) : (float)((YZeroPrice - ask) / Digits * VerticalScale);
+            _bidData[HorizontalShift].Y = IsReversed ? (float)(offset - (YZeroPrice - bid) / Digits * VerticalScale) : (float)((YZeroPrice - bid) / Digits * VerticalScale);
             cpb.BeginFigure(_bidData[HorizontalShift]);
             cpb.AddLine(_askData[HorizontalShift]);
 
@@ -75,14 +70,14 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
                 var end = Math.Min(Units - HorizontalShift, Kernel.Count);
                 for (var unit = 1; unit < end; unit++)
                 {
-                    var yAsk = (yZeroPrice - Kernel[unit + KernelShift].Ask) / Digits * VerticalScale;
+                    var yAsk = (YZeroPrice - Kernel[unit + KernelShift].Ask) / Digits * VerticalScale;
                     _askData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - yAsk) : (float)yAsk;
                     cpb.AddLine(_askData[unit + HorizontalShift]);
                 }
 
                 for (var unit = end - 1; unit >= 1; unit--)
                 {
-                    var yBid = (yZeroPrice - Kernel[unit + KernelShift].Bid) / Digits * VerticalScale;
+                    var yBid = (YZeroPrice - Kernel[unit + KernelShift].Bid) / Digits * VerticalScale;
                     _bidData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - yBid) : (float)yBid;
                     cpb.AddLine(_bidData[unit + HorizontalShift]);
                 }
@@ -218,7 +213,6 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
         KernelShift = (int)Math.Max(0, ((Kernel.Count - Units) / 100d) * (100 - KernelShiftPercent));
 
         HorizontalScale = GraphWidth / (Units - 1);
-        VerticalScale = GraphHeight / Pips;
 
         _askData = new Vector2[Units];
         _bidData = new Vector2[Units];
@@ -230,9 +224,7 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
             _bidData[unit] = new Vector2 { X = x };
         }
 
-        GraphCanvas!.Invalidate();
-        PipsAxisCanvas!.Invalidate();
-        XAxisCanvas!.Invalidate();
-        DebugCanvas!.Invalidate();
+        EnqueueMessage(MessageType.Trace, $"W: {GraphWidth}, maxU: {MaxUnits}, U%: {UnitsPercent}, U: {Units}, HS: {HorizontalShift}, KS: {KernelShift}, KS%: {KernelShiftPercent}");
+        Invalidate();
     }
 }

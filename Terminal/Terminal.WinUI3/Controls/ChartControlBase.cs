@@ -1,22 +1,19 @@
 ﻿/*+------------------------------------------------------------------+
   |                                         Terminal.WinUI3.Controls |
-  |                                              ChartControlBase.cs |
+  |                                              ChartControlBaseFirst.cs |
   +------------------------------------------------------------------+*/
 
-using Windows.Graphics.Display;
 using Windows.UI;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
-using Microsoft.Graphics.Canvas.UI.Xaml;
-using Microsoft.UI;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Symbol = Common.Entities.Symbol;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Configuration;
+using CommunityToolkit.Mvvm.Messaging;
 
 namespace Terminal.WinUI3.Controls;
 
@@ -27,13 +24,9 @@ public abstract partial class ChartControlBase : Control
     protected readonly double Digits;
     protected const double Century = 100d; // todo: settings // one hundred dollars of the balance currency
   
-    protected readonly Line AskLine = new();
-    protected readonly Line BidLine = new();
-    protected readonly Line CenturyZeroLine = new();
-
     private readonly Queue<(int ID, MessageType Type, string Message)> _messageQueue = new();
     protected const int DebugMessageQueueSize = 10;
-    private int _debugMessageId = 0;
+    private int _debugMessageId;
     private readonly MessageType _messageTypeLevel;
 
     protected ChartControlBase(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger)
@@ -110,7 +103,7 @@ public abstract partial class ChartControlBase : Control
     }
     public void Dispose()
     {
-       
+        StrongReferenceMessenger.Default.UnregisterAll(this);
     }
 
     private static (string baseCurrency, string quoteCurrency) GetCurrenciesFromSymbol(Symbol symbol)

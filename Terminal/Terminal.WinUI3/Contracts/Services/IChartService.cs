@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                               Terminal.WinUI3.Contracts.Services |
-  |                                                IVisualService.cs |
+  |                                                IChartService.cs |
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
@@ -9,12 +9,13 @@ using Terminal.WinUI3.Controls;
 
 namespace Terminal.WinUI3.Contracts.Services;
 
-public interface IVisualService
+public interface IChartService
 {
     Task InitializeAsync(Dictionary<Symbol, Dictionary<ChartType, IKernel>> kernels);
     void ProcessTickValues(string details);
-    T GetChart<T, TItem, TK>(Symbol symbol, ChartType chartType, bool isReversed) where T : ChartControl<TItem, TK> where TItem : IChartItem where TK : IKernel<TItem>;
+    Task<ChartControlBase> GetDefaultChartAsync(Symbol symbol, bool isReversed);
+    Task<ChartControlBase> GetChartByTypeAsync(Symbol symbol, bool isReversed, ChartType chartType);
+    Task<T> GetChartAsync<T, TItem, TK>(Symbol symbol, ChartType chartType, bool isReversed) where T : ChartControl<TItem, TK> where TItem : IChartItem where TK : IKernel<TItem>;
     void DisposeChart(ChartControlBase chartControlBase);
     void Tick(Symbol symbol);
-    ChartControlBase GetDefaultChart(Symbol symbol, bool isReversed);
 }

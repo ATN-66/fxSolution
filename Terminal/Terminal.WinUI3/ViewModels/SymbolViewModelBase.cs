@@ -12,24 +12,25 @@ using CommunityToolkit.Mvvm.Input;
 using Terminal.WinUI3.AI.Data;
 using Terminal.WinUI3.Helpers;
 using Terminal.WinUI3.Models.Account.Enums;
+using Microsoft.Extensions.Configuration;
 
 namespace Terminal.WinUI3.ViewModels;
 
 public abstract partial class SymbolViewModelBase : ObservableRecipient, INavigationAware
 {
-    protected readonly IVisualService VisualService;
+    protected readonly IChartService ChartService;
     private readonly IProcessor _processor;
     private readonly IAccountService _accountService;
     private readonly IDispatcherService _dispatcherService;
 
-    [ObservableProperty] private double _minCenturies = 0.2d; // todo:settings
-    [ObservableProperty] private double _maxCenturies = 3.0d; // todo:settings
-    [ObservableProperty] private int _centuriesPercent = 50; // todo:settings
+    [ObservableProperty] private double _minCenturies;
+    [ObservableProperty] private double _maxCenturies; 
+    [ObservableProperty] private int _centuriesPercent;
 
-    [ObservableProperty] private int _minUnits = 10;// todo:settings
-    [ObservableProperty] private int _unitsPercent = 100; // todo:settings
-    [ObservableProperty] private int _kernelShiftPercent = 100; //todo:settings
-    [ObservableProperty] private int _horizontalShift = 3; //todo:settings
+    [ObservableProperty] private int _minUnits;
+    [ObservableProperty] private int _unitsPercent;
+    [ObservableProperty] private int _kernelShiftPercent;
+    [ObservableProperty] private int _horizontalShift;
 
     private string _operationalButtonContent = null!;
     private ICommand _operationalCommand = null!;
@@ -44,30 +45,27 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
     }
 
     [RelayCommand]
-    private Task TicksAsync()
+    private async Task TicksAsync()
     {
         DisposeChart();
-        ChartControlBase = VisualService.GetChart<TickChartControl, Quotation, QuotationKernel>(Symbol, ChartType.Ticks, IsReversed);
+        ChartControlBase = await ChartService.GetChartAsync<TickChartControl, Quotation, QuotationKernel>(Symbol, ChartType.Ticks, IsReversed).ConfigureAwait(true);
         UpdateProperties();
-        return Task.CompletedTask;
     }
 
     [RelayCommand]
-    private Task CandlesticksAsync()
+    private async Task CandlesticksAsync()
     {
         DisposeChart();
-        ChartControlBase = VisualService.GetChart<CandlestickChartControl, Candlestick, CandlestickKernel>(Symbol, ChartType.Candlesticks, IsReversed);
+        ChartControlBase = await ChartService.GetChartAsync<CandlestickChartControl, Candlestick, CandlestickKernel>(Symbol, ChartType.Candlesticks, IsReversed).ConfigureAwait(true);
         UpdateProperties();
-        return Task.CompletedTask;
     }
 
     [RelayCommand]
-    private Task ThresholdBarsAsync()
+    private async Task ThresholdBarsAsync()
     {
         DisposeChart();
-        ChartControlBase = VisualService.GetChart<ThresholdBarChartControl, ThresholdBar, ThresholdBarKernel>(Symbol, ChartType.ThresholdBar, IsReversed);
+        ChartControlBase = await ChartService.GetChartAsync<ThresholdBarChartControl, ThresholdBar, ThresholdBarKernel>(Symbol, ChartType.ThresholdBar, IsReversed).ConfigureAwait(true);
         UpdateProperties();
-        return Task.CompletedTask;
     }
 
     [RelayCommand]
@@ -87,18 +85,26 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
 
     private void DisposeChart()
     {
-        VisualService.DisposeChart(ChartControlBase);
+        ChartService.DisposeChart(ChartControlBase);
         ChartControlBase.Detach();
         ChartControlBase = null!;
     }
 
-    protected SymbolViewModelBase(IVisualService visualService, IProcessor processor, IAccountService accountService, IDispatcherService dispatcherService)
+    protected SymbolViewModelBase(IConfiguration configuration, IChartService chartService, IProcessor processor, IAccountService accountService, IDispatcherService dispatcherService)
     {
-        VisualService = visualService;
+        ChartService = chartService;
         _processor = processor;
         _accountService = accountService;
         _accountService.PropertyChanged += OnAccountServicePropertyChanged;
         _dispatcherService = dispatcherService;
+
+        _minCenturies = configuration.GetValue<double>($"{nameof(_minCenturies)}");
+        _maxCenturies = configuration.GetValue<double>($"{nameof(_maxCenturies)}");
+        _centuriesPercent = configuration.GetValue<int>($"{nameof(_centuriesPercent)}");
+        _minUnits = configuration.GetValue<int>($"{nameof(_minUnits)}");
+        _unitsPercent = configuration.GetValue<int>($"{nameof(_unitsPercent)}");
+        _kernelShiftPercent = configuration.GetValue<int>($"{nameof(_kernelShiftPercent)}");
+        _horizontalShift = configuration.GetValue<int>($"{nameof(_horizontalShift)}");
     }
 
     public Symbol Symbol
@@ -216,8 +222,7 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
                 OperationalCommand = new RelayCommand(execute: ExecuteAsync, canExecute: () => true);
                 break;
             }
-            default:
-                throw new InvalidOperationException($"{nameof(_accountService.ServiceState)} is not implemented.");
+            default: throw new InvalidOperationException($"{nameof(_accountService.ServiceState)} is not implemented.");
         }
     }
 

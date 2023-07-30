@@ -3,11 +3,12 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
+using CommunityToolkit.Mvvm.Messaging;
 using Fx.Grpc;
-using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Configuration;
 
 using Terminal.WinUI3.Contracts.Services;
+using Terminal.WinUI3.Controls.Messages;
 using Terminal.WinUI3.Helpers;
 using Terminal.WinUI3.Models.Account;
 using Terminal.WinUI3.Models.Account.Enums;
@@ -33,6 +34,8 @@ internal sealed class AccountService : IAccountService
         _accountInfo.FreeMarginPercentToRisk = double.Parse(configuration.GetValue<string>("FreeMarginPercentToRisk")!);
         _accountInfo.Deviation = ulong.Parse(configuration.GetValue<string>("Deviation")!);
         _mT5DateTimeFormat = configuration.GetValue<string>($"{nameof(_mT5DateTimeFormat)}")!;
+
+        WeakReferenceMessenger.Default.Register<OrderRequestMessage>(this, OnOrderRequestAsync);
     }
 
     public ServiceState ServiceState
@@ -233,6 +236,8 @@ internal sealed class AccountService : IAccountService
         _position.StartOrder.Bid = double.Parse(detailsDictionary["StartOrderBid"]);
         _position.StartOrder.Volume = double.Parse(detailsDictionary["StartOrderVolume"]);
         _position.StartOrder.Time = DateTime.ParseExact(detailsDictionary["StartOrderTime"], _mT5DateTimeFormat, CultureInfo.InvariantCulture);
+
+        StrongReferenceMessenger.Default.Send(new OrderBroadcastMessage(_position.Symbol, BroadcastOperation.Open, _position.StartOrder), new Token(_position.Symbol));
     }
     private void UpdateClose(string details)
     {
@@ -266,6 +271,8 @@ internal sealed class AccountService : IAccountService
         _position.EndOrder.Ask = double.Parse(detailsDictionary["EndOrderAsk"]);
         _position.EndOrder.Bid = double.Parse(detailsDictionary["EndOrderBid"]);
         _position.EndOrder.Time = DateTime.ParseExact(detailsDictionary["EndOrderTime"], _mT5DateTimeFormat, CultureInfo.InvariantCulture);
+
+        StrongReferenceMessenger.Default.Send(new OrderBroadcastMessage(_position.Symbol, BroadcastOperation.Close, _position.EndOrder), new Token(_position.Symbol));
         _position = null;
     }
     public void UpdatePosition(int ticket, ResultCode code, string details)
@@ -289,6 +296,22 @@ internal sealed class AccountService : IAccountService
         else
         {
             throw new NotImplementedException();
+        }
+    }
+    private void OnOrderRequestAsync(object recipient, OrderRequestMessage message)
+    {
+        if (_position == null)
+        {
+            message.Reply(Order.Null);
+
+        }
+        else if (_position.Symbol != message.Symbol)
+        {
+            message.Reply(Order.Null);
+        }
+        else
+        {
+            message.Reply(_position.StartOrder);
         }
     }
     public IEnumerable<HistoryPosition> ProcessPositionsHistory(string details)

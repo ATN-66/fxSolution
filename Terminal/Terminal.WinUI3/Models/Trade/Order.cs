@@ -5,14 +5,15 @@ namespace Terminal.WinUI3.Models.Trade;
 
 public class Order
 {
-    public Order(TradeType tradeType)
+    public Order(TradeType tradeType, string comment)
     {
         TradeType = tradeType;
+        Comment = comment;
     }
 
     [Description("Unique identifier for the order")] public ulong Ticket { get; set; }
     [Description("TradeType (Buy, Sell)")] public TradeType TradeType { get; }
-    [Description("A comment about the order")] public string Comment { get; set; }
+    [Description("A comment about the order")] public string Comment { get; }
     [Description("The price at which the order was placed")] public double Price { get; set; }
     [Description("Stop loss level of the order")] public double StopLoss { get; set; }
     [Description("Take Profit level of the order")] public double TakeProfit { get; set; }
@@ -22,4 +23,6 @@ public class Order
     [Description("The time at which the order was placed")] public DateTime Time { get; set; }
 
     public TradeType OppositeTradeType => TradeType == TradeType.Buy ? TradeType.Sell : TradeType.Buy;
+
+    public static readonly Order Null = new(TradeType.NaN, string.Empty);
 }

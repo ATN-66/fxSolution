@@ -8,11 +8,8 @@ public class Position
 {
     public Position(Symbol symbol, TradeType tradeType, ulong deviation, ulong magicNumber, double freeMarginPercentToUse, double freeMarginPercentToRisk)
     {
-        StartOrder = new Order(tradeType)
-        {
-            Comment = "Order opened by EXECUTIVE EA"
-        };
-        EndOrder = new Order(StartOrder.OppositeTradeType);
+        StartOrder = new Order(tradeType, "Order opened by EXECUTIVE EA");
+        EndOrder = new Order(StartOrder.OppositeTradeType, "Order closed by EXECUTIVE EA");
 
         Symbol = symbol;
         MagicNumber = magicNumber;

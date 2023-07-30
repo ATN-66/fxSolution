@@ -101,7 +101,7 @@ public partial class App
             services.AddSingleton<IDataConsumerService, DataConsumerService>();
             services.AddSingleton<IExecutiveConsumerService, ExecutiveConsumerService>();
             services.AddSingleton<IDataBaseService, DataBaseService>();
-            services.AddSingleton<IVisualService, VisualService>();
+            services.AddSingleton<IChartService, ChartService>();
 
             // Navigation and settings
             services.AddTransient<ShellPage>(); services.AddTransient<ShellViewModel>();

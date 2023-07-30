@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                                         Terminal.WinUI3.Controls |
-  |                                   ChartControlBase.Properties.cs |
+  |                                   ChartControlBaseFirst.Properties.cs |
   +------------------------------------------------------------------+*/
 
 using Microsoft.UI.Xaml;
@@ -47,7 +47,7 @@ public abstract partial class ChartControlBase
     protected double Centuries
     {
         get => _centuries;
-        set
+        private set
         {
             if (value.Equals(_centuries))
             {
@@ -60,7 +60,7 @@ public abstract partial class ChartControlBase
     }
     private void OnCenturiesChanged()
     {
-        var pipsPerCentury = Century / TickValue;
+        var pipsPerCentury = Century / TickValue / 10d;
         Pips = (int)(pipsPerCentury * Centuries);
         VerticalScale = GraphHeight / Pips;
 
@@ -102,7 +102,7 @@ public abstract partial class ChartControlBase
     protected int Units
     {
         get => _units;
-        set
+        private set
         {
             if (_units == value)
             {

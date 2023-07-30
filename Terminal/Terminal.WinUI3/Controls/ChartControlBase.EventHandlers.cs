@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                                         Terminal.WinUI3.Controls |
-  |                                ChartControlBase.EventHandlers.cs |
+  |                                ChartControlBaseFirst.EventHandlers.cs |
   +------------------------------------------------------------------+*/
 
 using System.Numerics;
@@ -30,11 +30,11 @@ public abstract partial class ChartControlBase
     protected double PreviousMouseX;
     protected double PreviousMouseY;
 
-    protected double CMAxisWidth;
+    protected double CenturyAxisWidth;
     protected double YAxisWidth;
     protected double XAxisHeight;
 
-    private const string CmAxisTextSample = "0000";
+    private const string CenturyAxisTextSample = "-1234";
     private const string YAxisTextSample = "1.234";
     private const string XAxisTextSample = "HH:mm:ss";
 
@@ -94,6 +94,7 @@ public abstract partial class ChartControlBase
         GraphCanvas.PointerPressed += GraphCanvas_OnPointerPressed;
         GraphCanvas.PointerMoved += GraphCanvas_OnPointerMoved;
         GraphCanvas.PointerReleased += GraphCanvas_OnPointerReleased;
+        GraphCanvas.DoubleTapped += GraphCanvas_OnDoubleTapped;
 
         CenturyAxisCanvas.SizeChanged += CenturyAxisCanvasOnSizeChanged;
         CenturyAxisCanvas.Draw += CenturyAxisCanvasOnDraw;
@@ -177,7 +178,23 @@ public abstract partial class ChartControlBase
         }
     }
 
-    protected abstract void GraphCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e);
+    protected virtual void GraphCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        
+
+        GraphHeight = e.NewSize.Height;
+        Centuries = MinCenturies + (MaxCenturies - MinCenturies) * CenturiesPercent / 100d;
+
+        var pipsPerCentury = Century / TickValue / 10d; // tick value for pipette
+        Pips = (int)(pipsPerCentury * Centuries);
+        VerticalScale = GraphHeight / Pips;
+
+        GraphWidth = e.NewSize.Width;
+        MaxUnits = CalculateMaxUnits();
+        Units = Math.Max(MinUnits, MaxUnits * UnitsPercent / 100);
+        HorizontalScale = GraphWidth / (Units - 1);
+    }
+    protected abstract int CalculateMaxUnits();
     protected abstract void GraphCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args);
 
     private void GraphCanvas_OnPointerPressed(object sender, PointerRoutedEventArgs e)
@@ -197,27 +214,20 @@ public abstract partial class ChartControlBase
         }
     }
     protected abstract void GraphCanvas_OnPointerMoved(object sender, PointerRoutedEventArgs e);
-    private void GraphCanvas_OnPointerReleased(object sender, PointerRoutedEventArgs e)
+    protected virtual void GraphCanvas_OnPointerReleased(object sender, PointerRoutedEventArgs e)
     {
-        try
-        {
-            ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
-            IsMouseDown = false;
-            GraphCanvas!.ReleasePointerCapture(e.Pointer);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "GraphCanvas_OnPointerReleased");
-            throw;
-        }
+        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+        IsMouseDown = false;
+        GraphCanvas!.ReleasePointerCapture(e.Pointer);
     }
+    protected abstract void GraphCanvas_OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e);
 
     protected virtual void CenturyAxisCanvasOnSizeChanged(object sender, SizeChangedEventArgs e)
     {
         try
         {
             var cmAxisCanvas = sender as CanvasControl ?? throw new InvalidOperationException("Canvas controls not found.");
-            CMAxisWidth = CalculateTextBounds(CmAxisTextSample, YAxisCanvasTextFormat).width;
+            CenturyAxisWidth = CalculateTextBounds(CenturyAxisTextSample, YAxisCanvasTextFormat).width;
             var grid = cmAxisCanvas.Parent as Grid;
             if (grid == null || grid.ColumnDefinitions.Count <= 1)
             {
@@ -225,7 +235,7 @@ public abstract partial class ChartControlBase
             }
 
             var axisColumn = grid.ColumnDefinitions[0];
-            axisColumn.Width = new GridLength(CMAxisWidth);
+            axisColumn.Width = new GridLength(CenturyAxisWidth);
         }
         catch (Exception exception)
         {

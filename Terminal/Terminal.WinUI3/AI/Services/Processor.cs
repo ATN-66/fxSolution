@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
+using CommunityToolkit.Mvvm.Messaging;
 using Fx.Grpc;
 using Grpc.Core;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +15,8 @@ using Microsoft.Extensions.Logging;
 using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.AI.Models;
 using Terminal.WinUI3.Contracts.Services;
+using Terminal.WinUI3.Controls.Messages;
+using Terminal.WinUI3.Models.Trade;
 using Quotation = Common.Entities.Quotation;
 using Symbol = Common.Entities.Symbol;
 
@@ -26,7 +29,7 @@ public class Processor : IProcessor
     private readonly IAccountService _accountService;
     private readonly CancellationToken _token;
     private readonly IKernelManager _kernelManager;
-    private readonly IVisualService _visualService;
+    private readonly IChartService _chartService;
     private readonly IDispatcherService _dispatcherService;
     private readonly ISplashScreenService _splashScreenService;
     private readonly ILogger<IProcessor> _logger;
@@ -42,7 +45,7 @@ public class Processor : IProcessor
     private readonly TaskCompletionSource<bool> _accountReady = new();
     public event EventHandler<PositionsEventArgs> PositionsUpdated = null!;
 
-    public Processor(IConfiguration configuration, IDataService dataService, IExecutiveConsumerService executiveConsumerService, IAccountService accountService, IKernelManager kernelManager, IVisualService visualService,
+    public Processor(IConfiguration configuration, IDataService dataService, IExecutiveConsumerService executiveConsumerService, IAccountService accountService, IKernelManager kernelManager, IChartService chartService,
         IDispatcherService dispatcherService, ISplashScreenService splashScreenService, ILogger<IProcessor> logger, CancellationTokenSource cancellationTokenSource) {
 
         _dataService = dataService;
@@ -51,11 +54,13 @@ public class Processor : IProcessor
         _token = cancellationTokenSource.Token;
         _kernelManager = kernelManager;
         _dispatcherService = dispatcherService;
-        _visualService = visualService;
+        _chartService = chartService;
         _splashScreenService = splashScreenService;
         _logger = logger;
 
         _distanceToThePast = TimeSpan.ParseExact(configuration.GetValue<string>($"{nameof(_distanceToThePast)}")!, @"dd\:hh\:mm\:ss", null);
+
+        StrongReferenceMessenger.Default.Register<OrderUpdateMessage>(this, OnOrderUpdateAsync);
     }
 
     public async Task StartAsync(CancellationToken token)
@@ -72,25 +77,25 @@ public class Processor : IProcessor
             await _accountReady.Task.ConfigureAwait(false);
 
             //todo: remove this
-            _startDateTime = new DateTime(2023, 7, 4, 0, 0, 0);
-            _nowDateTime = new DateTime(2023, 7, 4, 23, 0, 0);
+            //_startDateTime = new DateTime(2023, 7, 4, 0, 0, 0);
+            //_nowDateTime = new DateTime(2023, 7, 4, 23, 0, 0);
             
             var diff = (_nowDateTime - _startDateTime).Hours + 1;
             Debug.WriteLine($"Processor.StartAsync: difference = {diff} hours");
             var historicalData = await _dataService.LoadDataAsync(_startDateTime, _nowDateTime).ConfigureAwait(false);
             await _kernelManager.InitializeAsync(historicalData).ConfigureAwait(false);
 
-            //var (dataTask, dataChannel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
-            //var dataProcessingTask = DataProcessingTaskAsync(token);
+            var (dataTask, dataChannel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
+            var dataProcessingTask = DataProcessingTaskAsync(token);
 
             await _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
                 _splashScreenService.HideSplash();
             }).ConfigureAwait(true);
 
-            await Task.WhenAll(executiveTask, executiveProcessingTask).ConfigureAwait(false);
-            //await Task.WhenAll(dataTask, dataProcessingTask, executiveTask, executiveProcessingTask).ConfigureAwait(false);
-            //await dataChannel.ShutdownAsync().ConfigureAwait(false);
+            //await Task.WhenAll(executiveTask, executiveProcessingTask).ConfigureAwait(false);
+            await Task.WhenAll(dataTask, dataProcessingTask, executiveTask, executiveProcessingTask).ConfigureAwait(false);
+            await dataChannel.ShutdownAsync().ConfigureAwait(false);
             await executiveChannel.ShutdownAsync().ConfigureAwait(false);
         }
         catch (Exception exception)
@@ -179,7 +184,7 @@ public class Processor : IProcessor
                                     _accountService.ProcessProperties(response.AccountInfoResponse.Details);
                                     break;
                                 case AccountInfoCode.TickValues:
-                                    _visualService.ProcessTickValues(response.AccountInfoResponse.Details);
+                                    _chartService.ProcessTickValues(response.AccountInfoResponse.Details);
                                     _accountReady.SetResult(true);
                                     break;
                                 case AccountInfoCode.TradingHistory:
@@ -251,7 +256,11 @@ public class Processor : IProcessor
         var request = _accountService.GetClosePositionRequest(symbol, isReversed);
         return _executiveCall.RequestStream.WriteAsync(request, _token);
     }
-
+    private void OnOrderUpdateAsync(object recipient, OrderUpdateMessage message)
+    {
+        Debug.WriteLine(message.Price);
+        message.Reply(true);
+    }
     public Task ExitAsync()
     {
         var request = new GeneralRequest

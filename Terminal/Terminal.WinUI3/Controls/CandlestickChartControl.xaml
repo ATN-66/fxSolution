@@ -28,16 +28,6 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <win2d:CanvasControl
-                            x:Name="pipsAxisCanvas"
-                            Grid.Row="0"
-                            Grid.RowSpan="3"
-                            Grid.Column="3" />
-                        <win2d:CanvasControl
-                            x:Name="centuryAxisCanvas"
-                            Grid.Row="0"
-                            Grid.RowSpan="3"
-                            Grid.Column="0" />
-                        <win2d:CanvasControl
                             x:Name="graphCanvas"
                             Grid.Row="0"
                             Grid.RowSpan="3"
@@ -93,6 +83,16 @@
                                 Content="{Binding OperationalButtonContent, Mode=OneWay}"
                                 CornerRadius="10,0,10,0" />
                         </StackPanel>
+                        <win2d:CanvasControl
+                            x:Name="centuryAxisCanvas"
+                            Grid.Row="0"
+                            Grid.RowSpan="3"
+                            Grid.Column="0" />
+                        <win2d:CanvasControl
+                            x:Name="pipsAxisCanvas"
+                            Grid.Row="0"
+                            Grid.RowSpan="3"
+                            Grid.Column="3" />
                         <win2d:CanvasControl
                             x:Name="xAxisCanvas"
                             Grid.Row="2"

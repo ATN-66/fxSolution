@@ -17,7 +17,7 @@ namespace Terminal.WinUI3.ViewModels;
 
 public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
 {
-    private readonly IVisualService _visualService;
+    private readonly IChartService _chartService;
     private readonly IProcessor _processor;
     private readonly IAccountService _accountService;
     private readonly IDispatcherService _dispatcherService;
@@ -46,55 +46,57 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
     [RelayCommand]
     private Task TicksAsync()
     {
-        DisposeChart();
-        ChartControlBase = _visualService.GetChart<TickChartControl, Quotation, QuotationKernel>(Symbol, ChartType.Ticks, IsReversed);
-        UpdateProperties();
+        //DisposeChart();
+        //ChartControlBaseFirst = _chartService.GetChart<TickChartControl, Quotation, QuotationKernel>(Symbol, ChartType.Ticks, IsReversed);
+        //UpdateProperties(ChartControlBaseFirst);
+        //UpdateOperationalProperties();
+        //Currency = IsReversed ? ChartControlBaseFirst.BaseCurrency : ChartControlBaseFirst.QuoteCurrency;
         return Task.CompletedTask;
     }
 
     [RelayCommand]
     private Task CandlesticksAsync()
     {
-        DisposeChart();
-        ChartControlBase = _visualService.GetChart<CandlestickChartControl, Candlestick, CandlestickKernel>(Symbol, ChartType.Candlesticks, IsReversed);
-        UpdateProperties();
+        //DisposeChart();
+        //ChartControlBaseFirst = _chartService.GetChart<CandlestickChartControl, Candlestick, CandlestickKernel>(Symbol, ChartType.Candlesticks, IsReversed);
+        //UpdateProperties();
         return Task.CompletedTask;
     }
 
     [RelayCommand]
     private Task ThresholdBarsAsync()
     {
-        DisposeChart();
-        ChartControlBase = _visualService.GetChart<ThresholdBarChartControl, ThresholdBar, ThresholdBarKernel>(Symbol, ChartType.ThresholdBar, IsReversed);
-        UpdateProperties();
+        //DisposeChart();
+        //ChartControlBaseFirst = _chartService.GetChart<ThresholdBarChartControl, ThresholdBar, ThresholdBarKernel>(Symbol, ChartType.ThresholdBar, IsReversed);
+        //UpdateProperties();
         return Task.CompletedTask;
     }
 
     [RelayCommand]
     private Task ClearMessagesAsync()
     {
-        ChartControlBase.ClearMessages();
+        ChartControlBaseFirst.ClearMessages();
         return Task.CompletedTask;
     }
 
     [RelayCommand]
     private Task ResetShiftsAsync()
     {
-        ChartControlBase.HorizontalShift = HorizontalShift;
-        ChartControlBase.ResetShifts();
+        ChartControlBaseFirst.HorizontalShift = HorizontalShift;
+        ChartControlBaseFirst.ResetShifts();
         return Task.CompletedTask;
     }
 
     private void DisposeChart()
     {
-        _visualService.DisposeChart(ChartControlBase);
-        ChartControlBase.Detach();
-        ChartControlBase = null!;
+        _chartService.DisposeChart(ChartControlBaseFirst);
+        ChartControlBaseFirst.Detach();
+        ChartControlBaseFirst = null!;
     }
 
-    public SymbolPlusViewModel(IVisualService visualService, IProcessor processor, IAccountService accountService, IDispatcherService dispatcherService)
+    public SymbolPlusViewModel(IChartService chartService, IProcessor processor, IAccountService accountService, IDispatcherService dispatcherService)
     {
-        _visualService = visualService;
+        _chartService = chartService;
         _processor = processor;
         _accountService = accountService;
         _accountService.PropertyChanged += OnAccountServicePropertyChanged;
@@ -119,18 +121,34 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
         set;
     } = null!;
 
-    private ChartControlBase _chartControlBase = null!;
-    public ChartControlBase ChartControlBase
+    private ChartControlBase _chartControlBaseFirst = null!;
+    public ChartControlBase ChartControlBaseFirst
     {
-        get => _chartControlBase;
+        get => _chartControlBaseFirst;
         private set
         {
-            if (_chartControlBase == value)
+            if (_chartControlBaseFirst == value)
             {
                 return;
             }
 
-            _chartControlBase = value;
+            _chartControlBaseFirst = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private ChartControlBase _chartControlBaseSecond = null!;
+    public ChartControlBase ChartControlBaseSecond
+    {
+        get => _chartControlBaseSecond;
+        private set
+        {
+            if (_chartControlBaseSecond == value)
+            {
+                return;
+            }
+
+            _chartControlBaseSecond = value;
             OnPropertyChanged();
         }
     }
@@ -147,31 +165,30 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
 
     partial void OnCenturiesPercentChanged(int value)
     {
-        ChartControlBase.CenturiesPercent = value;
+        ChartControlBaseFirst.CenturiesPercent = value;
+        ChartControlBaseSecond.CenturiesPercent = value;
     }
 
     partial void OnUnitsPercentChanged(int value)
     {
-        ChartControlBase.UnitsPercent = value;
+        ChartControlBaseFirst.UnitsPercent = value;
     }
 
     partial void OnKernelShiftPercentChanged(int value)
     {
-        ChartControlBase.KernelShiftPercent = value;
+        ChartControlBaseFirst.KernelShiftPercent = value;
     }
 
-    private void UpdateProperties()
+    private void UpdateProperties(ChartControlBase chartControlBase)
     {
-        ChartControlBase.DataContext = this;
-        ChartControlBase.SetBinding(ChartControlBase.MinCenturiesProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinCenturies)), Mode = BindingMode.OneWay });
-        ChartControlBase.SetBinding(ChartControlBase.MaxCenturiesProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MaxCenturies)), Mode = BindingMode.OneWay });
-        ChartControlBase.SetBinding(ChartControlBase.CenturiesPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(CenturiesPercent)), Mode = BindingMode.TwoWay });
-        ChartControlBase.SetBinding(ChartControlBase.UnitsPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(UnitsPercent)), Mode = BindingMode.TwoWay });
-        ChartControlBase.SetBinding(ChartControlBase.MinUnitsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnits)), Mode = BindingMode.OneWay });
-        ChartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
-        ChartControlBase.SetBinding(ChartControlBase.HorizontalShiftProperty, new Binding { Source = this, Path = new PropertyPath(nameof(HorizontalShift)), Mode = BindingMode.OneWay });
-        UpdateOperationalProperties();
-        Currency = IsReversed ? ChartControlBase.BaseCurrency : ChartControlBase.QuoteCurrency;
+        chartControlBase.DataContext = this;
+        chartControlBase.SetBinding(ChartControlBase.MinCenturiesProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinCenturies)), Mode = BindingMode.OneWay });
+        chartControlBase.SetBinding(ChartControlBase.MaxCenturiesProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MaxCenturies)), Mode = BindingMode.OneWay });
+        chartControlBase.SetBinding(ChartControlBase.CenturiesPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(CenturiesPercent)), Mode = BindingMode.TwoWay });
+        chartControlBase.SetBinding(ChartControlBase.UnitsPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(UnitsPercent)), Mode = BindingMode.TwoWay });
+        chartControlBase.SetBinding(ChartControlBase.MinUnitsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnits)), Mode = BindingMode.OneWay });
+        chartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
+        chartControlBase.SetBinding(ChartControlBase.HorizontalShiftProperty, new Binding { Source = this, Path = new PropertyPath(nameof(HorizontalShift)), Mode = BindingMode.OneWay });
     }
 
     public string OperationalButtonContent
@@ -227,7 +244,7 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
         OperationalButtonContent = _accountService.ServiceState.GetDescription();
     }
 
-    public void OnNavigatedTo(object parameter)
+    public async void OnNavigatedTo(object parameter)
     {
         var parts = parameter.ToString()?.Split(',');
         var symbolStr = parts?[0].Trim();
@@ -242,14 +259,21 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
 
         IsReversed = bool.Parse(parts?[1].Trim()!);
 
-        ChartControlBase = _visualService.GetDefaultChart(Symbol, IsReversed);
-        UpdateProperties();
+        ChartControlBaseFirst = await _chartService.GetChartByTypeAsync(Symbol, IsReversed, ChartType.Candlesticks).ConfigureAwait(true);
+        UpdateProperties(ChartControlBaseFirst);
+        ChartControlBaseSecond = await _chartService.GetChartByTypeAsync(Symbol, IsReversed, ChartType.ThresholdBar).ConfigureAwait(true);
+        UpdateProperties(ChartControlBaseSecond);
+
+        UpdateOperationalProperties();
+        Currency = IsReversed ? ChartControlBaseFirst.BaseCurrency : ChartControlBaseFirst.QuoteCurrency;
     }
 
     public void OnNavigatedFrom()
     {
-        _visualService.DisposeChart(ChartControlBase);
-        ChartControlBase.Detach();
-        ChartControlBase = null!;
+        throw new NotImplementedException("SymbolPlusViewModel:OnNavigatedFrom()");
+
+        _chartService.DisposeChart(ChartControlBaseFirst);
+        ChartControlBaseFirst.Detach();
+        ChartControlBaseFirst = null!;
     }
 }
