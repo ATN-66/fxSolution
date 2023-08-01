@@ -5,14 +5,14 @@
 
 using Microsoft.Extensions.Configuration;
 using Terminal.WinUI3.Contracts.Services;
-using Terminal.WinUI3.AI.Interfaces;
+using ICoordinator = Terminal.WinUI3.Contracts.Services.ICoordinator;
 using Symbol = Common.Entities.Symbol;
 
 namespace Terminal.WinUI3.ViewModels;
 
 public sealed class SymbolViewModel : SymbolViewModelBase
 {
-    public SymbolViewModel(IConfiguration configuration, IChartService chartService, IProcessor processor, IAccountService accountService, IDispatcherService dispatcherService) : base(configuration, chartService, processor, accountService, dispatcherService)
+    public SymbolViewModel(IConfiguration configuration, IChartService chartService, ICoordinator coordinator, IAccountService accountService, IDispatcherService dispatcherService) : base(configuration, chartService, coordinator, accountService, dispatcherService)
     {
        
     }

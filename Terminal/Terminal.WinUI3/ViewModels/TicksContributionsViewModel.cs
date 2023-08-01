@@ -10,8 +10,8 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Controls;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
+using Terminal.WinUI3.Messenger.DataService;
 using Terminal.WinUI3.Models.Maintenance;
-using Terminal.WinUI3.Services.Messenger.Messages;
 
 namespace Terminal.WinUI3.ViewModels;
 

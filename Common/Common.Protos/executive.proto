@@ -66,9 +66,10 @@ message AccountInfoResponse {
 enum TradeCode {
     OPEN_POSITION = 0;
     CLOSE_POSITION = 1;
-    OPEN_TRANSACTION = 2;
-    CLOSE_TRANSACTION = 3;
-    UPDATE_POSITION = 4;
+    MODIFY_POSITION = 2;
+    OPEN_TRANSACTION = 3;
+    CLOSE_TRANSACTION = 4;
+    UPDATE_TRANSACTION = 5;
     }
 
 message TradeRequest {

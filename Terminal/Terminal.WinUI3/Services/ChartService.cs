@@ -9,9 +9,16 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
-using Terminal.WinUI3.AI.Data;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Controls;
+using Terminal.WinUI3.Models.Kernel;
+using Terminal.WinUI3.Contracts.Models;
+using Terminal.WinUI3.Controls.Chart.Candlestick;
+using Terminal.WinUI3.Controls.Chart.ThresholdBar;
+using Terminal.WinUI3.Controls.Chart.Tick;
+using Terminal.WinUI3.Models.Entities;
+using Terminal.WinUI3.Models.Chart;
+using ChartControlBase = Terminal.WinUI3.Controls.Chart.Base.ChartControlBase;
 
 namespace Terminal.WinUI3.Services;
 
@@ -105,7 +112,6 @@ public class ChartService : IChartService
         };
     }
 
-    //public T GetChart<T, TItem, TK>(Symbol symbol, ChartType chartType, bool isReversed) where T : ChartControl<TItem, TK> where TItem : IChartItem where TK : IKernel<TItem>
     public async Task<T> GetChartAsync<T, TItem, TK>(Symbol symbol, ChartType chartType, bool isReversed) where T : ChartControl<TItem, TK> where TItem : IChartItem where TK : IKernel<TItem>
     {
         T result;

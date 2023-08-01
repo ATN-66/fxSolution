@@ -12,8 +12,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Configuration;
 using Terminal.WinUI3.Contracts.Services;
+using Terminal.WinUI3.Messenger.DataService;
 using Terminal.WinUI3.Models.Maintenance;
-using Terminal.WinUI3.Services.Messenger.Messages;
 using Quotation = Common.Entities.Quotation;
 using Symbol = Common.Entities.Symbol;
 

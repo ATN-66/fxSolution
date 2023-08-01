@@ -7,8 +7,8 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using Terminal.WinUI3.Contracts.Services;
+using Terminal.WinUI3.Messenger.DataService;
 using Terminal.WinUI3.Models.Dashboard;
-using Terminal.WinUI3.Services.Messenger.Messages;
 
 namespace Terminal.WinUI3.ViewModels;
 

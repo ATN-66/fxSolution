@@ -5,17 +5,17 @@
 
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Terminal.WinUI3.AI.Interfaces;
-using Terminal.WinUI3.AI.Models;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
+using Terminal.WinUI3.Helpers;
 using Terminal.WinUI3.Models.Trade;
+using ICoordinator = Terminal.WinUI3.Contracts.Services.ICoordinator;
 
 namespace Terminal.WinUI3.ViewModels;
 
 public partial class TradingHistoryViewModel : ObservableRecipient, INavigationAware
 {
-    private readonly IProcessor _processor;
+    private readonly ICoordinator _coordinator;
     //private readonly IDispatcherService _dispatcherService;
     [ObservableProperty] private string _headerContext = "Trading History";
     [ObservableProperty] private ObservableCollection<HistoryPosition> _positions = null!;
@@ -23,12 +23,12 @@ public partial class TradingHistoryViewModel : ObservableRecipient, INavigationA
     [ObservableProperty] private DateTimeOffset _selectedDate;
     public DateTimeOffset Today { get; } = DateTimeOffset.Now;
 
-    public TradingHistoryViewModel(IProcessor processor, IDispatcherService dispatcherService)
+    public TradingHistoryViewModel(ICoordinator coordinator, IDispatcherService dispatcherService)
     {
-        _processor = processor;
+        _coordinator = coordinator;
         //_dispatcherService = dispatcherService;
 
-        _processor.PositionsUpdated += delegate(object? _, PositionsEventArgs args)
+        _coordinator.PositionsUpdated += delegate(object? _, PositionsEventArgs args)
         {
             dispatcherService.ExecuteOnUIThreadAsync(() =>
                            {
@@ -41,7 +41,7 @@ public partial class TradingHistoryViewModel : ObservableRecipient, INavigationA
     {
         var end = DateTime.Now.Date;
         var start = end.AddDays(-31).Date;
-        _processor.RequestTradingHistoryAsync(start, end);
+        _coordinator.RequestTradingHistoryAsync(start, end);
     }
 
     public void OnNavigatedFrom()

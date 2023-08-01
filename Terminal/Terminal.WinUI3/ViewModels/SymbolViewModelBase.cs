@@ -3,23 +3,29 @@ using Common.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml;
-using Terminal.WinUI3.AI.Interfaces;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
 using Terminal.WinUI3.Controls;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
-using Terminal.WinUI3.AI.Data;
 using Terminal.WinUI3.Helpers;
 using Terminal.WinUI3.Models.Account.Enums;
 using Microsoft.Extensions.Configuration;
+using Terminal.WinUI3.Controls.Chart.Candlestick;
+using Terminal.WinUI3.Controls.Chart.ThresholdBar;
+using Terminal.WinUI3.Controls.Chart.Tick;
+using ICoordinator = Terminal.WinUI3.Contracts.Services.ICoordinator;
+using Terminal.WinUI3.Models.Kernel;
+using Terminal.WinUI3.Models.Entities;
+using Terminal.WinUI3.Models.Chart;
+using ChartControlBase = Terminal.WinUI3.Controls.Chart.Base.ChartControlBase;
 
 namespace Terminal.WinUI3.ViewModels;
 
 public abstract partial class SymbolViewModelBase : ObservableRecipient, INavigationAware
 {
     protected readonly IChartService ChartService;
-    private readonly IProcessor _processor;
+    private readonly ICoordinator _coordinator;
     private readonly IAccountService _accountService;
     private readonly IDispatcherService _dispatcherService;
 
@@ -90,10 +96,10 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
         ChartControlBase = null!;
     }
 
-    protected SymbolViewModelBase(IConfiguration configuration, IChartService chartService, IProcessor processor, IAccountService accountService, IDispatcherService dispatcherService)
+    protected SymbolViewModelBase(IConfiguration configuration, IChartService chartService, ICoordinator coordinator, IAccountService accountService, IDispatcherService dispatcherService)
     {
         ChartService = chartService;
-        _processor = processor;
+        _coordinator = coordinator;
         _accountService = accountService;
         _accountService.PropertyChanged += OnAccountServicePropertyChanged;
         _dispatcherService = dispatcherService;
@@ -168,13 +174,13 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
     protected void UpdateProperties()
     {
         ChartControlBase.DataContext = this;
-        ChartControlBase.SetBinding(ChartControlBase.MinCenturiesProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinCenturies)), Mode = BindingMode.OneWay });
-        ChartControlBase.SetBinding(ChartControlBase.MaxCenturiesProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MaxCenturies)), Mode = BindingMode.OneWay });
-        ChartControlBase.SetBinding(ChartControlBase.CenturiesPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(CenturiesPercent)), Mode = BindingMode.TwoWay });
-        ChartControlBase.SetBinding(ChartControlBase.UnitsPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(UnitsPercent)), Mode = BindingMode.TwoWay });
-        ChartControlBase.SetBinding(ChartControlBase.MinUnitsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnits)), Mode = BindingMode.OneWay });
-        ChartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
-        ChartControlBase.SetBinding(ChartControlBase.HorizontalShiftProperty, new Binding { Source = this, Path = new PropertyPath(nameof(HorizontalShift)), Mode = BindingMode.OneWay });
+        ChartControlBase.SetBinding(Controls.Chart.Base.ChartControlBase.MinCenturiesProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinCenturies)), Mode = BindingMode.OneWay });
+        ChartControlBase.SetBinding(Controls.Chart.Base.ChartControlBase.MaxCenturiesProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MaxCenturies)), Mode = BindingMode.OneWay });
+        ChartControlBase.SetBinding(Controls.Chart.Base.ChartControlBase.CenturiesPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(CenturiesPercent)), Mode = BindingMode.TwoWay });
+        ChartControlBase.SetBinding(Controls.Chart.Base.ChartControlBase.UnitsPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(UnitsPercent)), Mode = BindingMode.TwoWay });
+        ChartControlBase.SetBinding(Controls.Chart.Base.ChartControlBase.MinUnitsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnits)), Mode = BindingMode.OneWay });
+        ChartControlBase.SetBinding(Controls.Chart.Base.ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
+        ChartControlBase.SetBinding(Controls.Chart.Base.ChartControlBase.HorizontalShiftProperty, new Binding { Source = this, Path = new PropertyPath(nameof(HorizontalShift)), Mode = BindingMode.OneWay });
         UpdateOperationalProperties();
         Currency = IsReversed ? ChartControlBase.BaseCurrency : ChartControlBase.QuoteCurrency; 
     }
@@ -206,7 +212,7 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
             {
                 async void ExecuteAsync()
                 {
-                    await _processor.OpenPositionAsync(Symbol, IsReversed).ConfigureAwait(true);
+                    await _coordinator.OpenPositionAsync(Symbol, IsReversed).ConfigureAwait(true);
                 }
 
                 OperationalCommand = new RelayCommand(execute: ExecuteAsync, canExecute: () => true);
@@ -216,7 +222,7 @@ public abstract partial class SymbolViewModelBase : ObservableRecipient, INaviga
             {
                 async void ExecuteAsync()
                 {
-                    await _processor.ClosePositionAsync(Symbol, IsReversed).ConfigureAwait(true);
+                    await _coordinator.ClosePositionAsync(Symbol, IsReversed).ConfigureAwait(true);
                 }
 
                 OperationalCommand = new RelayCommand(execute: ExecuteAsync, canExecute: () => true);

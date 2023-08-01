@@ -10,7 +10,7 @@ public class SplashScreenService : ISplashScreenService
     {
         _mSc.Initialize();
         var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-        _mSc.DisplaySplash(hWnd, _mSc.GetBitmap(@"Assets\sunflower.png"));
+        _mSc.DisplaySplash(hWnd, _mSc.GetBitmap(@"Assets\cad.png"));
     }
 
     public void HideSplash()

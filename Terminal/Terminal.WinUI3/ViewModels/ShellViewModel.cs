@@ -15,7 +15,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Helpers;
-using Terminal.WinUI3.Services.Messenger.Messages;
+using Terminal.WinUI3.Messenger.DataService;
 using Terminal.WinUI3.Views;
 
 namespace Terminal.WinUI3.ViewModels;

@@ -5,7 +5,7 @@ namespace Common.Entities;
 
 public class AudioPlayer : IAudioPlayer
 {
-    private const string AudioFileName = "alert2.wav";
+    private const string AudioFileName = @"Assets\alert2.wav";
     private readonly AudioFileReader _audioFileReader;
     private readonly WaveOutEvent _outputDevice;
 
@@ -21,15 +21,15 @@ public class AudioPlayer : IAudioPlayer
 
     public void Play()
     {
-        //try
-        //{
-        //    _audioFileReader.Position = 0;
-        //    _outputDevice.Play();
-        //}
-        //catch (Exception)
-        //{
-        //    // ignored
-        //}
+        try
+        {
+            _audioFileReader.Position = 0;
+            _outputDevice.Play();
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
     }
 
     public void Stop()

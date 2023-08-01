@@ -1,0 +1,106 @@
+﻿<!--  ...\ThresholdBarChartControl.xaml  -->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:Terminal.WinUI3.Converters"
+    xmlns:thresholdBar="using:Terminal.WinUI3.Controls.Chart.ThresholdBar"
+    xmlns:win2d="using:Microsoft.Graphics.Canvas.UI.Xaml">
+
+    <converters:CurrencyToColorConverter x:Key="CurrencyToColor" />
+    <SolidColorBrush x:Key="ButtonHoverColor" Color="LightBlue" />
+
+    <Style TargetType="thresholdBar:ThresholdBarChartControl">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="thresholdBar:ThresholdBarChartControl">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <win2d:CanvasControl
+                            x:Name="graphCanvas"
+                            Grid.Row="0"
+                            Grid.RowSpan="3"
+                            Grid.Column="1"
+                            Grid.ColumnSpan="2" />
+                        <win2d:CanvasControl
+                            x:Name="debugCanvas"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Grid.ColumnSpan="2"
+                            Background="Transparent"
+                            IsHitTestVisible="False" />
+                        <win2d:CanvasControl
+                            x:Name="textCanvas"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Grid.ColumnSpan="2"
+                            Background="Transparent"
+                            IsHitTestVisible="False" />
+                        <StackPanel
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <Button
+                                Margin="3,3,3,3"
+                                Command="{Binding TicksCommand, Mode=OneWay}"
+                                Content="Ticks" />
+                            <Button
+                                Margin="3,3,3,3"
+                                Command="{Binding CandlesticksCommand, Mode=OneWay}"
+                                Content="Candlesticks" />
+                            <Button
+                                Margin="3,3,3,3"
+                                Command="{Binding ClearMessagesCommand, Mode=OneWay}"
+                                Content="Clear" />
+                            <Button
+                                Margin="3,3,3,3"
+                                Command="{Binding ResetShiftsCommand, Mode=OneWay}"
+                                Content="Reset Shifts" />
+                        </StackPanel>
+                        <StackPanel
+                            Grid.Row="1"
+                            Grid.Column="2"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <Button
+                                Margin="3,3,3,3"
+                                Background="{Binding Currency, Converter={StaticResource CurrencyToColor}}"
+                                Command="{Binding OperationalCommand, Mode=OneWay}"
+                                Content="{Binding OperationalButtonContent, Mode=OneWay}"
+                                CornerRadius="10,0,10,0" />
+                        </StackPanel>
+                        <win2d:CanvasControl
+                            x:Name="centuryAxisCanvas"
+                            Grid.Row="0"
+                            Grid.RowSpan="3"
+                            Grid.Column="0" />
+                        <win2d:CanvasControl
+                            x:Name="pipsAxisCanvas"
+                            Grid.Row="0"
+                            Grid.RowSpan="3"
+                            Grid.Column="3" />
+                        <win2d:CanvasControl
+                            x:Name="xAxisCanvas"
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Grid.ColumnSpan="2" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

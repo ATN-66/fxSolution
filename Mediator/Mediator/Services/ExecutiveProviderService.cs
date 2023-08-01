@@ -186,47 +186,6 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
                     "0" => _outcomeMessages.TryDequeue(out outcomeResult) ? outcomeResult : Ok,
                     _ => throw new ArgumentOutOfRangeException(nameof(code), @"Pulse: The provided string code is not supported.")
                 };
-            case "TradeCommand":
-                response = new GeneralResponse
-                {
-                    Type = MessageType.TradeCommand,
-                    TradeResponse = new TradeResponse()
-                    {
-                        TradeCode = code switch
-                        {
-                            "OpenPosition" => TradeCode.OpenPosition,
-                            "ClosePosition" => TradeCode.ClosePosition,
-                            "OpenTransaction" => TradeCode.OpenTransaction,
-                            "CloseTransaction" => TradeCode.CloseTransaction,
-                            "UpdatePosition" => TradeCode.UpdatePosition,
-                            _ => throw new ArgumentOutOfRangeException(nameof(code), @"Pulse: The provided string TradeCode is not supported.")
-                        },
-                        Ticket = int.Parse(ticket),
-                        ResultCode = result switch
-                        {
-                            "FAILURE" => ResultCode.Failure,
-                            "SUCCESS" => ResultCode.Success,
-                            _ => throw new ArgumentOutOfRangeException(nameof(code), @"Pulse: The provided string ResultCode is not supported.")
-                        },
-                        Details = details
-                    }
-                };
-                try
-                {
-                    _responseStream?.WriteAsync(response).ConfigureAwait(false);
-                }
-                catch (RpcException)
-                {
-                    // ignore
-                    _responseStream = null;
-                }
-                catch (Exception exception)
-                {
-                    // ignore
-                    _responseStream = null;
-                    LogExceptionHelper.LogException(_logger, exception, "");
-                }
-                return _outcomeMessages.TryDequeue(out outcomeResult) ? outcomeResult : Ok;
             case "AccountInfo":
                 response = new GeneralResponse
                 {
@@ -261,6 +220,50 @@ public class ExecutiveProviderService : ExecutiveProvider.ExecutiveProviderBase,
                     LogExceptionHelper.LogException(_logger, exception, "");
                 }
                 return _outcomeMessages.TryDequeue(out outcomeResult) ? outcomeResult : Ok;
+            case "TradeCommand":
+                response = new GeneralResponse
+                {
+                    Type = MessageType.TradeCommand,
+                    TradeResponse = new TradeResponse()
+                    {
+                        TradeCode = code switch
+                        {
+                            "OpenPosition" => TradeCode.OpenPosition,
+                            "ClosePosition" => TradeCode.ClosePosition,
+                            "ModifyPosition" => TradeCode.ModifyPosition,
+
+                            "OpenTransaction" => TradeCode.OpenTransaction,
+                            "CloseTransaction" => TradeCode.CloseTransaction,
+                            "UpdateTransaction" => TradeCode.UpdateTransaction,
+                            _ => throw new ArgumentOutOfRangeException(nameof(code), @"Pulse: The provided string TradeCode is not supported.")
+                        },
+                        Ticket = int.Parse(ticket),
+                        ResultCode = result switch
+                        {
+                            "FAILURE" => ResultCode.Failure,
+                            "SUCCESS" => ResultCode.Success,
+                            _ => throw new ArgumentOutOfRangeException(nameof(code), @"Pulse: The provided string ResultCode is not supported.")
+                        },
+                        Details = details
+                    }
+                };
+                try
+                {
+                    _responseStream?.WriteAsync(response).ConfigureAwait(false);
+                }
+                catch (RpcException)
+                {
+                    // ignore
+                    _responseStream = null;
+                }
+                catch (Exception exception)
+                {
+                    // ignore
+                    _responseStream = null;
+                    LogExceptionHelper.LogException(_logger, exception, "");
+                }
+                return _outcomeMessages.TryDequeue(out outcomeResult) ? outcomeResult : Ok;
+          
             default: throw new ArgumentOutOfRangeException(nameof(type), @"PulseAsync: The provided string type is not supported.");
         }
     }

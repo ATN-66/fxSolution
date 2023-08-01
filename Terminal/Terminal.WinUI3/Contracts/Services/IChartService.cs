@@ -4,8 +4,10 @@
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
-using Terminal.WinUI3.AI.Data;
+using Terminal.WinUI3.Contracts.Models;
 using Terminal.WinUI3.Controls;
+using Terminal.WinUI3.Models.Chart;
+using ChartControlBase = Terminal.WinUI3.Controls.Chart.Base.ChartControlBase;
 
 namespace Terminal.WinUI3.Contracts.Services;
 

@@ -12,8 +12,6 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Serilog;
 using Terminal.WinUI3.Activation;
-using Terminal.WinUI3.AI.Interfaces;
-using Terminal.WinUI3.AI.Services;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Services;
 using Terminal.WinUI3.ViewModels;
@@ -23,7 +21,8 @@ using UnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArg
 using Terminal.WinUI3.Models.Settings;
 using Microsoft.Extensions.Logging;
 using Common.DataSource;
-using Terminal.WinUI3.AI.Data;
+using Coordinator = Terminal.WinUI3.Services.Coordinator;
+using ICoordinator = Terminal.WinUI3.Contracts.Services.ICoordinator;
 
 namespace Terminal.WinUI3;
 
@@ -94,8 +93,8 @@ public partial class App
             services.AddSingleton<ISplashScreenService, SplashScreenService>();
 
             // Business Services
-            services.AddSingleton<IProcessor, Processor>();
-            services.AddSingleton<IKernelManager, KernelManager>();
+            services.AddSingleton<ICoordinator, Coordinator>();
+            services.AddSingleton<IKernelService, KernelService>();
             services.AddSingleton<IAccountService, AccountService>();
             services.AddSingleton<IDataService, DataService>();
             services.AddSingleton<IDataConsumerService, DataConsumerService>();
@@ -160,7 +159,7 @@ public partial class App
     }
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
-        GetService<IProcessor>().ExitAsync().ConfigureAwait(false);
+        GetService<ICoordinator>().ExitAsync().ConfigureAwait(false);
 
         _cts.Cancel();
         GetService<IAudioPlayer>().Dispose();
@@ -203,7 +202,7 @@ public partial class App
         await GetService<IActivationService>().ActivateAsync(args).ConfigureAwait(true);
 
         using var scope = Host.Services.CreateScope();
-        var processor = scope.ServiceProvider.GetRequiredService<IProcessor>();
+        var processor = scope.ServiceProvider.GetRequiredService<ICoordinator>();
         var processorTask = processor.StartAsync(_cts.Token);
         await Task.WhenAny(processorTask).ConfigureAwait(false);
         Environment.Exit(0); // Process.GetCurrentProcess().Kill(); also works, but Current.Exit(); doesn't work.

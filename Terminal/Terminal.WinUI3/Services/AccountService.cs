@@ -8,8 +8,8 @@ using Fx.Grpc;
 using Microsoft.Extensions.Configuration;
 
 using Terminal.WinUI3.Contracts.Services;
-using Terminal.WinUI3.Controls.Messages;
 using Terminal.WinUI3.Helpers;
+using Terminal.WinUI3.Messenger.AccountService;
 using Terminal.WinUI3.Models.Account;
 using Terminal.WinUI3.Models.Account.Enums;
 using Terminal.WinUI3.Models.Trade;
@@ -121,13 +121,13 @@ internal sealed class AccountService : IAccountService
         };
 
         _detailsBuilder.Clear();
-        _detailsBuilder.Append($"{nameof(Symbol)}>").Append(_position!.Symbol);
-        _detailsBuilder.Append($";{nameof(TradeType)}>").Append(_position.StartOrder.TradeType);
-        _detailsBuilder.Append(";Deviation>").Append(_position.Deviation);
-        _detailsBuilder.Append(";FreeMarginPercentToUse>").Append(_position.FreeMarginPercentToUse);
-        _detailsBuilder.Append(";FreeMarginPercentToRisk>").Append(_position.FreeMarginPercentToRisk);
-        _detailsBuilder.Append(";MagicNumber>").Append(_position.MagicNumber);
-        _detailsBuilder.Append(";Comment>").Append(_position.StartOrder.Comment);
+        _detailsBuilder.Append($"{nameof(Symbol).ToLower()}>").Append(_position!.Symbol);
+        _detailsBuilder.Append($";{nameof(TradeType).ToLower()}>").Append(_position.StartOrder.TradeType);
+        _detailsBuilder.Append(";deviation>").Append(_position.Deviation);
+        _detailsBuilder.Append(";freeMarginPercentToUse>").Append(_position.FreeMarginPercentToUse);
+        _detailsBuilder.Append(";freeMarginPercentToRisk>").Append(_position.FreeMarginPercentToRisk);
+        _detailsBuilder.Append(";magicNumber>").Append(_position.MagicNumber);
+        _detailsBuilder.Append(";comment>").Append(_position.StartOrder.Comment);
         var details = _detailsBuilder.ToString();
         request.TradeRequest.Details = details;
         return request;
@@ -155,6 +155,35 @@ internal sealed class AccountService : IAccountService
         request.TradeRequest.Details = details;
         return request;
     }
+    public GeneralRequest GetModifyPositionRequest(Symbol symbol, double stopLoss, double takeProfit)
+    {
+        if (_position!.PositionState != PositionState.Opened)
+        {
+            throw new InvalidOperationException("PositionState != PositionState.Opened");
+        }
+
+        if (_position!.Symbol != symbol)
+        {
+            throw new InvalidOperationException("_position!.Symbol != symbol");
+        }
+
+        ServiceState = ServiceState.Busy;
+
+        var request = new GeneralRequest
+        {
+            Type = MessageType.TradeCommand,
+            TradeRequest = new TradeRequest { TradeCode = TradeCode.ModifyPosition, Ticket = 666 }
+        };
+
+        _detailsBuilder.Clear();
+        _detailsBuilder.Append("ticket>").Append(_position.Ticket);
+        _detailsBuilder.Append(";symbol>").Append(symbol);
+        _detailsBuilder.Append(";stopLoss>").Append(stopLoss);
+        _detailsBuilder.Append(";takeProfit>").Append(takeProfit);
+        var details = _detailsBuilder.ToString();
+        request.TradeRequest.Details = details;
+        return request;
+    }
     public void OpenPosition(int ticket, ResultCode code, string details)
     {
         if (code == ResultCode.Success)
@@ -173,6 +202,17 @@ internal sealed class AccountService : IAccountService
         {
             _position!.PositionState = PositionState.Closed;
             ServiceState = ServiceState.ReadyToOpen;
+        }
+        else
+        {
+            TurnOff(details);
+        }
+    }
+    public void ModifyPosition(int ticket, ResultCode code, string details)
+    {
+        if (code == ResultCode.Success)
+        {
+            ServiceState = ServiceState.ReadyToClose;
         }
         else
         {
@@ -237,7 +277,7 @@ internal sealed class AccountService : IAccountService
         _position.StartOrder.Volume = double.Parse(detailsDictionary["StartOrderVolume"]);
         _position.StartOrder.Time = DateTime.ParseExact(detailsDictionary["StartOrderTime"], _mT5DateTimeFormat, CultureInfo.InvariantCulture);
 
-        StrongReferenceMessenger.Default.Send(new OrderBroadcastMessage(_position.Symbol, BroadcastOperation.Open, _position.StartOrder), new Token(_position.Symbol));
+        StrongReferenceMessenger.Default.Send(new OrderAcceptMessage(_position.Symbol, AcceptType.Open, _position.StartOrder), new Token(_position.Symbol));
     }
     private void UpdateClose(string details)
     {
@@ -272,10 +312,10 @@ internal sealed class AccountService : IAccountService
         _position.EndOrder.Bid = double.Parse(detailsDictionary["EndOrderBid"]);
         _position.EndOrder.Time = DateTime.ParseExact(detailsDictionary["EndOrderTime"], _mT5DateTimeFormat, CultureInfo.InvariantCulture);
 
-        StrongReferenceMessenger.Default.Send(new OrderBroadcastMessage(_position.Symbol, BroadcastOperation.Close, _position.EndOrder), new Token(_position.Symbol));
+        StrongReferenceMessenger.Default.Send(new OrderAcceptMessage(_position.Symbol, AcceptType.Close, _position.EndOrder), new Token(_position.Symbol));
         _position = null;
     }
-    public void UpdatePosition(int ticket, ResultCode code, string details)
+    public void UpdateTransaction(int ticket, ResultCode code, string details)
     {
         if (code == ResultCode.Success)
         {
@@ -292,10 +332,12 @@ internal sealed class AccountService : IAccountService
             }
             _position.StartOrder.StopLoss = double.Parse(detailsDictionary["StartOrderStopLoss"]);
             _position.StartOrder.TakeProfit = double.Parse(detailsDictionary["StartOrderTakeProfit"]);
+
+            StrongReferenceMessenger.Default.Send(new OrderAcceptMessage(_position.Symbol, AcceptType.Modify, _position.StartOrder), new Token(_position.Symbol));
         }
         else
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("AccountService.UpdateTransaction:code != ResultCode.Success");
         }
     }
     private void OnOrderRequestAsync(object recipient, OrderRequestMessage message)
