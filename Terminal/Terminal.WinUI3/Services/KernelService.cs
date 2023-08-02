@@ -32,7 +32,7 @@ public class KernelService : IKernelService
 
             var thresholdKernel = new ThresholdBarKernel(_thresholdsInPips[symbol], _digits[symbol]);
             thresholdKernel.AddRange(symbolQuotations);
-            symbolKernels[ChartType.ThresholdBar] = thresholdKernel;
+            symbolKernels[ChartType.ThresholdBars] = thresholdKernel;
 
             var candlestickKernel = new CandlestickKernel();
             candlestickKernel.AddRange(symbolQuotations);
@@ -51,7 +51,7 @@ public class KernelService : IKernelService
     public void Add(Quotation quotation)
     {
         var symbol = quotation.Symbol;
-        ((IKernel<ThresholdBar>)_kernels[symbol][ChartType.ThresholdBar]).Add(quotation);
+        ((IKernel<ThresholdBar>)_kernels[symbol][ChartType.ThresholdBars]).Add(quotation);
         ((IKernel<Candlestick>)_kernels[symbol][ChartType.Candlesticks]).Add(quotation);
         ((IKernel<Quotation>)_kernels[symbol][ChartType.Ticks]).Add(quotation);
         _chartService.Tick(symbol);

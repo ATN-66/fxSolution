@@ -43,7 +43,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <ContentControl
+                    <!--<ContentControl
                         Grid.Row="0"
                         Grid.Column="0"
                         HorizontalContentAlignment="Stretch"
@@ -60,7 +60,7 @@
                         Grid.Column="2"
                         HorizontalContentAlignment="Stretch"
                         VerticalContentAlignment="Stretch"
-                        Content="{x:Bind ViewModel.CurrencyViewModels[0].SymbolViewModels[2].ChartControlBase, Mode=OneWay}" />
+                        Content="{x:Bind ViewModel.CurrencyViewModels[0].SymbolViewModels[2].ChartControlBase, Mode=OneWay}" />-->
                 </Grid>
             </Grid>
             <Grid Grid.Row="0" Column="1">
@@ -73,7 +73,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <ContentControl
+                    <!--<ContentControl
                         Grid.Row="0"
                         Grid.Column="0"
                         HorizontalContentAlignment="Stretch"
@@ -90,7 +90,7 @@
                         Grid.Column="2"
                         HorizontalContentAlignment="Stretch"
                         VerticalContentAlignment="Stretch"
-                        Content="{x:Bind ViewModel.CurrencyViewModels[1].SymbolViewModels[2].ChartControlBase, Mode=OneWay}" />
+                        Content="{x:Bind ViewModel.CurrencyViewModels[1].SymbolViewModels[2].ChartControlBase, Mode=OneWay}" />-->
                 </Grid>
             </Grid>
             <Grid Grid.Row="1" Column="0">
@@ -103,7 +103,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <ContentControl
+                    <!--<ContentControl
                         Grid.Row="0"
                         Grid.Column="0"
                         HorizontalContentAlignment="Stretch"
@@ -120,7 +120,7 @@
                         Grid.Column="2"
                         HorizontalContentAlignment="Stretch"
                         VerticalContentAlignment="Stretch"
-                        Content="{x:Bind ViewModel.CurrencyViewModels[2].SymbolViewModels[2].ChartControlBase, Mode=OneWay}" />
+                        Content="{x:Bind ViewModel.CurrencyViewModels[2].SymbolViewModels[2].ChartControlBase, Mode=OneWay}" />-->
                 </Grid>
             </Grid>
             <Grid Grid.Row="1" Column="1">
@@ -133,7 +133,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <ContentControl
+                    <!--<ContentControl
                         Grid.Row="0"
                         Grid.Column="0"
                         HorizontalContentAlignment="Stretch"
@@ -150,7 +150,7 @@
                         Grid.Column="2"
                         HorizontalContentAlignment="Stretch"
                         VerticalContentAlignment="Stretch"
-                        Content="{x:Bind ViewModel.CurrencyViewModels[3].SymbolViewModels[2].ChartControlBase, Mode=OneWay}" />
+                        Content="{x:Bind ViewModel.CurrencyViewModels[3].SymbolViewModels[2].ChartControlBase, Mode=OneWay}" />-->
                 </Grid>
             </Grid>
         </Grid>
@@ -173,11 +173,4 @@
             StepFrequency="1"
             Value="{x:Bind Path=ViewModel.CenturiesPercent, Mode=TwoWay}" />
     </Grid>
-
-
-
 </Page>
-
-
-
-

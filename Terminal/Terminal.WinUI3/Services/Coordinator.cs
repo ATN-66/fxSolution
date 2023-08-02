@@ -15,8 +15,6 @@ using Microsoft.Extensions.Logging;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Helpers;
 using Terminal.WinUI3.Messenger.AccountService;
-using Terminal.WinUI3.Models.Trade;
-using ICoordinator = Terminal.WinUI3.Contracts.Services.ICoordinator;
 using Quotation = Common.Entities.Quotation;
 using Symbol = Common.Entities.Symbol;
 
@@ -236,7 +234,7 @@ public class Coordinator : ICoordinator
         };
         return _executiveCall.RequestStream.WriteAsync(request, _token);
     }
-    public void RequestTradingHistoryAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
+    public Task RequestTradingHistoryAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
     {
         var ordersHistoryRequest = new GeneralRequest
         {
@@ -250,17 +248,22 @@ public class Coordinator : ICoordinator
         };
 
         _executiveCall.RequestStream.WriteAsync(ordersHistoryRequest, _token);
+        return Task.CompletedTask;
     }
-    public Task OpenPositionAsync(Symbol symbol, bool isReversed)
+
+    public Task DoOpenPositionAsync(Symbol symbol, bool isReversed)
     {
         var request = _accountService.GetOpenPositionRequest(symbol, isReversed);
-        return _executiveCall.RequestStream.WriteAsync(request, _token);
+        _executiveCall.RequestStream.WriteAsync(request, _token);
+        return Task.CompletedTask;
     }
-    public Task ClosePositionAsync(Symbol symbol, bool isReversed)
+    public Task DoClosePositionAsync(Symbol symbol, bool isReversed)
     {
         var request = _accountService.GetClosePositionRequest(symbol, isReversed);
-        return _executiveCall.RequestStream.WriteAsync(request, _token);
+        _executiveCall.RequestStream.WriteAsync(request, _token);
+        return Task.CompletedTask;
     }
+
     private void OnOrderModifyAsync(object recipient, OrderModifyMessage message)
     {
         var request = _accountService.GetModifyPositionRequest(message.Symbol, message.StopLoss, message.TakeProfit);

@@ -17,7 +17,7 @@ public interface IChartService
     void ProcessTickValues(string details);
     Task<ChartControlBase> GetDefaultChartAsync(Symbol symbol, bool isReversed);
     Task<ChartControlBase> GetChartByTypeAsync(Symbol symbol, bool isReversed, ChartType chartType);
-    Task<T> GetChartAsync<T, TItem, TK>(Symbol symbol, ChartType chartType, bool isReversed) where T : ChartControl<TItem, TK> where TItem : IChartItem where TK : IKernel<TItem>;
+    Task<T> GetChartAsync<T, TItem, TK>(Symbol symbol, ChartType chartType, bool isReversed) where T : Controls.Chart.ChartControl<TItem, TK> where TItem : IChartItem where TK : IKernel<TItem>;
     void DisposeChart(ChartControlBase chartControlBase);
     void Tick(Symbol symbol);
 }

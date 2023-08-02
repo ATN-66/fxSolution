@@ -40,6 +40,7 @@
     <None Remove="Views\CurrenciesOverviewPage.xaml" />
     <None Remove="Views\CurrencyPage.xaml" />
     <None Remove="Views\HistoricalDataOverviewPage.xaml" />
+    <None Remove="Views\PlaceHolderPage.xaml" />
     <None Remove="Views\SymbolPage.xaml" />
     <None Remove="Views\SymbolPlusPage.xaml" />
     <None Remove="Views\TicksContributionsPage.xaml" />
@@ -142,6 +143,9 @@
     <Page Update="Views\AccountOverviewPage.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\PlaceHolderPage.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
     </Page>
     <Page Update="Views\SymbolPlusPage.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>

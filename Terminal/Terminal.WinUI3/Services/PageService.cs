@@ -12,6 +12,7 @@ public class PageService : IPageService
 
     public PageService()
     {
+        Configure<PlaceHolderViewModel, PlaceHolderPage>();
         Configure<DashboardViewModel, DashboardPage>();
         Configure<CurrenciesOverviewViewModel, CurrenciesOverviewPage>();
         Configure<CurrencyViewModel, CurrencyPage>();

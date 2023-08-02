@@ -120,7 +120,7 @@ public class ThresholdBarKernel : Kernel<ThresholdBar>
                 }
                 break;
             case Direction.NaN:
-            default: throw new ArgumentOutOfRangeException($"{nameof(lastThresholdBar.Direction)}", @"Encountered a ThresholdBar with invalid direction.");
+            default: throw new ArgumentOutOfRangeException($"{nameof(lastThresholdBar.Direction)}", @"Encountered a ThresholdBars with invalid direction.");
         }
     }
 }

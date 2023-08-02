@@ -12,8 +12,8 @@ public interface ICoordinator
 {
     event EventHandler<PositionsEventArgs> PositionsUpdated;
     Task StartAsync(CancellationToken token);
-    void RequestTradingHistoryAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive);
-    Task OpenPositionAsync(Symbol symbol, bool isReversed);
-    Task ClosePositionAsync(Symbol symbol, bool isReversed);
+    Task RequestTradingHistoryAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive);
+    Task DoOpenPositionAsync(Symbol symbol, bool isReversed);
+    Task DoClosePositionAsync(Symbol symbol, bool isReversed);
     Task ExitAsync();
 }

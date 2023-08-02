@@ -7,6 +7,7 @@ public sealed partial class MainWindow
     public MainWindow()
     {
         InitializeComponent();
+        
 
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets/WindowIcon.ico"));
         Content = null;

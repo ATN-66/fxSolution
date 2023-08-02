@@ -11,9 +11,9 @@
           "IsSelected": false,
           "MainItem": {
             "Content": "Currencies Overview",
-            "Tag": "[USD, (EURUSD:false), (GBPUSD:false), (USDJPY:true)];[EUR, (EURUSD:true), (EURGBP:true), (EURJPY:true)];[GBP, (GBPUSD:true), (EURGBP:false), (GBPJPY:true)];[JPY, (USDJPY:false), (EURJPY:false), (GBPJPY:false)]",
+            "Tag": "CurrenciesOverviewViewModel    [USD, (EURUSD:false), (GBPUSD:false), (USDJPY:true)];[EUR, (EURUSD:true), (EURGBP:true), (EURJPY:true)];[GBP, (GBPUSD:true), (EURGBP:false), (GBPJPY:true)];[JPY, (USDJPY:false), (EURJPY:false), (GBPJPY:false)]",
             "Glyph": "\u2720",
-            "NavigateTo": "CurrenciesOverviewViewModel"
+            "NavigateTo": "PlaceHolderViewModel"
           },
           "NavigationItems": [
             {

@@ -1,15 +1,9 @@
-﻿<windowex:WindowEx
-    x:Class="Terminal.WinUI3.MainWindow"
+﻿<Page
+    x:Class="Terminal.WinUI3.Views.PlaceHolderPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:windowex="using:WinUIEx"
-    IsAlwaysOnTop="True"
-    IsResizable="True"
-    PersistenceId="MainWindow"
     mc:Ignorable="d">
-    <Window.SystemBackdrop>
-        <MicaBackdrop />
-    </Window.SystemBackdrop>
-</windowex:WindowEx>
+    <TextBlock Text="PlaceHolderPage" />
+</Page>

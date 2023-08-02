@@ -21,15 +21,15 @@ public class AudioPlayer : IAudioPlayer
 
     public void Play()
     {
-        try
-        {
-            _audioFileReader.Position = 0;
-            _outputDevice.Play();
-        }
-        catch (Exception)
-        {
-            // ignored
-        }
+        //try
+        //{
+        //    //_audioFileReader.Position = 0;
+        //    //_outputDevice.Play();
+        //}
+        //catch (Exception)
+        //{
+        //    // ignored
+        //}
     }
 
     public void Stop()

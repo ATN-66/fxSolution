@@ -4,17 +4,17 @@ using Terminal.WinUI3.ViewModels;
 
 namespace Terminal.WinUI3.Services;
 
-public class SymbolOfCurrencyViewModelFactory : ISymbolOfCurrencyViewModelFactory
+public class SymbolViewModelFactory : ISymbolViewModelFactory
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public SymbolOfCurrencyViewModelFactory(IServiceProvider serviceProvider)
+    public SymbolViewModelFactory(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
-    public SymbolOfCurrencyViewModel Create()
+    public SymbolViewModel Create()
     {
-        return _serviceProvider.GetRequiredService<SymbolOfCurrencyViewModel>();
+        return _serviceProvider.GetRequiredService<SymbolViewModel>();
     }
 }

@@ -51,7 +51,7 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
     {
         //DisposeChart();
         //ChartControlBase = await ChartService.GetChartAsync<TickChartControl, Quotation, QuotationKernel>(Symbol, ChartType.Ticks, IsReversed).ConfigureAwait(true);
-        //UpdateProperties();
+        //SetChartBindings();
         return Task.CompletedTask;
     }
 
@@ -60,7 +60,7 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
     {
         //DisposeChart();
         //ChartControlBaseFirst = _chartService.GetChart<CandlestickChartControl, Candlestick, CandlestickKernel>(Symbol, ChartType.Candlesticks, IsReversed);
-        //UpdateProperties();
+        //SetChartBindings();
         return Task.CompletedTask;
     }
 
@@ -68,8 +68,8 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
     private Task ThresholdBarsAsync()
     {
         //DisposeChart();
-        //ChartControlBaseFirst = _chartService.GetChart<ThresholdBarChartControl, ThresholdBar, ThresholdBarKernel>(Symbol, ChartType.ThresholdBar, IsReversed);
-        //UpdateProperties();
+        //ChartControlBaseFirst = _chartService.GetChart<ThresholdBarChartControl, ThresholdBars, ThresholdBarKernel>(Symbol, ChartType.ThresholdBars, IsReversed);
+        //SetChartBindings();
         return Task.CompletedTask;
     }
 
@@ -225,22 +225,22 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
                 break;
             case ServiceState.ReadyToOpen:
             {
-                async void ExecuteAsync()
-                {
-                    await _coordinator.OpenPositionAsync(Symbol, IsReversed).ConfigureAwait(true);
-                }
+                //async void ExecuteAsync()
+                //{
+                //    //await _coordinator.DoOpenPositionAsync(Symbol, IsReversed).ConfigureAwait(true);
+                //}
 
-                OperationalCommand = new RelayCommand(execute: ExecuteAsync, canExecute: () => true);
+                //OperationalCommand = new RelayCommand(execute: ExecuteAsync, canExecute: () => true);
                 break;
             }
             case ServiceState.ReadyToClose:
             {
-                async void ExecuteAsync()
-                {
-                    await _coordinator.ClosePositionAsync(Symbol, IsReversed).ConfigureAwait(true);
-                }
+                //async void ExecuteAsync()
+                //{
+                //    await _coordinator.DoClosePositionAsync(Symbol, IsReversed).ConfigureAwait(true);
+                //}
 
-                OperationalCommand = new RelayCommand(execute: ExecuteAsync, canExecute: () => true);
+                //OperationalCommand = new RelayCommand(execute: ExecuteAsync, canExecute: () => true);
                 break;
             }
             default:
@@ -270,7 +270,7 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
 
         ChartControlBaseFirst = await _chartService.GetChartByTypeAsync(Symbol, IsReversed, ChartType.Candlesticks).ConfigureAwait(true);
         UpdateProperties(ChartControlBaseFirst);
-        ChartControlBaseSecond = await _chartService.GetChartByTypeAsync(Symbol, IsReversed, ChartType.ThresholdBar).ConfigureAwait(true);
+        ChartControlBaseSecond = await _chartService.GetChartByTypeAsync(Symbol, IsReversed, ChartType.ThresholdBars).ConfigureAwait(true);
         UpdateProperties(ChartControlBaseSecond);
 
         UpdateOperationalProperties();

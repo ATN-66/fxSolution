@@ -103,6 +103,7 @@ public partial class App
             services.AddSingleton<IChartService, ChartService>();
 
             // Navigation and settings
+            services.AddTransient<PlaceHolderViewModel>(); services.AddTransient<PlaceHolderPage>();
             services.AddTransient<ShellPage>(); services.AddTransient<ShellViewModel>();
             services.AddTransient<DashboardViewModel>(); services.AddTransient<DashboardPage>();
             services.AddTransient<SettingsViewModel>(); services.AddTransient<SettingsPage>();
@@ -112,8 +113,7 @@ public partial class App
             services.AddTransient<CurrencyViewModel>(); services.AddTransient<CurrencyPage>();
             services.AddTransient<SymbolViewModel>(); services.AddTransient<SymbolPage>();
             services.AddTransient<SymbolPlusViewModel>(); services.AddTransient<SymbolPlusPage>();
-            services.AddTransient<ISymbolOfCurrencyViewModelFactory, SymbolOfCurrencyViewModelFactory>();
-            services.AddTransient<SymbolOfCurrencyViewModel>();
+            services.AddTransient<ISymbolViewModelFactory, SymbolViewModelFactory>();
             services.AddTransient<ICurrencyViewModelFactory, CurrencyViewModelFactory>();
 
             // DatabaseMaintenance

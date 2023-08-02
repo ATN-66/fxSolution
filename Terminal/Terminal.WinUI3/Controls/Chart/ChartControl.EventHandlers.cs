@@ -8,7 +8,7 @@ using Common.Entities;
 using Microsoft.UI.Xaml.Input;
 using Terminal.WinUI3.Contracts.Models;
 
-namespace Terminal.WinUI3.Controls;
+namespace Terminal.WinUI3.Controls.Chart;
 
 public abstract partial class ChartControl<TItem, TKernel> where TItem : IChartItem where TKernel : IKernel<TItem>
 {

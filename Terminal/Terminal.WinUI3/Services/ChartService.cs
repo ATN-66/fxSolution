@@ -96,7 +96,7 @@ public class ChartService : IChartService
         {
             ChartType.Ticks => await GetChartAsync<TickChartControl, Quotation, QuotationKernel>(symbol, chartType, isReversed).ConfigureAwait(false),
             ChartType.Candlesticks => await GetChartAsync<CandlestickChartControl, Candlestick, CandlestickKernel>(symbol, chartType, isReversed).ConfigureAwait(false),
-            ChartType.ThresholdBar => await GetChartAsync<ThresholdBarChartControl, ThresholdBar, ThresholdBarKernel>(symbol, chartType, isReversed).ConfigureAwait(false),
+            ChartType.ThresholdBars => await GetChartAsync<ThresholdBarChartControl, ThresholdBar, ThresholdBarKernel>(symbol, chartType, isReversed).ConfigureAwait(false),
             _ => throw new ArgumentException($@"Unsupported chart type {chartType}", nameof(chartType))
         };
     }
@@ -107,12 +107,12 @@ public class ChartService : IChartService
         {
             ChartType.Ticks => await GetChartAsync<TickChartControl, Quotation, QuotationKernel>(symbol, chartType, isReversed).ConfigureAwait(false),
             ChartType.Candlesticks => await GetChartAsync<CandlestickChartControl, Candlestick, CandlestickKernel>(symbol, chartType, isReversed).ConfigureAwait(false),
-            ChartType.ThresholdBar => await GetChartAsync<ThresholdBarChartControl, ThresholdBar, ThresholdBarKernel>(symbol, chartType, isReversed).ConfigureAwait(false),
+            ChartType.ThresholdBars => await GetChartAsync<ThresholdBarChartControl, ThresholdBar, ThresholdBarKernel>(symbol, chartType, isReversed).ConfigureAwait(false),
             _ => throw new ArgumentException($@"Unsupported chart type {chartType}", nameof(chartType))
         };
     }
 
-    public async Task<T> GetChartAsync<T, TItem, TK>(Symbol symbol, ChartType chartType, bool isReversed) where T : ChartControl<TItem, TK> where TItem : IChartItem where TK : IKernel<TItem>
+    public async Task<T> GetChartAsync<T, TItem, TK>(Symbol symbol, ChartType chartType, bool isReversed) where T : Controls.Chart.ChartControl<TItem, TK> where TItem : IChartItem where TK : IKernel<TItem>
     {
         T result;
         switch (chartType)
@@ -167,8 +167,8 @@ public class ChartService : IChartService
                     RegisterChart(_candlestickChartsCounter, symbol, isReversed);
                 }
                 break;
-            case ChartType.ThresholdBar:
-                var thresholdBarKernel = _kernels[symbol][ChartType.ThresholdBar] as ThresholdBarKernel ?? throw new InvalidCastException();
+            case ChartType.ThresholdBars:
+                var thresholdBarKernel = _kernels[symbol][ChartType.ThresholdBars] as ThresholdBarKernel ?? throw new InvalidCastException();
                 if (isReversed)
                 {
                     if (_thresholdBarChartsReversed[symbol] != null)
@@ -223,7 +223,7 @@ public class ChartService : IChartService
                 UnRegisterChart(_candlestickChartsCounter, symbol, isReversed);
                 break;
             case nameof(ThresholdBarChartControl):
-                chartType = ChartType.ThresholdBar;
+                chartType = ChartType.ThresholdBars;
                 if (_thresholdBarChartsCounter[new Tuple<Symbol, bool>(symbol, isReversed)] == 1)
                 {
                     DisposeChart(symbol, chartType, isReversed);
@@ -268,7 +268,7 @@ public class ChartService : IChartService
                 }
 
                 break;
-            case ChartType.ThresholdBar:
+            case ChartType.ThresholdBars:
                 if (isReversed)
                 {
                     _thresholdBarChartsReversed[symbol]?.Dispose();

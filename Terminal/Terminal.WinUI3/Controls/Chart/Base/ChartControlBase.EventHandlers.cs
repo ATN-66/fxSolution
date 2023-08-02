@@ -180,18 +180,16 @@ public abstract partial class ChartControlBase
 
     protected virtual void GraphCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        
-
         GraphHeight = e.NewSize.Height;
         Centuries = MinCenturies + (MaxCenturies - MinCenturies) * CenturiesPercent / 100d;
 
-        var pipsPerCentury = Century / TickValue / 10d; // tick value for pipette
+        var pipsPerCentury = Century / TickValue / 10d;
         Pips = (int)(pipsPerCentury * Centuries);
         VerticalScale = GraphHeight / Pips;
 
         GraphWidth = e.NewSize.Width;
         MaxUnits = CalculateMaxUnits();
-        Units = Math.Max((int)MinUnits, MaxUnits * UnitsPercent / 100);
+        Units = Math.Max(MinUnits, MaxUnits * UnitsPercent / 100);
         HorizontalScale = GraphWidth / (Units - 1);
     }
     protected abstract int CalculateMaxUnits();
@@ -272,7 +270,7 @@ public abstract partial class ChartControlBase
                 throw new InvalidOperationException("Canvas control has no parent grid.");
             }
 
-            var axisColumn = grid.ColumnDefinitions[3];
+            var axisColumn = grid.ColumnDefinitions[1];
             axisColumn.Width = new GridLength(YAxisWidth);
         }
         catch (Exception exception)
@@ -377,7 +375,7 @@ public abstract partial class ChartControlBase
                 throw new InvalidOperationException("Canvas control has no parent grid.");
             }
 
-            var axisRow = grid.RowDefinitions[2];
+            var axisRow = grid.RowDefinitions[0];
             axisRow.Height = new GridLength(XAxisHeight);
         }
         catch (Exception exception)

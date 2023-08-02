@@ -7,6 +7,8 @@ using System.Diagnostics;
 using System.Numerics;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
+using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Geometry;
@@ -14,20 +16,18 @@ using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
-using Microsoft.Extensions.Configuration;
-using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml.Input;
+using Terminal.WinUI3.Contracts.Models;
+using Terminal.WinUI3.Messenger.AccountService;
+using Terminal.WinUI3.Models.Chart;
 using Terminal.WinUI3.Models.Trade;
 using Terminal.WinUI3.Models.Trade.Enums;
 using Color = Windows.UI.Color;
 using Symbol = Common.Entities.Symbol;
-using Terminal.WinUI3.Contracts.Models;
-using Terminal.WinUI3.Messenger.AccountService;
-using Terminal.WinUI3.Models.Chart;
 
-namespace Terminal.WinUI3.Controls;
+namespace Terminal.WinUI3.Controls.Chart;
 
-public abstract partial class ChartControl<TItem, TKernel> : Chart.Base.ChartControlBase, IRecipient<OrderAcceptMessage> where TItem : IChartItem where TKernel : IKernel<TItem>
+public abstract partial class ChartControl<TItem, TKernel> : Base.ChartControlBase, IRecipient<OrderAcceptMessage> where TItem : IChartItem where TKernel : IKernel<TItem>
 {
     protected double YZeroPrice;
     private readonly Line _ask = new();
@@ -46,7 +46,7 @@ public abstract partial class ChartControl<TItem, TKernel> : Chart.Base.ChartCon
     private const float ProximityThresholdStatic = 5.0f;
     private const float ProximityThresholdDynamic = 30.0f;
 
-    protected ChartControl(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, TKernel kernel, Color baseColor, Color quoteColor, ILogger<Chart.Base.ChartControlBase> logger) : base(configuration, symbol, isReversed, tickValue, baseColor, quoteColor, logger)
+    protected ChartControl(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, TKernel kernel, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, symbol, isReversed, tickValue, baseColor, quoteColor, logger)
     {
         Kernel = kernel;
         StrongReferenceMessenger.Default.Register(this, new Token(Symbol));
@@ -231,6 +231,7 @@ public abstract partial class ChartControl<TItem, TKernel> : Chart.Base.ChartCon
     protected override void CenturyAxisCanvasOnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
         args.DrawingSession.Clear(AxisBackgroundColor);
+        args.DrawingSession.Antialiasing = CanvasAntialiasing.Antialiased;
 
         var offset = IsReversed ? GraphHeight : 0;
         var ask = Kernel[KernelShift].Ask;
@@ -252,73 +253,65 @@ public abstract partial class ChartControl<TItem, TKernel> : Chart.Base.ChartCon
             for (var i = 0; i <= centuriesAbove; i++)
             {
                 var yPos = _centuryZeroLine.StartPoint.Y - (float)(centuriesHeight * i);
-                args.DrawingSession.DrawLine(0, yPos, (float)GraphWidth, yPos, Colors.Gray, 0.5f);
+                args.DrawingSession.DrawLine(0, yPos, (float)GraphWidth, yPos, AxisForegroundColor, 0.5f);
                 var labelValue = -100 * i;
-                args.DrawingSession.DrawText(labelValue.ToString("#####0"), 0, yPos, Colors.Gray, YAxisCanvasTextFormat);
+                args.DrawingSession.DrawText(labelValue.ToString("#####0"), 0, yPos, AxisForegroundColor, YAxisCanvasTextFormat);
             }
 
             for (var i = 1; i <= centuriesBelow; i++)
             {
                 var yPos = _centuryZeroLine.StartPoint.Y + (float)(centuriesHeight * i);
-                args.DrawingSession.DrawLine(0, yPos, (float)GraphWidth, yPos, Colors.Gray, 0.5f);
+                args.DrawingSession.DrawLine(0, yPos, (float)GraphWidth, yPos, AxisForegroundColor, 0.5f);
                 var labelValue = 100 * i;
-                args.DrawingSession.DrawText(labelValue.ToString("#####0"), 0, yPos, Colors.Gray, YAxisCanvasTextFormat);
+                args.DrawingSession.DrawText(labelValue.ToString("#####0"), 0, yPos, AxisForegroundColor, YAxisCanvasTextFormat);
             }
         }
     }
 
     protected override void PipsAxisCanvasOnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
-        try
+        args.DrawingSession.Clear(AxisBackgroundColor);
+        args.DrawingSession.Antialiasing = CanvasAntialiasing.Antialiased;
+
+        using var cpb = new CanvasPathBuilder(args.DrawingSession);
+        var offset = IsReversed ? GraphHeight : 0;
+
+        var ask = (float)Kernel[KernelShift].Ask;
+        var yZeroPrice = ask + Digits * Pips / 2f - VerticalShift * Digits;
+        var y = Math.Abs(offset - (yZeroPrice - ask) / Digits * VerticalScale);
+        cpb.BeginFigure(new Vector2(0, (float)y));
+        cpb.AddLine(new Vector2((float)YAxisWidth, (float)y));
+        cpb.EndFigure(CanvasFigureLoop.Open);
+
+        var bid = (float)Kernel[KernelShift].Bid;
+        y = Math.Abs(offset - (yZeroPrice - bid) / Digits * VerticalScale);
+        cpb.BeginFigure(new Vector2(0f, (float)y));
+        cpb.AddLine(new Vector2((float)YAxisWidth, (float)y));
+        cpb.EndFigure(CanvasFigureLoop.Open);
+
+        var divisor = 1f / (YAxisStepInPips * Digits);
+        var firstPriceDivisibleBy10Pips = (float)Math.Floor(yZeroPrice * divisor) / divisor;
+
+        for (var price = firstPriceDivisibleBy10Pips; price >= yZeroPrice - Pips * Digits; price -= Digits * YAxisStepInPips)
         {
-            args.DrawingSession.Clear(AxisBackgroundColor);
-            args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
+            y = Math.Abs(offset - (yZeroPrice - price) / Digits * VerticalScale);
+            using var textLayout = new CanvasTextLayout(args.DrawingSession, price.ToString(PriceLabelTextFormat), YAxisCanvasTextFormat, (float)YAxisWidth, AxisFontSize);
+            args.DrawingSession.DrawTextLayout(textLayout, 0f, (float)(y - textLayout.LayoutBounds.Height), AxisForegroundColor);
+            textLayout.Dispose();
 
-            using var cpb = new CanvasPathBuilder(args.DrawingSession);
-            var offset = IsReversed ? GraphHeight : 0;
-
-            var ask = (float)Kernel[KernelShift].Ask;
-            var yZeroPrice = ask + Digits * (float)Pips / 2f - VerticalShift * Digits;
-            var y = Math.Abs(offset - (yZeroPrice - ask) / Digits * VerticalScale);
-            cpb.BeginFigure(new Vector2(0, (float)y));
-            cpb.AddLine(new Vector2((float)YAxisWidth, (float)y));
-            cpb.EndFigure(CanvasFigureLoop.Open);
-
-            var bid = (float)Kernel[KernelShift].Bid;
-            y = Math.Abs(offset - (yZeroPrice - bid) / Digits * VerticalScale);
             cpb.BeginFigure(new Vector2(0f, (float)y));
             cpb.AddLine(new Vector2((float)YAxisWidth, (float)y));
             cpb.EndFigure(CanvasFigureLoop.Open);
-
-            var divisor = 1f / (YAxisStepInPips * Digits);
-            var firstPriceDivisibleBy10Pips = (float)Math.Floor(yZeroPrice * divisor) / divisor;
-
-            for (var price = firstPriceDivisibleBy10Pips; price >= yZeroPrice - Pips * Digits; price -= Digits * YAxisStepInPips)
-            {
-                y = Math.Abs(offset - (yZeroPrice - price) / Digits * VerticalScale);
-                using var textLayout = new CanvasTextLayout(args.DrawingSession, price.ToString(PriceLabelTextFormat), YAxisCanvasTextFormat, (float)YAxisWidth, AxisFontSize);
-                args.DrawingSession.DrawTextLayout(textLayout, 0f, (float)(y - textLayout.LayoutBounds.Height), AxisForegroundColor);
-                textLayout.Dispose();
-
-                cpb.BeginFigure(new Vector2(0f, (float)y));
-                cpb.AddLine(new Vector2((float)YAxisWidth, (float)y));
-                cpb.EndFigure(CanvasFigureLoop.Open);
-            }
-
-            args.DrawingSession.DrawGeometry(CanvasGeometry.CreatePath(cpb), AxisForegroundColor, 1f);
         }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "PipsAxisCanvasOnDraw");
-            throw;
-        }
+
+        args.DrawingSession.DrawGeometry(CanvasGeometry.CreatePath(cpb), AxisForegroundColor, 0.5f);
     }
 
     protected override void XAxisCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
     {
         try
         {
-            args.DrawingSession.Clear(Colors.Transparent);
+            args.DrawingSession.Clear(AxisBackgroundColor);
             //using var cpb = new CanvasPathBuilder(args.DrawingSession);
             //args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 
@@ -383,10 +376,10 @@ public abstract partial class ChartControl<TItem, TKernel> : Chart.Base.ChartCon
         args.DrawingSession.DrawText(downCurrency, downCurrencyPosition, downColor, CurrencyLabelCanvasTextFormat);
 
         var askStr = Kernel[KernelShift].Ask.ToString(PriceTextFormat);
-        var askHeight = DrawPrice(askStr[..4], askStr[4..6], askStr[6..7], 10, 10, 3);
+        var askHeight = DrawPrice(askStr[..4], askStr[4..6], askStr[6..7], 5, 3, 3);
         var bidStr = Kernel[KernelShift].Bid.ToString(PriceTextFormat);
-        var bidHeight = DrawPrice(bidStr[..4], bidStr[4..6], bidStr[6..7], 10, askHeight + 3, 3);
-        DrawSpread(Kernel[KernelShift].Ask, Kernel[KernelShift].Bid, 10, bidHeight + 3);
+        var bidHeight = DrawPrice(bidStr[..4], bidStr[4..6], bidStr[6..7], 5, askHeight + 3, 3);
+        DrawSpread(Kernel[KernelShift].Ask, Kernel[KernelShift].Bid, 5, bidHeight + 3);
 
         float DrawPrice(string firstPart, string secondPart, string thirdPart, float xShift, float yShift, float margin)
         {
