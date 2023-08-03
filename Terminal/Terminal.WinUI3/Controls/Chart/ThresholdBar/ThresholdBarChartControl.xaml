@@ -17,34 +17,33 @@
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
                         <win2d:CanvasControl
                             x:Name="graphCanvas"
                             Grid.Row="0"
                             Grid.RowSpan="2"
-                            Grid.Column="1" />
+                            Grid.Column="2" />
 
                         <win2d:CanvasControl
                             x:Name="debugCanvas"
                             Grid.Row="1"
-                            Grid.Column="1"
+                            Grid.Column="2"
                             Background="Transparent"
                             IsHitTestVisible="False" />
                         <win2d:CanvasControl
                             x:Name="textCanvas"
                             Grid.Row="1"
-                            Grid.Column="1"
+                            Grid.Column="2"
                             Background="Transparent"
                             IsHitTestVisible="False" />
 
                         <win2d:CanvasControl
                             x:Name="xAxisCanvas"
                             Grid.Row="0"
-                            Grid.Column="1"
-                            Grid.ColumnSpan="2" />
+                            Grid.Column="2" />
 
                         <win2d:CanvasControl
                             x:Name="centuryAxisCanvas"
@@ -55,7 +54,7 @@
                             x:Name="pipsAxisCanvas"
                             Grid.Row="0"
                             Grid.RowSpan="2"
-                            Grid.Column="2" />
+                            Grid.Column="1" />
 
                     </Grid>
                 </ControlTemplate>

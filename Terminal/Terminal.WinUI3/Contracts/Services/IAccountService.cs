@@ -10,7 +10,7 @@ namespace Terminal.WinUI3.Contracts.Services;
 public interface IAccountService : INotifyPropertyChanged
 {
     ServiceState ServiceState { get; }
-
+    Symbol Symbol { get; }
     AccountInfo GetAccountInfo();
     void ProcessProperties(string details);
     IEnumerable<HistoryPosition> ProcessPositionsHistory(string details);

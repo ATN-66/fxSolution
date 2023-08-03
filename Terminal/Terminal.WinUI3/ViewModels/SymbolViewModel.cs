@@ -36,6 +36,9 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     [ObservableProperty] private int _kernelShiftPercent;
     [ObservableProperty] private int _horizontalShift;
 
+    [ObservableProperty] private Currency _currency;
+    [ObservableProperty] private string _operationalContent = string.Empty;
+
     [RelayCommand(CanExecute = nameof(CanExecuteOperation))]
     private Task OperateAsync()
     {
@@ -52,17 +55,39 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     }
     private bool CanExecuteOperation()
     {
-        return _accountService.ServiceState is ServiceState.ReadyToOpen or ServiceState.ReadyToClose;
+        return _accountService.ServiceState switch
+        {
+            ServiceState.ReadyToOpen => true,
+            ServiceState.ReadyToClose => Symbol == _accountService.Symbol,
+            _ => false
+        };
     }
     private void OnAccountServicePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        UpdateOperationalProperties();
+        _dispatcherService.ExecuteOnUIThreadAsync(UpdateOperationalProperties);
         OperateCommand.NotifyCanExecuteChanged();
     }
     private void UpdateOperationalProperties()
     {
         OperationalContent = _accountService.ServiceState.GetDescription();
-        Currency = IsReversed ? ChartControlBase.BaseCurrency : ChartControlBase.QuoteCurrency;
+        switch (_accountService.ServiceState)
+        {
+            case ServiceState.ReadyToOpen: Currency = IsReversed ? ChartControlBase.BaseCurrency : ChartControlBase.QuoteCurrency; break;
+            case ServiceState.ReadyToClose:
+                if (Symbol == _accountService.Symbol)
+                {
+                    Currency = IsReversed ? ChartControlBase.QuoteCurrency : ChartControlBase.BaseCurrency;
+                }
+                else
+                {
+                    OperationalContent = string.Empty;
+                    Currency = Currency.NaN;
+                }
+                break;
+            case ServiceState.Busy:
+            case ServiceState.Off:
+            default: Currency = Currency.NaN; break;
+        }
     }
 
     [RelayCommand]
@@ -147,11 +172,6 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         get;
         set;
     }
-    public string Currency
-    {
-        get;
-        set;
-    } = null!;
 
     private ChartControlBase _chartControlBase = null!;
     public ChartControlBase ChartControlBase
@@ -194,17 +214,6 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         ChartControlBase.SetBinding(ChartControlBase.MinUnitsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnits)), Mode = BindingMode.OneWay });
         ChartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.HorizontalShiftProperty, new Binding { Source = this, Path = new PropertyPath(nameof(HorizontalShift)), Mode = BindingMode.OneWay });
-    }
-
-    private string _operationalButtonContent = null!;
-    public string OperationalContent
-    {
-        get => _operationalButtonContent;
-        private set
-        {
-            _operationalButtonContent = value;
-            _dispatcherService.ExecuteOnUIThreadAsync(() => OnPropertyChanged());
-        }
     }
 
     public async void OnNavigatedTo(object parameter)

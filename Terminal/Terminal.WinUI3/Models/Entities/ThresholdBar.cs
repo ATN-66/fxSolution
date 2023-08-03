@@ -4,6 +4,7 @@
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
+using Newtonsoft.Json;
 
 namespace Terminal.WinUI3.Models.Entities;
 
@@ -16,31 +17,41 @@ public class ThresholdBar : IChartItem
         Direction = DetermineDirection(open, close);
     }
 
+    [JsonIgnore]
     public Symbol Symbol
     {
         get; init;
     }
+
+    [JsonIgnore]
     public DateTime DateTime
     {
         get; init;
     }
+
     public double Open
     {
         get; init;
     }
+
     public double Close
     {
         get; set;
     }
+
+    [JsonIgnore]
     public double Ask
     {
         get; set;
     }
+
+    [JsonIgnore]
     public double Bid
     {
         get; set;
     }
 
+    [JsonIgnore]
     public double Threshold
     {
         get;

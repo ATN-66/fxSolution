@@ -3,8 +3,10 @@
   |                                   CurrenciesOverviewViewModel.cs |
   +------------------------------------------------------------------+*/
 
+using System.Collections.ObjectModel;
 using Common.ExtensionsAndHelpers;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
@@ -16,16 +18,20 @@ public partial class CurrenciesOverviewViewModel : ObservableRecipient, INavigat
     private readonly ICurrencyViewModelFactory _currencyViewModelFactory;
     private readonly ILogger<CurrenciesOverviewViewModel> _logger;
 
-    [ObservableProperty] private int _centuriesPercent = 50; // todo:settings
-    [ObservableProperty] private int _unitsPercent = 100; // todo:settings
-    [ObservableProperty] private int _kernelShiftPercent = 100; //todo:settings
+    [ObservableProperty] private int _centuriesPercent;
+    [ObservableProperty] private int _unitsPercent;
+    [ObservableProperty] private int _kernelShiftPercent;
 
-    public List<CurrencyViewModel> CurrencyViewModels { get; set; } = new();
+    public ObservableCollection<CurrencyViewModel> CurrencyViewModels { get; set; } = new();
 
-    public CurrenciesOverviewViewModel(ICurrencyViewModelFactory currencyViewModelFactory, ILogger<CurrenciesOverviewViewModel> logger)
+    public CurrenciesOverviewViewModel(IConfiguration configuration, ICurrencyViewModelFactory currencyViewModelFactory, ILogger<CurrenciesOverviewViewModel> logger)
     {
         _currencyViewModelFactory = currencyViewModelFactory;
         _logger = logger;
+
+        _centuriesPercent = configuration.GetValue<int>($"{nameof(_centuriesPercent)}");
+        _unitsPercent = configuration.GetValue<int>($"{nameof(_unitsPercent)}");
+        _kernelShiftPercent = configuration.GetValue<int>($"{nameof(_kernelShiftPercent)}");
     }
 
     partial void OnCenturiesPercentChanged(int value)

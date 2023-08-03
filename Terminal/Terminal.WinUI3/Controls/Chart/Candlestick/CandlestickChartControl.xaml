@@ -43,8 +43,7 @@
                         <win2d:CanvasControl
                             x:Name="xAxisCanvas"
                             Grid.Row="0"
-                            Grid.Column="2"
-                            Grid.ColumnSpan="1" />
+                            Grid.Column="2"/>
 
                         <win2d:CanvasControl
                             x:Name="centuryAxisCanvas"

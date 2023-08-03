@@ -52,7 +52,8 @@ internal sealed class AccountService : IAccountService
             OnPropertyChanged();
         }
     }
-    
+
+    public Symbol Symbol => _position!.Symbol;
     public AccountInfo GetAccountInfo()
     {
         return _accountInfo;

@@ -4,6 +4,8 @@
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
+using Newtonsoft.Json;
+using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Models.Entities;
 using Quotation = Common.Entities.Quotation;
 
@@ -11,12 +13,16 @@ namespace Terminal.WinUI3.Models.Kernel;
 
 public class ThresholdBarKernel : Kernel<ThresholdBar>
 {
+    private readonly IFileService _fileService;
+    private readonly Symbol _symbol;
     private const double StartingThreshold = 50d; // 5 pips 
     private readonly double _threshold;
     private readonly double _digit;
 
-    public ThresholdBarKernel(int thresholdInPips, double digit)
+    public ThresholdBarKernel(Symbol symbol, int thresholdInPips, double digit, IFileService fileService)
     {
+        _fileService = fileService;
+        _symbol = symbol;
         _digit = digit;
         _threshold = thresholdInPips / _digit;
     }
@@ -61,6 +67,8 @@ public class ThresholdBarKernel : Kernel<ThresholdBar>
 
             Add(quotation);
         }
+
+        SaveThresholdBarsToJson(Items, @"D:\forex.Terminal.WinUI3.Logs\", "thresholdBars.json");
     }
 
     public override void Add(Quotation quotation)
@@ -122,5 +130,12 @@ public class ThresholdBarKernel : Kernel<ThresholdBar>
             case Direction.NaN:
             default: throw new ArgumentOutOfRangeException($"{nameof(lastThresholdBar.Direction)}", @"Encountered a ThresholdBars with invalid direction.");
         }
+    }
+
+    private void SaveThresholdBarsToJson(IEnumerable<ThresholdBar> thresholdBars, string folderPath, string fileName)
+    {
+        var symbolName = _symbol.ToString();
+        var fullFileName = $"{symbolName}_{fileName}";
+        _fileService.Save(folderPath, fullFileName, thresholdBars);
     }
 }

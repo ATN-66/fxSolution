@@ -15,13 +15,16 @@ namespace Terminal.WinUI3.Services;
 public class KernelService : IKernelService
 {
     private readonly IChartService _chartService;
+    private readonly IFileService _fileService;
+
+    private readonly Dictionary<Symbol, int> _thresholdsInPips = new() { { Symbol.EURUSD, 20 }, { Symbol.GBPUSD, 30 }, { Symbol.USDJPY, 20 }, { Symbol.EURGBP, 30 }, { Symbol.EURJPY, 40 }, { Symbol.GBPJPY, 60 } };
     private readonly Dictionary<Symbol, int> _digits = new() { { Symbol.EURUSD, 100000 }, { Symbol.GBPUSD, 100000 }, { Symbol.USDJPY, 1000 }, { Symbol.EURGBP, 100000 }, { Symbol.EURJPY, 1000 }, { Symbol.GBPJPY, 100000 } };
-    private readonly Dictionary<Symbol, int> _thresholdsInPips = new() { { Symbol.EURUSD, 20 }, { Symbol.GBPUSD, 20 }, { Symbol.USDJPY, 20 }, { Symbol.EURGBP, 20 }, { Symbol.EURJPY, 20 }, { Symbol.GBPJPY, 20 } };
     private readonly Dictionary<Symbol, Dictionary<ChartType, IKernel>> _kernels = new();
 
-    public KernelService(IChartService chartService)
+    public KernelService(IChartService chartService, IFileService fileService)
     {
         _chartService = chartService;
+        _fileService = fileService;
     }
 
     public Task InitializeAsync(IDictionary<Symbol, List<Quotation>> quotations)
@@ -30,7 +33,7 @@ public class KernelService : IKernelService
         {
             var symbolKernels = new Dictionary<ChartType, IKernel>();
 
-            var thresholdKernel = new ThresholdBarKernel(_thresholdsInPips[symbol], _digits[symbol]);
+            var thresholdKernel = new ThresholdBarKernel(symbol, _thresholdsInPips[symbol], _digits[symbol], _fileService);
             thresholdKernel.AddRange(symbolQuotations);
             symbolKernels[ChartType.ThresholdBars] = thresholdKernel;
 

@@ -37,10 +37,9 @@ public abstract partial class ChartControlBase : Control
             return count;
         }
     }
-    protected const double Century = 100d; // todo: settings // one hundred dollars of the balance currency
-  
+    private const double Century = 100d; // todo: settings // one hundred dollars of the balance currency
     private readonly Queue<(int ID, MessageType Type, string Message)> _messageQueue = new();
-    protected const int DebugMessageQueueSize = 10;
+    private const int DebugMessageQueueSize = 10;
     private int _debugMessageId;
     private readonly MessageType _messageTypeLevel;
 
@@ -81,12 +80,12 @@ public abstract partial class ChartControlBase : Control
     }
 
     public Symbol  Symbol { get; }
-    public string BaseCurrency
+    public Currency BaseCurrency
     {
         get;
         set;
     }
-    public string QuoteCurrency
+    public Currency QuoteCurrency
     {
         get;
         set;
@@ -121,14 +120,14 @@ public abstract partial class ChartControlBase : Control
         StrongReferenceMessenger.Default.UnregisterAll(this);
     }
 
-    private static (string baseCurrency, string quoteCurrency) GetCurrenciesFromSymbol(Symbol symbol)
+    private static (Currency baseCurrency, Currency quoteCurrency) GetCurrenciesFromSymbol(Symbol symbol)
     {
         var symbolName = symbol.ToString();
         var first = symbolName[..3];
-        var second = symbolName.Substring(3, 3);
+        var second = symbolName[3..];
         if (Enum.TryParse<Currency>(first, out var baseCurrency) && Enum.TryParse<Currency>(second, out var quoteCurrency))
         {
-            return (baseCurrency.ToString(), quoteCurrency.ToString());
+            return (baseCurrency, quoteCurrency);
         }
         throw new Exception("Failed to parse currencies from symbol.");
     }

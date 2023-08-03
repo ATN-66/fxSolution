@@ -124,11 +124,11 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
         set;
     }
 
-    public string Currency
+    public Currency Currency
     {
         get;
         set;
-    } = null!;
+    }
 
     private ChartControlBase _chartControlBaseFirst = null!;
     public ChartControlBase ChartControlBaseFirst

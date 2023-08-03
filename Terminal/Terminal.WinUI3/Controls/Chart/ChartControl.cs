@@ -123,14 +123,15 @@ public abstract partial class ChartControl<TItem, TKernel> : Base.ChartControlBa
             priceCpb.AddLine(_priceLine.EndPoint);
             priceCpb.EndFigure(CanvasFigureLoop.Open);
             using var priceGeometries = CanvasGeometry.CreatePath(priceCpb);
+            using var priceStrokeStyle = new CanvasStrokeStyle { DashStyle = CanvasDashStyle.DashDotDot };
 
             switch (_tradeType)
             {
                 case TradeType.Buy:
-                    args.DrawingSession.DrawGeometry(priceGeometries, _price < bid ? Colors.Green : Colors.Red, 1.0f);
+                    args.DrawingSession.DrawGeometry(priceGeometries, _price < bid ? Colors.Green : Colors.Red, 1.0f, priceStrokeStyle);
                     break;
                 case TradeType.Sell:
-                    args.DrawingSession.DrawGeometry(priceGeometries, _price > ask ? Colors.Green : Colors.Red, 1.0f);
+                    args.DrawingSession.DrawGeometry(priceGeometries, _price > ask ? Colors.Green : Colors.Red, 1.0f, priceStrokeStyle);
                     break;
                 case TradeType.NaN:
                 default: throw new ArgumentOutOfRangeException();
@@ -148,7 +149,8 @@ public abstract partial class ChartControl<TItem, TKernel> : Base.ChartControlBa
             slCpb.EndFigure(CanvasFigureLoop.Open);
 
             using var slGeometries = CanvasGeometry.CreatePath(slCpb);
-            args.DrawingSession.DrawGeometry(slGeometries, Colors.Red, 1.0f);
+            using var slStrokeStyle = new CanvasStrokeStyle { CustomDashStyle = new float[] { 20, 10 } };
+            args.DrawingSession.DrawGeometry(slGeometries, Colors.Red, 1.0f, slStrokeStyle);
 
             if (_slLine.IsSelected)
             {
@@ -168,7 +170,8 @@ public abstract partial class ChartControl<TItem, TKernel> : Base.ChartControlBa
             tpCpb.EndFigure(CanvasFigureLoop.Open);
 
             using var tpGeometries = CanvasGeometry.CreatePath(tpCpb);
-            args.DrawingSession.DrawGeometry(tpGeometries, Colors.Green, 1.0f);
+            using var tpStrokeStyle = new CanvasStrokeStyle { CustomDashStyle = new float[] { 20, 10 } };
+            args.DrawingSession.DrawGeometry(tpGeometries, Colors.Green, 1.0f, tpStrokeStyle);
 
             if (_tpLine.IsSelected)
             {
@@ -367,13 +370,13 @@ public abstract partial class ChartControl<TItem, TKernel> : Base.ChartControlBa
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Antialiased;
 
         var (upCurrency, downCurrency, upColor, downColor) = IsReversed ? (QuoteCurrency, BaseCurrency, QuoteColor, BaseColor) : (BaseCurrency, QuoteCurrency, BaseColor, QuoteColor);
-        using var upCurrencyLayout = new CanvasTextLayout(args.DrawingSession, upCurrency, CurrencyLabelCanvasTextFormat, 0.0f, CurrencyFontSize);
+        using var upCurrencyLayout = new CanvasTextLayout(args.DrawingSession, upCurrency.ToString(), CurrencyLabelCanvasTextFormat, 0.0f, CurrencyFontSize);
 
         var upCurrencyPosition = new Vector2(0f, 0f);
         var downCurrencyPosition = new Vector2(0f, (float)upCurrencyLayout.DrawBounds.Height + 3f);
 
-        args.DrawingSession.DrawText(upCurrency, upCurrencyPosition, upColor, CurrencyLabelCanvasTextFormat);
-        args.DrawingSession.DrawText(downCurrency, downCurrencyPosition, downColor, CurrencyLabelCanvasTextFormat);
+        args.DrawingSession.DrawText(upCurrency.ToString(), upCurrencyPosition, upColor, CurrencyLabelCanvasTextFormat);
+        args.DrawingSession.DrawText(downCurrency.ToString(), downCurrencyPosition, downColor, CurrencyLabelCanvasTextFormat);
 
         var askStr = Kernel[KernelShift].Ask.ToString(PriceTextFormat);
         var askHeight = DrawPrice(askStr[..4], askStr[4..6], askStr[6..7], 5, 3, 3);
@@ -439,6 +442,8 @@ public abstract partial class ChartControl<TItem, TKernel> : Base.ChartControlBa
                 _tp = _tpLastKnown = message.Value.TakeProfit;
 
                 _tradeType = message.Value.TradeType;
+
+                EnqueueMessage(MessageType.Information, "Order opened.");
                 Invalidate();
                 break;
             case AcceptType.Close:
@@ -446,6 +451,8 @@ public abstract partial class ChartControl<TItem, TKernel> : Base.ChartControlBa
                 Debug.Assert(message.Symbol == Symbol);
                 _priceLine = _slLine = _tpLine = null;
                 _price = _sl = _tp = default;
+
+                EnqueueMessage(MessageType.Information, "Order closed.");
                 Invalidate();
                 break;
             case AcceptType.Modify:
@@ -458,6 +465,7 @@ public abstract partial class ChartControl<TItem, TKernel> : Base.ChartControlBa
                 _tp = _tpLastKnown = message.Value.TakeProfit;
                 _slLine.IsSelected = _tpLine.IsSelected = false;
 
+                EnqueueMessage(MessageType.Information, "Order modified.");
                 Invalidate();
                 break;
             case AcceptType.NaN:

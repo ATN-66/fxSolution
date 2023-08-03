@@ -43,10 +43,10 @@ public abstract partial class ChartControlBase
     protected readonly CanvasTextFormat AskBidLabelCanvasTextFormat = new() { FontSize = AskBidFontSize, FontFamily = CurrencyFontFamily, WordWrapping = CanvasWordWrapping.NoWrap };
 
     protected const float AxisFontSize = 12f;
-    protected const float AskBidFontSize = 18f;
+    private const float AskBidFontSize = 18f;
     protected const float CurrencyFontSize = AskBidFontSize * 2;
     private const string AxisFontFamily = "Lucida Console";
-    protected const string CurrencyFontFamily = "Lucida Console";
+    private const string CurrencyFontFamily = "Lucida Console";
 
     protected readonly string PriceTextFormat;
     protected readonly string PriceLabelTextFormat;
@@ -457,19 +457,19 @@ public abstract partial class ChartControlBase
         args.DrawingSession.Clear(Colors.Transparent);
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 
-        var y = (float)sender.ActualHeight;
+        var x = (float)sender.ActualWidth / 5;
+        var y = 0f; // Start from the top.
 
-        foreach (var (id, type, message) in _messageQueue.Reverse())
+        foreach (var (id, type, message) in _messageQueue)
         {
             if (type < _messageTypeLevel)
             {
                 continue;
             }
 
-            using var textLayout = new CanvasTextLayout(args.DrawingSession, $"{id:##00}: {message}" , YAxisCanvasTextFormat, float.PositiveInfinity, float.PositiveInfinity);
-            y -= (float)textLayout.LayoutBounds.Height; 
-            args.DrawingSession.DrawTextLayout(textLayout, 0, y, Colors.White);
-            textLayout.Dispose();
+            using var textLayout = new CanvasTextLayout(args.DrawingSession, $"{id:##00}: {message}", YAxisCanvasTextFormat, float.PositiveInfinity, float.PositiveInfinity);
+            args.DrawingSession.DrawTextLayout(textLayout, x, y, Colors.White);
+            y += (float)textLayout.LayoutBounds.Height;
         }
     }
 
