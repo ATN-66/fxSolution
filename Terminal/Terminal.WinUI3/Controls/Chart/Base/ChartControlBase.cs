@@ -11,6 +11,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml.Controls;
 using Terminal.WinUI3.Models.Chart;
@@ -42,6 +43,7 @@ public abstract partial class ChartControlBase : Control
     private const int DebugMessageQueueSize = 10;
     private int _debugMessageId;
     private readonly MessageType _messageTypeLevel;
+    protected readonly ViewPort ViewPort = new();
 
     protected ChartControlBase(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger)
     {
@@ -189,5 +191,27 @@ public abstract partial class ChartControlBase : Control
         VerticalShift = 0;
         KernelShift = 0;
         Invalidate();
+    }
+    protected double GetPrice(float positionY)
+    {
+        if (IsReversed)
+        {
+            return ViewPort.High - (ViewPort.High - ViewPort.Low) * (positionY / GraphHeight);
+        }
+        else
+        {
+            return ViewPort.Low + (ViewPort.High - ViewPort.Low) * (1 - positionY / GraphHeight);
+        }
+    }
+    protected float GetPositionY(double price)
+    {
+        if (IsReversed)
+        {
+            return (float)(((price - ViewPort.Low) / (ViewPort.High - ViewPort.Low)) * GraphHeight);
+        }
+        else
+        {
+            return (float)((1 - ((price - ViewPort.Low) / (ViewPort.High - ViewPort.Low))) * GraphHeight);
+        }
     }
 }

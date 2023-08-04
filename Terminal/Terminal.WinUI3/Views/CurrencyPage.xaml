@@ -144,7 +144,7 @@
                     <ToggleButton
                         Margin="3,0,3,0"
                         Command="{x:Bind Path=ViewModel.CandlesticksCommand, Mode=OneWay}"
-                        Content="Candlesticks"
+                        Content="DataSource"
                         IsChecked="{x:Bind Path=ViewModel.IsCandlesticksSelected, Mode=OneWay}"
                         IsEnabled="{x:Bind Path=ViewModel.IsCandlesticksEnabled, Mode=OneWay}" />
                     <ToggleButton

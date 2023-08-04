@@ -307,7 +307,7 @@ public class MainViewModel : ObservableRecipient
         _dispatcherService.ExecuteOnUIThreadAsync(() =>
         {
             var index = (int)quotation.Symbol - 1;
-            IndicatorStatuses[index].DateTime = quotation.DateTime;
+            IndicatorStatuses[index].DateTime = quotation.StartDateTime;
             IndicatorStatuses[index].Ask = quotation.Ask;
             IndicatorStatuses[index].Bid = quotation.Bid;
             IndicatorStatuses[index].Counter = counter;

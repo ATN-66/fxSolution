@@ -19,12 +19,12 @@ public class AppNotificationActivationHandler : ActivationHandler<LaunchActivate
     protected override bool CanHandleInternal(LaunchActivatedEventArgs args) => AppInstance.GetCurrent().GetActivatedEventArgs()?.Kind == ExtendedActivationKind.AppNotification;
     protected override Task HandleInternalAsync(LaunchActivatedEventArgs args)
     {
-        // TODO: Handle notification activations.
+        // TODO: Handle notifications activations.
 
         //// // Access the AppNotificationActivatedEventArgs.
         //// var activatedEventArgs = (AppNotificationActivatedEventArgs)AppInstance.GetCurrent().GetActivatedEventArgs().Data;
 
-        //// // Navigate to a specific page based on the notification arguments.
+        //// // Navigate to a specific page based on the notifications arguments.
         //// if (_notificationService.ParseArguments(activatedEventArgs.Argument)["action"] == "Settings")
         //// {
         ////     // Queue navigation with low priority to allow the UI to initialize.
@@ -36,7 +36,7 @@ public class AppNotificationActivationHandler : ActivationHandler<LaunchActivate
 
         App.MainWindow.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
         {
-            App.MainWindow.ShowMessageDialogAsync("TODO: Handle notification activations.", "Notification Activation");
+            App.MainWindow.ShowMessageDialogAsync("TODO: Handle notifications activations.", "Notifications Activation");
         });
 
         return Task.CompletedTask;

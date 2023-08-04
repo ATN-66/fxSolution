@@ -1,25 +1,25 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                           Terminal.WinUI3.AI.Data|
-  |                                            ThresholdBarKernel.cs |
+  |                                    Terminal.WinUI3.Models.Kernels|
+  |                                                 ThresholdBars.cs |
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
-using Newtonsoft.Json;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Models.Entities;
 using Quotation = Common.Entities.Quotation;
 
-namespace Terminal.WinUI3.Models.Kernel;
+namespace Terminal.WinUI3.Models.Kernels;
 
-public class ThresholdBarKernel : Kernel<ThresholdBar>
+public class ThresholdBars : DataSourceKernel<ThresholdBar>
 {
     private readonly IFileService _fileService;
     private readonly Symbol _symbol;
-    private const double StartingThreshold = 50d; // 5 pips 
+    private const double StartingThreshold = 50d; // 5 pips //todo: settings
     private readonly double _threshold;
     private readonly double _digit;
+    private int _id;
 
-    public ThresholdBarKernel(Symbol symbol, int thresholdInPips, double digit, IFileService fileService)
+    public ThresholdBars(Symbol symbol, int thresholdInPips, double digit, IFileService fileService)
     {
         _fileService = fileService;
         _symbol = symbol;
@@ -31,7 +31,7 @@ public class ThresholdBarKernel : Kernel<ThresholdBar>
     {
         var quotationList = quotations.ToList();
         var bufferOpen = quotationList[0].Ask;
-        var bufferDateTime = quotationList[0].DateTime;
+        var bufferDateTime = quotationList[0].StartDateTime;
         var started = false;
 
         foreach (var quotation in quotationList)
@@ -44,10 +44,10 @@ public class ThresholdBarKernel : Kernel<ThresholdBar>
                     continue;
                 }
 
-                Items.Add(new ThresholdBar(bufferOpen, quotation.Ask)
+                Items.Add(new ThresholdBar(_id++, bufferOpen, quotation.Ask)
                 {
                     Symbol = quotation.Symbol,
-                    DateTime = bufferDateTime,
+                    StartDateTime = bufferDateTime,
                     Ask = quotation.Ask,
                     Bid = quotation.Bid
                 });
@@ -87,10 +87,10 @@ public class ThresholdBarKernel : Kernel<ThresholdBar>
                 }
                 else if (quotation.Ask < lastThresholdBar.Threshold)
                 {
-                    Items.Add(new ThresholdBar(lastThresholdBar.Close, quotation.Ask)
+                    Items.Add(new ThresholdBar(_id++,lastThresholdBar.Close, quotation.Ask)
                     {
                         Symbol = quotation.Symbol,
-                        DateTime = quotation.DateTime,
+                        StartDateTime = quotation.StartDateTime,
                         Threshold = quotation.Ask + _threshold,
                         Ask = quotation.Ask,
                         Bid = quotation.Bid
@@ -112,10 +112,10 @@ public class ThresholdBarKernel : Kernel<ThresholdBar>
                 }
                 else if (quotation.Ask > lastThresholdBar.Threshold)
                 {
-                    Items.Add(new ThresholdBar(lastThresholdBar.Close, quotation.Ask)
+                    Items.Add(new ThresholdBar(_id++,lastThresholdBar.Close, quotation.Ask)
                     {
                         Symbol = quotation.Symbol,
-                        DateTime = quotation.DateTime,
+                        StartDateTime = quotation.StartDateTime,
                         Threshold = quotation.Ask - _threshold,
                         Ask = quotation.Ask,
                         Bid = quotation.Bid

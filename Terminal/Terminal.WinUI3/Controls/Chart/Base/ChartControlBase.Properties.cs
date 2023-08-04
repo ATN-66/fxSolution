@@ -3,6 +3,7 @@
   |                                   ChartControlBaseFirst.Properties.cs |
   +------------------------------------------------------------------+*/
 
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Terminal.WinUI3.Models.Chart;
 
@@ -17,19 +18,19 @@ public abstract partial class ChartControlBase
     protected double VerticalShift;
     protected int Pips;
 
-    public static readonly DependencyProperty MinCenturiesProperty = DependencyProperty.Register(nameof(MinCenturies), typeof(double), typeof(Chart.Base.ChartControlBase), new PropertyMetadata(0));
+    public static readonly DependencyProperty MinCenturiesProperty = DependencyProperty.Register(nameof(MinCenturies), typeof(double), typeof(ChartControlBase), new PropertyMetadata(0));
     public double MinCenturies
     {
         get => (double)GetValue(MinCenturiesProperty);
         set => throw new InvalidOperationException("The set method for MinCenturies should not be called.");
     }
-    public static readonly DependencyProperty MaxCenturiesProperty = DependencyProperty.Register(nameof(MaxCenturies), typeof(double), typeof(Chart.Base.ChartControlBase), new PropertyMetadata(0));
+    public static readonly DependencyProperty MaxCenturiesProperty = DependencyProperty.Register(nameof(MaxCenturies), typeof(double), typeof(ChartControlBase), new PropertyMetadata(0));
     public double MaxCenturies
     {
         get => (double)GetValue(MaxCenturiesProperty);
         set => throw new InvalidOperationException("The set method for MaxCenturies should not be called.");
     }
-    public static readonly DependencyProperty CenturiesPercentProperty = DependencyProperty.Register(nameof(CenturiesPercent), typeof(int), typeof(Chart.Base.ChartControlBase), new PropertyMetadata(0));
+    public static readonly DependencyProperty CenturiesPercentProperty = DependencyProperty.Register(nameof(CenturiesPercent), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
     public int CenturiesPercent
     {
         get => (int)GetValue(CenturiesPercentProperty);
@@ -69,8 +70,8 @@ public abstract partial class ChartControlBase
         Invalidate();
     }
 
-    public static readonly DependencyProperty MinUnitsProperty = DependencyProperty.Register(nameof(MinUnits), typeof(int), typeof(Chart.Base.ChartControlBase), new PropertyMetadata(0));
-    public static readonly DependencyProperty UnitsPercentProperty = DependencyProperty.Register(nameof(UnitsPercent), typeof(int), typeof(Chart.Base.ChartControlBase), new PropertyMetadata(0));
+    public static readonly DependencyProperty MinUnitsProperty = DependencyProperty.Register(nameof(MinUnits), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
+    public static readonly DependencyProperty UnitsPercentProperty = DependencyProperty.Register(nameof(UnitsPercent), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
     public int MinUnits
     {
         get => (int)GetValue(MinUnitsProperty);
@@ -130,7 +131,7 @@ public abstract partial class ChartControlBase
             SetValue(KernelShiftPercentProperty, CalculateKernelShiftPercent());
         }
     }
-    public static readonly DependencyProperty KernelShiftPercentProperty = DependencyProperty.Register(nameof(KernelShiftPercent), typeof(int), typeof(Chart.Base.ChartControlBase), new PropertyMetadata(0));
+    public static readonly DependencyProperty KernelShiftPercentProperty = DependencyProperty.Register(nameof(KernelShiftPercent), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
     public int KernelShiftPercent
     {
         get => (int)GetValue(KernelShiftPercentProperty);
@@ -150,10 +151,45 @@ public abstract partial class ChartControlBase
     protected abstract int CalculateKernelShift();
     protected abstract int CalculateKernelShiftPercent();
 
-    public static readonly DependencyProperty HorizontalShiftProperty = DependencyProperty.Register(nameof(HorizontalShift), typeof(int), typeof(Chart.Base.ChartControlBase), new PropertyMetadata(0));
+    public static readonly DependencyProperty HorizontalShiftProperty = DependencyProperty.Register(nameof(HorizontalShift), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
     public int HorizontalShift
     {
         get => (int)GetValue(HorizontalShiftProperty);
         set => SetValue(HorizontalShiftProperty, value);
     }
+
+    public static readonly DependencyProperty IsVerticalLineRequestedProperty = DependencyProperty.Register(nameof(IsVerticalLineRequested), typeof(bool), typeof(ChartControlBase), new PropertyMetadata(false));
+    private bool _isVerticalLineRequested;
+    public bool IsVerticalLineRequested
+    {
+        get => _isVerticalLineRequested;
+        set
+        {
+            _isVerticalLineRequested = value;
+            SetValue(IsVerticalLineRequestedProperty, value);
+            ProtectedCursor = InputSystemCursor.Create(value ? InputSystemCursorShape.Cross : InputSystemCursorShape.Arrow);
+        }
+    }
+
+    public static readonly DependencyProperty IsHorizontalLineRequestedProperty = DependencyProperty.Register(nameof(IsHorizontalLineRequested), typeof(bool), typeof(ChartControlBase), new PropertyMetadata(false));
+    private bool _isHorizontalLineRequested;
+    public bool IsHorizontalLineRequested
+    {
+        get => _isHorizontalLineRequested;
+        set
+        {
+            _isHorizontalLineRequested = value;
+            SetValue(IsHorizontalLineRequestedProperty, value);
+            ProtectedCursor = InputSystemCursor.Create(value ? InputSystemCursorShape.Cross : InputSystemCursorShape.Arrow);
+        }
+    }
+
+    //public static readonly DependencyProperty IsVerticalLineRequestedProperty = DependencyProperty.Register(nameof(IsVerticalLineRequested), typeof(bool), typeof(ChartControlBase), new PropertyMetadata(false, OnIsVerticalLineRequestedChanged));
+    //private static void OnIsVerticalLineRequestedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    //{
+    //    ChartControlBase chartControl = (ChartControlBase)d;
+    //    bool isVerticalLineRequested = (bool)e.NewValue;
+
+    //    chartControl.ProtectedCursor = InputSystemCursor.Create(isVerticalLineRequested ? InputSystemCursorShape.Cross : InputSystemCursorShape.Arrow);
+    //}
 }

@@ -1,15 +1,15 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                           Terminal.WinUI3.AI.Data|
-  |                                                        Kernel.cs |
+  |                                    Terminal.WinUI3.Models.Kernels|
+  |                                              DataSource.cs |
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
 using Terminal.WinUI3.Contracts.Models;
 using Quotation = Common.Entities.Quotation;
 
-namespace Terminal.WinUI3.Models.Kernel;
+namespace Terminal.WinUI3.Models.Kernels;
 
-public abstract class Kernel<TItem> : IKernel<TItem> where TItem : IChartItem
+public abstract class DataSourceKernel<TItem> : IDataSourceKernel<TItem> where TItem : IChartItem
 {
     protected readonly List<TItem> Items = new();
 

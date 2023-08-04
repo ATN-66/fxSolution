@@ -50,7 +50,7 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
     private Task TicksAsync()
     {
         //DisposeChart();
-        //ChartControlBase = await ChartService.GetChartAsync<TickChartControl, Quotation, QuotationKernel>(Symbol, ChartType.Ticks, IsReversed).ConfigureAwait(true);
+        //ChartControlBase = await ChartService.GetChartAsync<TickChartControl, Quotation, Quotations>(Symbol, ChartType.Ticks, IsReversed).ConfigureAwait(true);
         //SetChartBindings();
         return Task.CompletedTask;
     }
@@ -59,7 +59,7 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
     private Task CandlesticksAsync()
     {
         //DisposeChart();
-        //ChartControlBaseFirst = _chartService.GetChart<CandlestickChartControl, Candlestick, CandlestickKernel>(Symbol, ChartType.Candlesticks, IsReversed);
+        //ChartControlBaseFirst = _chartService.GetChart<CandlestickChartControl, Candlestick, DataSource>(Symbol, ChartType.DataSource, IsReversed);
         //SetChartBindings();
         return Task.CompletedTask;
     }
@@ -68,7 +68,7 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
     private Task ThresholdBarsAsync()
     {
         //DisposeChart();
-        //ChartControlBaseFirst = _chartService.GetChart<ThresholdBarChartControl, ThresholdBars, ThresholdBarKernel>(Symbol, ChartType.ThresholdBars, IsReversed);
+        //ChartControlBaseFirst = _chartService.GetChart<ThresholdBarChartControl, ThresholdBars, ThresholdBars>(Symbol, ChartType.ThresholdBars, IsReversed);
         //SetChartBindings();
         return Task.CompletedTask;
     }

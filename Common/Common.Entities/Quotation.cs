@@ -5,18 +5,19 @@
 
 namespace Common.Entities;
 
-public readonly record struct Quotation() : IChartItem, IComparable
+public class Quotation : IChartItem, IComparable
 {
-    public Quotation(Symbol symbol, DateTime dateTime, double ask, double bid) : this()
+    public Quotation(Symbol symbol, DateTime dateTime, double ask, double bid)
     {
         Symbol = symbol;
-        DateTime = dateTime;
+        StartDateTime = dateTime;
         Ask = ask;
         Bid = bid;
     }
     
     public Symbol Symbol { get; }
-    public DateTime DateTime { get; }
+    public DateTime StartDateTime { get; }
+    public DateTime EndDateTime => StartDateTime;
     public double Ask { get; }
     public double Bid { get; }
 
@@ -26,8 +27,8 @@ public readonly record struct Quotation() : IChartItem, IComparable
     {
         if (obj == null) return 1;
         var otherQuotation = (Quotation)obj;
-        if (DateTime < otherQuotation.DateTime) return -1;
-        if (DateTime > otherQuotation.DateTime) return 1;
+        if (StartDateTime < otherQuotation.StartDateTime) return -1;
+        if (StartDateTime > otherQuotation.StartDateTime) return 1;
         if (Symbol < otherQuotation.Symbol) return -1;
         if (Symbol > otherQuotation.Symbol) return 1;
         throw new InvalidOperationException("The duplicates found.");
@@ -69,7 +70,7 @@ public readonly record struct Quotation() : IChartItem, IComparable
 
     public override string ToString()
     {
-        return $"{Symbol}, {DateTime:D}, {DateTime:T}";
+        return $"{Symbol}, {StartDateTime:D}, {StartDateTime:T}";
         //return Symbol switch
         //{
         //    Symbol.EURUSD => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.00000}, {Bid:##0.00000}",

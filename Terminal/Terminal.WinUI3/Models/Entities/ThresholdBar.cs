@@ -10,11 +10,17 @@ namespace Terminal.WinUI3.Models.Entities;
 
 public class ThresholdBar : IChartItem
 {
-    public ThresholdBar(double open, double close)
+    public ThresholdBar(int id, double open, double close)
     {
+        Id = id;
         Open = open;
         Close = close;
         Direction = DetermineDirection(open, close);
+    }
+
+    public int Id
+    {
+        get; init;
     }
 
     [JsonIgnore]
@@ -24,7 +30,13 @@ public class ThresholdBar : IChartItem
     }
 
     [JsonIgnore]
-    public DateTime DateTime
+    public DateTime StartDateTime
+    {
+        get; init;
+    }
+
+    [JsonIgnore]
+    public DateTime EndDateTime
     {
         get; init;
     }
@@ -58,6 +70,7 @@ public class ThresholdBar : IChartItem
         set;
     }
 
+    [JsonIgnore]
     public Direction Direction
     {
         get; init;
@@ -76,5 +89,10 @@ public class ThresholdBar : IChartItem
         }
 
         throw new Exception("DetermineDirection: Open and close cannot be equal.");
+    }
+
+    public override string ToString()
+    {
+        return $"{StartDateTime:yyyy-MM-dd HH:mm}-{EndDateTime:yyyy-MM-dd HH:mm} OC: {Open}, {Close}";
     }
 }

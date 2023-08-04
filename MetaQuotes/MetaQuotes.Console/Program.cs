@@ -70,7 +70,7 @@ static Task InitializeIndicators(Queue<Quotation> firstQuotations, Workplace spa
     {
         if (ct.IsCancellationRequested) break;
         var quotation = firstQuotations.Dequeue();
-        var output = DataMediator.Init((int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.Ask, quotation.Bid, (int)space).Split(':');
+        var output = DataMediator.Init((int)quotation.Symbol, quotation.StartDateTime.ToString(mt5Format), quotation.Ask, quotation.Bid, (int)space).Split(':');
         var symbol = (Symbol)Convert.ToInt32(output[0]);
         var guid = Guid.Parse(output[1]);
         var result = output[2];
@@ -87,7 +87,7 @@ static Task ProcessQuotations(Queue<Quotation> quotations, CancellationToken ct)
         if (ct.IsCancellationRequested) break;
         var quotation = quotations.Dequeue();
         //await Task.Delay(100, ct).ConfigureAwait(false);
-        var result = DataMediator.Tick((int)quotation.Symbol, quotation.DateTime.ToString(mt5Format), quotation.Ask, quotation.Bid);
+        var result = DataMediator.Tick((int)quotation.Symbol, quotation.StartDateTime.ToString(mt5Format), quotation.Ask, quotation.Bid);
         if (ok != result) throw new Exception(result);
     }
 

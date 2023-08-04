@@ -22,11 +22,18 @@
                         </Grid.ColumnDefinitions>
 
                         <win2d:CanvasControl
-                            x:Name="graphCanvas"
-                            Grid.Row="0"
-                            Grid.RowSpan="2"
-                            Grid.Column="2" />
+                            x:Name="centuryAxisCanvas"
+                            Grid.Row="1"
+                            Grid.Column="0" />
+                        <win2d:CanvasControl
+                            x:Name="pipsAxisCanvas"
+                            Grid.Row="1"
+                            Grid.Column="1" />
 
+                        <win2d:CanvasControl
+                            x:Name="graphCanvas"
+                            Grid.Row="1"
+                            Grid.Column="2" />
                         <win2d:CanvasControl
                             x:Name="debugCanvas"
                             Grid.Row="1"
@@ -43,18 +50,7 @@
                         <win2d:CanvasControl
                             x:Name="xAxisCanvas"
                             Grid.Row="0"
-                            Grid.Column="2"/>
-
-                        <win2d:CanvasControl
-                            x:Name="centuryAxisCanvas"
-                            Grid.Row="0"
-                            Grid.RowSpan="2"
-                            Grid.Column="0" />
-                        <win2d:CanvasControl
-                            x:Name="pipsAxisCanvas"
-                            Grid.Row="0"
-                            Grid.RowSpan="2"
-                            Grid.Column="1" />
+                            Grid.Column="2" />
 
                     </Grid>
                 </ControlTemplate>

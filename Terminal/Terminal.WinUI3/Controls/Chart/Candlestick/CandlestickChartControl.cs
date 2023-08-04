@@ -3,33 +3,38 @@
   |                                       CandlestickChartControl.cs |
   +------------------------------------------------------------------+*/
 
+using System.Diagnostics;
 using System.Numerics;
-using Windows.UI;
 using Common.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas.UI.Xaml;
+using Microsoft.UI;
 using Microsoft.UI.Xaml.Input;
+using Terminal.WinUI3.Contracts.Models;
 using Terminal.WinUI3.Models.Chart;
-using Terminal.WinUI3.Models.Kernel;
+using Terminal.WinUI3.Models.Kernels;
+using Windows.UI;
+using Terminal.WinUI3.Models.Notifications;
 
 namespace Terminal.WinUI3.Controls.Chart.Candlestick;
 
-public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candlestick, CandlestickKernel>
+public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candlestick, Candlesticks>
 {
-    private Vector2[] _highData = null!;
-    private Vector2[] _lowData = null!;
-    private Vector2[] _openData = null!;
-    private Vector2[] _closeData = null!;
+    private Vector2[] _high = null!;
+    private Vector2[] _low = null!;
+    private Vector2[] _open = null!;
+    private Vector2[] _close = null!;
+    private DateTime[] _dateTime = null!;
 
-    private const int MinOcThickness = 3;
+    private const int MinOcThickness = 3; //todo: make it configurable
+    private const int Space = 1; //todo: make it configurable
     private int _ocThickness = MinOcThickness;
     private int _hlThickness = (MinOcThickness - 1) / 2;
-    private const int Space = 1;
 
-    public CandlestickChartControl(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, CandlestickKernel kernel, Color baseColor, Color quoteColor, ILogger<Chart.Base.ChartControlBase> logger) : base(configuration, symbol, isReversed, tickValue, kernel, baseColor, quoteColor, logger)
+    public CandlestickChartControl(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, Candlesticks candlesticks, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, symbol, isReversed, tickValue, candlesticks, notifications, baseColor, quoteColor, logger)
     {
         DefaultStyleKey = typeof(CandlestickChartControl);
     }
@@ -48,62 +53,66 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
         CanvasGeometry highLowDownGeometries;
         CanvasGeometry openCloseUpGeometries;
         CanvasGeometry openCloseDownGeometries;
-       
-        var ask = Kernel[KernelShift].Ask;
-        YZeroPrice = ask + Pips * Digits / 2d - VerticalShift * Digits;
+        CanvasGeometry flatGeometries;
 
         DrawData();
+        DrawNotifications();
         Execute();
+        return;
 
         void DrawData()
         {
-            var offset = IsReversed ? GraphHeight : 0;
             using var highLowUpCpb = new CanvasPathBuilder(args.DrawingSession);
             using var highLowDownCpb = new CanvasPathBuilder(args.DrawingSession);
             using var openCloseUpCpb = new CanvasPathBuilder(args.DrawingSession);
             using var openCloseDownCpb = new CanvasPathBuilder(args.DrawingSession);
-            var end = Math.Min(Units - HorizontalShift, Kernel.Count);
+            using var flatCpb = new CanvasPathBuilder(args.DrawingSession);
 
+            var end = Math.Min(Units - HorizontalShift, DataSource.Count);
             for (var unit = 0; unit < end; unit++)
             {
-                var high = Kernel[unit + KernelShift].High;
-                var low = Kernel[unit + KernelShift].Low;
-                var open = Kernel[unit + KernelShift].Open;
-                var close = Kernel[unit + KernelShift].Close;
+                var high = DataSource[unit + KernelShift].High;
+                var low = DataSource[unit + KernelShift].Low;
+                var open = DataSource[unit + KernelShift].Open;
+                var close = DataSource[unit + KernelShift].Close;
+                var dateTime = DataSource[unit + KernelShift].StartDateTime;
 
-                var yHigh = (YZeroPrice - high) / Digits * VerticalScale;
-                var yLow = (YZeroPrice - low) / Digits * VerticalScale;
-                var yOpen = (YZeroPrice - open) / Digits * VerticalScale;
-                var yClose = (YZeroPrice - close) / Digits * VerticalScale;
+                var yHigh = (ViewPort.High - high) / Digits * VerticalScale;
+                var yLow = (ViewPort.High - low) / Digits * VerticalScale;
+                var yOpen = (ViewPort.High - open) / Digits * VerticalScale;
+                var yClose = (ViewPort.High - close) / Digits * VerticalScale;
 
-                _highData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - yHigh) : (float)yHigh;
-                _lowData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - yLow) : (float)yLow;
-                _openData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - yOpen) : (float)yOpen;
-                _closeData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - yClose) : (float)yClose;
+                _high[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yHigh) : (float)yHigh;
+                _low[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yLow) : (float)yLow;
+                _open[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yOpen) : (float)yOpen;
+                _close[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yClose) : (float)yClose;
+                _dateTime[unit + HorizontalShift] = dateTime;
 
                 if (open < close)
                 {
-                    highLowUpCpb.BeginFigure(_lowData[unit + HorizontalShift]);
-                    highLowUpCpb.AddLine(_highData[unit + HorizontalShift]);
+                    highLowUpCpb.BeginFigure(_low[unit + HorizontalShift]);
+                    highLowUpCpb.AddLine(_high[unit + HorizontalShift]);
                     highLowUpCpb.EndFigure(CanvasFigureLoop.Open);
 
-                    openCloseUpCpb.BeginFigure(_closeData[unit + HorizontalShift]);
-                    openCloseUpCpb.AddLine(_openData[unit + HorizontalShift]);
+                    openCloseUpCpb.BeginFigure(_close[unit + HorizontalShift]);
+                    openCloseUpCpb.AddLine(_open[unit + HorizontalShift]);
                     openCloseUpCpb.EndFigure(CanvasFigureLoop.Open);
                 }
                 else if (open > close)
                 {
-                    highLowDownCpb.BeginFigure(_lowData[unit + HorizontalShift]);
-                    highLowDownCpb.AddLine(_highData[unit + HorizontalShift]);
+                    highLowDownCpb.BeginFigure(_low[unit + HorizontalShift]);
+                    highLowDownCpb.AddLine(_high[unit + HorizontalShift]);
                     highLowDownCpb.EndFigure(CanvasFigureLoop.Open);
 
-                    openCloseDownCpb.BeginFigure(_closeData[unit + HorizontalShift]);
-                    openCloseDownCpb.AddLine(_openData[unit + HorizontalShift]);
+                    openCloseDownCpb.BeginFigure(_close[unit + HorizontalShift]);
+                    openCloseDownCpb.AddLine(_open[unit + HorizontalShift]);
                     openCloseDownCpb.EndFigure(CanvasFigureLoop.Open);
                 }
                 else
                 {
-                    //todo
+                    flatCpb.BeginFigure(_low[unit + HorizontalShift]);
+                    flatCpb.AddLine(_high[unit + HorizontalShift]);
+                    flatCpb.EndFigure(CanvasFigureLoop.Open);
                 }
             }
 
@@ -111,14 +120,110 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
             highLowDownGeometries = CanvasGeometry.CreatePath(highLowDownCpb);
             openCloseUpGeometries = CanvasGeometry.CreatePath(openCloseUpCpb);
             openCloseDownGeometries = CanvasGeometry.CreatePath(openCloseDownCpb);
+            flatGeometries = CanvasGeometry.CreatePath(flatCpb);
         }
+
+        void DrawNotifications()
+        {
+            var notifications = Notifications.GetAllNotifications(Symbol, ViewPort);
+
+            foreach (var notification in notifications)
+            {
+                switch (notification.Type)
+                {
+                    case NotificationType.Candlestick:
+                        var index = Array.IndexOf(_dateTime, ((IDateTimeNotification)notification).DateTime);
+                        notification.StartPoint.X = notification.EndPoint.X = _open[index].X;
+                        notification.StartPoint.Y = (float)GraphHeight;
+                        notification.EndPoint.Y = 0f;
+                        DrawLine(notification);
+                        args.DrawingSession.DrawText(notification.Description, notification.EndPoint, Colors.Gray, VerticalTextFormat);
+                        break;
+                    case NotificationType.Price:
+                        notification.StartPoint.X = 0f; 
+                        notification.EndPoint.X = (float)GraphWidth;
+                        notification.StartPoint.Y = notification.EndPoint.Y = GetPositionY(((IPriceNotification)notification).Price);
+                        DrawLine(notification);
+                        args.DrawingSession.DrawText(notification.Description, notification.StartPoint, Colors.Gray, HorizontalTextFormat);
+                        break;
+                    default: throw new ArgumentOutOfRangeException();
+                }
+            }
+        }
+
         void Execute()
         {
             args.DrawingSession.DrawGeometry(highLowUpGeometries, BaseColor, _hlThickness);
             args.DrawingSession.DrawGeometry(highLowDownGeometries, QuoteColor, _hlThickness);
             args.DrawingSession.DrawGeometry(openCloseUpGeometries, BaseColor, _ocThickness);
             args.DrawingSession.DrawGeometry(openCloseDownGeometries, QuoteColor, _ocThickness);
+            args.DrawingSession.DrawGeometry(flatGeometries, Colors.Gray, _hlThickness);
         }
+
+
+        void DrawLine(NotificationBase notification)
+        {
+            if (!notification.IsSelected)
+            {
+                args.DrawingSession.DrawLine(notification.StartPoint, notification.EndPoint, Colors.Gray, 0.5f, NotificationStrokeStyle);
+            }
+            else
+            {
+                args.DrawingSession.DrawLine(notification.StartPoint, notification.EndPoint, Colors.Yellow, 1.0f, NotificationStrokeStyleSelected);
+                DrawSquares(args.DrawingSession, notification, Colors.Yellow);
+            }
+        }
+    }
+
+    protected override void GraphCanvas_OnPointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (IsVerticalLineRequested)
+        {
+            DeselectAllLines();
+            var index = GetIndex((float)e.GetCurrentPoint(GraphCanvas).Position.X, _open);
+            var closestDateTime = _dateTime[index + HorizontalShift];
+            var unit = index + KernelShift;
+            Debug.Assert(closestDateTime == DataSource[unit].StartDateTime);
+
+            var notification = new CandlestickNotification
+            {
+                Symbol = Symbol,
+                Type = NotificationType.Candlestick,
+                DateTime = closestDateTime,
+                IsSelected = true,
+                Description = DataSource[unit].ToString(),
+                StartPoint = new Vector2(),
+                EndPoint = new Vector2()
+            };
+            
+            Notifications.Add(notification);
+            Invalidate();
+            IsVerticalLineRequested = false;
+            return;
+        }
+
+        if (IsHorizontalLineRequested)
+        {
+            DeselectAllLines();
+            var price = GetPrice((float)e.GetCurrentPoint(GraphCanvas).Position.Y);
+            var notification = new PriceNotification
+            {
+                Symbol = Symbol,
+                Type = NotificationType.Price,
+                Price = price,
+                IsSelected = true,
+                StartPoint = new Vector2(),
+                EndPoint = new Vector2(),
+                Description = price.ToString(PriceTextFormat)
+            };
+
+            Notifications.Add(notification);
+            Invalidate();
+            IsHorizontalLineRequested = false;
+            return;
+        }
+
+        base.GraphCanvas_OnPointerPressed(sender, e);
     }
 
     protected override void XAxisCanvas_OnPointerReleased(object sender, PointerRoutedEventArgs e)
@@ -131,23 +236,25 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
         AdjustThickness();
 
         HorizontalShift = Math.Clamp(HorizontalShift, 0, Math.Max(0, Units - 1));
-        KernelShift = (int)Math.Max(0, ((Kernel.Count - Units) / 100d) * (100 - KernelShiftPercent));
+        KernelShift = (int)Math.Max(0, ((DataSource.Count - Units) / 100d) * (100 - KernelShiftPercent));
 
         HorizontalScale = GraphWidth / (Units - 1);
 
-        _highData = new Vector2[Units];
-        _lowData = new Vector2[Units];
-        _openData = new Vector2[Units];
-        _closeData = new Vector2[Units];
+        _high = new Vector2[Units];
+        _low = new Vector2[Units];
+        _open = new Vector2[Units];
+        _close = new Vector2[Units];
+        _dateTime = new DateTime[Units];
 
-        for (var unit = 0; unit < Units; unit++)
+        var chartIndex = 0;
+        do
         {
-            var x = (float)((Units - 1 - unit) * HorizontalScale);
-            _highData[unit] = new Vector2 { X = x };
-            _lowData[unit] = new Vector2 { X = x };
-            _openData[unit] = new Vector2 { X = x };
-            _closeData[unit] = new Vector2 { X = x };
-        }
+            var x = (float)((Units - chartIndex - 1) * HorizontalScale);
+            _high[chartIndex] = new Vector2 { X = x };
+            _low[chartIndex] = new Vector2 { X = x };
+            _open[chartIndex] = new Vector2 { X = x };
+            _close[chartIndex] = new Vector2 { X = x };
+        } while (++chartIndex < Units);
 
         EnqueueMessage(MessageType.Trace, $"W: {GraphWidth}, maxU: {MaxUnits}, U%: {UnitsPercent}, U: {Units}, HS: {HorizontalShift}, KS: {KernelShift}, KS%: {KernelShiftPercent}");
         Invalidate();
@@ -166,6 +273,38 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
         if (_hlThickness < (MinOcThickness - 1) / 2)
         {
             _hlThickness = (MinOcThickness - 1) / 2;
+        }
+    }
+
+    protected override void MoveSelectedNotification(double deltaX, double deltaY)
+    {
+        var notification = Notifications.GetSelectedNotification(Symbol);
+        switch (notification.Type)
+        {
+            case NotificationType.Candlestick:
+                var x = notification.StartPoint.X - (float)deltaX;
+                var index = GetIndex(x, _open);
+                var closestDateTime = _dateTime[index + HorizontalShift];
+                var unit = index + KernelShift;
+                Debug.Assert(closestDateTime == DataSource[unit].StartDateTime);
+                ((IDateTimeNotification)notification).DateTime = closestDateTime;
+                notification.Description = DataSource[unit].ToString();
+                break;
+            case NotificationType.Price:
+                float y;
+                if (IsReversed)
+                {
+                    y = notification.StartPoint.Y + (float)deltaY;
+                }
+                else
+                {
+                    y = notification.StartPoint.Y - (float)deltaY;
+                }
+                var price = GetPrice(y);
+                ((IPriceNotification)notification).Price = price;
+                notification.Description = price.ToString(PriceTextFormat);
+                break;
+            default: throw new ArgumentOutOfRangeException($@" protected override void GraphCanvas_OnPointerMoved(object sender, PointerRoutedEventArgs e)");
         }
     }
 }

@@ -33,7 +33,6 @@
             Value="{x:Bind Path=ViewModel.UnitsPercent, Mode=TwoWay}" />
         <ContentControl
             Grid.Row="1"
-            Grid.RowSpan="2"
             Grid.Column="0"
             HorizontalContentAlignment="Stretch"
             VerticalContentAlignment="Stretch"
@@ -51,26 +50,25 @@
                 Grid.Column="0"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
-                Orientation="Horizontal"
-                Background="Black">
+                Orientation="Horizontal">
                 <ToggleButton
                     Margin="3,3,3,3"
-                    IsChecked="{x:Bind Path=ViewModel.IsTicksSelected, Mode=OneWay}"
-                    IsEnabled="{x:Bind Path=ViewModel.IsTicksEnabled, Mode=OneWay}"
                     Command="{x:Bind Path=ViewModel.TicksCommand, Mode=OneWay}"
-                    Content="Ticks" />
+                    Content="Ticks"
+                    IsChecked="{x:Bind Path=ViewModel.IsTicksSelected, Mode=OneWay}"
+                    IsEnabled="{x:Bind Path=ViewModel.IsTicksEnabled, Mode=OneWay}" />
                 <ToggleButton
                     Margin="3,3,3,3"
-                    IsChecked="{x:Bind Path=ViewModel.IsCandlesticksSelected, Mode=OneWay}"
-                    IsEnabled="{x:Bind Path=ViewModel.IsCandlesticksEnabled, Mode=OneWay}"
                     Command="{x:Bind Path=ViewModel.CandlesticksCommand, Mode=OneWay}"
-                    Content="Candles" />
+                    Content="Candles"
+                    IsChecked="{x:Bind Path=ViewModel.IsCandlesticksSelected, Mode=OneWay}"
+                    IsEnabled="{x:Bind Path=ViewModel.IsCandlesticksEnabled, Mode=OneWay}" />
                 <ToggleButton
                     Margin="3,3,3,3"
-                    IsChecked="{x:Bind Path=ViewModel.IsThresholdBarsSelected, Mode=OneWay}"
-                    IsEnabled="{x:Bind Path=ViewModel.IsThresholdBarsEnabled, Mode=OneWay}"
                     Command="{x:Bind Path=ViewModel.ThresholdBarsCommand, Mode=OneWay}"
-                    Content="Thresholds" />
+                    Content="Thresholds"
+                    IsChecked="{x:Bind Path=ViewModel.IsThresholdBarsSelected, Mode=OneWay}"
+                    IsEnabled="{x:Bind Path=ViewModel.IsThresholdBarsEnabled, Mode=OneWay}" />
                 <Button
                     Margin="3,3,3,3"
                     Command="{x:Bind Path=ViewModel.ClearMessagesCommand, Mode=OneWay}"
@@ -79,14 +77,21 @@
                     Margin="3,3,3,3"
                     Command="{x:Bind Path=ViewModel.ResetShiftsCommand, Mode=OneWay}"
                     Content="Reset" />
+                <ToggleButton
+                    Margin="3,3,3,3"
+                    Content="VL"
+                    IsChecked="{x:Bind Path=ViewModel.IsVerticalLineRequested, Mode=TwoWay}" />
+                <ToggleButton
+                    Margin="3,3,3,3"
+                    Content="HL"
+                    IsChecked="{x:Bind Path=ViewModel.IsHorizontalLineRequested, Mode=TwoWay}" />
             </StackPanel>
             <StackPanel
                 Grid.Row="0"
                 Grid.Column="1"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center"
-                Orientation="Horizontal"
-                Background="Black">
+                Orientation="Horizontal">
                 <Button
                     Margin="3,3,3,3"
                     Background="{x:Bind Path=ViewModel.Currency, Converter={StaticResource CurrencyToColor}, Mode=OneWay}"

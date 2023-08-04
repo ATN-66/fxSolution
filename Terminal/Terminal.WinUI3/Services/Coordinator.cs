@@ -76,25 +76,26 @@ public class Coordinator : ICoordinator
             await _accountReady.Task.ConfigureAwait(false);
 
             //todo: remove this
-            //_startDateTime = new DateTime(2023, 7, 4, 0, 0, 0);
-            //_nowDateTime = new DateTime(2023, 7, 4, 23, 0, 0);
+            _startDateTime = new DateTime(2023, 6, 5, 0, 0, 0);
+            _nowDateTime = new DateTime(2023, 6, 5, 23, 0, 0);
 
             var diff = (_nowDateTime - _startDateTime).Hours + 1;
             Debug.WriteLine($"Coordinator.StartAsync: difference = {diff} hours");
             var historicalData = await _dataService.LoadDataAsync(_startDateTime, _nowDateTime).ConfigureAwait(false);
+            // todo: load notifications ...
             await _kernelService.InitializeAsync(historicalData).ConfigureAwait(false);
 
-            var (dataTask, dataChannel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
-            var dataProcessingTask = DataProcessingTaskAsync(token);
+            //var (dataTask, dataChannel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
+            //var dataProcessingTask = DataProcessingTaskAsync(token);
 
             await _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
                 _splashScreenService.HideSplash();
             }).ConfigureAwait(true);
 
-            //await Task.WhenAll(executiveTask, executiveProcessingTask).ConfigureAwait(false);
-            await Task.WhenAll(dataTask, dataProcessingTask, executiveTask, executiveProcessingTask).ConfigureAwait(false);
-            await dataChannel.ShutdownAsync().ConfigureAwait(false);
+            await Task.WhenAll(executiveTask, executiveProcessingTask).ConfigureAwait(false);
+            //await Task.WhenAll(dataTask, dataProcessingTask, executiveTask, executiveProcessingTask).ConfigureAwait(false);
+            //await dataChannel.ShutdownAsync().ConfigureAwait(false);
             await executiveChannel.ShutdownAsync().ConfigureAwait(false);
         }
         catch (Exception exception)

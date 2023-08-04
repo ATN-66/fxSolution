@@ -68,7 +68,7 @@ public class FileService : DataSource, IFileService
                     throw;
                 }
             })
-            .OrderBy(quotation => quotation.DateTime)
+            .OrderBy(quotation => quotation.StartDateTime)
             .ToList();
 
         return quotations;

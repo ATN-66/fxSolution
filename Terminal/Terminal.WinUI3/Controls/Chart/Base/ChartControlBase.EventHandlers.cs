@@ -7,6 +7,7 @@ using System.Numerics;
 using Windows.UI;
 using Common.ExtensionsAndHelpers;
 using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
@@ -30,12 +31,17 @@ public abstract partial class ChartControlBase
     protected double PreviousMouseX;
     protected double PreviousMouseY;
 
-    protected double CenturyAxisWidth;
-    protected double YAxisWidth;
-    protected double XAxisHeight;
+    private double _centuryAxisWidth;
+    protected double PipsAxisWidth;
+    private double _xAxisHeight;
+
+    protected readonly CanvasStrokeStyle NotificationStrokeStyleSelected = new() { DashStyle = CanvasDashStyle.DashDot };
+    protected readonly CanvasStrokeStyle NotificationStrokeStyle = new() { DashStyle = CanvasDashStyle.Solid };
+    protected readonly CanvasTextFormat VerticalTextFormat = new() { FontSize = 10f, FontFamily = AxisFontFamily, WordWrapping = CanvasWordWrapping.NoWrap, Direction = CanvasTextDirection.TopToBottomThenRightToLeft };
+    protected readonly CanvasTextFormat HorizontalTextFormat = new () { FontSize = 10f, FontFamily = AxisFontFamily, WordWrapping = CanvasWordWrapping.NoWrap, Direction = CanvasTextDirection.LeftToRightThenTopToBottom};
 
     private const string CenturyAxisTextSample = "-1234";
-    private const string YAxisTextSample = "1.234";
+    private const string PipsAxisTextSample = "1.234";
     private const string XAxisTextSample = "HH:mm:ss";
 
     protected readonly CanvasTextFormat YAxisCanvasTextFormat = new() { FontSize = AxisFontSize, FontFamily = AxisFontFamily, WordWrapping = CanvasWordWrapping.NoWrap }; 
@@ -45,7 +51,7 @@ public abstract partial class ChartControlBase
     protected const float AxisFontSize = 12f;
     private const float AskBidFontSize = 18f;
     protected const float CurrencyFontSize = AskBidFontSize * 2;
-    private const string AxisFontFamily = "Lucida Console";
+    protected const string AxisFontFamily = "Lucida Console";
     private const string CurrencyFontFamily = "Lucida Console";
 
     protected readonly string PriceTextFormat;
@@ -78,8 +84,8 @@ public abstract partial class ChartControlBase
         base.OnApplyTemplate();
 
         GraphCanvas = GetTemplateChild("graphCanvas") as CanvasControl;
-        PipsAxisCanvas = GetTemplateChild("pipsAxisCanvas") as CanvasControl;
         CenturyAxisCanvas = GetTemplateChild("centuryAxisCanvas") as CanvasControl;
+        PipsAxisCanvas = GetTemplateChild("pipsAxisCanvas") as CanvasControl;
         XAxisCanvas = GetTemplateChild("xAxisCanvas") as CanvasControl;
         _textCanvas = GetTemplateChild("textCanvas") as CanvasControl;
         DebugCanvas = GetTemplateChild("debugCanvas") as CanvasControl;
@@ -95,8 +101,8 @@ public abstract partial class ChartControlBase
         GraphCanvas.PointerMoved += GraphCanvas_OnPointerMoved;
         GraphCanvas.PointerReleased += GraphCanvas_OnPointerReleased;
         GraphCanvas.DoubleTapped += GraphCanvas_OnDoubleTapped;
-
-        CenturyAxisCanvas.SizeChanged += CenturyAxisCanvasOnSizeChanged;
+        
+        GraphCanvas.SizeChanged += CenturyAxisCanvasOnSizeChanged;
         CenturyAxisCanvas.Draw += CenturyAxisCanvasOnDraw;
         CenturyAxisCanvas.PointerEntered += CenturyAxisCanvasOnPointerEntered;
         CenturyAxisCanvas.PointerExited += CenturyAxisCanvasOnPointerExited;
@@ -104,7 +110,6 @@ public abstract partial class ChartControlBase
         CenturyAxisCanvas.PointerMoved += CenturyAxisCanvasOnPointerMoved;
         CenturyAxisCanvas.PointerReleased += CenturyAxisCanvasOnPointerReleased;
 
-        PipsAxisCanvas.SizeChanged += PipsAxisCanvasOnSizeChanged;
         PipsAxisCanvas.Draw += PipsAxisCanvasOnDraw;
         PipsAxisCanvas.PointerEntered += PipsAxisCanvasOnPointerEntered;
         PipsAxisCanvas.PointerExited += PipsAxisCanvasOnPointerExited;
@@ -136,18 +141,17 @@ public abstract partial class ChartControlBase
 
         if (CenturyAxisCanvas != null)
         {
-            CenturyAxisCanvas.SizeChanged -= PipsAxisCanvasOnSizeChanged;
-            CenturyAxisCanvas.Draw -= PipsAxisCanvasOnDraw;
-            CenturyAxisCanvas.PointerEntered -= PipsAxisCanvasOnPointerEntered;
-            CenturyAxisCanvas.PointerExited -= PipsAxisCanvasOnPointerExited;
-            CenturyAxisCanvas.PointerPressed -= PipsAxisCanvasOnPointerPressed;
-            CenturyAxisCanvas.PointerMoved -= PipsAxisCanvasOnPointerMoved;
-            CenturyAxisCanvas.PointerReleased -= PipsAxisCanvasOnPointerReleased;
+            CenturyAxisCanvas.SizeChanged -= CenturyAxisCanvasOnSizeChanged;
+            CenturyAxisCanvas.Draw -= CenturyAxisCanvasOnDraw;
+            CenturyAxisCanvas.PointerEntered -= CenturyAxisCanvasOnPointerEntered;
+            CenturyAxisCanvas.PointerExited -= CenturyAxisCanvasOnPointerExited;
+            CenturyAxisCanvas.PointerPressed -= CenturyAxisCanvasOnPointerPressed;
+            CenturyAxisCanvas.PointerMoved -= CenturyAxisCanvasOnPointerMoved;
+            CenturyAxisCanvas.PointerReleased -= CenturyAxisCanvasOnPointerReleased;
         }
 
         if (PipsAxisCanvas != null)
         {
-            PipsAxisCanvas.SizeChanged -= PipsAxisCanvasOnSizeChanged;
             PipsAxisCanvas.Draw -= PipsAxisCanvasOnDraw;
             PipsAxisCanvas.PointerEntered -= PipsAxisCanvasOnPointerEntered;
             PipsAxisCanvas.PointerExited -= PipsAxisCanvasOnPointerExited;
@@ -180,6 +184,36 @@ public abstract partial class ChartControlBase
 
     protected virtual void GraphCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
+        _xAxisHeight = CalculateTextBounds(XAxisTextSample, YAxisCanvasTextFormat).height;
+        var xAxisCanvas = sender as CanvasControl ?? throw new InvalidOperationException("Canvas controls not found.");
+        var grid = xAxisCanvas.Parent as Grid;
+        if (grid == null || grid.RowDefinitions.Count <= 1)
+        {
+            throw new InvalidOperationException("Canvas control has no parent grid.");
+        }
+        var axisRow = grid.RowDefinitions[0];
+        axisRow.Height = new GridLength(_xAxisHeight);
+
+        _centuryAxisWidth = CalculateTextBounds(CenturyAxisTextSample, YAxisCanvasTextFormat).width;
+        var centuryAxisCanvas = sender as CanvasControl ?? throw new InvalidOperationException("Canvas controls not found.");
+        var centuryAxisGrid = centuryAxisCanvas.Parent as Grid;
+        if (centuryAxisGrid == null || centuryAxisGrid.ColumnDefinitions.Count <= 1)
+        {
+            throw new InvalidOperationException("Canvas control has no parent grid.");
+        }
+        var centuryAxisColumn = centuryAxisGrid.ColumnDefinitions[0];
+        centuryAxisColumn.Width = new GridLength(_centuryAxisWidth);
+
+        PipsAxisWidth = CalculateTextBounds(PipsAxisTextSample, YAxisCanvasTextFormat).width;
+        var pipsAxisCanvas = sender as CanvasControl ?? throw new InvalidOperationException("Canvas controls not found.");
+        var pipsAxisGrid = pipsAxisCanvas.Parent as Grid;
+        if (pipsAxisGrid == null || pipsAxisGrid.ColumnDefinitions.Count <= 1)
+        {
+            throw new InvalidOperationException("Canvas control has no parent grid.");
+        }
+        var pipsAxisColumn = pipsAxisGrid.ColumnDefinitions[1];
+        pipsAxisColumn.Width = new GridLength(PipsAxisWidth);
+
         GraphHeight = e.NewSize.Height;
         Centuries = MinCenturies + (MaxCenturies - MinCenturies) * CenturiesPercent / 100d;
 
@@ -192,24 +226,14 @@ public abstract partial class ChartControlBase
         Units = Math.Max(MinUnits, MaxUnits * UnitsPercent / 100);
         HorizontalScale = GraphWidth / (Units - 1);
     }
-    protected abstract int CalculateMaxUnits();
     protected abstract void GraphCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args);
-
-    private void GraphCanvas_OnPointerPressed(object sender, PointerRoutedEventArgs e)
+    protected virtual void GraphCanvas_OnPointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        try
-        {
-            ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
-            IsMouseDown = true;
-            PreviousMouseY = (float)e.GetCurrentPoint(GraphCanvas).Position.Y;
-            PreviousMouseX = (float)e.GetCurrentPoint(GraphCanvas).Position.X;
-            GraphCanvas!.CapturePointer(e.Pointer);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "GraphCanvas_OnPointerPressed");
-            throw;
-        }
+        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
+        IsMouseDown = true;
+        PreviousMouseY = (float)e.GetCurrentPoint(GraphCanvas).Position.Y;
+        PreviousMouseX = (float)e.GetCurrentPoint(GraphCanvas).Position.X;
+        GraphCanvas!.CapturePointer(e.Pointer);
     }
     protected abstract void GraphCanvas_OnPointerMoved(object sender, PointerRoutedEventArgs e);
     protected virtual void GraphCanvas_OnPointerReleased(object sender, PointerRoutedEventArgs e)
@@ -220,27 +244,7 @@ public abstract partial class ChartControlBase
     }
     protected abstract void GraphCanvas_OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e);
 
-    protected virtual void CenturyAxisCanvasOnSizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        try
-        {
-            var cmAxisCanvas = sender as CanvasControl ?? throw new InvalidOperationException("Canvas controls not found.");
-            CenturyAxisWidth = CalculateTextBounds(CenturyAxisTextSample, YAxisCanvasTextFormat).width;
-            var grid = cmAxisCanvas.Parent as Grid;
-            if (grid == null || grid.ColumnDefinitions.Count <= 1)
-            {
-                throw new InvalidOperationException("Canvas control has no parent grid.");
-            }
-
-            var axisColumn = grid.ColumnDefinitions[0];
-            axisColumn.Width = new GridLength(CenturyAxisWidth);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "CenturyAxisCanvasOnSizeChanged");
-            throw;
-        }
-    }
+    protected abstract void CenturyAxisCanvasOnSizeChanged(object sender, SizeChangedEventArgs e);
     protected abstract void CenturyAxisCanvasOnDraw(CanvasControl sender, CanvasDrawEventArgs args);
     private void CenturyAxisCanvasOnPointerEntered(object sender, PointerRoutedEventArgs e)
     {
@@ -258,27 +262,6 @@ public abstract partial class ChartControlBase
     {
     }
 
-    private void PipsAxisCanvasOnSizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        try
-        {
-            var yAxisCanvas = sender as CanvasControl ?? throw new InvalidOperationException("Canvas controls not found.");
-            YAxisWidth = CalculateTextBounds(YAxisTextSample, YAxisCanvasTextFormat).width;
-            var grid = yAxisCanvas.Parent as Grid;
-            if (grid == null || grid.ColumnDefinitions.Count <= 1)
-            {
-                throw new InvalidOperationException("Canvas control has no parent grid.");
-            }
-
-            var axisColumn = grid.ColumnDefinitions[1];
-            axisColumn.Width = new GridLength(YAxisWidth);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "PipsAxisCanvasOnSizeChanged");
-            throw;
-        }
-    }
     protected abstract void PipsAxisCanvasOnDraw(CanvasControl sender, CanvasDrawEventArgs args);
     private void PipsAxisCanvasOnPointerEntered(object sender, PointerRoutedEventArgs e)
     {
@@ -306,17 +289,9 @@ public abstract partial class ChartControlBase
     }
     private void PipsAxisCanvasOnPointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        try
-        {
-            IsMouseDown = true;
-            PreviousMouseY = (float)e.GetCurrentPoint(PipsAxisCanvas).Position.Y;
-            PipsAxisCanvas!.CapturePointer(e.Pointer);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "PipsAxisCanvasOnPointerPressed");
-            throw;
-        }
+        //IsMouseDown = true;
+        //PreviousMouseY = (float)e.GetCurrentPoint(PipsAxisCanvas).Position.Y;
+        //PipsAxisCanvas!.CapturePointer(e.Pointer);
     }
     private void PipsAxisCanvasOnPointerMoved(object sender, PointerRoutedEventArgs e)
     {
@@ -351,103 +326,61 @@ public abstract partial class ChartControlBase
     }
     private void PipsAxisCanvasOnPointerReleased(object sender, PointerRoutedEventArgs e)
     {
-        try
-        {
-            IsMouseDown = false;
-            PipsAxisCanvas!.ReleasePointerCapture(e.Pointer);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "PipsAxisCanvasOnPointerReleased");
-            throw;
-        }
+        //IsMouseDown = false;
+        //PipsAxisCanvas!.ReleasePointerCapture(e.Pointer);
     }
 
     private void XAxisCanvas_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        try
-        {
-            var xAxisCanvas = sender as CanvasControl ?? throw new InvalidOperationException("Canvas controls not found.");
-            XAxisHeight = CalculateTextBounds(XAxisTextSample, YAxisCanvasTextFormat).height;
-            var grid = xAxisCanvas.Parent as Grid;
-            if (grid == null || grid.RowDefinitions.Count <= 1)
-            {
-                throw new InvalidOperationException("Canvas control has no parent grid.");
-            }
-
-            var axisRow = grid.RowDefinitions[0];
-            axisRow.Height = new GridLength(XAxisHeight);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "XAxisCanvas_OnSizeChanged");
-            throw;
-        }
     }
     protected abstract void XAxisCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args);
     private void XAxisCanvas_OnPointerEntered(object sender, PointerRoutedEventArgs e)
     {
-        try
-        {
-            ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "XAxisCanvas_OnPointerEntered");
-            throw;
-        }
+        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
     }
     private void XAxisCanvas_OnPointerExited(object sender, PointerRoutedEventArgs e)
     {
-        try
-        {
-            ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "XAxisCanvas_OnPointerExited");
-            throw;
-        }
+        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
     }
     private void XAxisCanvas_OnPointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        try
-        {
-            IsMouseDown = true;
-            PreviousMouseX = (float)e.GetCurrentPoint(XAxisCanvas).Position.X;
-            XAxisCanvas!.CapturePointer(e.Pointer);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "XAxisCanvas_OnPointerPressed");
-            throw;
-        }
+        //try
+        //{
+        //    IsMouseDown = true;
+        //    PreviousMouseX = (float)e.GetCurrentPoint(XAxisCanvas).Position.X;
+        //    XAxisCanvas!.CapturePointer(e.Pointer);
+        //}
+        //catch (Exception exception)
+        //{
+        //    LogExceptionHelper.LogException(Logger, exception, "XAxisCanvas_OnPointerPressed");
+        //    throw;
+        //}
     }
     private void XAxisCanvas_OnPointerMoved(object sender, PointerRoutedEventArgs e)
     {
-        try
-        {
-            if (!IsMouseDown)
-            {
-                return;
-            }
+        //try
+        //{
+        //    if (!IsMouseDown)
+        //    {
+        //        return;
+        //    }
 
-            var currentMouseX = (float)e.GetCurrentPoint(XAxisCanvas).Position.X;
-            var deltaX = PreviousMouseX - currentMouseX;
-            var unitsChange = deltaX / HorizontalScale;
+        //    var currentMouseX = (float)e.GetCurrentPoint(XAxisCanvas).Position.X;
+        //    var deltaX = PreviousMouseX - currentMouseX;
+        //    var unitsChange = deltaX / HorizontalScale;
 
-            if (Math.Abs(unitsChange) < 1)
-            {
-                return;
-            }
+        //    if (Math.Abs(unitsChange) < 1)
+        //    {
+        //        return;
+        //    }
 
-            PreviousMouseX = currentMouseX;
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "XAxisCanvas_OnPointerMoved");
-            throw;
-        }
+        //    PreviousMouseX = currentMouseX;
+        //}
+        //catch (Exception exception)
+        //{
+        //    LogExceptionHelper.LogException(Logger, exception, "XAxisCanvas_OnPointerMoved");
+        //    throw;
+        //}
     }
     protected abstract void XAxisCanvas_OnPointerReleased(object sender, PointerRoutedEventArgs e);
 
@@ -482,4 +415,6 @@ public abstract partial class ChartControlBase
         _textCanvas!.Invalidate();
         DebugCanvas!.Invalidate();
     }
+
+    protected abstract int CalculateMaxUnits();
 }

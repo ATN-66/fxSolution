@@ -1,26 +1,26 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                           Terminal.WinUI3.AI.Data|
-  |                                             CandlestickKernel.cs |
+  |                                    Terminal.WinUI3.Models.Kernels|
+  |                                                  Candlesticks.cs |
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using Terminal.WinUI3.Models.Entities;
 
-namespace Terminal.WinUI3.Models.Kernel;
+namespace Terminal.WinUI3.Models.Kernels;
 
-public class CandlestickKernel : Kernel<Candlestick>
+public class Candlesticks : DataSourceKernel<Candlestick>
 {
     public override void AddRange(IEnumerable<Quotation> quotations)
     {
         var groupedQuotations = quotations.GroupBy(q => new
         {
             q.Symbol,
-            q.DateTime.Year,
-            q.DateTime.Month,
-            q.DateTime.Day,
-            q.DateTime.Hour,
-            q.DateTime.Minute
+            q.StartDateTime.Year,
+            q.StartDateTime.Month,
+            q.StartDateTime.Day,
+            q.StartDateTime.Hour,
+            q.StartDateTime.Minute
         });
 
         var candlesticks = groupedQuotations.Select(group => new Candlestick
@@ -28,7 +28,7 @@ public class CandlestickKernel : Kernel<Candlestick>
             Symbol = group.Key.Symbol,
             Ask = group.Last().Ask,
             Bid = group.Last().Bid,
-            DateTime = new DateTime(group.Key.Year, group.Key.Month, group.Key.Day, group.Key.Hour, group.Key.Minute, 0),
+            StartDateTime = new DateTime(group.Key.Year, group.Key.Month, group.Key.Day, group.Key.Hour, group.Key.Minute, 0),
 
             Minutes = new DateTime(group.Key.Year, group.Key.Month, group.Key.Day, group.Key.Hour, group.Key.Minute, 0).ElapsedMinutesFromJanuaryFirstOf1970(),
             Open = group.First().Ask,
@@ -42,7 +42,7 @@ public class CandlestickKernel : Kernel<Candlestick>
 
     public override void Add(Quotation quotation)
     {
-        if (Items[^1].DateTime.AddMinutes(1) > quotation.DateTime)
+        if (Items[^1].StartDateTime.AddMinutes(1) > quotation.StartDateTime)
         {
             var lastCandle = Items[^1];
             lastCandle.Ask = quotation.Ask;
@@ -67,9 +67,9 @@ public class CandlestickKernel : Kernel<Candlestick>
                 Symbol = quotation.Symbol,
                 Ask = quotation.Ask,
                 Bid = quotation.Bid,
-                DateTime = new DateTime(quotation.DateTime.Year, quotation.DateTime.Month, quotation.DateTime.Day, quotation.DateTime.Hour, quotation.DateTime.Minute, 0),
+                StartDateTime = new DateTime(quotation.StartDateTime.Year, quotation.StartDateTime.Month, quotation.StartDateTime.Day, quotation.StartDateTime.Hour, quotation.StartDateTime.Minute, 0),
 
-                Minutes = new DateTime(quotation.DateTime.Year, quotation.DateTime.Month, quotation.DateTime.Day, quotation.DateTime.Hour, quotation.DateTime.Minute, 0).ElapsedMinutesFromJanuaryFirstOf1970(),
+                Minutes = new DateTime(quotation.StartDateTime.Year, quotation.StartDateTime.Month, quotation.StartDateTime.Day, quotation.StartDateTime.Hour, quotation.StartDateTime.Minute, 0).ElapsedMinutesFromJanuaryFirstOf1970(),
                 Open = quotation.Ask,
                 Close = quotation.Ask,
                 High = quotation.Ask,

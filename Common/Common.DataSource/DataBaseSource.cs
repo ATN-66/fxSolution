@@ -160,13 +160,13 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
     public async Task<int> SaveDataAsync(IList<Quotation> quotations)
     {
         int result = default;
-        var groupedWeekly = quotations.GroupBy(q => new { q.DateTime.Year, Week = Week(q.DateTime) }).ToList();
+        var groupedWeekly = quotations.GroupBy(q => new { q.StartDateTime.Year, Week = Week(q.StartDateTime) }).ToList();
 
         foreach (var weekGroup in groupedWeekly)
         {
             var yearNumber = weekGroup.Key.Year;
             var weekNumber = weekGroup.Key.Week;
-            var quotationsWeekly = weekGroup.OrderBy(q => q.DateTime).ToList();
+            var quotationsWeekly = weekGroup.OrderBy(q => q.StartDateTime).ToList();
 
             var tableName = GetTableName(weekNumber);
             Check_ISO_8601(yearNumber, weekNumber, quotationsWeekly);
@@ -230,7 +230,7 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
 
         foreach (var quotation in quotationsWeekly)
         {
-            dataTable.Rows.Add((int)quotation.Symbol, quotation.DateTime.ToString(_dataBaseSourceDateTimeFormat), quotation.Ask.ToString("F8"), quotation.Bid.ToString("F8"));
+            dataTable.Rows.Add((int)quotation.Symbol, quotation.StartDateTime.ToString(_dataBaseSourceDateTimeFormat), quotation.Ask.ToString("F8"), quotation.Bid.ToString("F8"));
         }
 
         return dataTable;
@@ -280,8 +280,8 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
     }
     private static void Check_ISO_8601(int yearNumber, int weekNumber, IList<Quotation> list)
     {
-        var start = list[0].DateTime.Date;
-        var end = list[^1].DateTime.Date;
+        var start = list[0].StartDateTime.Date;
+        var end = list[^1].StartDateTime.Date;
 
         switch (yearNumber, weekNumber)
         {

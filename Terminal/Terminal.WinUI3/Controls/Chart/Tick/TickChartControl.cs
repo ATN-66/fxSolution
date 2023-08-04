@@ -14,16 +14,17 @@ using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Terminal.WinUI3.Models.Chart;
-using Terminal.WinUI3.Models.Kernel;
+using Terminal.WinUI3.Models.Kernels;
+using Terminal.WinUI3.Contracts.Models;
 
 namespace Terminal.WinUI3.Controls.Chart.Tick;
 
-public class TickChartControl : ChartControl<Quotation, QuotationKernel>
+public class TickChartControl : ChartControl<Quotation, Quotations>
 {
     private Vector2[] _askData = null!;
     private Vector2[] _bidData = null!;
 
-    public TickChartControl(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, QuotationKernel kernel, Color baseColor, Color quoteColor, ILogger<Chart.Base.ChartControlBase> logger) : base(configuration, symbol, isReversed, tickValue, kernel, baseColor, quoteColor, logger)
+    public TickChartControl(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, Quotations ticks, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, symbol, isReversed, tickValue, ticks, notifications, baseColor, quoteColor, logger)
     {
         DefaultStyleKey = typeof(TickChartControl);
     }
@@ -43,6 +44,7 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
         DrawData(drawGeometries, fillGeometries);
         DrawArrowLines(drawGeometries, fillGeometries);
         Execute(drawGeometries, fillGeometries);
+        return;
 
         void DrawData(ICollection<CanvasGeometry> dg, ICollection<CanvasGeometry> fg)
         {
@@ -56,30 +58,28 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
 
         CanvasGeometry GetDrawDataGeometry(CanvasPathBuilder cpb)
         {
-            var offset = IsReversed ? GraphHeight : 0;
-            var ask = Kernel[KernelShift].Ask;
-            var bid = Kernel[KernelShift].Bid;
-            YZeroPrice = ask + Pips * Digits / 2f - VerticalShift * Digits;
+            var ask = DataSource[KernelShift].Ask;
+            var bid = DataSource[KernelShift].Bid;
 
-            _askData[HorizontalShift].Y = IsReversed ? (float)(offset - (YZeroPrice - ask) / Digits * VerticalScale) : (float)((YZeroPrice - ask) / Digits * VerticalScale);
-            _bidData[HorizontalShift].Y = IsReversed ? (float)(offset - (YZeroPrice - bid) / Digits * VerticalScale) : (float)((YZeroPrice - bid) / Digits * VerticalScale);
+            _askData[HorizontalShift].Y = IsReversed ? (float)(GraphHeight - (ViewPort.High - ask) / Digits * VerticalScale) : (float)((ViewPort.High - ask) / Digits * VerticalScale);
+            _bidData[HorizontalShift].Y = IsReversed ? (float)(GraphHeight - (ViewPort.High - bid) / Digits * VerticalScale) : (float)((ViewPort.High - bid) / Digits * VerticalScale);
             cpb.BeginFigure(_bidData[HorizontalShift]);
             cpb.AddLine(_askData[HorizontalShift]);
 
             try
             {
-                var end = Math.Min(Units - HorizontalShift, Kernel.Count);
+                var end = Math.Min(Units - HorizontalShift, DataSource.Count);
                 for (var unit = 1; unit < end; unit++)
                 {
-                    var yAsk = (YZeroPrice - Kernel[unit + KernelShift].Ask) / Digits * VerticalScale;
-                    _askData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - yAsk) : (float)yAsk;
+                    var yAsk = (ViewPort.High - DataSource[unit + KernelShift].Ask) / Digits * VerticalScale;
+                    _askData[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yAsk) : (float)yAsk;
                     cpb.AddLine(_askData[unit + HorizontalShift]);
                 }
 
                 for (var unit = end - 1; unit >= 1; unit--)
                 {
-                    var yBid = (YZeroPrice - Kernel[unit + KernelShift].Bid) / Digits * VerticalScale;
-                    _bidData[unit + HorizontalShift].Y = IsReversed ? (float)(offset - yBid) : (float)yBid;
+                    var yBid = (ViewPort.High - DataSource[unit + KernelShift].Bid) / Digits * VerticalScale;
+                    _bidData[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yBid) : (float)yBid;
                     cpb.AddLine(_bidData[unit + HorizontalShift]);
                 }
 
@@ -199,33 +199,76 @@ public class TickChartControl : ChartControl<Quotation, QuotationKernel>
             throw;
         }
 
-        IsMouseDown = false;
-        XAxisCanvas!.ReleasePointerCapture(e.Pointer);
+        //IsMouseDown = false;
+        //XAxisCanvas!.ReleasePointerCapture(e.Pointer);
 
-        GraphCanvas!.Invalidate();
-        PipsAxisCanvas!.Invalidate();
-        XAxisCanvas!.Invalidate();
-        DebugCanvas!.Invalidate();
+        //GraphCanvas!.Invalidate();
+        //PipsAxisCanvas!.Invalidate();
+        //XAxisCanvas!.Invalidate();
+        //DebugCanvas!.Invalidate();
     }
 
     protected override void OnUnitsChanged()
     {
         HorizontalShift = Math.Clamp(HorizontalShift, 0, Math.Max(0, Units - 1));
-        KernelShift = (int)Math.Max(0, ((Kernel.Count - Units) / 100d) * (100 - KernelShiftPercent));
+        KernelShift = (int)Math.Max(0, ((DataSource.Count - Units) / 100d) * (100 - KernelShiftPercent));
 
         HorizontalScale = GraphWidth / (Units - 1);
 
         _askData = new Vector2[Units];
         _bidData = new Vector2[Units];
 
-        for (var unit = 0; unit < Units; unit++)
+        var chartIndex = 0;
+        do
         {
-            var x = (float)((Units - 1 - unit) * HorizontalScale);
-            _askData[unit] = new Vector2 { X = x };
-            _bidData[unit] = new Vector2 { X = x };
-        }
+            var x = (float)((Units - chartIndex - 1) * HorizontalScale);
+            _askData[chartIndex] = new Vector2 { X = x };
+            _bidData[chartIndex] = new Vector2 { X = x };
+        } while (++chartIndex < Units);
 
         EnqueueMessage(MessageType.Trace, $"W: {GraphWidth}, maxU: {MaxUnits}, U%: {UnitsPercent}, U: {Units}, HS: {HorizontalShift}, KS: {KernelShift}, KS%: {KernelShiftPercent}");
         Invalidate();
     }
+
+    protected override void GraphCanvas_OnPointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        base.GraphCanvas_OnPointerReleased(sender, e);
+
+        //if (VerticalLines.Any(line => line.IsSelected))
+        //{
+        //    var selectedLine = VerticalLines.FirstOrDefault(line => line.IsSelected);
+        //    if (selectedLine != null)
+        //    {
+        //        var distances = _askData.Skip(HorizontalShift).Take(Math.Min(Units - HorizontalShift, DataSource.Count)).
+        //            Select((vector, index) => new { Distance = Math.Abs(vector.X - selectedLine.StartPoint.X), Index = index }).ToList();
+        //        var minDistanceTuple = distances.Aggregate((a, b) => a.Distance < b.Distance ? a : b);
+        //        var index = minDistanceTuple.Index;
+        //        var closestVector = _askData[index + HorizontalShift];
+        //        selectedLine.StartPoint.X = selectedLine.EndPoint.X = closestVector.X;
+        //        var unit = index + KernelShift;
+        //        selectedLine.Description = DataSource[unit].ToString();
+        //        Invalidate();
+        //    }
+        //    else
+        //    {
+        //        throw new InvalidOperationException("selected vertical line is null");
+        //    }
+        //}
+
+        //if (HorizontalLines.Any(line => line.IsSelected))
+        //{
+        //    var selectedLine = HorizontalLines.FirstOrDefault(line => line.IsSelected);
+        //    if (selectedLine != null)
+        //    {
+        //        EnqueueMessage(MessageType.Information, $"y: {selectedLine.StartPoint.Y}");
+        //        Invalidate();
+        //    }
+        //    else
+        //    {
+        //        throw new InvalidOperationException("selected horizontal line is null");
+        //    }
+        //}
+    }
+
+    protected override void MoveSelectedNotification(double deltaX, double deltaY) => throw new NotImplementedException();
 }

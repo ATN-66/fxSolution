@@ -1,13 +1,13 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                           Terminal.WinUI3.AI.Data|
-  |                                               QuotationKernel.cs |
+  |                                    Terminal.WinUI3.Models.Kernels|
+  |                                                    Quotations.cs |
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
 
-namespace Terminal.WinUI3.Models.Kernel;
+namespace Terminal.WinUI3.Models.Kernels;
 
-public class QuotationKernel : Kernel<Quotation>
+public class Quotations : DataSourceKernel<Quotation>
 {
     public override void AddRange(IEnumerable<Quotation> quotations)
     {

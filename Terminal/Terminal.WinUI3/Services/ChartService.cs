@@ -10,14 +10,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Terminal.WinUI3.Contracts.Services;
-using Terminal.WinUI3.Controls;
-using Terminal.WinUI3.Models.Kernel;
 using Terminal.WinUI3.Contracts.Models;
 using Terminal.WinUI3.Controls.Chart.Candlestick;
 using Terminal.WinUI3.Controls.Chart.ThresholdBar;
 using Terminal.WinUI3.Controls.Chart.Tick;
 using Terminal.WinUI3.Models.Entities;
 using Terminal.WinUI3.Models.Chart;
+using Terminal.WinUI3.Models.Kernels;
 using ChartControlBase = Terminal.WinUI3.Controls.Chart.Base.ChartControlBase;
 
 namespace Terminal.WinUI3.Services;
@@ -29,7 +28,8 @@ public class ChartService : IChartService
     private readonly IDispatcherService _dispatcherService;
 
     private Dictionary<Symbol, Dictionary<bool, ChartType>> _settings = null!;
-    private Dictionary<Symbol, Dictionary<ChartType, IKernel>> _kernels = null!;
+    private Dictionary<Symbol, Dictionary<ChartType, IDataSourceKernel<IChartItem>>> _dataSources = null!;
+    private Dictionary<Symbol, INotificationsKernel> _notifications = new();
 
     private readonly Dictionary<Symbol, TickChartControl?> _tickChartsReversed = new();
     private readonly Dictionary<Symbol, TickChartControl?> _tickCharts = new();
@@ -62,9 +62,10 @@ public class ChartService : IChartService
         App.MainWindow.GetAppWindow().Closing += OnClosing;
     }
 
-    public Task InitializeAsync(Dictionary<Symbol, Dictionary<ChartType, IKernel>> kernels)
+    public Task InitializeAsync(Dictionary<Symbol, Dictionary<ChartType, IDataSourceKernel<IChartItem>>> dataSourceKernels, Dictionary<Symbol, INotificationsKernel> eventsKernels)
     {
-        _kernels = kernels;
+        _dataSources = dataSourceKernels;
+        _notifications = eventsKernels;
 
         foreach (var symbol in Enum.GetValues(typeof(Symbol)))
         {
@@ -94,9 +95,9 @@ public class ChartService : IChartService
 
         return chartType switch
         {
-            ChartType.Ticks => await GetChartAsync<TickChartControl, Quotation, QuotationKernel>(symbol, chartType, isReversed).ConfigureAwait(false),
-            ChartType.Candlesticks => await GetChartAsync<CandlestickChartControl, Candlestick, CandlestickKernel>(symbol, chartType, isReversed).ConfigureAwait(false),
-            ChartType.ThresholdBars => await GetChartAsync<ThresholdBarChartControl, ThresholdBar, ThresholdBarKernel>(symbol, chartType, isReversed).ConfigureAwait(false),
+            ChartType.Ticks => await GetChartAsync<TickChartControl, Quotation, Quotations>(symbol, chartType, isReversed).ConfigureAwait(false),
+            ChartType.Candlesticks => await GetChartAsync<CandlestickChartControl, Candlestick, Candlesticks>(symbol, chartType, isReversed).ConfigureAwait(false),
+            ChartType.ThresholdBars => await GetChartAsync<ThresholdBarChartControl, ThresholdBar, ThresholdBars>(symbol, chartType, isReversed).ConfigureAwait(false),
             _ => throw new ArgumentException($@"Unsupported chart type {chartType}", nameof(chartType))
         };
     }
@@ -105,20 +106,22 @@ public class ChartService : IChartService
     {
         return chartType switch
         {
-            ChartType.Ticks => await GetChartAsync<TickChartControl, Quotation, QuotationKernel>(symbol, chartType, isReversed).ConfigureAwait(false),
-            ChartType.Candlesticks => await GetChartAsync<CandlestickChartControl, Candlestick, CandlestickKernel>(symbol, chartType, isReversed).ConfigureAwait(false),
-            ChartType.ThresholdBars => await GetChartAsync<ThresholdBarChartControl, ThresholdBar, ThresholdBarKernel>(symbol, chartType, isReversed).ConfigureAwait(false),
+            ChartType.Ticks => await GetChartAsync<TickChartControl, Quotation, Quotations>(symbol, chartType, isReversed).ConfigureAwait(false),
+            ChartType.Candlesticks => await GetChartAsync<CandlestickChartControl, Candlestick, Candlesticks>(symbol, chartType, isReversed).ConfigureAwait(false),
+            ChartType.ThresholdBars => await GetChartAsync<ThresholdBarChartControl, ThresholdBar, ThresholdBars>(symbol, chartType, isReversed).ConfigureAwait(false),
             _ => throw new ArgumentException($@"Unsupported chart type {chartType}", nameof(chartType))
         };
     }
 
-    public async Task<T> GetChartAsync<T, TItem, TK>(Symbol symbol, ChartType chartType, bool isReversed) where T : Controls.Chart.ChartControl<TItem, TK> where TItem : IChartItem where TK : IKernel<TItem>
+    public async Task<T> GetChartAsync<T, TItem, TK>(Symbol symbol, ChartType chartType, bool isReversed) where T : Controls.Chart.ChartControl<TItem, TK> where TItem : IChartItem where TK : IDataSourceKernel<TItem>
     {
         T result;
+        var notifications = _notifications[symbol];
+
         switch (chartType)
         {
             case ChartType.Ticks:
-                var quotationKernel = _kernels[symbol][ChartType.Ticks] as QuotationKernel ?? throw new InvalidCastException();
+                var quotations = _dataSources[symbol][ChartType.Ticks] as Quotations ?? throw new InvalidCastException();
                 if (isReversed)
                 {
                     if (_tickChartsReversed[symbol] != null)
@@ -126,7 +129,7 @@ public class ChartService : IChartService
                         DisposeChart(symbol, chartType, isReversed);
                         _tickChartsReversed[symbol] = null;
                     }
-                    _tickChartsReversed[symbol] = new TickChartControl(_configuration, symbol, true, _tickValues[symbol], quotationKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _tickChartsReversed[symbol] = new TickChartControl(_configuration, symbol, true, _tickValues[symbol], quotations, notifications, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     result = (_tickChartsReversed[symbol] as T)!;
                     RegisterChart(_tickChartsCounter, symbol, isReversed);
                 }
@@ -137,13 +140,13 @@ public class ChartService : IChartService
                         DisposeChart(symbol, chartType, isReversed);
                         _tickCharts[symbol] = null;
                     }
-                    _tickCharts[symbol] = new TickChartControl(_configuration, symbol, false, _tickValues[symbol], quotationKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _tickCharts[symbol] = new TickChartControl(_configuration, symbol, false, _tickValues[symbol], quotations, notifications, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     result = (_tickCharts[symbol] as T)!;
                     RegisterChart(_tickChartsCounter, symbol, isReversed);
                 }
                 break;
             case ChartType.Candlesticks:
-                var candlestickKernel = _kernels[symbol][ChartType.Candlesticks] as CandlestickKernel ?? throw new InvalidCastException();
+                var candlesticks = _dataSources[symbol][ChartType.Candlesticks] as Candlesticks ?? throw new InvalidCastException();
                 if (isReversed)
                 {
                     if (_candlestickChartsReversed[symbol] != null)
@@ -151,7 +154,7 @@ public class ChartService : IChartService
                         DisposeChart(symbol, chartType, isReversed);
                         _candlestickChartsReversed[symbol] = null;
                     }
-                    _candlestickChartsReversed[symbol] = new CandlestickChartControl(_configuration, symbol, true, _tickValues[symbol], candlestickKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _candlestickChartsReversed[symbol] = new CandlestickChartControl(_configuration, symbol, true, _tickValues[symbol], candlesticks, notifications, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     result = (_candlestickChartsReversed[symbol] as T)!;
                     RegisterChart(_candlestickChartsCounter, symbol, isReversed);
                 }
@@ -162,13 +165,13 @@ public class ChartService : IChartService
                         DisposeChart(symbol, chartType, isReversed);
                         _candlestickCharts[symbol] = null;
                     }
-                    _candlestickCharts[symbol] = new CandlestickChartControl(_configuration, symbol, false, _tickValues[symbol], candlestickKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _candlestickCharts[symbol] = new CandlestickChartControl(_configuration, symbol, false, _tickValues[symbol], candlesticks, notifications, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     result = (_candlestickCharts[symbol] as T)!;
                     RegisterChart(_candlestickChartsCounter, symbol, isReversed);
                 }
                 break;
             case ChartType.ThresholdBars:
-                var thresholdBarKernel = _kernels[symbol][ChartType.ThresholdBars] as ThresholdBarKernel ?? throw new InvalidCastException();
+                var thresholdBars = _dataSources[symbol][ChartType.ThresholdBars] as ThresholdBars ?? throw new InvalidCastException();
                 if (isReversed)
                 {
                     if (_thresholdBarChartsReversed[symbol] != null)
@@ -176,7 +179,7 @@ public class ChartService : IChartService
                         DisposeChart(symbol, chartType, isReversed);
                         _thresholdBarChartsReversed[symbol] = null;
                     }
-                    _thresholdBarChartsReversed[symbol] = new ThresholdBarChartControl(_configuration, symbol, true, _tickValues[symbol], thresholdBarKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _thresholdBarChartsReversed[symbol] = new ThresholdBarChartControl(_configuration, symbol, true, _tickValues[symbol], thresholdBars, notifications, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     result = (_thresholdBarChartsReversed[symbol] as T)!;
                     RegisterChart(_thresholdBarChartsCounter, symbol, isReversed);
                 }
@@ -187,7 +190,7 @@ public class ChartService : IChartService
                         DisposeChart(symbol, chartType, isReversed);
                         _thresholdBarCharts[symbol] = null;
                     }
-                    _thresholdBarCharts[symbol] = new ThresholdBarChartControl(_configuration, symbol, false, _tickValues[symbol], thresholdBarKernel, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
+                    _thresholdBarCharts[symbol] = new ThresholdBarChartControl(_configuration, symbol, false, _tickValues[symbol], thresholdBars, notifications, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     result = (_thresholdBarCharts[symbol] as T)!;
                     RegisterChart(_thresholdBarChartsCounter, symbol, isReversed);
                 }

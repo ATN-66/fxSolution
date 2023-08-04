@@ -118,19 +118,19 @@ public abstract class DataSource : IDataSource
     private void ProcessData(DateTime dateTime, IEnumerable<Quotation> quotations)
     {
         var done = false;
-        var groupedByYear = quotations.GroupBy(q => new QuotationKey { Year = q.DateTime.Year });
+        var groupedByYear = quotations.GroupBy(q => new QuotationKey { Year = q.StartDateTime.Year });
         foreach (var yearGroup in groupedByYear)
         {
             var year = yearGroup.Key.Year;
-            var groupedByMonth = yearGroup.GroupBy(q => new QuotationKey { Month = q.DateTime.Month });
+            var groupedByMonth = yearGroup.GroupBy(q => new QuotationKey { Month = q.StartDateTime.Month });
             foreach (var monthGroup in groupedByMonth)
             {
                 var month = monthGroup.Key.Month;
-                var groupedByDay = monthGroup.GroupBy(q => new QuotationKey { Day = q.DateTime.Day });
+                var groupedByDay = monthGroup.GroupBy(q => new QuotationKey { Day = q.StartDateTime.Day });
                 foreach (var dayGroup in groupedByDay)
                 {
                     var day = dayGroup.Key.Day;
-                    var groupedByHour = dayGroup.GroupBy(q => new QuotationKey { Hour = q.DateTime.Hour });
+                    var groupedByHour = dayGroup.GroupBy(q => new QuotationKey { Hour = q.StartDateTime.Hour });
                     foreach (var hourGroup in groupedByHour)
                     {
                         var hour = hourGroup.Key.Hour;
