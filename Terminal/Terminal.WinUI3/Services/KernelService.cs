@@ -35,7 +35,7 @@ public class KernelService : IKernelService
         {
             var symbolKernels = new Dictionary<ChartType, IDataSourceKernel<IChartItem>>();
 
-            var thresholdKernel = new ThresholdBars(symbol, _thresholdsInPips[symbol], _digits[symbol], _fileService);
+            var thresholdKernel = new ThresholdBars(_thresholdsInPips[symbol], _digits[symbol]);
             thresholdKernel.AddRange(symbolQuotations);
             symbolKernels[ChartType.ThresholdBars] = thresholdKernel;
 

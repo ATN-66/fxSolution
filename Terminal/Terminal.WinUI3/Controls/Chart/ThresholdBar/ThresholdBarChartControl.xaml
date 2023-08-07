@@ -33,7 +33,9 @@
                         <win2d:CanvasControl
                             x:Name="graphCanvas"
                             Grid.Row="1"
-                            Grid.Column="2" />
+                            Grid.Column="2"
+                            ContextFlyout="{Binding GraphMenuFlyout}" 
+                            DataContext="{Binding DataContext, RelativeSource={RelativeSource TemplatedParent}}" />
                         <win2d:CanvasControl
                             x:Name="debugCanvas"
                             Grid.Row="1"

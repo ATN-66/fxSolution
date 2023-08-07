@@ -16,7 +16,7 @@ var liveDataQueue = new BlockingCollection<Quotation>();
 
 ConcurrentDictionary<DateTime, List<Quotation>> hoursCache = new();
 ConcurrentQueue<DateTime> hoursKeys = new();
-//DateTime currentHoursKey;
+//Start currentHoursKey;
 
 const int deadline = int.MaxValue;
 //const int maxHoursInCache = 168;
@@ -26,9 +26,9 @@ const int maxSendMessageSize = 50 * 1024 * 1024; //e.g. 50 MB wo 4
 const int maxReceiveMessageSize = 50 * 1024 * 1024; //e.g. 50 MB wo 4
 
 // ReSharper disable once JoinDeclarationAndInitializer
-//DateTime endTime;
+//Start endTime;
 // ReSharper disable once JoinDeclarationAndInitializer
-//DateTime startTime;
+//Start startTime;
 // ReSharper disable once JoinDeclarationAndInitializer
 IEnumerable<Quotation> result;
 
@@ -46,57 +46,57 @@ Console.WriteLine("Terminal simulator...");
 
 #region MyRegion
 // 1 hour empty
-//startTime = new DateTime(2023, 1, 1, 0, 0, 0);
-//endTime = new DateTime(2023, 1, 1, 0, 0, 0);
+//startTime = new Start(2023, 1, 1, 0, 0, 0);
+//endTime = new Start(2023, 1, 1, 0, 0, 0);
 //Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
 //result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
 //Console.WriteLine(result.Count().ToString("##,##0"));
 
 // 1 hour full
-//endTime = new DateTime(2023, 6, 30, 0, 0, 0);
+//endTime = new Start(2023, 6, 30, 0, 0, 0);
 //startTime = endTime;
 //Console.Write(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours. -> ");
 //result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
 //Console.WriteLine(result.Count().ToString("##,##0"));
 
 // 1 day 
-//endTime = new DateTime(2023, 6, 28, 23, 0, 0);
+//endTime = new Start(2023, 6, 28, 23, 0, 0);
 //startTime = endTime.AddDays(-1).AddHours(1);
 //Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
 //result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
 //Console.WriteLine(result.Count().ToString("##,##0"));
 
 // 1st week
-//startTime = new DateTime(2023, 1, 1, 0, 0, 0);
-//endTime = new DateTime(2023, 1, 7, 23, 0, 0);
+//startTime = new Start(2023, 1, 1, 0, 0, 0);
+//endTime = new Start(2023, 1, 7, 23, 0, 0);
 //Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
 //result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
 //Console.WriteLine(result.Count().ToString("##,##0"));
 
 // 2nd weeks
-//startTime = new DateTime(2023, 1, 8, 0, 0, 0);
-//endTime = new DateTime(2023, 1, 14, 23, 0, 0);
+//startTime = new Start(2023, 1, 8, 0, 0, 0);
+//endTime = new Start(2023, 1, 14, 23, 0, 0);
 //Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
 //result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
 //Console.WriteLine(result.Count().ToString("##,##0"));
 
 
 // Now
-//startTime = DateTime.Now;
+//startTime = Start.Now;
 //endTime = startTime;
 //Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
 //result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
 //Console.WriteLine(result.Count().ToString("##,##0"));
 
 // 3 hours before now
-//endTime = DateTime.Now;
+//endTime = Start.Now;
 //startTime = endTime.AddHours(-3);
 //Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
 //result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
 //Console.WriteLine(result.Count().ToString("##,##0"));
 
 // 1 week before now
-//endTime = DateTime.Now;
+//endTime = Start.Now;
 //startTime = endTime.AddDays(-7).AddHours(1);
 //Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
 //result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
@@ -105,7 +105,7 @@ Console.WriteLine("Terminal simulator...");
 
 //this one will get:
 //Timeout expired.  The timeout period elapsed prior to obtaining a connection from the pool.  This may have occurred because all pooled connections were in use and max pool size was reached.
-//startTime = new DateTime(2023, 1, 1, 0, 0, 0);
+//startTime = new Start(2023, 1, 1, 0, 0, 0);
 //endTime = startTime.AddDays(7).AddHours(-1);
 //do
 //{
@@ -114,13 +114,13 @@ Console.WriteLine("Terminal simulator...");
 //    Console.WriteLine(result.Count().ToString("##,##0"));
 //    startTime = startTime.Add(new TimeSpan(7, 0, 0, 0));
 //    endTime = startTime.AddDays(7).AddHours(-1);
-//} while (endTime <= new DateTime(2023, 12, 31)); 
+//} while (endTime <= new Start(2023, 12, 31)); 
 #endregion
 
 
 ////1) get last known time of data from db <-- todo:
 //// 2) send request to get saved data
-//endTime = DateTime.Now;
+//endTime = Start.Now;
 //startTime = endTime.AddDays(-1).AddHours(-0);
 //Console.WriteLine(Math.Ceiling((endTime - startTime).TotalHours + 1).ToString(CultureInfo.InvariantCulture) + " hours.");
 //result = await GetHistoricalDataAsync(startTime, endTime).ConfigureAwait(false);
@@ -140,7 +140,7 @@ Console.WriteLine("End of the program. Press any key to exit ...");
 Console.ReadKey();
 return 1;
 
-//async Task<IEnumerable<Quotation>> GetHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
+//async Task<IEnumerable<Quotation>> GetHistoricalDataAsync(Start startDateTimeInclusive, Start endDateTimeInclusive)
 //{
 //    var difference = Math.Ceiling((endDateTimeInclusive - startDateTimeInclusive).TotalHours);
 //    switch (difference)
@@ -153,7 +153,7 @@ return 1;
 //    var quotations = new List<Quotation>();
 //    var start = startDateTimeInclusive.Date.AddHours(startDateTimeInclusive.Hour);
 //    var end = endDateTimeInclusive.Date.AddHours(endDateTimeInclusive.Hour).AddHours(1);
-//    currentHoursKey = DateTime.Now.Date.AddHours(DateTime.Now.Hour);
+//    currentHoursKey = Start.Now.Date.AddHours(Start.Now.Hour);
 //    var key = start;
 //    do
 //    {
@@ -185,7 +185,7 @@ return 1;
 //    while (key < end);
 //    return quotations;
 //}
-//async Task LoadHistoricalDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
+//async Task LoadHistoricalDataAsync(Start startDateTimeInclusive, Start endDateTimeInclusive)
 //{
 //    if (!startDateTimeInclusive.Equals(endDateTimeInclusive))
 //    {
@@ -214,15 +214,15 @@ return 1;
 //        throw;
 //    }
 //}
-//async Task<IList<Quotation>> GetDataAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive)
+//async Task<IList<Quotation>> GetDataAsync(Start startDateTimeInclusive, Start endDateTimeInclusive)
 //{
 //    var channelOptions = new GrpcChannelOptions { MaxSendMessageSize = maxSendMessageSize, MaxReceiveMessageSize = maxReceiveMessageSize };
 //    using var channel = GrpcChannel.ForAddress(grpcChannelAddress, channelOptions);
 //    var client = new DataProvider.DataProviderClient(channel);
-//    var callOptions = new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(deadline)));
+//    var callOptions = new CallOptions(deadline: Start.UtcNow.Add(TimeSpan.FromSeconds(deadline)));
 //    var request = new DataRequest
 //    {
-//        StartDateTime = Timestamp.FromDateTime(startDateTimeInclusive.ToUniversalTime()),
+//        Start = Timestamp.FromDateTime(startDateTimeInclusive.ToUniversalTime()),
 //        Code = DataRequest.Types.StatusCode.HistoricalData
 //    };
 
@@ -268,26 +268,26 @@ return 1;
 //        throw;
 //    }
 //}
-//void ProcessData(DateTime dateTime, IEnumerable<Quotation> quotations)
+//void ProcessData(Start dateTime, IEnumerable<Quotation> quotations)
 //{
 //    var done = false;
-//    var groupedByYear = quotations.GroupBy(q => new QuotationKey { Year = q.DateTime.Year });
+//    var groupedByYear = quotations.GroupBy(q => new QuotationKey { Year = q.Start.Year });
 //    foreach (var yearGroup in groupedByYear)
 //    {
 //        var year = yearGroup.Key.Year;
-//        var groupedByMonth = yearGroup.GroupBy(q => new QuotationKey { Month = q.DateTime.Month });
+//        var groupedByMonth = yearGroup.GroupBy(q => new QuotationKey { Month = q.Start.Month });
 //        foreach (var monthGroup in groupedByMonth)
 //        {
 //            var month = monthGroup.Key.Month;
-//            var groupedByDay = monthGroup.GroupBy(q => new QuotationKey { Day = q.DateTime.Day });
+//            var groupedByDay = monthGroup.GroupBy(q => new QuotationKey { Day = q.Start.Day });
 //            foreach (var dayGroup in groupedByDay)
 //            {
 //                var day = dayGroup.Key.Day;
-//                var groupedByHour = dayGroup.GroupBy(q => new QuotationKey { Hour = q.DateTime.Hour });
+//                var groupedByHour = dayGroup.GroupBy(q => new QuotationKey { Hour = q.Start.Hour });
 //                foreach (var hourGroup in groupedByHour)
 //                {
 //                    var hour = hourGroup.Key.Hour;
-//                    var key = new DateTime(year, month, day, hour, 0, 0);
+//                    var key = new Start(year, month, day, hour, 0, 0);
 //                    var quotationsToSave = hourGroup.ToList();
 //                    SetData(key, quotationsToSave);
 //                    done = true;
@@ -302,7 +302,7 @@ return 1;
 //        SetData(dateTime, quotations: new List<Quotation>());
 //    }
 //}
-//void AddData(DateTime key, List<Quotation> quotations)
+//void AddData(Start key, List<Quotation> quotations)
 //{
 //    if (hoursCache.Count >= maxHoursInCache)
 //    {
@@ -327,11 +327,11 @@ return 1;
 //        hoursCache[key] = quotations;
 //    }
 //}
-//void SetData(DateTime key, List<Quotation> quotations)
+//void SetData(Start key, List<Quotation> quotations)
 //{
 //    AddData(key, quotations);
 //}
-//IEnumerable<Quotation> GetData(DateTime key)
+//IEnumerable<Quotation> GetData(Start key)
 //{
 //    hoursCache.TryGetValue(key, out var quotations);
 //    return quotations!;

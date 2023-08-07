@@ -69,13 +69,19 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
             using var flatCpb = new CanvasPathBuilder(args.DrawingSession);
 
             var end = Math.Min(Units - HorizontalShift, DataSource.Count);
+
+            for (var unit = 0; unit < HorizontalShift; unit++)
+            {
+                _dateTime[unit] = DateTime.MaxValue;
+            }
+
             for (var unit = 0; unit < end; unit++)
             {
                 var high = DataSource[unit + KernelShift].High;
                 var low = DataSource[unit + KernelShift].Low;
                 var open = DataSource[unit + KernelShift].Open;
                 var close = DataSource[unit + KernelShift].Close;
-                var dateTime = DataSource[unit + KernelShift].StartDateTime;
+                var dateTime = DataSource[unit + KernelShift].Start;
 
                 var yHigh = (ViewPort.High - high) / Digits * VerticalScale;
                 var yLow = (ViewPort.High - low) / Digits * VerticalScale;
@@ -126,13 +132,23 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
         void DrawNotifications()
         {
             var notifications = Notifications.GetAllNotifications(Symbol, ViewPort);
-
             foreach (var notification in notifications)
             {
+                int index;
                 switch (notification.Type)
                 {
+                    case NotificationType.ThresholdBar:
+                        var targetDateTime = ((IDateTimeNotification)notification).DateTime;
+                        var roundedDateTime = new DateTime(targetDateTime.Year, targetDateTime.Month, targetDateTime.Day, targetDateTime.Hour, targetDateTime.Minute, 0);
+                        index = FindClosestIndex(roundedDateTime);
+                        notification.StartPoint.X = notification.EndPoint.X = _open[index].X;
+                        notification.StartPoint.Y = (float)GraphHeight;
+                        notification.EndPoint.Y = 0f;
+                        DrawLine(notification);
+                        args.DrawingSession.DrawText(notification.Description, notification.EndPoint, Colors.Gray, VerticalTextFormat);
+                        break;
                     case NotificationType.Candlestick:
-                        var index = Array.IndexOf(_dateTime, ((IDateTimeNotification)notification).DateTime);
+                        index = Array.IndexOf(_dateTime, ((IDateTimeNotification)notification).DateTime);
                         notification.StartPoint.X = notification.EndPoint.X = _open[index].X;
                         notification.StartPoint.Y = (float)GraphHeight;
                         notification.EndPoint.Y = 0f;
@@ -160,7 +176,6 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
             args.DrawingSession.DrawGeometry(flatGeometries, Colors.Gray, _hlThickness);
         }
 
-
         void DrawLine(NotificationBase notification)
         {
             if (!notification.IsSelected)
@@ -173,6 +188,47 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
                 DrawSquares(args.DrawingSession, notification, Colors.Yellow);
             }
         }
+
+        int FindClosestIndex(DateTime target)
+        {
+            var index = Array.IndexOf(_dateTime, target);
+            if (index != -1)
+            {
+                return index;
+            }
+
+            int leftSearch = 1, rightSearch = 1;
+
+            while (true)
+            {
+                var leftIndex = Math.Max(0, index - leftSearch);
+                var rightIndex = Math.Min(_dateTime.Length - 1, index + rightSearch);
+
+                if (leftIndex == rightIndex) // reached bounds of array
+                {
+                    return leftIndex; // or throw an exception if you want to signal no close value found
+                }
+
+                if (_dateTime[leftIndex] < target && target < _dateTime[rightIndex])
+                {
+                    // decide which one is closer
+                    return (target - _dateTime[leftIndex] < _dateTime[rightIndex] - target) ? leftIndex : rightIndex;
+                }
+
+                if (_dateTime[leftIndex] < target)
+                {
+                    return leftIndex;
+                }
+
+                if (_dateTime[rightIndex] > target)
+                {
+                    return rightIndex;
+                }
+
+                leftSearch++;
+                rightSearch++;
+            }
+        }
     }
 
     protected override void GraphCanvas_OnPointerPressed(object sender, PointerRoutedEventArgs e)
@@ -183,7 +239,7 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
             var index = GetIndex((float)e.GetCurrentPoint(GraphCanvas).Position.X, _open);
             var closestDateTime = _dateTime[index + HorizontalShift];
             var unit = index + KernelShift;
-            Debug.Assert(closestDateTime == DataSource[unit].StartDateTime);
+            Debug.Assert(closestDateTime == DataSource[unit].Start);
 
             var notification = new CandlestickNotification
             {
@@ -199,27 +255,6 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
             Notifications.Add(notification);
             Invalidate();
             IsVerticalLineRequested = false;
-            return;
-        }
-
-        if (IsHorizontalLineRequested)
-        {
-            DeselectAllLines();
-            var price = GetPrice((float)e.GetCurrentPoint(GraphCanvas).Position.Y);
-            var notification = new PriceNotification
-            {
-                Symbol = Symbol,
-                Type = NotificationType.Price,
-                Price = price,
-                IsSelected = true,
-                StartPoint = new Vector2(),
-                EndPoint = new Vector2(),
-                Description = price.ToString(PriceTextFormat)
-            };
-
-            Notifications.Add(notification);
-            Invalidate();
-            IsHorizontalLineRequested = false;
             return;
         }
 
@@ -281,12 +316,15 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
         var notification = Notifications.GetSelectedNotification(Symbol);
         switch (notification.Type)
         {
+            case NotificationType.ThresholdBar:
+                notification.IsSelected = false;
+                break;
             case NotificationType.Candlestick:
                 var x = notification.StartPoint.X - (float)deltaX;
                 var index = GetIndex(x, _open);
                 var closestDateTime = _dateTime[index + HorizontalShift];
                 var unit = index + KernelShift;
-                Debug.Assert(closestDateTime == DataSource[unit].StartDateTime);
+                Debug.Assert(closestDateTime == DataSource[unit].Start);
                 ((IDateTimeNotification)notification).DateTime = closestDateTime;
                 notification.Description = DataSource[unit].ToString();
                 break;

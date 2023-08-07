@@ -16,11 +16,11 @@ public class Candlesticks : DataSourceKernel<Candlestick>
         var groupedQuotations = quotations.GroupBy(q => new
         {
             q.Symbol,
-            q.StartDateTime.Year,
-            q.StartDateTime.Month,
-            q.StartDateTime.Day,
-            q.StartDateTime.Hour,
-            q.StartDateTime.Minute
+            q.Start.Year,
+            q.Start.Month,
+            q.Start.Day,
+            q.Start.Hour,
+            q.Start.Minute
         });
 
         var candlesticks = groupedQuotations.Select(group => new Candlestick
@@ -28,9 +28,8 @@ public class Candlesticks : DataSourceKernel<Candlestick>
             Symbol = group.Key.Symbol,
             Ask = group.Last().Ask,
             Bid = group.Last().Bid,
-            StartDateTime = new DateTime(group.Key.Year, group.Key.Month, group.Key.Day, group.Key.Hour, group.Key.Minute, 0),
+            Start = new DateTime(group.Key.Year, group.Key.Month, group.Key.Day, group.Key.Hour, group.Key.Minute, 0),
 
-            Minutes = new DateTime(group.Key.Year, group.Key.Month, group.Key.Day, group.Key.Hour, group.Key.Minute, 0).ElapsedMinutesFromJanuaryFirstOf1970(),
             Open = group.First().Ask,
             Close = group.Last().Ask,
             High = group.Max(tick => tick.Ask),
@@ -42,7 +41,7 @@ public class Candlesticks : DataSourceKernel<Candlestick>
 
     public override void Add(Quotation quotation)
     {
-        if (Items[^1].StartDateTime.AddMinutes(1) > quotation.StartDateTime)
+        if (Items[^1].Start.AddMinutes(1) > quotation.Start)
         {
             var lastCandle = Items[^1];
             lastCandle.Ask = quotation.Ask;
@@ -67,9 +66,8 @@ public class Candlesticks : DataSourceKernel<Candlestick>
                 Symbol = quotation.Symbol,
                 Ask = quotation.Ask,
                 Bid = quotation.Bid,
-                StartDateTime = new DateTime(quotation.StartDateTime.Year, quotation.StartDateTime.Month, quotation.StartDateTime.Day, quotation.StartDateTime.Hour, quotation.StartDateTime.Minute, 0),
+                Start = new DateTime(quotation.Start.Year, quotation.Start.Month, quotation.Start.Day, quotation.Start.Hour, quotation.Start.Minute, 0),
 
-                Minutes = new DateTime(quotation.StartDateTime.Year, quotation.StartDateTime.Month, quotation.StartDateTime.Day, quotation.StartDateTime.Hour, quotation.StartDateTime.Minute, 0).ElapsedMinutesFromJanuaryFirstOf1970(),
                 Open = quotation.Ask,
                 Close = quotation.Ask,
                 High = quotation.Ask,

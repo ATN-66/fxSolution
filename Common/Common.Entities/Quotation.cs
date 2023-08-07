@@ -10,14 +10,14 @@ public class Quotation : IChartItem, IComparable
     public Quotation(Symbol symbol, DateTime dateTime, double ask, double bid)
     {
         Symbol = symbol;
-        StartDateTime = dateTime;
+        Start = dateTime;
         Ask = ask;
         Bid = bid;
     }
     
     public Symbol Symbol { get; }
-    public DateTime StartDateTime { get; }
-    public DateTime EndDateTime => StartDateTime;
+    public DateTime Start { get; }
+    public DateTime End => Start;
     public double Ask { get; }
     public double Bid { get; }
 
@@ -27,8 +27,8 @@ public class Quotation : IChartItem, IComparable
     {
         if (obj == null) return 1;
         var otherQuotation = (Quotation)obj;
-        if (StartDateTime < otherQuotation.StartDateTime) return -1;
-        if (StartDateTime > otherQuotation.StartDateTime) return 1;
+        if (Start < otherQuotation.Start) return -1;
+        if (Start > otherQuotation.Start) return 1;
         if (Symbol < otherQuotation.Symbol) return -1;
         if (Symbol > otherQuotation.Symbol) return 1;
         throw new InvalidOperationException("The duplicates found.");
@@ -70,16 +70,6 @@ public class Quotation : IChartItem, IComparable
 
     public override string ToString()
     {
-        return $"{Symbol}, {StartDateTime:D}, {StartDateTime:T}";
-        //return Symbol switch
-        //{
-        //    Symbol.EURUSD => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.00000}, {Bid:##0.00000}",
-        //    Symbol.EURGBP => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.00000}, {Bid:##0.00000}",
-        //    Symbol.GBPUSD => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.00000}, {Bid:##0.00000}",
-        //    Symbol.USDJPY => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.000}, {Bid:##0.000}",
-        //    Symbol.EURJPY => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.000}, {Bid:##0.000}",
-        //    Symbol.GBPJPY => $"{ID:000000}, {Symbol}, {DateTime:HH:mm:ss.fff}, {Ask:##0.000}, {Bid:##0.000}",
-        //    _ => throw new Exception(nameof(Symbol))
-        //};
+        return $"{Symbol}, {Start:D}, {Start:T}";
     }
 }

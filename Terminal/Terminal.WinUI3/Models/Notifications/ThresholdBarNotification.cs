@@ -1,12 +1,15 @@
 ﻿/*+------------------------------------------------------------------+
   |                              Terminal.WinUI3.Models.Notifications|
-  |                                    IDateTimeRangeNotification.cs |
+  |                                 ThresholdBarChartNotification.cs |
   +------------------------------------------------------------------+*/
 
 namespace Terminal.WinUI3.Models.Notifications;
 
-public interface IDateTimeRangeNotification
+public class ThresholdBarChartNotification : NotificationBase, IDateTimeNotification
 {
-    DateTime Start { get; set; }
-    DateTime End { get; set; }
+    public DateTime DateTime
+    {
+        get;
+        set;
+    }
 }

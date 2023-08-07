@@ -11,4 +11,9 @@ public class ViewPort
     public DateTime End;
     public double High;
     public double Low;
+
+    public override string ToString()
+    {
+        return $"Start: {Start}, End: {End}, High: {High}, Low: {Low}";
+    }
 }

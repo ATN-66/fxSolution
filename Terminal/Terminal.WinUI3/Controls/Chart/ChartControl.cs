@@ -76,7 +76,29 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> : Base.Char
             session.FillRectangle(secondPoint.X - halfSquareSize, secondPoint.Y - halfSquareSize, SquareSize, SquareSize, color);
         }
     }
-   
+
+    private static void DrawSquares(CanvasDrawingSession session, Line line, Color color)
+    {
+        const float halfSquareSize = SquareSize / 2f;
+        Vector2 firstPoint, secondPoint;
+
+        // Check if the notificationBase is vertical or horizontal
+        if (line.StartPoint.X.Equals(line.EndPoint.X)) // It's a vertical notificationBase
+        {
+            firstPoint = line.StartPoint.Y < line.EndPoint.Y ? line.StartPoint : line.EndPoint;
+            secondPoint = line.StartPoint.Y >= line.EndPoint.Y ? line.StartPoint : line.EndPoint;
+            session.FillRectangle(firstPoint.X - halfSquareSize, firstPoint.Y - halfSquareSize, SquareSize, SquareSize, color);
+            session.FillRectangle(secondPoint.X - halfSquareSize, secondPoint.Y - halfSquareSize, SquareSize, SquareSize, color);
+        }
+        else // It's a horizontal notificationBase
+        {
+            firstPoint = line.StartPoint.X < line.EndPoint.X ? line.StartPoint : line.EndPoint;
+            secondPoint = line.StartPoint.X >= line.EndPoint.X ? line.StartPoint : line.EndPoint;
+            session.FillRectangle(firstPoint.X - halfSquareSize, firstPoint.Y - halfSquareSize, SquareSize, SquareSize, color);
+            session.FillRectangle(secondPoint.X - halfSquareSize, secondPoint.Y - halfSquareSize, SquareSize, SquareSize, color);
+        }
+    }
+
     protected override int CalculateKernelShift()
     {
         return (int)Math.Max(0, ((DataSource.Count - Units) / 100d) * (100d - KernelShiftPercent));

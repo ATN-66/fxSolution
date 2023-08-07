@@ -49,7 +49,7 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
         //    [ActionResult.Success] = 0
         //};
         //var startYear = _startDateTimeUtc.Year;
-        //var endYear = DateTime.UtcNow.Year;
+        //var endYear = Start.UtcNow.Year;
 
         //if (Workplace is not (Workplace.Production or Workplace.Development))
         //{
@@ -160,13 +160,13 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
     public async Task<int> SaveDataAsync(IList<Quotation> quotations)
     {
         int result = default;
-        var groupedWeekly = quotations.GroupBy(q => new { q.StartDateTime.Year, Week = Week(q.StartDateTime) }).ToList();
+        var groupedWeekly = quotations.GroupBy(q => new { q.Start.Year, Week = Week(q.Start) }).ToList();
 
         foreach (var weekGroup in groupedWeekly)
         {
             var yearNumber = weekGroup.Key.Year;
             var weekNumber = weekGroup.Key.Week;
-            var quotationsWeekly = weekGroup.OrderBy(q => q.StartDateTime).ToList();
+            var quotationsWeekly = weekGroup.OrderBy(q => q.Start).ToList();
 
             var tableName = GetTableName(weekNumber);
             Check_ISO_8601(yearNumber, weekNumber, quotationsWeekly);
@@ -224,13 +224,13 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
         var dataTable = new DataTable();
 
         dataTable.Columns.Add("Symbol", typeof(int));
-        dataTable.Columns.Add("DateTime", typeof(DateTime));
+        dataTable.Columns.Add("Start", typeof(DateTime));
         dataTable.Columns.Add("Ask", typeof(double));
         dataTable.Columns.Add("Bid", typeof(double));
 
         foreach (var quotation in quotationsWeekly)
         {
-            dataTable.Rows.Add((int)quotation.Symbol, quotation.StartDateTime.ToString(_dataBaseSourceDateTimeFormat), quotation.Ask.ToString("F8"), quotation.Bid.ToString("F8"));
+            dataTable.Rows.Add((int)quotation.Symbol, quotation.Start.ToString(_dataBaseSourceDateTimeFormat), quotation.Ask.ToString("F8"), quotation.Bid.ToString("F8"));
         }
 
         return dataTable;
@@ -280,8 +280,8 @@ public abstract class DataBaseSource : DataSource, IDataBaseSource
     }
     private static void Check_ISO_8601(int yearNumber, int weekNumber, IList<Quotation> list)
     {
-        var start = list[0].StartDateTime.Date;
-        var end = list[^1].StartDateTime.Date;
+        var start = list[0].Start.Date;
+        var end = list[^1].Start.Date;
 
         switch (yearNumber, weekNumber)
         {

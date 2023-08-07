@@ -10,17 +10,11 @@ namespace Terminal.WinUI3.Models.Entities;
 
 public class ThresholdBar : IChartItem
 {
-    public ThresholdBar(int id, double open, double close)
+    public ThresholdBar(double open, double close)
     {
-        Id = id;
         Open = open;
         Close = close;
         Direction = DetermineDirection(open, close);
-    }
-
-    public int Id
-    {
-        get; init;
     }
 
     [JsonIgnore]
@@ -29,23 +23,23 @@ public class ThresholdBar : IChartItem
         get; init;
     }
 
-    [JsonIgnore]
-    public DateTime StartDateTime
+    public DateTime Start
     {
         get; init;
     }
 
-    [JsonIgnore]
-    public DateTime EndDateTime
+    public DateTime End
     {
-        get; init;
+        get; set;
     }
 
+    [JsonIgnore]
     public double Open
     {
         get; init;
     }
 
+    [JsonIgnore]
     public double Close
     {
         get; set;
@@ -93,6 +87,6 @@ public class ThresholdBar : IChartItem
 
     public override string ToString()
     {
-        return $"{StartDateTime:yyyy-MM-dd HH:mm}-{EndDateTime:yyyy-MM-dd HH:mm} OC: {Open}, {Close}";
+        return $"{Start:D} {Start:T} - {End:D} {End:T} OC: {Open}, {Close}";
     }
 }

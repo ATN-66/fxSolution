@@ -4,7 +4,7 @@ public class HistoryDeal
 {
     public long Ticket { get; set; }
     public long Order { get; set; }
-    // DateTime
+    // Start
     public long Time { get; set; }
     public long ExecutionTime { get; set; }
     // enum

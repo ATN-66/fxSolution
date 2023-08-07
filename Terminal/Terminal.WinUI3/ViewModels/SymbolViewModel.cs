@@ -17,6 +17,8 @@ using Terminal.WinUI3.Models.Entities;
 using Terminal.WinUI3.Models.Chart;
 using Terminal.WinUI3.Models.Kernels;
 using ChartControlBase = Terminal.WinUI3.Controls.Chart.Base.ChartControlBase;
+using Microsoft.UI.Xaml.Controls;
+using Symbol = Common.Entities.Symbol;
 
 namespace Terminal.WinUI3.ViewModels;
 
@@ -41,6 +43,8 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
 
     [ObservableProperty] private bool _isVerticalLineRequested;
     [ObservableProperty] private bool _isHorizontalLineRequested;
+
+    [ObservableProperty] private MenuFlyout _graphMenuFlyout;
 
     [RelayCommand(CanExecute = nameof(CanExecuteOperation))]
     private Task OperateAsync()
@@ -96,6 +100,8 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     [RelayCommand]
     public async Task TicksAsync()
     {
+        IsVerticalLineRequested = IsHorizontalLineRequested = false;
+
         DisposeChart();
         ChartControlBase = await _chartService.GetChartAsync<TickChartControl, Quotation, Quotations>(Symbol, ChartType.Ticks, IsReversed).ConfigureAwait(true);
         SetChartBindings();
@@ -107,6 +113,8 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     [RelayCommand]
     public async Task CandlesticksAsync()
     {
+        IsVerticalLineRequested = IsHorizontalLineRequested = false;
+
         DisposeChart();
         ChartControlBase = await _chartService.GetChartAsync<CandlestickChartControl, Candlestick, Candlesticks>(Symbol, ChartType.Candlesticks, IsReversed).ConfigureAwait(true);
         SetChartBindings();
@@ -118,6 +126,8 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     [RelayCommand]
     public async Task ThresholdBarsAsync()
     {
+        IsVerticalLineRequested = IsHorizontalLineRequested = false;
+
         DisposeChart();
         ChartControlBase = await _chartService.GetChartAsync<ThresholdBarChartControl, ThresholdBar, ThresholdBars>(Symbol, ChartType.ThresholdBars, IsReversed).ConfigureAwait(true);
         SetChartBindings();
@@ -163,6 +173,14 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         _unitsPercent = configuration.GetValue<int>($"{nameof(_unitsPercent)}");
         _kernelShiftPercent = configuration.GetValue<int>($"{nameof(_kernelShiftPercent)}");
         _horizontalShift = configuration.GetValue<int>($"{nameof(_horizontalShift)}");
+
+        GraphMenuFlyout = new MenuFlyout();
+        var deleteSelected = new MenuFlyoutItem { Text = "Delete Selected" };
+        deleteSelected.Click += async (sender, e) => { ChartControlBase.DeleteSelectedNotification(); };
+        GraphMenuFlyout.Items.Add(deleteSelected);
+        var deleteAll = new MenuFlyoutItem { Text = "Delete All" };
+        deleteAll.Click += async (sender, e) => { ChartControlBase.DeleteAllNotifications(); };
+        GraphMenuFlyout.Items.Add(deleteAll);
     }
 
     public Symbol Symbol
@@ -210,11 +228,19 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     partial void OnIsVerticalLineRequestedChanged(bool value)
     {
         ChartControlBase.IsVerticalLineRequested = value;
+        if (value && IsHorizontalLineRequested)
+        {
+            ChartControlBase.IsHorizontalLineRequested = IsHorizontalLineRequested = false;
+        }
     }
 
     partial void OnIsHorizontalLineRequestedChanged(bool value)
     {
         ChartControlBase.IsHorizontalLineRequested = value;
+        if (value && IsVerticalLineRequested)
+        {
+            ChartControlBase.IsVerticalLineRequested = IsVerticalLineRequested = false;
+        }
     }
 
     private void SetChartBindings()

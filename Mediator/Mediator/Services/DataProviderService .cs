@@ -365,7 +365,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
         {
             var resultSymbol = (Symbol)symbol;
             var resultDateTime = DateTime.ParseExact(datetime, _mT5DateTimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
-            while (_lastKnownQuotations[symbol - 1].StartDateTime >= resultDateTime)
+            while (_lastKnownQuotations[symbol - 1].Start >= resultDateTime)
             {
                 resultDateTime = resultDateTime.AddMilliseconds(1);
             }
@@ -583,7 +583,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
                             }
                         };
 
-                        var q = new Fx.Grpc.Quotation { Symbol = ToProtoSymbol(quotation.Symbol), Datetime = Timestamp.FromDateTime(quotation.StartDateTime.ToUniversalTime()), Ask = quotation.Ask, Bid = quotation.Bid };
+                        var q = new Fx.Grpc.Quotation { Symbol = ToProtoSymbol(quotation.Symbol), Datetime = Timestamp.FromDateTime(quotation.Start.ToUniversalTime()), Ask = quotation.Ask, Bid = quotation.Bid };
                         response.Quotations.Add(q);
                         await responseStream.WriteAsync(response).ConfigureAwait(false);
                     }
@@ -644,7 +644,7 @@ internal sealed class DataProviderService : DataProvider.DataProviderBase, IData
             response.Quotations.Add(new Fx.Grpc.Quotation
             {
                 Symbol = ToProtoSymbol(quotation.Symbol),
-                Datetime = Timestamp.FromDateTime(quotation.StartDateTime.ToUniversalTime()),
+                Datetime = Timestamp.FromDateTime(quotation.Start.ToUniversalTime()),
                 Ask = quotation.Ask,
                 Bid = quotation.Bid
             });

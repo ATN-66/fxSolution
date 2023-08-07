@@ -101,8 +101,10 @@ public abstract partial class ChartControlBase
         GraphCanvas.PointerMoved += GraphCanvas_OnPointerMoved;
         GraphCanvas.PointerReleased += GraphCanvas_OnPointerReleased;
         GraphCanvas.DoubleTapped += GraphCanvas_OnDoubleTapped;
-        
-        GraphCanvas.SizeChanged += CenturyAxisCanvasOnSizeChanged;
+        GraphCanvas.RightTapped += GraphCanvas_RightTapped;
+        GraphCanvas.PointerWheelChanged += GraphCanvasOnPointerWheelChanged;
+
+        CenturyAxisCanvas.SizeChanged += CenturyAxisCanvasOnSizeChanged;
         CenturyAxisCanvas.Draw += CenturyAxisCanvasOnDraw;
         CenturyAxisCanvas.PointerEntered += CenturyAxisCanvasOnPointerEntered;
         CenturyAxisCanvas.PointerExited += CenturyAxisCanvasOnPointerExited;
@@ -128,6 +130,17 @@ public abstract partial class ChartControlBase
         _textCanvas.Draw += TextCanvas_OnDraw;
         DebugCanvas.Draw += DebugCanvas_OnDraw;
     }
+
+    private void GraphCanvasOnPointerWheelChanged(object sender, PointerRoutedEventArgs e)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void GraphCanvas_RightTapped(object sender, RightTappedRoutedEventArgs e)
+    {
+        
+    }
+
     public void Detach()
     {
         if (GraphCanvas != null)
@@ -137,6 +150,9 @@ public abstract partial class ChartControlBase
             GraphCanvas.PointerPressed -= GraphCanvas_OnPointerPressed;
             GraphCanvas.PointerMoved -= GraphCanvas_OnPointerMoved;
             GraphCanvas.PointerReleased -= GraphCanvas_OnPointerReleased;
+            GraphCanvas.DoubleTapped -= GraphCanvas_OnDoubleTapped;
+            GraphCanvas.RightTapped -= GraphCanvas_RightTapped;
+            GraphCanvas.PointerWheelChanged -= GraphCanvasOnPointerWheelChanged;
         }
 
         if (CenturyAxisCanvas != null)
@@ -417,4 +433,6 @@ public abstract partial class ChartControlBase
     }
 
     protected abstract int CalculateMaxUnits();
+    public abstract void DeleteSelectedNotification();
+    public abstract void DeleteAllNotifications();
 }

@@ -86,7 +86,7 @@ public class DataService : ObservableRecipient, IDataService
             {
                 foreach (var symbol in Enum.GetValues(typeof(Symbol)))
                 {
-                    var filteredQuotations = quotations.Where(quotation => quotation.Symbol == (Symbol)symbol).OrderBy(quotation => quotation.StartDateTime).ToList();
+                    var filteredQuotations = quotations.Where(quotation => quotation.Symbol == (Symbol)symbol).OrderBy(quotation => quotation.Start).ToList();
                     result[(Symbol)symbol].AddRange(filteredQuotations);
                 }
             }
@@ -103,7 +103,7 @@ public class DataService : ObservableRecipient, IDataService
         
         //foreach (var symbol in Enum.GetValues(typeof(Symbol)))
         //{
-        //    var filteredQuotations = quotations.Where(quotation => quotation.Symbol == (Symbol)symbol).OrderBy(quotation => quotation.DateTime).ToList();
+        //    var filteredQuotations = quotations.Where(quotation => quotation.Symbol == (Symbol)symbol).OrderBy(quotation => quotation.Start).ToList();
         //    result[(Symbol)symbol].AddRange(filteredQuotations);
         //}
 
@@ -231,7 +231,7 @@ public class DataService : ObservableRecipient, IDataService
         foreach (var tick in sampleTicks)
         {
             var symbolicContribution = symbolicContributions.First(sc => sc.Symbol == tick.Symbol);
-            var hourlyContribution = symbolicContribution.HourlyContributions.First(hc => hc.Hour == tick.StartDateTime.Hour);
+            var hourlyContribution = symbolicContribution.HourlyContributions.First(hc => hc.Hour == tick.Start.Hour);
             hourlyContribution.HasContribution = true;
         }
 
@@ -323,7 +323,7 @@ public class DataService : ObservableRecipient, IDataService
         }
         else
         {
-            var ticksHourly = sampleTicks.GroupBy(q => new DateTime(q.StartDateTime.Year, q.StartDateTime.Month, q.StartDateTime.Day, q.StartDateTime.Hour, 0, 0)).ToList();
+            var ticksHourly = sampleTicks.GroupBy(q => new DateTime(q.Start.Year, q.Start.Month, q.Start.Day, q.Start.Hour, 0, 0)).ToList();
             Debug.Assert(ticksHourly.Count == 1);
             var hourNumbers = (from @group in ticksHourly
                                let distinctSymbolsInGroup = @group.Select(q => q.Symbol).Distinct().Count()
@@ -373,7 +373,7 @@ public class DataService : ObservableRecipient, IDataService
 
                     _ = await _dataBaseService.DeleteTicksAsync(dateTimes, dailyContribution.Year, dailyContribution.Week).ConfigureAwait(true);
                     var quotations = await GetHistoricalDataAsync(dateTimes, provider).ConfigureAwait(true);
-                    var groupedQuotations = quotations.GroupBy(q => new QuotationKey { Symbol = q.Symbol, Hour = q.StartDateTime.Hour, });
+                    var groupedQuotations = quotations.GroupBy(q => new QuotationKey { Symbol = q.Symbol, Hour = q.Start.Hour, });
                     var sortedGroups = groupedQuotations.OrderBy(g => g.Key.Hour).ThenBy(g => g.Key.Symbol);
                     var groupsGroupedByHour = sortedGroups.GroupBy(g => g.Key.Hour);
                     var counter = 0;
@@ -386,7 +386,7 @@ public class DataService : ObservableRecipient, IDataService
                             throw new InvalidOperationException("_countOfSymbols != symbolsInHour");
                         }
 
-                        var quotationsForThisHour = hourGroup.SelectMany(group => group).OrderBy(q => q.StartDateTime).ToList();
+                        var quotationsForThisHour = hourGroup.SelectMany(group => group).OrderBy(q => q.Start).ToList();
                         var insertTicksResult = await _dataBaseService.SaveDataAsync(quotationsForThisHour).ConfigureAwait(true);
                         counter += insertTicksResult;
                         var updateContributionsResult = await _dataBaseService.UpdateContributionsAsync(new[] { dailyContribution.HourlyContributions[hour].Hour }, true).ConfigureAwait(true);
@@ -465,12 +465,12 @@ public class DataService : ObservableRecipient, IDataService
                     _ = await _dataBaseService.DeleteTicksAsync(dateTimes, dailyContribution.Year, dailyContribution.HourlyContributions[0].DateTime.Week()).ConfigureAwait(true);
                     var quotations = await GetHistoricalDataAsync(dateTimes, provider).ConfigureAwait(true);
 
-                    if (year != quotations[0].StartDateTime.Year || month != quotations[0].StartDateTime.Month || day != quotations[0].StartDateTime.Day)
+                    if (year != quotations[0].Start.Year || month != quotations[0].Start.Month || day != quotations[0].Start.Day)
                     {
-                        throw new Exception("year != quotations[0].DateTime.Year || month != quotations[0].DateTime.Month || day != quotations[0].DateTime.Day");
+                        throw new Exception("year != quotations[0].Start.Year || month != quotations[0].Start.Month || day != quotations[0].Start.Day");
                     }
 
-                    var groupedQuotations = quotations.GroupBy(q => new QuotationKey { Symbol = q.Symbol, Hour = q.StartDateTime.Hour, });
+                    var groupedQuotations = quotations.GroupBy(q => new QuotationKey { Symbol = q.Symbol, Hour = q.Start.Hour, });
                     var sortedGroups = groupedQuotations.OrderBy(g => g.Key.Hour).ThenBy(g => g.Key.Symbol);
                     var groupsGroupedByHour = sortedGroups.GroupBy(g => g.Key.Hour);
                     var counter = 0;
@@ -482,7 +482,7 @@ public class DataService : ObservableRecipient, IDataService
                         {
                             continue;
                         }
-                        var quotationsForThisHour = hourGroup.SelectMany(group => group).OrderBy(q => q.StartDateTime).ToList();
+                        var quotationsForThisHour = hourGroup.SelectMany(group => group).OrderBy(q => q.Start).ToList();
                         var insertTicksResult = await _dataBaseService.SaveDataAsync(quotationsForThisHour).ConfigureAwait(true);
                         counter += insertTicksResult;
                         

@@ -3,7 +3,6 @@
   |                                                 Notifications.cs |
   +------------------------------------------------------------------+*/
 
-using System.Linq;
 using Common.Entities;
 using Terminal.WinUI3.Contracts.Models;
 using Terminal.WinUI3.Models.Chart;
@@ -31,9 +30,9 @@ public class Notifications : INotificationsKernel
     public IEnumerable<NotificationBase> GetAllNotifications(Symbol symbol, ViewPort viewPort)
     {
         var dateTimeNotifications = _items.OfType<IDateTimeNotification>().
-            Where(notification => notification.DateTime >= viewPort.Start && notification.DateTime <= viewPort.End).Cast<NotificationBase>(); ;
+            Where(notification => notification.DateTime >= viewPort.Start && notification.DateTime <= viewPort.End).Cast<NotificationBase>(); 
         var priceNotifications = _items.OfType<IPriceNotification>().
-            Where(notification => notification.Price >= viewPort.Low && notification.Price <= viewPort.High).Cast<NotificationBase>(); ;
+            Where(notification => notification.Price >= viewPort.Low && notification.Price <= viewPort.High).Cast<NotificationBase>(); 
 
         return dateTimeNotifications.Concat(priceNotifications);
     }
@@ -65,5 +64,21 @@ public class Notifications : INotificationsKernel
             throw new InvalidOperationException("More than one notification is selected for the given symbol.");
         }
         return selectedNotifications.Single();
+    }
+
+    public void DeleteSelected()
+    {
+        for (var i = _items.Count - 1; i >= 0; i--)
+        {
+            if (_items[i].IsSelected)
+            {
+                _items.RemoveAt(i);
+            }
+        }
+    }
+
+    public void DeleteAll()
+    {
+        _items.Clear();
     }
 }

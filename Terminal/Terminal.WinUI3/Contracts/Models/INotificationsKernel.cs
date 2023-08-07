@@ -17,4 +17,6 @@ public interface INotificationsKernel : IKernel
     List<CandlestickNotification> GetCandlestickNotifications(Symbol symbol, ViewPort viewPort);
     bool IsAnySelected(Symbol symbol);
     NotificationBase GetSelectedNotification(Symbol symbol);
+    void DeleteSelected();
+    void DeleteAll();
 }

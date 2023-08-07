@@ -60,9 +60,9 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> where TItem
         var bid = DataSource[KernelShift].Bid;
         ViewPort.High = ask + Pips * Digits / 2d - VerticalShift * Digits;
         ViewPort.Low = ask - Pips * Digits / 2d - VerticalShift * Digits;
-        ViewPort.End = DataSource[KernelShift].EndDateTime;
-        ViewPort.Start = DataSource[Math.Min(Units - HorizontalShift, DataSource.Count) - 1].StartDateTime;
-        
+        ViewPort.End = DataSource[KernelShift].End;
+        ViewPort.Start = DataSource[Math.Min(Units - HorizontalShift + KernelShift, DataSource.Count) - 1].Start;
+
         var yAsk = (ViewPort.High - ask) / Digits * VerticalScale;
         var yBid = (ViewPort.High - bid) / Digits * VerticalScale;
 
@@ -93,47 +93,72 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> where TItem
             }
         }
 
-        //if (_slLine != null)
-        //{
-        //    var ySl = (YZeroPrice - _sl) / Digits * VerticalScale;
-        //    _slLine.StartPoint.Y = _slLine.EndPoint.Y = IsReversed ? (float)(offset - ySl) : (float)ySl;
+        if (_slLine != null)
+        {
+            var ySl = (ViewPort.High - _sl) / Digits * VerticalScale;
+            _slLine.StartPoint.Y = _slLine.EndPoint.Y = IsReversed ? (float)(GraphHeight - ySl) : (float)ySl;
 
-        //    using var slCpb = new CanvasPathBuilder(args.DrawingSession);
-        //    slCpb.BeginFigure(_slLine.StartPoint);
-        //    slCpb.AddLine(_slLine.EndPoint);
-        //    slCpb.EndFigure(CanvasFigureLoop.Open);
+            using var slCpb = new CanvasPathBuilder(args.DrawingSession);
+            slCpb.BeginFigure(_slLine.StartPoint);
+            slCpb.AddLine(_slLine.EndPoint);
+            slCpb.EndFigure(CanvasFigureLoop.Open);
 
-        //    using var slGeometries = CanvasGeometry.CreatePath(slCpb);
-        //    using var slStrokeStyle = new CanvasStrokeStyle();
-        //    slStrokeStyle.CustomDashStyle = new float[] { 20, 10 };
-        //    args.DrawingSession.DrawGeometry(slGeometries, Colors.Red, 1.0f, slStrokeStyle);
+            using var slGeometries = CanvasGeometry.CreatePath(slCpb);
+            using var slStrokeStyle = new CanvasStrokeStyle();
+            slStrokeStyle.CustomDashStyle = new float[] { 20, 10 };
+            args.DrawingSession.DrawGeometry(slGeometries, Colors.Red, 1.0f, slStrokeStyle);
 
-        //    if (_slLine.IsSelected)
-        //    {
-        //        DrawSquares(args.DrawingSession, _slLine, Colors.Red);
-        //    }
-        //}
+            if (_slLine.IsSelected)
+            {
+                DrawSquares(args.DrawingSession, _slLine, Colors.Red);
+            }
+        }
 
-        //if (_tpLine != null)
-        //{
-        //    var yTp = (YZeroPrice - _tp) / Digits * VerticalScale;
-        //    _tpLine.StartPoint.Y = _tpLine.EndPoint.Y = IsReversed ? (float)(offset - yTp) : (float)yTp;
+        if (_tpLine != null)
+        {
+            var yTp = (ViewPort.High - _tp) / Digits * VerticalScale;
+            _tpLine.StartPoint.Y = _tpLine.EndPoint.Y = IsReversed ? (float)(GraphHeight - yTp) : (float)yTp;
 
-        //    using var tpCpb = new CanvasPathBuilder(args.DrawingSession);
-        //    tpCpb.BeginFigure(_tpLine.StartPoint);
-        //    tpCpb.AddLine(_tpLine.EndPoint);
-        //    tpCpb.EndFigure(CanvasFigureLoop.Open);
+            using var tpCpb = new CanvasPathBuilder(args.DrawingSession);
+            tpCpb.BeginFigure(_tpLine.StartPoint);
+            tpCpb.AddLine(_tpLine.EndPoint);
+            tpCpb.EndFigure(CanvasFigureLoop.Open);
 
-        //    using var tpGeometries = CanvasGeometry.CreatePath(tpCpb);
-        //    using var tpStrokeStyle = new CanvasStrokeStyle();
-        //    tpStrokeStyle.CustomDashStyle = new float[] { 20, 10 };
-        //    args.DrawingSession.DrawGeometry(tpGeometries, Colors.Green, 1.0f, tpStrokeStyle);
+            using var tpGeometries = CanvasGeometry.CreatePath(tpCpb);
+            using var tpStrokeStyle = new CanvasStrokeStyle();
+            tpStrokeStyle.CustomDashStyle = new float[] { 20, 10 };
+            args.DrawingSession.DrawGeometry(tpGeometries, Colors.Green, 1.0f, tpStrokeStyle);
 
-        //    if (_tpLine.IsSelected)
-        //    {
-        //        DrawSquares(args.DrawingSession, _tpLine, Colors.Green);
-        //    }
-        //}
+            if (_tpLine.IsSelected)
+            {
+                DrawSquares(args.DrawingSession, _tpLine, Colors.Green);
+            }
+        }
+    }
+    protected override void GraphCanvas_OnPointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (IsHorizontalLineRequested)
+        {
+            DeselectAllLines();
+            var price = GetPrice((float)e.GetCurrentPoint(GraphCanvas).Position.Y);
+            var notification = new PriceNotification
+            {
+                Symbol = Symbol,
+                Type = NotificationType.Price,
+                Price = price,
+                IsSelected = true,
+                StartPoint = new Vector2(),
+                EndPoint = new Vector2(),
+                Description = price.ToString(PriceTextFormat)
+            };
+
+            Notifications.Add(notification);
+            Invalidate();
+            IsHorizontalLineRequested = false;
+            return;
+        }
+
+        base.GraphCanvas_OnPointerPressed(sender, e);
     }
     protected override void GraphCanvas_OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
     {
@@ -215,46 +240,45 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> where TItem
             return;
         }
 
-        //if (_slLine is { IsSelected: true })
-        //{
-        //    if (IsReversed)
-        //    {
-        //        _slLine.StartPoint.Y += (float)deltaY;
-        //        _slLine.EndPoint.Y += (float)deltaY;
-        //        _sl = YZeroPrice - (GraphHeight - _slLine.StartPoint.Y) * Digits / VerticalScale;
-        //    }
-        //    else
-        //    {
-        //        _slLine.StartPoint.Y -= (float)deltaY;
-        //        _slLine.EndPoint.Y -= (float)deltaY;
-        //        _sl = YZeroPrice - _slLine.StartPoint.Y * Digits / VerticalScale;
-        //    }
+        if (_slLine is { IsSelected: true })
+        {
+            if (IsReversed)
+            {
+                _slLine.StartPoint.Y += (float)deltaY;
+                _slLine.EndPoint.Y += (float)deltaY;
+                _sl = ViewPort.High - (GraphHeight - _slLine.StartPoint.Y) * Digits / VerticalScale;
+            }
+            else
+            {
+                _slLine.StartPoint.Y -= (float)deltaY;
+                _slLine.EndPoint.Y -= (float)deltaY;
+                _sl = ViewPort.High - _slLine.StartPoint.Y * Digits / VerticalScale;
+            }
 
-        //    Invalidate();
-        //    PreviousMouseY = currentMouseY;
-        //    PreviousMouseX = currentMouseX;
-        //}
-        //else if (_tpLine is { IsSelected: true })
-        //{
-        //    if (IsReversed)
-        //    {
-        //        _tpLine.StartPoint.Y += (float)deltaY;
-        //        _tpLine.EndPoint.Y += (float)deltaY;
-        //        _tp = YZeroPrice - (GraphHeight - _tpLine.StartPoint.Y) * Digits / VerticalScale;
-        //    }
-        //    else
-        //    {
-        //        _tpLine.StartPoint.Y -= (float)deltaY;
-        //        _tpLine.EndPoint.Y -= (float)deltaY;
-        //        _tp = YZeroPrice - _tpLine.StartPoint.Y * Digits / VerticalScale;
-        //    }
+            Invalidate();
+            PreviousMouseY = currentMouseY;
+            PreviousMouseX = currentMouseX;
+        }
+        else if (_tpLine is { IsSelected: true })
+        {
+            if (IsReversed)
+            {
+                _tpLine.StartPoint.Y += (float)deltaY;
+                _tpLine.EndPoint.Y += (float)deltaY;
+                _tp = ViewPort.High - (GraphHeight - _tpLine.StartPoint.Y) * Digits / VerticalScale;
+            }
+            else
+            {
+                _tpLine.StartPoint.Y -= (float)deltaY;
+                _tpLine.EndPoint.Y -= (float)deltaY;
+                _tp = ViewPort.High - _tpLine.StartPoint.Y * Digits / VerticalScale;
+            }
 
-        //    Invalidate();
-        //    PreviousMouseY = currentMouseY;
-        //    PreviousMouseX = currentMouseX;
-        //}
-
-        if (Notifications.IsAnySelected(Symbol))
+            Invalidate();
+            PreviousMouseY = currentMouseY;
+            PreviousMouseX = currentMouseX;
+        }
+        else if (Notifications.IsAnySelected(Symbol))
         {
             MoveSelectedNotification(deltaX, deltaY);
             Invalidate();
@@ -412,8 +436,8 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> where TItem
             //var startUnit = KernelShift;
             //var endUnit = UnitsPercent - HorizontalShift + KernelShift - 1;
 
-            //var endTime = DataSource[startUnit].DateTime;
-            //var startTime = DataSource[endUnit].DateTime; //todo
+            //var endTime = DataSource[startUnit].Start;
+            //var startTime = DataSource[endUnit].Start; //todo
             //var timeSpan = endTime - startTime;
             //var totalSeconds = timeSpan.TotalSeconds;
             //if (totalSeconds <= 0)
@@ -502,5 +526,16 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> where TItem
             var spreadPositionX = (float)(GraphWidth - spreadLayout.DrawBounds.Width - xShift);
             args.DrawingSession.DrawText(spread, spreadPositionX, yShift, Colors.Gray, AskBidLabelCanvasTextFormat);
         }
+    }
+
+    public override void DeleteSelectedNotification()
+    {
+        Notifications.DeleteSelected();
+        Invalidate();
+    }
+    public override void DeleteAllNotifications()
+    {
+        Notifications.DeleteAll();
+        Invalidate();
     }
 }

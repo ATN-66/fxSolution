@@ -3,15 +3,15 @@
 public class HistoryOrder
 {
     public long Ticket { get; set; }
-    // DateTime
+    // Start
     public long TimeSetup { get; set; }
     // enum
     public int Type { get; set; }
     // enum
     public int State { get; set; }
-    // DateTime
+    // Start
     public long TimeExpiration { get; set; }
-    // DateTime
+    // Start
     public long TimeDone { get; set; }
     public long TimeSetupMsc { get; set; }
     public long TimeDoneMsc { get; set; }
