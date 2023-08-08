@@ -12,6 +12,7 @@ using Fx.Grpc;
 using Grpc.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Xaml;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Helpers;
 using Terminal.WinUI3.Messenger.AccountService;
@@ -76,26 +77,26 @@ public class Coordinator : ICoordinator
             await _accountReady.Task.ConfigureAwait(false);
 
             //todo: remove this
-            _startDateTime = new DateTime(2023, 6, 5, 0, 0, 0);
-            _nowDateTime = new DateTime(2023, 6, 5, 23, 0, 0);
+            //_startDateTime = new DateTime(2023, 6, 5, 0, 0, 0);
+            //_nowDateTime = new DateTime(2023, 6, 5, 23, 0, 0);
 
             var diff = (_nowDateTime - _startDateTime).Hours + 1;
             Debug.WriteLine($"Coordinator.StartAsync: difference = {diff} hours");
             var historicalData = await _dataService.LoadDataAsync(_startDateTime, _nowDateTime).ConfigureAwait(false);
             // todo: load notifications ...
-            await _kernelService.InitializeAsync(historicalData).ConfigureAwait(false);
+            _kernelService.Initialize(historicalData);
 
-            //var (dataTask, dataChannel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
-            //var dataProcessingTask = DataProcessingTaskAsync(token);
+            var (dataTask, dataChannel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
+            var dataProcessingTask = DataProcessingTaskAsync(token);
 
             await _dispatcherService.ExecuteOnUIThreadAsync(() =>
             {
                 _splashScreenService.HideSplash();
             }).ConfigureAwait(true);
 
-            await Task.WhenAll(executiveTask, executiveProcessingTask).ConfigureAwait(false);
-            //await Task.WhenAll(dataTask, dataProcessingTask, executiveTask, executiveProcessingTask).ConfigureAwait(false);
-            //await dataChannel.ShutdownAsync().ConfigureAwait(false);
+            //await Task.WhenAll(executiveTask, executiveProcessingTask).ConfigureAwait(false);
+            await Task.WhenAll(dataTask, dataProcessingTask, executiveTask, executiveProcessingTask).ConfigureAwait(false);
+            await dataChannel.ShutdownAsync().ConfigureAwait(false);
             await executiveChannel.ShutdownAsync().ConfigureAwait(false);
         }
         catch (Exception exception)
@@ -265,13 +266,18 @@ public class Coordinator : ICoordinator
         return Task.CompletedTask;
     }
 
+    public async void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        await ExitAsync().ConfigureAwait(false);
+    }
+
     private void OnOrderModifyAsync(object recipient, OrderModifyMessage message)
     {
         var request = _accountService.GetModifyPositionRequest(message.Symbol, message.StopLoss, message.TakeProfit);
         _executiveCall.RequestStream.WriteAsync(request, _token);
         message.Reply(true);
     }
-    public Task ExitAsync()
+    private async Task ExitAsync()
     {
         var request = new GeneralRequest
         {
@@ -279,6 +285,6 @@ public class Coordinator : ICoordinator
             MaintenanceRequest = new MaintenanceRequest { MaintenanceCode = MaintenanceCode.CloseSession }
         };
 
-        return _executiveCall.RequestStream.WriteAsync(request, _token);
+        await _executiveCall.RequestStream.WriteAsync(request, _token);
     }
 }

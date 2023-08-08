@@ -24,7 +24,7 @@ public class TickChartControl : ChartControl<Quotation, Quotations>
     private Vector2[] _askData = null!;
     private Vector2[] _bidData = null!;
 
-    public TickChartControl(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, Quotations ticks, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, symbol, isReversed, tickValue, ticks, notifications, baseColor, quoteColor, logger)
+    public TickChartControl(IConfiguration configuration, ChartSettings chartSettings, double tickValue, Quotations ticks, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, chartSettings, tickValue, ticks, notifications, baseColor, quoteColor, logger)
     {
         DefaultStyleKey = typeof(TickChartControl);
     }

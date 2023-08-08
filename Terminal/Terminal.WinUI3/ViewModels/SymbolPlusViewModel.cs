@@ -90,9 +90,11 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
 
     private void DisposeChart()
     {
-        _chartService.DisposeChart(ChartControlBaseFirst);
-        ChartControlBaseFirst.Detach();
-        ChartControlBaseFirst = null!;
+        throw new NotImplementedException();
+
+        //_chartService.DisposeChart(ChartControlBaseFirst);
+        //ChartControlBaseFirst.Detach();
+        //ChartControlBaseFirst = null!;
     }
 
     public SymbolPlusViewModel(IConfiguration configuration, IChartService chartService, ICoordinator coordinator, IAccountService accountService, IDispatcherService dispatcherService)
@@ -279,12 +281,14 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
 
     public void OnNavigatedFrom()
     {
-        _chartService.DisposeChart(ChartControlBaseFirst);
-        ChartControlBaseFirst.Detach();
-        ChartControlBaseFirst = null!;
+        throw new NotImplementedException();
 
-        _chartService.DisposeChart(ChartControlBaseSecond);
-        ChartControlBaseSecond.Detach();
-        ChartControlBaseSecond = null!;
+        //_chartService.DisposeChart(ChartControlBaseFirst);
+        //ChartControlBaseFirst.Detach();
+        //ChartControlBaseFirst = null!;
+
+        //_chartService.DisposeChart(ChartControlBaseSecond);
+        //ChartControlBaseSecond.Detach();
+        //ChartControlBaseSecond = null!;
     }
 }

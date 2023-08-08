@@ -5,7 +5,6 @@
 
 using System.Diagnostics;
 using System.Numerics;
-using Common.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas;
@@ -34,7 +33,7 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
     private int _ocThickness = MinOcThickness;
     private int _hlThickness = (MinOcThickness - 1) / 2;
 
-    public CandlestickChartControl(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, Candlesticks candlesticks, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, symbol, isReversed, tickValue, candlesticks, notifications, baseColor, quoteColor, logger)
+    public CandlestickChartControl(IConfiguration configuration, ChartSettings chartSettings, double tickValue, Candlesticks candlesticks, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, chartSettings, tickValue, candlesticks, notifications, baseColor, quoteColor, logger)
     {
         DefaultStyleKey = typeof(CandlestickChartControl);
     }

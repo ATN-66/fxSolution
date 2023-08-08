@@ -4,6 +4,7 @@
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
+using Microsoft.UI.Xaml;
 using Terminal.WinUI3.Helpers;
 
 namespace Terminal.WinUI3.Contracts.Services;
@@ -15,5 +16,5 @@ public interface ICoordinator
     Task RequestTradingHistoryAsync(DateTime startDateTimeInclusive, DateTime endDateTimeInclusive);
     Task DoOpenPositionAsync(Symbol symbol, bool isReversed);
     Task DoClosePositionAsync(Symbol symbol, bool isReversed);
-    Task ExitAsync();
+    void MainWindow_Closed(object sender, WindowEventArgs args);
 }

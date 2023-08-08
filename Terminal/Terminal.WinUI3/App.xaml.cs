@@ -77,7 +77,6 @@ public partial class App
             // Services
             services.AddSingleton<IAppNotificationService, AppNotificationService>();
             services.AddSingleton<ILocalSettingsService, LocalSettingsService>();
-            services.AddSingleton<IThemeSelectorService, ThemeSelectorService>();
             services.AddTransient<INavigationViewService, NavigationViewService>();
             services.AddSingleton<IFileService, FileService>();
 
@@ -159,11 +158,10 @@ public partial class App
     }
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
-        GetService<ICoordinator>().ExitAsync().ConfigureAwait(false);
-
         _cts.Cancel();
-        GetService<IAudioPlayer>().Dispose();
         GetService<ILogger<App>>().LogInformation("<--- end --->");
+        GetService<IAudioPlayer>().Dispose();
+        Task.Delay(5000).Wait();
     }
     private static void DebugSettings_BindingFailed(object sender, BindingFailedEventArgs exception)
     {
@@ -194,6 +192,8 @@ public partial class App
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
+        MainWindow.Closed += GetService<ILocalSettingsService>().MainWindow_Closed;
+        MainWindow.Closed += GetService<ICoordinator>().MainWindow_Closed;
         MainWindow.Closed += MainWindow_Closed;
 
         GetService<ILogger<App>>().LogInformation("<--- start --->");

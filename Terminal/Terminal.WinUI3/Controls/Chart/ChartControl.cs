@@ -17,7 +17,6 @@ using Terminal.WinUI3.Models.Notifications;
 using Terminal.WinUI3.Models.Trade;
 using Terminal.WinUI3.Models.Trade.Enums;
 using Color = Windows.UI.Color;
-using Symbol = Common.Entities.Symbol;
 
 namespace Terminal.WinUI3.Controls.Chart;
 
@@ -38,7 +37,7 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> : Base.Char
     private const float SquareSize = 10.0f;
     private const float ProximityThresholdStatic = 5.0f;
 
-    protected ChartControl(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, TDataSourceKernel dataSource, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, symbol, isReversed, tickValue, baseColor, quoteColor, logger)
+    protected ChartControl(IConfiguration configuration, ChartSettings chartSettings, double tickValue, TDataSourceKernel dataSource, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, chartSettings, tickValue, baseColor, quoteColor, logger)
     {
         DataSource = dataSource;
         Notifications = notifications;

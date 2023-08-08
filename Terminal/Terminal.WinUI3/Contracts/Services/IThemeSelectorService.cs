@@ -1,17 +1,17 @@
-﻿using Microsoft.UI.Xaml;
+﻿//using Microsoft.UI.Xaml;
 
-namespace Terminal.WinUI3.Contracts.Services;
+//namespace Terminal.WinUI3.Contracts.Services;
 
-public interface IThemeSelectorService
-{
-    ElementTheme Theme
-    {
-        get;
-    }
+//public interface IThemeSelectorService
+//{
+//    //ElementTheme Theme
+//    //{
+//    //    get;
+//    //}
 
-    Task InitializeAsync();
+//    //Task InitializeAsync();
 
-    Task SetThemeAsync(ElementTheme theme);
+//    //Task SetThemeAsync(ElementTheme theme);
 
-    Task SetRequestedThemeAsync();
-}
+//    //Task SetRequestedThemeAsync();
+//}

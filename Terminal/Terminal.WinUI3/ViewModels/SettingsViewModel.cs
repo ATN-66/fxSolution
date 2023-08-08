@@ -2,38 +2,16 @@
 using System.Windows.Input;
 using Windows.ApplicationModel;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using Microsoft.UI.Xaml;
-using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Helpers;
 
 namespace Terminal.WinUI3.ViewModels;
 
 public partial class SettingsViewModel : ObservableRecipient
 {
-    [ObservableProperty] private ElementTheme _elementTheme;
-
     [ObservableProperty] private string _versionDescription;
 
-    public SettingsViewModel(IThemeSelectorService themeSelectorService)
+    public SettingsViewModel()
     {
-        var themeSelectorService1 = themeSelectorService;
-        _elementTheme = themeSelectorService1.Theme;
-        _versionDescription = GetVersionDescription();
-
-        SwitchThemeCommand = new RelayCommand<ElementTheme>(async param =>
-            {
-                if (ElementTheme != param)
-                {
-                    ElementTheme = param;
-                    await themeSelectorService1.SetThemeAsync(param).ConfigureAwait(true);
-                }
-            });
-    }
-
-    public ICommand SwitchThemeCommand
-    {
-        get;
     }
 
     private static string GetVersionDescription()
@@ -43,9 +21,7 @@ public partial class SettingsViewModel : ObservableRecipient
         if (RuntimeHelper.IsMSIX)
         {
             var packageVersion = Package.Current.Id.Version;
-
-            version = new Version(packageVersion.Major, packageVersion.Minor, packageVersion.Build,
-                packageVersion.Revision);
+            version = new Version(packageVersion.Major, packageVersion.Minor, packageVersion.Build, packageVersion.Revision);
         }
         else
         {

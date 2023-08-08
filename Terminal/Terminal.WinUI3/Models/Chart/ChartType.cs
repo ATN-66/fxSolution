@@ -1,4 +1,9 @@
-﻿namespace Terminal.WinUI3.Models.Chart;
+﻿/*+------------------------------------------------------------------+
+  |                                     Terminal.WinUI3.Models.Chart |
+  |                                                     ChartType.cs |
+  +------------------------------------------------------------------+*/
+
+namespace Terminal.WinUI3.Models.Chart;
 
 public enum ChartType
 {

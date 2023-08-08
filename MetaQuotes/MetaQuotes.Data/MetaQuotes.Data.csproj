@@ -10,7 +10,7 @@
   <ItemGroup>
     <PackageReference Include="PipeMethodCalls" Version="4.0.1" />
     <PackageReference Include="PipeMethodCalls.NetJson" Version="3.0.0" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0-preview.6.23329.7" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0-preview.7.23375.6" />
   </ItemGroup>
 
   <ItemGroup>

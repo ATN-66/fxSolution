@@ -1,10 +1,13 @@
 ﻿/*+------------------------------------------------------------------+
   |                                         Terminal.WinUI3.Controls |
-  |                                   ChartControlBaseFirst.Properties.cs |
+  |                              ChartControlBaseFirst.Properties.cs |
   +------------------------------------------------------------------+*/
 
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
+using Terminal.WinUI3.Controls.Chart.Candlestick;
+using Terminal.WinUI3.Controls.Chart.ThresholdBar;
+using Terminal.WinUI3.Controls.Chart.Tick;
 using Terminal.WinUI3.Models.Chart;
 
 namespace Terminal.WinUI3.Controls.Chart.Base;
@@ -17,6 +20,34 @@ public abstract partial class ChartControlBase
     protected double VerticalScale;
     protected double VerticalShift;
     protected int Pips;
+
+    public ChartSettings GetChartSettings()
+    {
+        var result = new ChartSettings()
+        {
+            Symbol = Symbol,
+            IsReversed = IsReversed,
+            HorizontalShift = HorizontalShift,
+            VerticalShift = VerticalShift,
+            KernelShiftPercent = KernelShiftPercent
+        };
+
+        var childType = GetType();
+        if (typeof(TickChartControl).IsAssignableFrom(childType))
+        {
+            result.ChartType = ChartType.Ticks;
+        }
+        else if (typeof(CandlestickChartControl).IsAssignableFrom(childType))
+        {
+            result.ChartType = ChartType.Candlesticks;
+        }
+        else if (typeof(ThresholdBarChartControl).IsAssignableFrom(childType))
+        {
+            result.ChartType = ChartType.ThresholdBars;
+        }
+
+        return result;
+    }
 
     public static readonly DependencyProperty MinCenturiesProperty = DependencyProperty.Register(nameof(MinCenturies), typeof(double), typeof(ChartControlBase), new PropertyMetadata(0));
     public double MinCenturies
@@ -183,13 +214,4 @@ public abstract partial class ChartControlBase
             ProtectedCursor = InputSystemCursor.Create(value ? InputSystemCursorShape.Cross : InputSystemCursorShape.Arrow);
         }
     }
-
-    //public static readonly DependencyProperty IsVerticalLineRequestedProperty = DependencyProperty.Register(nameof(IsVerticalLineRequested), typeof(bool), typeof(ChartControlBase), new PropertyMetadata(false, OnIsVerticalLineRequestedChanged));
-    //private static void OnIsVerticalLineRequestedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    //{
-    //    ChartControlBase chartControl = (ChartControlBase)d;
-    //    bool isVerticalLineRequested = (bool)e.NewValue;
-
-    //    chartControl.ProtectedCursor = InputSystemCursor.Create(isVerticalLineRequested ? InputSystemCursorShape.Cross : InputSystemCursorShape.Arrow);
-    //}
 }

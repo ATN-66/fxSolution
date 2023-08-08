@@ -1,7 +1,11 @@
-﻿namespace Terminal.WinUI3.Contracts.Services;
+﻿using Microsoft.UI.Xaml;
+
+namespace Terminal.WinUI3.Contracts.Services;
 
 public interface ILocalSettingsService
 {
-    Task<T?> ReadSettingAsync<T>(string key);
-    Task SaveSettingAsync<T>(string key, T value);
+    Task InitializeAsync();
+    T? ReadSetting<T>(string key);
+    void SaveSetting<T>(string key, T value);
+    void MainWindow_Closed(object sender, WindowEventArgs args);
 }

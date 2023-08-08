@@ -1,71 +1,51 @@
-﻿using Windows.Storage;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
+using Microsoft.UI.Xaml;
+using Newtonsoft.Json;
 using Terminal.WinUI3.Contracts.Services;
-using Terminal.WinUI3.Helpers;
 using Terminal.WinUI3.Models.Settings;
 
 namespace Terminal.WinUI3.Services;
 
 public class LocalSettingsService : ILocalSettingsService
 {
-    private const string DefaultApplicationDataFolder = "Terminal.WinUI3/ApplicationData";
+    private const string DefaultApplicationDataFolder = @"Terminal.WinUI3\\ApplicationData";
     private const string DefaultLocalSettingsFile = "LocalSettings.json";
+    private readonly string _applicationDataFolder;
     private readonly IFileService _fileService;
     private readonly string _localApplicationData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    private readonly string _applicationDataFolder;
     private readonly string _localsettingsFile;
-    private IDictionary<string, object> _settings;
-    private bool _isInitialized;
+    private IDictionary<string, object> _settings = null!;
 
     public LocalSettingsService(IFileService fileService, IOptions<LocalSettingsOptions> options)
     {
         _fileService = fileService;
         _applicationDataFolder = Path.Combine(_localApplicationData, options.Value.ApplicationDataFolder ?? DefaultApplicationDataFolder);
         _localsettingsFile = options.Value.LocalSettingsFile ?? DefaultLocalSettingsFile;
-        _settings = new Dictionary<string, object>();
     }
 
-    private async Task InitializeAsync()
+    public async Task InitializeAsync()
     {
-        if (!_isInitialized)
-        {
-            _settings = await Task.Run(() => _fileService.Read<IDictionary<string, object>>(_applicationDataFolder, _localsettingsFile)).ConfigureAwait(false) ?? new Dictionary<string, object>();
-            _isInitialized = true;
-        }
+        _settings = await Task.Run(() => _fileService.Read<IDictionary<string, object>>(_applicationDataFolder, _localsettingsFile)).ConfigureAwait(false) ?? new Dictionary<string, object>();
     }
 
-    public async Task<T?> ReadSettingAsync<T>(string key)
+    public T? ReadSetting<T>(string key)
     {
-        if (RuntimeHelper.IsMSIX)
+        if (!_settings.TryGetValue(key, out var obj))
         {
-            if (ApplicationData.Current.LocalSettings.Values.TryGetValue(key, out var obj))
-            {
-                return await Json.ToObjectAsync<T>((string)obj).ConfigureAwait(false);
-            }
-        }
-        else
-        {
-            await InitializeAsync().ConfigureAwait(false);
-            if (_settings.TryGetValue(key, out var obj))
-            {
-                return await Json.ToObjectAsync<T>((string)obj).ConfigureAwait(false);
-            }
+            return default;
         }
 
-        return default;
+        var json = JsonConvert.SerializeObject(obj);
+        return JsonConvert.DeserializeObject<T>(json);
     }
 
-    public async Task SaveSettingAsync<T>(string key, T value)
+    public void SaveSetting<T>(string key, T value)
     {
-        if (RuntimeHelper.IsMSIX)
-        {
-            ApplicationData.Current.LocalSettings.Values[key] = await Json.StringifyAsync(value!).ConfigureAwait(false);
-        }
-        else
-        {
-            await InitializeAsync().ConfigureAwait(false);
-            _settings[key] = await Json.StringifyAsync(value!).ConfigureAwait(false);
-            await Task.Run(() => _fileService.Save(_applicationDataFolder, _localsettingsFile, _settings)).ConfigureAwait(false);
-        }
+        _settings[key] = value!;
+    }
+
+    public void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        _fileService.Save(_applicationDataFolder, _localsettingsFile, _settings);
     }
 }

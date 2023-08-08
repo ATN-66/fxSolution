@@ -15,7 +15,6 @@ namespace Terminal.WinUI3.Services;
 public class KernelService : IKernelService
 {
     private readonly IChartService _chartService;
-    private readonly IFileService _fileService;
 
     private readonly Dictionary<Symbol, int> _thresholdsInPips = new() { { Symbol.EURUSD, 20 }, { Symbol.GBPUSD, 30 }, { Symbol.USDJPY, 20 }, { Symbol.EURGBP, 30 }, { Symbol.EURJPY, 40 }, { Symbol.GBPJPY, 60 } };//todo:
     private readonly Dictionary<Symbol, int> _digits = new() { { Symbol.EURUSD, 100000 }, { Symbol.GBPUSD, 100000 }, { Symbol.USDJPY, 1000 }, { Symbol.EURGBP, 100000 }, { Symbol.EURJPY, 1000 }, { Symbol.GBPJPY, 100000 } };//todo
@@ -23,13 +22,12 @@ public class KernelService : IKernelService
     private readonly Dictionary<Symbol, Dictionary<ChartType, IDataSourceKernel<IChartItem>>> _dataSourceKernels = new();
     private readonly Dictionary<Symbol, INotificationsKernel> _notificationsKernels = new();
 
-    public KernelService(IChartService chartService, IFileService fileService)
+    public KernelService(IChartService chartService)
     {
         _chartService = chartService;
-        _fileService = fileService;
     }
 
-    public Task InitializeAsync(IDictionary<Symbol, List<Quotation>> quotations)
+    public void Initialize(IDictionary<Symbol, List<Quotation>> quotations)
     {
         foreach (var (symbol, symbolQuotations) in quotations)
         {
@@ -56,7 +54,7 @@ public class KernelService : IKernelService
             _notificationsKernels[symbol] = new Notifications();
         }
 
-        return _chartService.InitializeAsync(_dataSourceKernels, _notificationsKernels);
+        _chartService.Initialize(_dataSourceKernels, _notificationsKernels);
     }
 
     public void Add(Quotation quotation)

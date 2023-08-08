@@ -1,6 +1,6 @@
 using Windows.Graphics;
-using Windows.UI;
 using Microsoft.Extensions.Configuration;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Terminal.WinUI3.Contracts.Services;
 
@@ -9,42 +9,38 @@ namespace Terminal.WinUI3.Services;
 public class WindowingService : IWindowingService
 {
     private readonly ILocalSettingsService _localSettingsService;
-    private Window? _window;
+    private Window _window = null!;
     private readonly int _defaultWindowWidth;
     private readonly int _defaultWindowHeight;
+    private string WindowWidthSettingsKey { get; set; } = "WindowWidth";
+    private string WindowHeightSettingsKey { get; set; } = "WindowHeight";
 
+    [Obsolete("Obsolete")]
     public WindowingService(ILocalSettingsService localSettingsService, IConfiguration configuration)
     {
         _localSettingsService = localSettingsService;
 
         _defaultWindowWidth = configuration.GetValue<int>($"{nameof(_defaultWindowWidth)}");
         _defaultWindowHeight = configuration.GetValue<int>($"{nameof(_defaultWindowHeight)}");
+
+        App.MainWindow.GetAppWindow().Closing += OnClosing;
     }
 
-    private string WindowWidthSettingsKey { get; set; } = "WindowWidth";
-    private string WindowHeightSettingsKey { get; set; } = "WindowHeight";
-    private string IsAlwaysOnTopSettingsKey { get; set; } = "IsAlwaysOnTop";
-
     [Obsolete("Obsolete")]
-    public async Task InitializeAsync(Window window)
+    public void Initialize(Window window)
     {
         _window = window;
-        _window.GetAppWindow().Closing += async (_, _) =>
-        {
-            await SaveWindowSizeSettingsAsync((int)((WindowEx)_window).Width, (int)((WindowEx)_window).Height).ConfigureAwait(false);
-        };
-
-        var (width, height) = await LoadWindowSizeSettingsAsync().ConfigureAwait(true);
+        var (width, height) = LoadWindowSizeSettings();
         if (width > 0 && height > 0)
         {
             SetWindowSize(width, height);
         }
     }
 
-    public async Task<(int Width, int Height)> LoadWindowSizeSettingsAsync()
+    public (int Width, int Height) LoadWindowSizeSettings()
     {
-        var widthSetting = await _localSettingsService.ReadSettingAsync<string>(WindowWidthSettingsKey).ConfigureAwait(false);
-        var heightSetting = await _localSettingsService.ReadSettingAsync<string>(WindowHeightSettingsKey).ConfigureAwait(false);
+        var widthSetting = _localSettingsService.ReadSetting<string>(WindowWidthSettingsKey);
+        var heightSetting = _localSettingsService.ReadSetting<string>(WindowHeightSettingsKey);
 
         if (int.TryParse(widthSetting, out var width) && int.TryParse(heightSetting, out var height))
         {
@@ -54,20 +50,15 @@ public class WindowingService : IWindowingService
         return (_defaultWindowWidth, _defaultWindowHeight);
     }
 
-    public async Task SaveWindowSizeSettingsAsync(int width, int height)
+    public void SaveWindowSizeSettings(int width, int height)
     {
-        await _localSettingsService.SaveSettingAsync(WindowWidthSettingsKey, width.ToString()).ConfigureAwait(false);
-        await _localSettingsService.SaveSettingAsync(WindowHeightSettingsKey, height.ToString()).ConfigureAwait(false);
+        _localSettingsService.SaveSetting(WindowWidthSettingsKey, width.ToString());
+        _localSettingsService.SaveSetting(WindowHeightSettingsKey, height.ToString());
     }
 
     [Obsolete("Obsolete")]
     public (int Width, int Height)? GetWindowSize()
     {
-        if (_window is null)
-        {
-            return null;
-        }
-
         var currentSize = _window.GetAppWindow().Size;
         return (currentSize.Width, currentSize.Height);
     }
@@ -75,31 +66,15 @@ public class WindowingService : IWindowingService
     [Obsolete("Obsolete")]
     public void SetWindowSize(int width, int height)
     {
-        if (_window is not null && width > 0 && height > 0)
+        if (width > 0 && height > 0)
         {
             _window.GetAppWindow().Resize(new SizeInt32(width, height));
             
         }
     }
 
-    public async Task<bool> LoadIsAlwaysOnTopSettingsAsync()
+    private void OnClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
-        var isAlwaysOnTopSetting = await _localSettingsService.ReadSettingAsync<string>(IsAlwaysOnTopSettingsKey).ConfigureAwait(false);
-        return bool.TryParse(isAlwaysOnTopSetting, out var isAlwaysOnTop) && isAlwaysOnTop;
-    }
-
-    public Task SaveIsAlwaysOnTopSettingsAsync(bool isAlwaysOnTop)
-    {
-        return _localSettingsService.SaveSettingAsync(IsAlwaysOnTopSettingsKey, isAlwaysOnTop.ToString());
-    }
-
-    public bool? GetIsAlwaysOnTop()
-    {
-        return _window?.GetIsAlwaysOnTop();
-    }
-
-    public void SetIsAlwaysOnTop(bool isAlwaysOnTop)
-    {
-        _window?.SetIsAlwaysOnTop(isAlwaysOnTop);
+        SaveWindowSizeSettings((int)((WindowEx)_window).Width, (int)((WindowEx)_window).Height);
     }
 }

@@ -51,8 +51,8 @@ public sealed partial class TicksContributionsPage
 
         try
         {
-            var widthSetting = await _localSettingsService.ReadSettingAsync<string>(TicksContributionsPageFirstColumnDefinitionWidth).ConfigureAwait(true);
-            var heightSetting = await _localSettingsService.ReadSettingAsync<string>(TicksContributionsPageFirstRowDefinitionHeight).ConfigureAwait(true);
+            var widthSetting = _localSettingsService. ReadSetting<string>(TicksContributionsPageFirstColumnDefinitionWidth);
+            var heightSetting = _localSettingsService.ReadSetting<string>(TicksContributionsPageFirstRowDefinitionHeight);
 
             if (int.TryParse(widthSetting, out var width) && int.TryParse(heightSetting, out var height))
             {
@@ -81,10 +81,10 @@ public sealed partial class TicksContributionsPage
 
         try
         {
-            async void Action()
+            void Action()
             {
-                await _localSettingsService.SaveSettingAsync(TicksContributionsPageFirstColumnDefinitionWidth, FirstColumnDefinition.Width.Value.ToString(CultureInfo.InvariantCulture)).ConfigureAwait(true);
-                await _localSettingsService.SaveSettingAsync(TicksContributionsPageFirstRowDefinitionHeight, FirstRowDefinition.Height.Value.ToString(CultureInfo.InvariantCulture)).ConfigureAwait(true);
+                _localSettingsService.SaveSetting(TicksContributionsPageFirstColumnDefinitionWidth, FirstColumnDefinition.Width.Value.ToString(CultureInfo.InvariantCulture));
+                _localSettingsService.SaveSetting(TicksContributionsPageFirstRowDefinitionHeight, FirstRowDefinition.Height.Value.ToString(CultureInfo.InvariantCulture));
             }
 
             _dispatcherService.ExecuteOnUIThreadAsync(Action);

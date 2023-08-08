@@ -32,7 +32,7 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
     private int _ocThickness = MinOcThickness;
     private const int Space = 1;
 
-    public ThresholdBarChartControl(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, ThresholdBars thresholdBars, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, symbol, isReversed, tickValue, thresholdBars, notifications, baseColor, quoteColor, logger)
+    public ThresholdBarChartControl(IConfiguration configuration, ChartSettings chartSettings, double tickValue, ThresholdBars thresholdBars, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, chartSettings, tickValue, thresholdBars, notifications, baseColor, quoteColor, logger)
     {
         DefaultStyleKey = typeof(ThresholdBarChartControl);
     }

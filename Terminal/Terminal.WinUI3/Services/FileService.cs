@@ -104,10 +104,6 @@ public class FileService : DataSource, IFileService
     }
     public async Task<string> LoadTextAsync(string relativeFilePath)
     {
-        //#if PACKAGED
-        //var sourceUri = new Uri("ms-appx:///" + relativeFilePath);
-        //var file = await StorageFile.GetFileFromApplicationUriAsync(sourceUri); 
-        //return await FileIO.ReadTextAsync(file);
         var sourcePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location)!, relativeFilePath));
         var file = await StorageFile.GetFileFromPathAsync(sourcePath);
         return await FileIO.ReadTextAsync(file);

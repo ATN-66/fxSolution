@@ -15,6 +15,7 @@ using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml.Controls;
 using Terminal.WinUI3.Models.Chart;
 using Symbol = Common.Entities.Symbol;
+using Enum = System.Enum;
 
 namespace Terminal.WinUI3.Controls.Chart.Base;
 
@@ -44,13 +45,16 @@ public abstract partial class ChartControlBase : Control
     private readonly MessageType _messageTypeLevel;
     protected readonly ViewPort ViewPort = new();
 
-    protected ChartControlBase(IConfiguration configuration, Symbol symbol, bool isReversed, double tickValue, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger)
+    protected ChartControlBase(IConfiguration configuration, ChartSettings chartSettings, double tickValue, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger)
     {
         Logger = logger;
 
-        Symbol = symbol;
-        IsReversed = isReversed;
-        
+        Symbol = chartSettings.Symbol;
+        IsReversed = chartSettings.IsReversed;
+        HorizontalShift = chartSettings.HorizontalShift;
+        VerticalShift = chartSettings.VerticalShift;
+        SetValue(KernelShiftPercentProperty, chartSettings.KernelShiftPercent);
+
         switch (Symbol)
         {
             case Symbol.EURGBP:
@@ -80,7 +84,7 @@ public abstract partial class ChartControlBase : Control
         _messageTypeLevel = Enum.TryParse(messageTypeStr, out MessageType parsedMessageType) ? parsedMessageType : MessageType.Trace;
     }
 
-    public Symbol  Symbol { get; }
+    protected Symbol  Symbol { get; }
     public Currency BaseCurrency
     {
         get;
