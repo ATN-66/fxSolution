@@ -1,4 +1,9 @@
-﻿using System.ComponentModel;
+﻿/*+------------------------------------------------------------------+
+  |                                        Terminal.WinUI3.ViewModels|
+  |                                               SymbolViewModel.cs |
+  +------------------------------------------------------------------+*/
+
+using System.ComponentModel;
 using System.Diagnostics;
 using Common.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -20,6 +25,8 @@ using Terminal.WinUI3.Models.Kernels;
 using ChartControlBase = Terminal.WinUI3.Controls.Chart.Base.ChartControlBase;
 using Microsoft.UI.Xaml.Controls;
 using Symbol = Common.Entities.Symbol;
+using CommunityToolkit.Mvvm.Messaging;
+using Terminal.WinUI3.Messenger.Chart;
 
 namespace Terminal.WinUI3.ViewModels;
 
@@ -33,7 +40,7 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     private readonly int _horizontalShiftDefault;
     private readonly double _verticalShiftDefault;
     private readonly int _kernelShiftPercentDefault;
-
+    
     [ObservableProperty] private double _minCenturies;
     [ObservableProperty] private double _maxCenturies; 
     [ObservableProperty] private int _centuriesPercent;
@@ -43,12 +50,15 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     [ObservableProperty] private int _kernelShiftPercent;
     [ObservableProperty] private int _horizontalShift;
     [ObservableProperty] private double _verticalShift;
+    [ObservableProperty] private double _centuryShift;
 
     [ObservableProperty] private Currency _currency;
     [ObservableProperty] private string _operationalContent = string.Empty;
 
     [ObservableProperty] private bool _isVerticalLineRequested;
     [ObservableProperty] private bool _isHorizontalLineRequested;
+
+    [ObservableProperty] private bool _isSelected;
 
     [ObservableProperty] private MenuFlyout _graphMenuFlyout;
 
@@ -112,7 +122,7 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
 
         DisposeChart(false);
         ChartControlBase = await _chartService.GetChartAsync<TickChartControl, Quotation, Quotations>(Symbol, IsReversed, ChartType.Ticks).ConfigureAwait(true);
-        SetupChart();
+        SetupViewModel();
     }
 
     [RelayCommand]
@@ -124,7 +134,7 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
 
         DisposeChart(false);
         ChartControlBase = await _chartService.GetChartAsync<CandlestickChartControl, Candlestick, Candlesticks>(Symbol, IsReversed, ChartType.Candlesticks).ConfigureAwait(true);
-        SetupChart();
+        SetupViewModel();
     }
 
     [RelayCommand]
@@ -136,7 +146,7 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
 
         DisposeChart(false);
         ChartControlBase = await _chartService.GetChartAsync<ThresholdBarChartControl, ThresholdBar, ThresholdBars>(Symbol, IsReversed, ChartType.ThresholdBars).ConfigureAwait(true);
-        SetupChart();
+        SetupViewModel();
     }
 
     [RelayCommand]
@@ -250,6 +260,26 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         ChartControlBase.KernelShiftPercent = value;
     }
 
+    partial void OnHorizontalShiftChanged(int value)
+    {
+        if (!ChartControlBase.IsSelected || ChartControlBase.ChartType != ChartType.Candlesticks)
+        {
+            return;
+        }
+
+        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.HorizontalShift) { ChartType = ChartControlBase.ChartType, Symbol = Symbol, IntValue = value }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
+    }
+
+    partial void OnCenturyShiftChanged(double value)
+    {
+        if (!ChartControlBase.IsSelected)
+        {
+            return;
+        }
+
+        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.CenturyShift) { Symbol = Symbol, IsReversed = IsReversed, DoubleValue = value }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
+    }
+
     partial void OnIsVerticalLineRequestedChanged(bool value)
     {
         ChartControlBase.IsVerticalLineRequested = value;
@@ -268,6 +298,16 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         }
     }
 
+    partial void OnIsSelectedChanged(bool value)
+    {
+        if (!value)
+        {
+            return;
+        }
+
+        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.IsSelected) { ChartType = ChartControlBase.ChartType, Symbol = Symbol }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
+    }
+
     private void SetChartBindings()
     {
         ChartControlBase.DataContext = this;
@@ -276,13 +316,13 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         ChartControlBase.SetBinding(ChartControlBase.CenturiesPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(CenturiesPercent)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.UnitsPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(UnitsPercent)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.MinUnitsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnits)), Mode = BindingMode.OneWay });
-
         ChartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.HorizontalShiftProperty, new Binding { Source = this, Path = new PropertyPath(nameof(HorizontalShift)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.VerticalShiftProperty, new Binding { Source = this, Path = new PropertyPath(nameof(VerticalShift)), Mode = BindingMode.TwoWay });
-
+        ChartControlBase.SetBinding(ChartControlBase.CenturyShiftProperty, new Binding { Source = this, Path = new PropertyPath(nameof(CenturyShift)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.IsVerticalLineRequestedProperty, new Binding { Source = this, Path = new PropertyPath(nameof(IsVerticalLineRequested)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.IsHorizontalLineRequestedProperty, new Binding { Source = this, Path = new PropertyPath(nameof(IsHorizontalLineRequested)), Mode = BindingMode.TwoWay });
+        ChartControlBase.SetBinding(ChartControlBase.IsSelectedProperty, new Binding { Source = this, Path = new PropertyPath(nameof(IsSelected)), Mode = BindingMode.TwoWay });
     }
 
     public async void OnNavigatedTo(object parameter)
@@ -301,60 +341,68 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         IsReversed = bool.Parse(parts?[1].Trim()!);
 
         ChartControlBase = await _chartService.GetDefaultChartAsync(Symbol, IsReversed).ConfigureAwait(true);
-        SetupChart();
+        ChartControlBase.IsSelected = true;
+        SetupViewModel();
     }
 
     public void OnNavigatedFrom()
     {
+        Task.Delay(5000);//todo: remove!!!
         DisposeChart(true);
     }
 
     public async void LoadChart(ChartType chartType)
     {
-        ChartControlBase = chartType switch
+        switch (chartType)
         {
-            ChartType.Ticks => await _chartService.GetChartAsync<TickChartControl, Quotation, Quotations>(Symbol, IsReversed, ChartType.Ticks).ConfigureAwait(false),
-            ChartType.Candlesticks => await _chartService.GetChartAsync<CandlestickChartControl, Candlestick, Candlesticks>(Symbol, IsReversed, ChartType.Candlesticks).ConfigureAwait(false),
-            ChartType.ThresholdBars => await _chartService.GetChartAsync<ThresholdBarChartControl, ThresholdBar, ThresholdBars>(Symbol, IsReversed, ChartType.ThresholdBars).ConfigureAwait(false),
-            _ => throw new ArgumentOutOfRangeException(nameof(chartType), chartType, null)
-        };
-        SetupChart();
+            case ChartType.Ticks:
+                ChartControlBase = await _chartService.GetChartAsync<TickChartControl, Quotation, Quotations>(Symbol, IsReversed, ChartType.Ticks).ConfigureAwait(false);
+                break;
+            case ChartType.Candlesticks:
+                ChartControlBase = await _chartService.GetChartAsync<CandlestickChartControl, Candlestick, Candlesticks>(Symbol, IsReversed, ChartType.Candlesticks).ConfigureAwait(false);
+                break;
+            case ChartType.ThresholdBars:
+                ChartControlBase = await _chartService.GetChartAsync<ThresholdBarChartControl, ThresholdBar, ThresholdBars>(Symbol, IsReversed, ChartType.ThresholdBars).ConfigureAwait(false);
+                break;
+            default: throw new ArgumentOutOfRangeException(nameof(chartType), chartType, null);
+        }
+
+        SetupViewModel();
     }
 
-    private void SetupChart()
+    private void SetupViewModel()
     {
+        IsSelected = false;
+
         var settings = ChartControlBase.GetChartSettings();
         Debug.Assert(Symbol == settings.Symbol);
         Debug.Assert(IsReversed == settings.IsReversed);
         VerticalShift = settings.VerticalShift;
         HorizontalShift = settings.HorizontalShift;
         KernelShiftPercent = settings.KernelShiftPercent;
-        var type = ChartControlBase.GetType();
-        switch (type)
+        
+        switch (settings.ChartType)
         {
-            case var _ when type == typeof(TickChartControl):
-                Debug.Assert(settings.ChartType == ChartType.Ticks);
-                IsTicksSelected = true;
-                IsCandlesticksSelected = IsThresholdBarsSelected = false;
+            case ChartType.Ticks:
+                IsCandlesticksEnabled = IsThresholdBarsEnabled = IsTicksSelected = true;
+                IsTicksEnabled = IsCandlesticksSelected = IsThresholdBarsSelected = false;
                 break;
-            case var _ when type == typeof(CandlestickChartControl):
-                Debug.Assert(settings.ChartType == ChartType.Candlesticks);
-                IsCandlesticksSelected = true;
-                IsTicksSelected = IsThresholdBarsSelected = false;
+            case ChartType.Candlesticks:
+                IsTicksEnabled = IsThresholdBarsEnabled = IsCandlesticksSelected = true;
+                IsCandlesticksEnabled = IsTicksSelected = IsThresholdBarsSelected = false;
                 break;
-            case var _ when type == typeof(ThresholdBarChartControl):
-                Debug.Assert(settings.ChartType == ChartType.ThresholdBars);
-                IsThresholdBarsSelected = true;
-                IsTicksSelected = IsCandlesticksSelected = false;
+            case ChartType.ThresholdBars:
+                IsTicksEnabled = IsCandlesticksEnabled = IsThresholdBarsSelected = true;
+                IsThresholdBarsEnabled = IsTicksSelected = IsCandlesticksSelected = false;
                 break;
-            default: throw new Exception($"Unknown chart type: {type}");
+            default: throw new Exception($"Unknown chart type: {settings.ChartType}");
         }
 
         SetChartBindings();
         UpdateOperationalProperties();
     }
 
-    private bool _isTicksEnabled = true;
+    private bool _isTicksEnabled;
     public bool IsTicksEnabled
     {
         get => _isTicksEnabled;
@@ -376,7 +424,7 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         }
     }
 
-    private bool _isCandlesticksEnabled = true;
+    private bool _isCandlesticksEnabled;
     public bool IsCandlesticksEnabled
     {
         get => _isCandlesticksEnabled;
@@ -398,7 +446,7 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         }
     }
 
-    private bool _isThresholdBarsEnabled = true;
+    private bool _isThresholdBarsEnabled;
     public bool IsThresholdBarsEnabled
     {
         get => _isThresholdBarsEnabled;

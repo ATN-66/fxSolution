@@ -278,7 +278,7 @@ internal sealed class AccountService : IAccountService
         _position.StartOrder.Volume = double.Parse(detailsDictionary["StartOrderVolume"]);
         _position.StartOrder.Time = DateTime.ParseExact(detailsDictionary["StartOrderTime"], _mT5DateTimeFormat, CultureInfo.InvariantCulture);
 
-        StrongReferenceMessenger.Default.Send(new OrderAcceptMessage(_position.Symbol, AcceptType.Open, _position.StartOrder), new Token(_position.Symbol));
+        StrongReferenceMessenger.Default.Send(new OrderAcceptMessage(_position.Symbol, AcceptType.Open, _position.StartOrder), new SymbolToken(_position.Symbol));
     }
     private void UpdateClose(string details)
     {
@@ -313,7 +313,7 @@ internal sealed class AccountService : IAccountService
         _position.EndOrder.Bid = double.Parse(detailsDictionary["EndOrderBid"]);
         _position.EndOrder.Time = DateTime.ParseExact(detailsDictionary["EndOrderTime"], _mT5DateTimeFormat, CultureInfo.InvariantCulture);
 
-        StrongReferenceMessenger.Default.Send(new OrderAcceptMessage(_position.Symbol, AcceptType.Close, _position.EndOrder), new Token(_position.Symbol));
+        StrongReferenceMessenger.Default.Send(new OrderAcceptMessage(_position.Symbol, AcceptType.Close, _position.EndOrder), new SymbolToken(_position.Symbol));
         _position = null;
     }
     public void UpdateTransaction(int ticket, ResultCode code, string details)
@@ -334,7 +334,7 @@ internal sealed class AccountService : IAccountService
             _position.StartOrder.StopLoss = double.Parse(detailsDictionary["StartOrderStopLoss"]);
             _position.StartOrder.TakeProfit = double.Parse(detailsDictionary["StartOrderTakeProfit"]);
 
-            StrongReferenceMessenger.Default.Send(new OrderAcceptMessage(_position.Symbol, AcceptType.Modify, _position.StartOrder), new Token(_position.Symbol));
+            StrongReferenceMessenger.Default.Send(new OrderAcceptMessage(_position.Symbol, AcceptType.Modify, _position.StartOrder), new SymbolToken(_position.Symbol));
         }
         else
         {

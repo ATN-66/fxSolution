@@ -5,6 +5,7 @@
 
 using System.Diagnostics;
 using System.Numerics;
+using Windows.Foundation;
 using Common.Entities;
 using Common.ExtensionsAndHelpers;
 using CommunityToolkit.Mvvm.Messaging;
@@ -60,8 +61,9 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> where TItem
         var bid = DataSource[KernelShift].Bid;
         ViewPort.High = ask + Pips * Digits / 2d - VerticalShift * Digits;
         ViewPort.Low = ask - Pips * Digits / 2d - VerticalShift * Digits;
-        ViewPort.End = DataSource[KernelShift].End;
         ViewPort.Start = DataSource[Math.Min(Units - HorizontalShift + KernelShift, DataSource.Count) - 1].Start;
+        ViewPort.End = DataSource[KernelShift].End;
+        
 
         var yAsk = (ViewPort.High - ask) / Digits * VerticalScale;
         var yBid = (ViewPort.High - bid) / Digits * VerticalScale;
@@ -486,12 +488,24 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> where TItem
 
         var (upCurrency, downCurrency, upColor, downColor) = IsReversed ? (QuoteCurrency, BaseCurrency, QuoteColor, BaseColor) : (BaseCurrency, QuoteCurrency, BaseColor, QuoteColor);
         using var upCurrencyLayout = new CanvasTextLayout(args.DrawingSession, upCurrency.ToString(), CurrencyLabelCanvasTextFormat, 0.0f, CurrencyFontSize);
+        using var downCurrencyLayout = new CanvasTextLayout(args.DrawingSession, downCurrency.ToString(), CurrencyLabelCanvasTextFormat, 0.0f, CurrencyFontSize);
 
         var upCurrencyPosition = new Vector2(0f, 0f);
-        var downCurrencyPosition = new Vector2(0f, (float)upCurrencyLayout.DrawBounds.Height + 3f);
+        var downCurrencyPosition = new Vector2(0f, upCurrencyPosition.Y + (float)upCurrencyLayout.LayoutBounds.Height + 1f);
 
-        args.DrawingSession.DrawText(upCurrency.ToString(), upCurrencyPosition, upColor, CurrencyLabelCanvasTextFormat);
-        args.DrawingSession.DrawText(downCurrency.ToString(), downCurrencyPosition, downColor, CurrencyLabelCanvasTextFormat);
+        args.DrawingSession.DrawTextLayout(upCurrencyLayout, upCurrencyPosition, upColor);
+        args.DrawingSession.DrawTextLayout(downCurrencyLayout, downCurrencyPosition, downColor);
+
+        if (IsSelected)
+        {
+            var borderRect = new Rect(
+                upCurrencyPosition.X,
+                upCurrencyPosition.Y,
+                Math.Max(upCurrencyLayout.LayoutBounds.Width, downCurrencyLayout.LayoutBounds.Width),
+                upCurrencyLayout.LayoutBounds.Height + downCurrencyLayout.LayoutBounds.Height + 1f
+            );
+            args.DrawingSession.DrawRectangle(borderRect, downColor, 1f);
+        }
 
         var askStr = DataSource[KernelShift].Ask.ToString(PriceTextFormat);
         var askHeight = DrawPrice(askStr[..4], askStr[4..6], askStr[6..7], 5, 3, 3);
@@ -499,24 +513,26 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> where TItem
         var bidHeight = DrawPrice(bidStr[..4], bidStr[4..6], bidStr[6..7], 5, askHeight + 3, 3);
         DrawSpread(DataSource[KernelShift].Ask, DataSource[KernelShift].Bid, 5, bidHeight + 3);
 
+        return;
+
         float DrawPrice(string firstPart, string secondPart, string thirdPart, float xShift, float yShift, float margin)
         {
-            using var askFirstPartLayout = new CanvasTextLayout(args.DrawingSession, firstPart, AskBidLabelCanvasTextFormat, 0f, 0f);
-            using var askSecondPartLayout = new CanvasTextLayout(args.DrawingSession, secondPart, CurrencyLabelCanvasTextFormat, 0f, 0f);
-            using var askThirdPartLayout = new CanvasTextLayout(args.DrawingSession, thirdPart, AskBidLabelCanvasTextFormat, 0f, 0f);
+            using var priceFirstPartLayout = new CanvasTextLayout(args.DrawingSession, firstPart, AskBidLabelCanvasTextFormat, 0f, 0f);
+            using var priceSecondPartLayout = new CanvasTextLayout(args.DrawingSession, secondPart, CurrencyLabelCanvasTextFormat, 0f, 0f);
+            using var priceThirdPartLayout = new CanvasTextLayout(args.DrawingSession, thirdPart, AskBidLabelCanvasTextFormat, 0f, 0f);
 
-            var askThirdPositionX = (float)(GraphWidth - askThirdPartLayout.DrawBounds.Width - xShift);
-            args.DrawingSession.DrawText(thirdPart, askThirdPositionX, yShift, Colors.Gray, AskBidLabelCanvasTextFormat);
+            var priceThirdPositionX = (float)(GraphWidth - priceThirdPartLayout.DrawBounds.Width - xShift);
+            args.DrawingSession.DrawText(thirdPart, priceThirdPositionX, yShift, Colors.Gray, AskBidLabelCanvasTextFormat);
 
-            var askSecondPositionX = (float)(GraphWidth - askSecondPartLayout.DrawBounds.Width - askThirdPartLayout.DrawBounds.Width - xShift - margin);
-            args.DrawingSession.DrawText(secondPart, askSecondPositionX, yShift, Colors.Gray, CurrencyLabelCanvasTextFormat);
+            var priceSecondPositionX = (float)(GraphWidth - priceSecondPartLayout.DrawBounds.Width - priceThirdPartLayout.DrawBounds.Width - xShift - margin);
+            args.DrawingSession.DrawText(secondPart, priceSecondPositionX, yShift, Colors.Gray, CurrencyLabelCanvasTextFormat);
 
-            var askFirstPositionX = (float)(GraphWidth - askFirstPartLayout.DrawBounds.Width - askSecondPartLayout.DrawBounds.Width - askThirdPartLayout.DrawBounds.Width - xShift - margin * 2);
-            var askFirstPositionY = (float)askSecondPartLayout.DrawBounds.Height - (float)askFirstPartLayout.DrawBounds.Height + yShift;
+            var priceFirstPositionX = (float)(GraphWidth - priceFirstPartLayout.DrawBounds.Width - priceSecondPartLayout.DrawBounds.Width - priceThirdPartLayout.DrawBounds.Width - xShift - margin * 2);
+            var priceFirstPositionY = (float)priceSecondPartLayout.DrawBounds.Height - (float)priceFirstPartLayout.DrawBounds.Height + yShift;
 
-            args.DrawingSession.DrawText(firstPart, askFirstPositionX, askFirstPositionY, Colors.Gray, AskBidLabelCanvasTextFormat);
+            args.DrawingSession.DrawText(firstPart, priceFirstPositionX, priceFirstPositionY, Colors.Gray, AskBidLabelCanvasTextFormat);
 
-            return askFirstPositionY + (float)askFirstPartLayout.DrawBounds.Height;
+            return priceFirstPositionY + (float)priceFirstPartLayout.DrawBounds.Height;
         }
 
         void DrawSpread(double ask, double bid, float xShift, float yShift)

@@ -170,6 +170,12 @@ public class TickChartControl : ChartControl<Quotation, Quotations>
         }
     }
 
+    protected override void GraphCanvas_OnPointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        IsSelected = true;
+        base.GraphCanvas_OnPointerPressed(sender, e);
+    }
+
     protected override void XAxisCanvas_OnPointerReleased(object sender, PointerRoutedEventArgs e)
     {
         try

@@ -11,9 +11,9 @@ public struct ChartSettings
 {
     public bool IsDefault { get; set; }
 
+    public ChartType ChartType { get; init; }
     public Symbol Symbol { get; init; }
     public bool IsReversed { get; init; }
-    public ChartType ChartType { get; set; }
 
     public int HorizontalShift { get; init; }
     public double VerticalShift { get; init; }

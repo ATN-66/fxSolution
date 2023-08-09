@@ -20,7 +20,7 @@ namespace Terminal.WinUI3.Controls.Chart.Base;
 
 public abstract partial class ChartControlBase
 {
-    protected CanvasControl? GraphCanvas;
+    protected CanvasControl?  GraphCanvas;
     protected CanvasControl? CenturyAxisCanvas;
     protected CanvasControl? PipsAxisCanvas;
     protected CanvasControl? XAxisCanvas;
@@ -207,7 +207,7 @@ public abstract partial class ChartControlBase
         {
             throw new InvalidOperationException("Canvas control has no parent grid.");
         }
-        var axisRow = grid.RowDefinitions[0];
+        var axisRow = grid.RowDefinitions[1];
         axisRow.Height = new GridLength(_xAxisHeight);
 
         _centuryAxisWidth = CalculateTextBounds(CenturyAxisTextSample, YAxisCanvasTextFormat).width;
@@ -233,8 +233,8 @@ public abstract partial class ChartControlBase
         GraphHeight = e.NewSize.Height;
         Centuries = MinCenturies + (MaxCenturies - MinCenturies) * CenturiesPercent / 100d;
 
-        var pipsPerCentury = Century / TickValue / 10d;
-        Pips = (int)(pipsPerCentury * Centuries);
+        PipsPerCentury = Century / TickValue / 10d;
+        Pips = (int)(PipsPerCentury * Centuries);
         VerticalScale = GraphHeight / Pips;
 
         GraphWidth = e.NewSize.Width;
@@ -424,6 +424,11 @@ public abstract partial class ChartControlBase
 
     public void Invalidate()
     {
+        if (GraphCanvas is null)
+        {
+            return;
+        }
+
         GraphCanvas!.Invalidate();
         CenturyAxisCanvas!.Invalidate();
         PipsAxisCanvas!.Invalidate();
@@ -432,6 +437,35 @@ public abstract partial class ChartControlBase
         DebugCanvas!.Invalidate();
     }
 
+    private (float width, float height) CalculateTextBounds(string textSample, CanvasTextFormat textFormat)
+    {
+        try
+        {
+            var textLayout = new CanvasTextLayout(CanvasDevice.GetSharedDevice(), textSample, textFormat, float.PositiveInfinity, float.PositiveInfinity);
+            var textBounds = textLayout.LayoutBounds;
+            return ((float)textBounds.Width, (float)textBounds.Height);
+        }
+        catch (Exception exception)
+        {
+            LogExceptionHelper.LogException(Logger, exception, "CalculateTextBounds");
+            throw;
+        }
+    }
+    protected DateTime RoundDateTime(DateTime dt, double timeStep)
+    {
+        try
+        {
+            dt = dt.AddMilliseconds(-dt.TimeOfDay.Milliseconds);
+            var totalSeconds = dt.TimeOfDay.TotalSeconds;
+            var modulo = totalSeconds % timeStep;
+            return modulo < timeStep / 2 ? dt.AddSeconds(-modulo) : dt.AddSeconds(timeStep - modulo);
+        }
+        catch (Exception exception)
+        {
+            LogExceptionHelper.LogException(Logger, exception, "RoundDateTime");
+            throw;
+        }
+    }
     protected abstract int CalculateMaxUnits();
     public abstract void DeleteSelectedNotification();
     public abstract void DeleteAllNotifications();

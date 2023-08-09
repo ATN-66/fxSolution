@@ -77,6 +77,14 @@ public class ChartService : IChartService
             _candlestickCharts[(Symbol)symbol] = null;
             _thresholdBarChartsReversed[(Symbol)symbol] = null;
             _thresholdBarCharts[(Symbol)symbol] = null;
+
+            foreach (var isReversed in new[] { false, true })
+            {
+                var key = Tuple.Create((Symbol)symbol, isReversed);
+                _tickChartsCounter[key] = 0;
+                _candlestickChartsCounter[key] = 0;
+                _thresholdBarChartsCounter[key] = 0;
+            }
         }
 
         LoadSettingsAsync();
@@ -86,21 +94,22 @@ public class ChartService : IChartService
     {
         ChartType chartType;
 
-        if (_settings.ContainsKey(symbol) && _settings[symbol].ContainsKey(isReversed))
+        try
         {
-            var settingsForSymbolAndReversed = _settings[symbol][isReversed];
-            if (settingsForSymbolAndReversed.Any(s => s.Value.IsDefault))
+            if (_settings.ContainsKey(symbol) && _settings[symbol].ContainsKey(isReversed))
             {
-                chartType = settingsForSymbolAndReversed.First(s => s.Value.IsDefault).Key;
+                var settingsForSymbolAndReversed = _settings[symbol][isReversed];
+                chartType = settingsForSymbolAndReversed.Any(s => s.Value.IsDefault) ? settingsForSymbolAndReversed.First(s => s.Value.IsDefault).Key : ChartType.Candlesticks;
             }
             else
             {
                 chartType = ChartType.Candlesticks;
             }
         }
-        else
+        catch (Exception e)
         {
-            chartType = ChartType.Candlesticks;
+            Debug.WriteLine(e);
+            throw;
         }
 
         return chartType switch
@@ -126,7 +135,18 @@ public class ChartService : IChartService
     public async Task<T> GetChartAsync<T, TItem, TK>(Symbol symbol,  bool isReversed, ChartType chartType) where T : Controls.Chart.ChartControl<TItem, TK> where TItem : IChartItem where TK : IDataSourceKernel<TItem>
     {
         T result;
-        var settings = _settings[symbol][isReversed][chartType];
+        ChartSettings settings;
+
+        try
+        {
+            settings = _settings[symbol][isReversed][chartType];
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e);
+            throw;
+        }
+        
         ValidateSettings(ref settings);
         Debug.Assert(settings.Symbol == symbol);
         Debug.Assert(settings.IsReversed == isReversed);
@@ -221,64 +241,96 @@ public class ChartService : IChartService
     public void DisposeChart(ChartSettings settings, bool isDefault)
     {
         settings.IsDefault = isDefault;
-
         var symbol = settings.Symbol;
         var isReversed = settings.IsReversed;
         var chartType = settings.ChartType;
         ValidateSettings(ref settings);
-        _settings[symbol][isReversed][chartType] = settings;
+
+        try
+        {
+            _settings[symbol][isReversed][chartType] = settings;
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e);
+            throw;
+        }
 
         switch (chartType)
         {
             case ChartType.Ticks:
-                if (_tickChartsCounter[new Tuple<Symbol, bool>(symbol, isReversed)] == 1)
+                try
                 {
-                    if (isReversed)
+                    if (_tickChartsCounter[new Tuple<Symbol, bool>(symbol, isReversed)] == 1)
                     {
-                        _tickChartsReversed[symbol]?.Dispose();
-                        _tickChartsReversed[symbol] = null;
-                    }
-                    else
-                    {
-                        _tickCharts[symbol]?.Dispose();
-                        _tickCharts[symbol] = null;
-                    }
+                        if (isReversed)
+                        {
+                            _tickChartsReversed[symbol]?.Dispose();
+                            _tickChartsReversed[symbol] = null;
+                        }
+                        else
+                        {
+                            _tickCharts[symbol]?.Dispose();
+                            _tickCharts[symbol] = null;
+                        }
 
-                    UnRegisterChart(_tickChartsCounter, symbol, isReversed);
+                        UnRegisterChart(_tickChartsCounter, symbol, isReversed);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    throw;
                 }
                 break;
             case ChartType.Candlesticks:
-                if (_candlestickChartsCounter[new Tuple<Symbol, bool>(symbol, isReversed)] == 1)
+                try
                 {
-                    if (isReversed)
+                    if (_candlestickChartsCounter[new Tuple<Symbol, bool>(symbol, isReversed)] == 1)
                     {
-                        _candlestickChartsReversed[symbol]?.Dispose();
-                        _candlestickChartsReversed[symbol] = null;
-                    }
-                    else
-                    {
-                        _candlestickCharts[symbol]?.Dispose();
-                        _candlestickCharts[symbol] = null;
-                    }
+                        if (isReversed)
+                        {
+                            _candlestickChartsReversed[symbol]?.Dispose();
+                            _candlestickChartsReversed[symbol] = null;
+                        }
+                        else
+                        {
+                            _candlestickCharts[symbol]?.Dispose();
+                            _candlestickCharts[symbol] = null;
+                        }
 
-                    UnRegisterChart(_candlestickChartsCounter, symbol, isReversed);
+                        UnRegisterChart(_candlestickChartsCounter, symbol, isReversed);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    throw;
                 }
                 break;
             case ChartType.ThresholdBars:
-                if (_thresholdBarChartsCounter[new Tuple<Symbol, bool>(symbol, isReversed)] == 1)
+                try
                 {
-                    if (isReversed)
+                    if (_thresholdBarChartsCounter[new Tuple<Symbol, bool>(symbol, isReversed)] == 1)
                     {
-                        _thresholdBarChartsReversed[symbol]?.Dispose();
-                        _thresholdBarChartsReversed[symbol] = null;
-                    }
-                    else
-                    {
-                        _thresholdBarCharts[symbol]?.Dispose();
-                        _thresholdBarCharts[symbol] = null;
-                    }
+                        if (isReversed)
+                        {
+                            _thresholdBarChartsReversed[symbol]?.Dispose();
+                            _thresholdBarChartsReversed[symbol] = null;
+                        }
+                        else
+                        {
+                            _thresholdBarCharts[symbol]?.Dispose();
+                            _thresholdBarCharts[symbol] = null;
+                        }
 
-                    UnRegisterChart(_thresholdBarChartsCounter, symbol, isReversed);
+                        UnRegisterChart(_thresholdBarChartsCounter, symbol, isReversed);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    throw;
                 }
                 break;
             default: throw new ArgumentException($@"Unsupported chart type {settings.ChartType}", nameof(settings.ChartType));
@@ -372,14 +424,7 @@ public class ChartService : IChartService
     private static void RegisterChart(IDictionary<Tuple<Symbol, bool>, int> chartUsageCounts, Symbol symbol, bool isReversed)
     {
         var key = new Tuple<Symbol, bool>(symbol, isReversed);
-        if (chartUsageCounts.TryGetValue(key, out var count))
-        {
-            chartUsageCounts[key] = count + 1;
-        }
-        else
-        {
-            chartUsageCounts[key] = 1;
-        }
+        chartUsageCounts[key] += 1;
     }
 
     private static void UnRegisterChart(IDictionary<Tuple<Symbol, bool>, int> chartUsageCounts, Symbol symbol, bool isReversed)
@@ -391,14 +436,12 @@ public class ChartService : IChartService
         }
 
         count--;
-        if (count <= 0)
+        if (count < 0)
         {
-            chartUsageCounts.Remove(key);
+            count = 0;
         }
-        else
-        {
-            chartUsageCounts[key] = count;
-        }
+
+        chartUsageCounts[key] = count;
     }
 
     private static void ValidateSettings(ref ChartSettings settings)

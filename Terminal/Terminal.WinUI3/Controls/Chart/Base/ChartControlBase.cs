@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                                         Terminal.WinUI3.Controls |
-  |                                              ChartControlBaseFirst.cs |
+  |                                              ChartControlBase.cs |
   +------------------------------------------------------------------+*/
 
 using System.Runtime.CompilerServices;
@@ -13,6 +13,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml.Controls;
+using Terminal.WinUI3.Controls.Chart.Candlestick;
+using Terminal.WinUI3.Controls.Chart.ThresholdBar;
+using Terminal.WinUI3.Controls.Chart.Tick;
 using Terminal.WinUI3.Models.Chart;
 using Symbol = Common.Entities.Symbol;
 using Enum = System.Enum;
@@ -22,28 +25,10 @@ namespace Terminal.WinUI3.Controls.Chart.Base;
 public abstract partial class ChartControlBase : Control
 {
     protected readonly ILogger<ChartControlBase> Logger;
-    protected readonly bool IsReversed;
-    protected readonly double Digits;
-    protected int DecimalPlaces
-    {
-        get
-        {
-            var value = Digits;
-            var count = 0;
-            while (value < 1)
-            {
-                value *= 10;
-                count++;
-            }
-            return count;
-        }
-    }
-    private const double Century = 100d; // todo: settings // one hundred dollars of the balance currency
     private readonly Queue<(int ID, MessageType Type, string Message)> _messageQueue = new();
     private const int DebugMessageQueueSize = 10;
     private int _debugMessageId;
     private readonly MessageType _messageTypeLevel;
-    protected readonly ViewPort ViewPort = new();
 
     protected ChartControlBase(IConfiguration configuration, ChartSettings chartSettings, double tickValue, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger)
     {
@@ -54,6 +39,15 @@ public abstract partial class ChartControlBase : Control
         HorizontalShift = chartSettings.HorizontalShift;
         VerticalShift = chartSettings.VerticalShift;
         SetValue(KernelShiftPercentProperty, chartSettings.KernelShiftPercent);
+
+        var type = GetType();
+        ChartType = type switch
+        {
+            _ when type == typeof(TickChartControl) => ChartType.Ticks,
+            _ when type == typeof(CandlestickChartControl) => ChartType.Candlesticks,
+            _ when type == typeof(ThresholdBarChartControl) => ChartType.ThresholdBars,
+            _ => throw new Exception($"Unknown chart type: {type}")
+        };
 
         switch (Symbol)
         {
@@ -105,11 +99,6 @@ public abstract partial class ChartControlBase : Control
         get;
         set;
     }
-    protected double TickValue
-    {
-        get;
-        set;
-    }
 
     public void Tick()
     {
@@ -122,6 +111,7 @@ public abstract partial class ChartControlBase : Control
     }
     public void Dispose()
     {
+        WeakReferenceMessenger.Default.UnregisterAll(this);
         StrongReferenceMessenger.Default.UnregisterAll(this);
     }
 
@@ -136,36 +126,8 @@ public abstract partial class ChartControlBase : Control
         }
         throw new Exception("Failed to parse currencies from symbol.");
     }
-    private (float width, float height) CalculateTextBounds(string textSample, CanvasTextFormat textFormat)
-    {
-        try
-        {
-            var textLayout = new CanvasTextLayout(CanvasDevice.GetSharedDevice(), textSample, textFormat, float.PositiveInfinity, float.PositiveInfinity);
-            var textBounds = textLayout.LayoutBounds;
-            return ((float)textBounds.Width, (float)textBounds.Height);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "CalculateTextBounds");
-            throw;
-        }
-    }
-    protected DateTime RoundDateTime(DateTime dt, double timeStep)
-    {
-        try
-        {
-            dt = dt.AddMilliseconds(-dt.TimeOfDay.Milliseconds);
-            var totalSeconds = dt.TimeOfDay.TotalSeconds;
-            var modulo = totalSeconds % timeStep;
-            return modulo < timeStep / 2 ? dt.AddSeconds(-modulo) : dt.AddSeconds(timeStep - modulo);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "RoundDateTime");
-            throw;
-        }
-    }
-    public void EnqueueMessage(MessageType type, string message, [CallerMemberName] string methodName = "")
+
+    protected void EnqueueMessage(MessageType type, string message, [CallerMemberName] string methodName = "")
     {
         var latestSameMethodMessage = _messageQueue
             .Reverse()
@@ -188,27 +150,5 @@ public abstract partial class ChartControlBase : Control
     {
         _messageQueue.Clear();
         DebugCanvas!.Invalidate();
-    }
-    protected double GetPrice(float positionY)
-    {
-        if (IsReversed)
-        {
-            return ViewPort.High - (ViewPort.High - ViewPort.Low) * (positionY / GraphHeight);
-        }
-        else
-        {
-            return ViewPort.Low + (ViewPort.High - ViewPort.Low) * (1 - positionY / GraphHeight);
-        }
-    }
-    protected float GetPositionY(double price)
-    {
-        if (IsReversed)
-        {
-            return (float)(((price - ViewPort.Low) / (ViewPort.High - ViewPort.Low)) * GraphHeight);
-        }
-        else
-        {
-            return (float)((1 - ((price - ViewPort.Low) / (ViewPort.High - ViewPort.Low))) * GraphHeight);
-        }
     }
 }

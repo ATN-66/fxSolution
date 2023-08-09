@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                                        Terminal.WinUI3.ViewModels|
-  |                                         CurrencyViewModel.cs |
+  |                                             CurrencyViewModel.cs |
   +------------------------------------------------------------------+*/
 
 using System.Collections.ObjectModel;
@@ -8,17 +8,21 @@ using System.Text.RegularExpressions;
 using Common.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Configuration;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
+using Terminal.WinUI3.Messenger.Chart;
 using Terminal.WinUI3.Models.Chart;
+using Enum = System.Enum;
 
 namespace Terminal.WinUI3.ViewModels;
 
-public partial class CurrencyViewModel : ObservableRecipient, INavigationAware
+public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, IRecipient<ChartMessage>
 {
     private readonly ISymbolViewModelFactory _symbolViewModelFactory;
 
+    private Currency _currency;
     private List<Symbol> Symbols { get; } = new();
     private List<bool> IsReversed { get; } = new();
     
@@ -34,47 +38,78 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware
 
         _centuriesPercent = configuration.GetValue<int>($"{nameof(_centuriesPercent)}");
         _unitsPercent = configuration.GetValue<int>($"{nameof(_unitsPercent)}");
-        _kernelShiftPercent = configuration.GetValue<int>($"{nameof(_kernelShiftPercent)}");
+        _kernelShiftPercent = configuration.GetValue<int>($"_kernelShiftPercentDefault");
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanChangeChart))]
     private async Task TicksAsync()
     {
         for (var i = 0; i < Symbols.Count; i++)
         {
+            if (!SymbolViewModels[i].IsSelected)
+            {
+                continue;
+            }
+
             await SymbolViewModels[i].TicksAsync().ConfigureAwait(true);
+            SetupCommands(ChartType.Ticks);
+            return;
         }
 
-        IsTicksSelected = true;
-        IsCandlesticksSelected = IsThresholdBarsSelected = false;
+        IsTicksSelected = false;
     }
 
-    [RelayCommand]
-    public async Task CandlesticksAsync()
+    [RelayCommand(CanExecute = nameof(CanChangeChart))]
+    private async Task CandlesticksAsync()
     {
         for (var i = 0; i < Symbols.Count; i++)
         {
+            if (!SymbolViewModels[i].IsSelected)
+            {
+                continue;
+            }
+
             await SymbolViewModels[i].CandlesticksAsync().ConfigureAwait(true);
+            SetupCommands(ChartType.Candlesticks);
+            return;
         }
 
-        IsCandlesticksSelected = true;
-        IsTicksSelected = IsThresholdBarsSelected = false;
+        IsCandlesticksSelected = false;
     }
 
-    [RelayCommand]
-    public async Task ThresholdBarsAsync()
+    [RelayCommand(CanExecute = nameof(CanChangeChart))]
+    private async Task ThresholdBarsAsync()
     {
         for (var i = 0; i < Symbols.Count; i++)
         {
+            if (!SymbolViewModels[i].IsSelected)
+            {
+                continue;
+            }
+
             await SymbolViewModels[i].ThresholdBarsAsync().ConfigureAwait(true);
+            SetupCommands(ChartType.ThresholdBars);
+            return;
         }
 
-        IsThresholdBarsSelected = true;
-        IsTicksSelected = IsCandlesticksSelected = false;
+        IsThresholdBarsSelected = false;
+    }
+
+    private bool CanChangeChart()
+    {
+        for (var i = 0; i < Symbols.Count; i++)
+        {
+            if (SymbolViewModels[i].IsSelected)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     [RelayCommand]
-    public async Task ClearMessagesAsync()
+    private async Task ClearMessagesAsync()
     {
         for (var i = 0; i < Symbols.Count; i++)
         {
@@ -83,11 +118,29 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware
     }
 
     [RelayCommand]
-    public async Task ResetShiftsAsync()
+    private async Task ResetShiftsAsync()
     {
         for (var i = 0; i < Symbols.Count; i++)
         {
             await SymbolViewModels[i].ResetShiftsAsync().ConfigureAwait(true);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ResetVerticalShiftAsync()
+    {
+        for (var i = 0; i < Symbols.Count; i++)
+        {
+            await SymbolViewModels[i].ResetHorizontalShiftAsync().ConfigureAwait(true);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ResetHorizontalShiftAsync()
+    {
+        for (var i = 0; i < Symbols.Count; i++)
+        {
+            await SymbolViewModels[i].ResetVerticalShiftAsync().ConfigureAwait(true);
         }
     }
 
@@ -123,8 +176,9 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware
 
         var parts = input!.Split(',').Select(part => part.Trim()).ToArray();
 
-        if (Enum.TryParse(parts[0], out Currency _))
+        if (Enum.TryParse(parts[0], out Currency currency))
         {
+            _currency = currency;
         }
         else
         {
@@ -152,10 +206,13 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware
             symbolViewModel.Symbol = Symbols[i];
             symbolViewModel.IsReversed = IsReversed[i];
             symbolViewModel.LoadChart(ChartType.Candlesticks);//todo: load from config
+            symbolViewModel.CenturiesPercent = CenturiesPercent;
+            symbolViewModel.UnitsPercent = UnitsPercent;
+            symbolViewModel.KernelShiftPercent = KernelShiftPercent;
             SymbolViewModels.Add(symbolViewModel);
-            IsCandlesticksSelected = true;//todo: load from config
-            IsTicksSelected = IsThresholdBarsSelected = false;//todo: load from config
         }
+
+        StrongReferenceMessenger.Default.Register(this, new CurrencyToken(_currency));
     }
 
     public void OnNavigatedFrom()
@@ -164,6 +221,8 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware
         {
             SymbolViewModels[i].OnNavigatedFrom();
         }
+
+        StrongReferenceMessenger.Default.UnregisterAll(this);
     }
 
     [GeneratedRegex(@"^[A-Z]{3}, \(\w+:[\w\d]+\)(, \(\w+:[\w\d]+\))*$")]
@@ -176,7 +235,7 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware
         }
     }
 
-    private bool _isTicksEnabled = true;
+    private bool _isTicksEnabled;
     public bool IsTicksEnabled
     {
         get => _isTicksEnabled;
@@ -198,7 +257,7 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware
         }
     }
 
-    private bool _isCandlesticksEnabled = true;
+    private bool _isCandlesticksEnabled;
     public bool IsCandlesticksEnabled
     {
         get => _isCandlesticksEnabled;
@@ -212,7 +271,7 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware
     public bool IsCandlesticksSelected
     {
         get => _isCandlesticksSelected;
-        protected set
+        private set
         {
             _isCandlesticksSelected = value;
             IsCandlesticksEnabled = !_isCandlesticksSelected;
@@ -220,7 +279,7 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware
         }
     }
 
-    private bool _isThresholdBarsEnabled = true;
+    private bool _isThresholdBarsEnabled;
     public bool IsThresholdBarsEnabled
     {
         get => _isThresholdBarsEnabled;
@@ -234,11 +293,69 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware
     public bool IsThresholdBarsSelected
     {
         get => _isThresholdBarsSelected;
-        protected set
+        private set
         {
             _isThresholdBarsSelected = value;
             IsThresholdBarsEnabled = !_isThresholdBarsSelected;
             OnPropertyChanged();
+        }
+    }
+
+    public void Receive(ChartMessage message)
+    {
+        switch (message.Value)
+        {
+            case ChartEvent.IsSelected: OnIsSelected(message); break;
+            case ChartEvent.CenturyShift: OnCenturyShift(message); break;
+            case ChartEvent.HorizontalShift: OnHorizontalShift(message); break;
+            default: throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    private void OnIsSelected(ChartMessage message)
+    {
+        if (SymbolViewModels[0].Symbol != message.Symbol) { SymbolViewModels[0].ChartControlBase.IsSelected = false; }
+        if (SymbolViewModels[1].Symbol != message.Symbol) { SymbolViewModels[1].ChartControlBase.IsSelected = false; }
+        if (SymbolViewModels[2].Symbol != message.Symbol) { SymbolViewModels[2].ChartControlBase.IsSelected = false; }
+
+        SetupCommands(message.ChartType);
+    }
+
+    private void OnCenturyShift(ChartMessage message)
+    {
+        if (SymbolViewModels[0].Symbol != message.Symbol) { SymbolViewModels[0].ChartControlBase.OnCenturyShift(message.IsReversed, message.DoubleValue); }
+        if (SymbolViewModels[1].Symbol != message.Symbol) { SymbolViewModels[1].ChartControlBase.OnCenturyShift(message.IsReversed, message.DoubleValue); }
+        if (SymbolViewModels[2].Symbol != message.Symbol) { SymbolViewModels[2].ChartControlBase.OnCenturyShift(message.IsReversed, message.DoubleValue); }
+    }
+
+    private void OnHorizontalShift(ChartMessage message)
+    {
+        if (SymbolViewModels[0].Symbol != message.Symbol) { SymbolViewModels[0].ChartControlBase.OnHorizontalShift(message.IntValue); }
+        if (SymbolViewModels[1].Symbol != message.Symbol) { SymbolViewModels[1].ChartControlBase.OnHorizontalShift(message.IntValue); }
+        if (SymbolViewModels[2].Symbol != message.Symbol) { SymbolViewModels[2].ChartControlBase.OnHorizontalShift(message.IntValue); }
+    }
+
+    private void SetupCommands(ChartType chartType)
+    {
+        TicksCommand.NotifyCanExecuteChanged();
+        CandlesticksCommand.NotifyCanExecuteChanged();
+        ThresholdBarsCommand.NotifyCanExecuteChanged();
+
+        switch (chartType)
+        {
+            case ChartType.Ticks:
+                IsCandlesticksEnabled = IsThresholdBarsEnabled = IsTicksSelected = true;
+                IsTicksEnabled = IsCandlesticksSelected = IsThresholdBarsSelected = false;
+                break;
+            case ChartType.Candlesticks:
+                IsTicksEnabled  = IsThresholdBarsEnabled = IsCandlesticksSelected = true;
+                IsCandlesticksEnabled = IsTicksSelected = IsThresholdBarsSelected = false;
+                break;
+            case ChartType.ThresholdBars:
+                IsTicksEnabled = IsCandlesticksEnabled = IsThresholdBarsSelected = true;
+                IsThresholdBarsEnabled = IsTicksSelected = IsCandlesticksSelected = false;
+                break;
+            default: throw new ArgumentOutOfRangeException();
         }
     }
 }

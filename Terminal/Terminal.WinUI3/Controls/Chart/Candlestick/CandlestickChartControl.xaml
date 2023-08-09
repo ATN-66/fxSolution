@@ -15,48 +15,45 @@
                 <ControlTemplate TargetType="candlestick:CandlestickChartControl">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-
                         <win2d:CanvasControl
                             x:Name="centuryAxisCanvas"
-                            Grid.Row="1"
+                            Grid.Row="0"
                             Grid.Column="0" />
                         <win2d:CanvasControl
                             x:Name="pipsAxisCanvas"
-                            Grid.Row="1"
+                            Grid.Row="0"
                             Grid.Column="1" />
-
                         <win2d:CanvasControl
                             x:Name="graphCanvas"
-                            Grid.Row="1"
+                            Grid.Row="0"
                             Grid.Column="2"
                             ContextFlyout="{Binding GraphMenuFlyout}"
                             DataContext="{Binding DataContext, RelativeSource={RelativeSource TemplatedParent}}" />
                         <win2d:CanvasControl
                             x:Name="debugCanvas"
-                            Grid.Row="1"
+                            Grid.Row="0"
                             Grid.Column="2"
                             Background="Transparent"
                             IsHitTestVisible="False" />
                         <win2d:CanvasControl
                             x:Name="textCanvas"
-                            Grid.Row="1"
+                            Grid.Row="0"
                             Grid.Column="2"
                             Background="Transparent"
                             IsHitTestVisible="False" />
-
                         <win2d:CanvasControl
                             x:Name="xAxisCanvas"
-                            Grid.Row="0"
+                            Grid.Row="1"
                             Grid.Column="2" />
-
+                        <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Background="Black" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>

@@ -13,8 +13,8 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -23,29 +23,81 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-
-        <ContentControl
-            Grid.Row="1"
-            Grid.RowSpan="2"
-            Grid.Column="0"
-            HorizontalContentAlignment="Stretch"
-            VerticalContentAlignment="Stretch"
-            Content="{x:Bind Path=ViewModel.SymbolViewModels[0].ChartControlBase, Mode=OneWay}" />
-        <ContentControl
-            Grid.Row="1"
-            Grid.RowSpan="2"
-            Grid.Column="1"
-            HorizontalContentAlignment="Stretch"
-            VerticalContentAlignment="Stretch"
-            Content="{x:Bind Path=ViewModel.SymbolViewModels[1].ChartControlBase, Mode=OneWay}" />
-        <ContentControl
-            Grid.Row="1"
-            Grid.RowSpan="2"
-            Grid.Column="2"
-            HorizontalContentAlignment="Stretch"
-            VerticalContentAlignment="Stretch"
-            Content="{x:Bind Path=ViewModel.SymbolViewModels[2].ChartControlBase, Mode=OneWay}" />
-
+        <Grid Grid.Row="1" Grid.RowSpan="2" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <ContentControl
+                Grid.Row="0"
+                Grid.RowSpan="2"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch"
+                Content="{x:Bind Path=ViewModel.SymbolViewModels[0].ChartControlBase, Mode=OneWay}" />
+            <StackPanel
+                Grid.Row="1"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Background="Black"
+                Orientation="Horizontal">
+                <Button
+                    Margin="0,0,0,0"
+                    Background="{x:Bind Path=ViewModel.SymbolViewModels[0].Currency, Converter={StaticResource CurrencyToColor}, Mode=OneWay}"
+                    Command="{x:Bind Path=ViewModel.SymbolViewModels[0].OperateCommand, Mode=OneWay}"
+                    Content="{x:Bind Path=ViewModel.SymbolViewModels[0].OperationalContent, Mode=OneWay}"
+                    CornerRadius="10,0,10,0" />
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1" Grid.RowSpan="2" Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <ContentControl
+                Grid.Row="0"
+                Grid.RowSpan="2"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch"
+                Content="{x:Bind Path=ViewModel.SymbolViewModels[1].ChartControlBase, Mode=OneWay}" />
+            <StackPanel
+                Grid.Row="1"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Background="Black"
+                Orientation="Horizontal">
+                <Button
+                    Margin="0,0,0,0"
+                    Background="{x:Bind Path=ViewModel.SymbolViewModels[1].Currency, Converter={StaticResource CurrencyToColor}, Mode=OneWay}"
+                    Command="{x:Bind Path=ViewModel.SymbolViewModels[1].OperateCommand, Mode=OneWay}"
+                    Content="{x:Bind Path=ViewModel.SymbolViewModels[1].OperationalContent, Mode=OneWay}"
+                    CornerRadius="10,0,10,0" />
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1" Grid.RowSpan="2" Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <ContentControl
+                Grid.Row="0"
+                Grid.RowSpan="2"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch"
+                Content="{x:Bind Path=ViewModel.SymbolViewModels[2].ChartControlBase, Mode=OneWay}" />
+            <StackPanel
+                Grid.Row="1"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Background="Black"
+                Orientation="Horizontal">
+                <Button
+                    Margin="0,0,0,0"
+                    Background="{x:Bind Path=ViewModel.SymbolViewModels[2].Currency, Converter={StaticResource CurrencyToColor}, Mode=OneWay}"
+                    Command="{x:Bind Path=ViewModel.SymbolViewModels[2].OperateCommand, Mode=OneWay}"
+                    Content="{x:Bind Path=ViewModel.SymbolViewModels[2].OperationalContent, Mode=OneWay}"
+                    CornerRadius="10,0,10,0" />
+            </StackPanel>
+        </Grid>
         <Slider
             Grid.Row="0"
             Grid.Column="0"
@@ -76,113 +128,55 @@
             SmallChange="1"
             StepFrequency="1"
             Value="{x:Bind Path=ViewModel.KernelShiftPercent, Mode=TwoWay}" />
-
         <Grid
-            Grid.Row="2"
+            Grid.Row="1"
             Grid.Column="0"
-            Grid.ColumnSpan="3"
-            Background="Transparent">
+            Grid.ColumnSpan="3">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Grid Grid.Row="0" Grid.Column="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <StackPanel
-                    Grid.Row="0"
-                    Grid.Column="0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    Background="Black"
-                    Orientation="Horizontal">
-                    <Button
-                        Margin="3,0,3,0"
-                        Command="{x:Bind Path=ViewModel.ResetShiftsCommand, Mode=OneWay}"
-                        Content="Reset Shifts" />
-                    <Button
-                        Margin="3,0,3,0"
-                        Command="{x:Bind Path=ViewModel.ClearMessagesCommand, Mode=OneWay}"
-                        Content="Clear" />
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="0"
-                    Grid.Column="1"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Background="Black"
-                    Orientation="Horizontal">
-                    <Button
-                        Margin="3,0,3,0"
-                        Background="{x:Bind Path=ViewModel.SymbolViewModels[0].Currency, Converter={StaticResource CurrencyToColor}, Mode=OneWay}"
-                        Command="{x:Bind Path=ViewModel.SymbolViewModels[0].OperateCommand, Mode=OneWay}"
-                        Content="{x:Bind Path=ViewModel.SymbolViewModels[0].OperationalContent, Mode=OneWay}"
-                        CornerRadius="10,0,10,0" />
-                </StackPanel>
-            </Grid>
-            <Grid Grid.Row="0" Grid.Column="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <StackPanel
-                    Grid.Row="0"
-                    Grid.Column="0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    Background="Black"
-                    Orientation="Horizontal">
-                    <ToggleButton
-                        Margin="3,0,3,0"
+            <StackPanel Background="{StaticResource SystemChromeLowColor }"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                <CommandBar
+                    Background="Transparent"
+                    DefaultLabelPosition="Right"
+                    IsOpen="False">
+                    <AppBarToggleButton
                         Command="{x:Bind Path=ViewModel.TicksCommand, Mode=OneWay}"
-                        Content="Ticks"
+                        Icon="Share"
                         IsChecked="{x:Bind Path=ViewModel.IsTicksSelected, Mode=OneWay}"
-                        IsEnabled="{x:Bind Path=ViewModel.IsTicksEnabled, Mode=OneWay}" />
-                    <ToggleButton
-                        Margin="3,0,3,0"
+                        IsEnabled="{x:Bind Path=ViewModel.IsTicksEnabled, Mode=OneWay}"
+                        Label="Ticks" />
+                    <AppBarToggleButton
                         Command="{x:Bind Path=ViewModel.CandlesticksCommand, Mode=OneWay}"
-                        Content="Candlesticks"
+                        Icon="Share"
                         IsChecked="{x:Bind Path=ViewModel.IsCandlesticksSelected, Mode=OneWay}"
-                        IsEnabled="{x:Bind Path=ViewModel.IsCandlesticksEnabled, Mode=OneWay}" />
-                    <ToggleButton
-                        Margin="3,0,3,0"
+                        IsEnabled="{x:Bind Path=ViewModel.IsCandlesticksEnabled, Mode=OneWay}"
+                        Label="Candles" />
+                    <AppBarToggleButton
                         Command="{x:Bind Path=ViewModel.ThresholdBarsCommand, Mode=OneWay}"
-                        Content="ThresholdBars"
+                        Icon="Share"
                         IsChecked="{x:Bind Path=ViewModel.IsThresholdBarsSelected, Mode=OneWay}"
-                        IsEnabled="{x:Bind Path=ViewModel.IsThresholdBarsEnabled, Mode=OneWay}" />
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="0"
-                    Grid.Column="1"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Background="Black"
-                    Orientation="Horizontal">
-                    <Button
-                        Margin="3,0,3,0"
-                        Background="{x:Bind Path=ViewModel.SymbolViewModels[1].Currency, Converter={StaticResource CurrencyToColor}, Mode=OneWay}"
-                        Command="{x:Bind Path=ViewModel.SymbolViewModels[1].OperateCommand, Mode=OneWay}"
-                        Content="{x:Bind Path=ViewModel.SymbolViewModels[1].OperationalContent, Mode=OneWay}"
-                        CornerRadius="10,0,10,0" />
-                </StackPanel>
-            </Grid>
-            <Grid Grid.Row="0" Grid.Column="2">
-                <StackPanel
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Background="Black"
-                    Orientation="Horizontal">
-                    <Button
-                        Margin="3,0,3,0"
-                        Background="{x:Bind Path=ViewModel.SymbolViewModels[2].Currency, Converter={StaticResource CurrencyToColor}, Mode=OneWay}"
-                        Command="{x:Bind Path=ViewModel.SymbolViewModels[2].OperateCommand, Mode=OneWay}"
-                        Content="{x:Bind Path=ViewModel.SymbolViewModels[2].OperationalContent, Mode=OneWay}"
-                        CornerRadius="10,0,10,0" />
-                </StackPanel>
-            </Grid>
+                        IsEnabled="{x:Bind Path=ViewModel.IsThresholdBarsEnabled, Mode=OneWay}"
+                        Label="Thresholds" />
+                    <AppBarSeparator />
+                    <AppBarButton Command="{x:Bind Path=ViewModel.ClearMessagesCommand, Mode=OneWay}" Icon="Remove" />
+                    <AppBarButton Command="{x:Bind Path=ViewModel.ResetShiftsCommand, Mode=OneWay}" Label="R" />
+                    <AppBarButton Command="{x:Bind Path=ViewModel.ResetVerticalShiftCommand, Mode=OneWay}" Label="RV" />
+                    <AppBarButton Command="{x:Bind Path=ViewModel.ResetHorizontalShiftCommand, Mode=OneWay}" Label="RH" />
+                    <AppBarSeparator />
+                    <!--<AppBarToggleButton Icon="Up" IsChecked="{x:Bind Path=ViewModel.IsVerticalLineRequested, Mode=TwoWay}" />-->
+                    <!--<AppBarToggleButton Icon="Forward" IsChecked="{x:Bind Path=ViewModel.IsHorizontalLineRequested, Mode=TwoWay}" />-->
+                    <AppBarSeparator />
+                </CommandBar>
+            </StackPanel>
         </Grid>
     </Grid>
 </Page>

@@ -3,6 +3,7 @@
   |                              ChartControlBaseFirst.Properties.cs |
   +------------------------------------------------------------------+*/
 
+using System.Diagnostics;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Terminal.WinUI3.Controls.Chart.Candlestick;
@@ -14,6 +15,33 @@ namespace Terminal.WinUI3.Controls.Chart.Base;
 
 public abstract partial class ChartControlBase
 {
+    public readonly ChartType ChartType;
+    public readonly bool IsReversed;
+    protected readonly double Digits;
+    protected int DecimalPlaces
+    {
+        get
+        {
+            var value = Digits;
+            var count = 0;
+            while (value < 1)
+            {
+                value *= 10;
+                count++;
+            }
+            return count;
+        }
+    }
+
+    private double TickValue
+    {
+        get;
+        set;
+    }
+    private const double Century = 100d; // todo: settings // one hundred dollars of the balance currency
+    protected double PipsPerCentury;
+    protected readonly ViewPort ViewPort = new();
+
     protected double GraphWidth;
     protected double GraphHeight;
     protected double HorizontalScale;
@@ -24,6 +52,7 @@ public abstract partial class ChartControlBase
     {
         var result = new ChartSettings()
         {
+            ChartType = ChartType,
             Symbol = Symbol,
             IsReversed = IsReversed,
             HorizontalShift = HorizontalShift,
@@ -31,23 +60,9 @@ public abstract partial class ChartControlBase
             KernelShiftPercent = KernelShiftPercent
         };
 
-        var childType = GetType();
-        if (typeof(TickChartControl).IsAssignableFrom(childType))
-        {
-            result.ChartType = ChartType.Ticks;
-        }
-        else if (typeof(CandlestickChartControl).IsAssignableFrom(childType))
-        {
-            result.ChartType = ChartType.Candlesticks;
-        }
-        else if (typeof(ThresholdBarChartControl).IsAssignableFrom(childType))
-        {
-            result.ChartType = ChartType.ThresholdBars;
-        }
-
         return result;
     }
-
+    
     public static readonly DependencyProperty MinCenturiesProperty = DependencyProperty.Register(nameof(MinCenturies), typeof(double), typeof(ChartControlBase), new PropertyMetadata(0d));
     public double MinCenturies
     {
@@ -174,7 +189,6 @@ public abstract partial class ChartControlBase
             SetValue(KernelShiftPercentProperty, value);
             HorizontalShift = 0;
             _kernelShift = CalculateKernelShift();
-
             Invalidate();
         }
     }
@@ -187,11 +201,46 @@ public abstract partial class ChartControlBase
         get => (int)GetValue(HorizontalShiftProperty);
         set => SetValue(HorizontalShiftProperty, value);
     }
+    public void OnHorizontalShift(int value)
+    {
+        if (ChartType != ChartType.Candlesticks)
+        {
+            return;
+        }
+        HorizontalShift = value;
+        Invalidate();
+    }
+
     public static readonly DependencyProperty VerticalShiftProperty = DependencyProperty.Register(nameof(VerticalShift), typeof(double), typeof(ChartControlBase), new PropertyMetadata(0d));
     public double VerticalShift
     {
         get => (double)GetValue(VerticalShiftProperty);
-        set => SetValue(VerticalShiftProperty, value);
+        set
+        {
+            if (value.Equals(VerticalShift))
+            {
+                return;
+            }
+            SetValue(VerticalShiftProperty, value);
+            CenturyShift = VerticalShift / PipsPerCentury;
+        }
+    }
+    public static readonly DependencyProperty CenturyShiftProperty = DependencyProperty.Register(nameof(CenturyShift), typeof(double), typeof(ChartControlBase), new PropertyMetadata(0d));
+    public double CenturyShift
+    {
+        get => (double)GetValue(CenturyShiftProperty);
+        set => SetValue(CenturyShiftProperty, value);
+    }
+    public void OnCenturyShift(bool isReversed, double value)
+    {
+        if (IsReversed != isReversed)
+        {
+            value = -value;
+        }
+
+        SetValue(CenturyShiftProperty, value);
+        SetValue(VerticalShiftProperty, value * PipsPerCentury);
+        Invalidate();
     }
 
     public static readonly DependencyProperty IsVerticalLineRequestedProperty = DependencyProperty.Register(nameof(IsVerticalLineRequested), typeof(bool), typeof(ChartControlBase), new PropertyMetadata(false));
@@ -219,4 +268,26 @@ public abstract partial class ChartControlBase
             ProtectedCursor = InputSystemCursor.Create(value ? InputSystemCursorShape.Cross : InputSystemCursorShape.Arrow);
         }
     }
+
+    public static readonly DependencyProperty IsSelectedProperty = DependencyProperty.Register(nameof(IsSelected), typeof(bool), typeof(ChartControlBase), new PropertyMetadata(false));
+    public bool IsSelected
+    {
+        get => (bool)GetValue(IsSelectedProperty);
+        set
+        {
+            if (IsSelected == value)
+            {
+                return;
+            }
+
+            SetValue(IsSelectedProperty, value);
+            OnIsSelectedChanged();
+        }
+    }
+    private void OnIsSelectedChanged()
+    {
+        _textCanvas!.Invalidate();
+    }
+
+   
 }

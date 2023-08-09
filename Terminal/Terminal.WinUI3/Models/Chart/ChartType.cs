@@ -9,5 +9,5 @@ public enum ChartType
 {
     Ticks,
     Candlesticks,
-    ThresholdBars
+    ThresholdBars,
 }

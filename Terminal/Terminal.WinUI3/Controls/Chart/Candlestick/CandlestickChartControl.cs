@@ -232,6 +232,8 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
 
     protected override void GraphCanvas_OnPointerPressed(object sender, PointerRoutedEventArgs e)
     {
+        IsSelected = true;
+
         if (IsVerticalLineRequested)
         {
             DeselectAllLines();

@@ -2,26 +2,26 @@
 
 namespace Terminal.WinUI3.Messenger.AccountService;
 
-public sealed class Token : IEquatable<Token>
+public sealed class SymbolToken : IEquatable<SymbolToken>
 {
     public Symbol Symbol
     {
         get;
     }
 
-    public Token(Symbol symbol)
+    public SymbolToken(Symbol symbol)
     {
         Symbol = symbol;
     }
 
-    public bool Equals(Token? other)
+    public bool Equals(SymbolToken? other)
     {
         return other != null && Symbol == other.Symbol;
     }
 
     public override bool Equals(object? obj)
     {
-        return obj is Token token && Equals(token);
+        return obj is SymbolToken token && Equals(token);
     }
 
     public override int GetHashCode()

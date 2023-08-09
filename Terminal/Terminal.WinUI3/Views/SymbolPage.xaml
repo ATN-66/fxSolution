@@ -13,9 +13,8 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -31,25 +30,47 @@
             SmallChange="1"
             StepFrequency="1"
             Value="{x:Bind Path=ViewModel.UnitsPercent, Mode=TwoWay}" />
-        <ContentControl
+        <Grid
             Grid.Row="1"
-            Grid.Column="0"
-            HorizontalContentAlignment="Stretch"
-            VerticalContentAlignment="Stretch"
-            Content="{x:Bind ViewModel.ChartControlBase, Mode=OneWay}" />
-        <Grid Grid.Row="2" Grid.Column="0">
+            Grid.RowSpan="2"
+            Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <ContentControl
+                Grid.Row="0"
+                Grid.RowSpan="2"
+                Grid.Column="0"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch"
+                Content="{x:Bind ViewModel.ChartControlBase, Mode=OneWay}" />
+            <StackPanel
+                Grid.Row="1"
+                Grid.Column="0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <Button
+                    Background="{x:Bind Path=ViewModel.Currency, Converter={StaticResource CurrencyToColor}, Mode=OneWay}"
+                    Command="{x:Bind Path=ViewModel.OperateCommand, Mode=OneWay}"
+                    Content="{x:Bind Path=ViewModel.OperationalContent, Mode=OneWay}"
+                    CornerRadius="10,0,10,0" />
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1" Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <StackPanel
                 Grid.Row="0"
                 Grid.Column="0"
-                HorizontalAlignment="Left"
+                HorizontalAlignment="Center"
                 VerticalAlignment="Center"
+                Background="{StaticResource SystemChromeLowColor}"
                 Orientation="Horizontal">
                 <CommandBar
                     Background="Transparent"
@@ -83,19 +104,6 @@
                     <AppBarToggleButton Icon="Forward" IsChecked="{x:Bind Path=ViewModel.IsHorizontalLineRequested, Mode=TwoWay}" />
                     <AppBarSeparator />
                 </CommandBar>
-            </StackPanel>
-            <StackPanel
-                Grid.Row="0"
-                Grid.Column="1"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Center"
-                Orientation="Horizontal">
-                <Button
-                    Margin="3,3,3,3"
-                    Background="{x:Bind Path=ViewModel.Currency, Converter={StaticResource CurrencyToColor}, Mode=OneWay}"
-                    Command="{x:Bind Path=ViewModel.OperateCommand, Mode=OneWay}"
-                    Content="{x:Bind Path=ViewModel.OperationalContent, Mode=OneWay}"
-                    CornerRadius="10,0,10,0" />
             </StackPanel>
         </Grid>
         <Slider

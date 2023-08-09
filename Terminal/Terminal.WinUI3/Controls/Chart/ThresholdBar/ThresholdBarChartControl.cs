@@ -173,6 +173,8 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
 
     protected override void GraphCanvas_OnPointerPressed(object sender, PointerRoutedEventArgs e)
     {
+        IsSelected = true;
+
         if (IsVerticalLineRequested)
         {
             DeselectAllLines();
