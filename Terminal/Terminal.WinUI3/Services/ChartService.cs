@@ -332,9 +332,9 @@ public class ChartService : IChartService
                             Symbol = (Symbol)symbol,
                             IsReversed = isReversed,
                             ChartType = (ChartType)chartType,
-                            HorizontalShift = _configuration.GetValue<int>("HorizontalShift"),
-                            VerticalShift = _configuration.GetValue<int>("VerticalShift"),
-                            KernelShiftPercent = _configuration.GetValue<int>("KernelShiftPercent")
+                            HorizontalShift = _configuration.GetValue<int>("_horizontalShiftDefault"),
+                            VerticalShift = _configuration.GetValue<int>("_verticalShiftDefault"),
+                            KernelShiftPercent = _configuration.GetValue<int>("_kernelShiftPercentDefault")
                         };
                     }
                 }
@@ -411,6 +411,33 @@ public class ChartService : IChartService
 
     private void OnClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
+        foreach (var pair in _tickChartsReversed.Where(pair => pair.Value != null))
+        {
+            DisposeChart(pair.Value!.GetChartSettings(), true);
+        }
+        foreach (var pair in _tickCharts.Where(pair => pair.Value != null))
+        {
+            DisposeChart(pair.Value!.GetChartSettings(), true);
+        }
+
+        foreach (var pair in _candlestickChartsReversed.Where(pair => pair.Value != null))
+        {
+            DisposeChart(pair.Value!.GetChartSettings(), true);
+        }
+        foreach (var pair in _candlestickCharts.Where(pair => pair.Value != null))
+        {
+            DisposeChart(pair.Value!.GetChartSettings(), true);
+        }
+
+        foreach (var pair in _thresholdBarChartsReversed.Where(pair => pair.Value != null))
+        {
+            DisposeChart(pair.Value!.GetChartSettings(), true);
+        }
+        foreach (var pair in _thresholdBarCharts.Where(pair => pair.Value != null))
+        {
+            DisposeChart(pair.Value!.GetChartSettings(), true);
+        }
+
         SaveSettingsAsync();
     }
 

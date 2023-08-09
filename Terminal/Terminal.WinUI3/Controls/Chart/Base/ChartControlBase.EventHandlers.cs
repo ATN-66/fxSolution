@@ -422,7 +422,7 @@ public abstract partial class ChartControlBase
         }
     }
 
-    protected void Invalidate()
+    public void Invalidate()
     {
         GraphCanvas!.Invalidate();
         CenturyAxisCanvas!.Invalidate();

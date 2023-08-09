@@ -18,7 +18,6 @@ public abstract partial class ChartControlBase
     protected double GraphHeight;
     protected double HorizontalScale;
     protected double VerticalScale;
-    protected double VerticalShift;
     protected int Pips;
 
     public ChartSettings GetChartSettings()
@@ -49,13 +48,13 @@ public abstract partial class ChartControlBase
         return result;
     }
 
-    public static readonly DependencyProperty MinCenturiesProperty = DependencyProperty.Register(nameof(MinCenturies), typeof(double), typeof(ChartControlBase), new PropertyMetadata(0));
+    public static readonly DependencyProperty MinCenturiesProperty = DependencyProperty.Register(nameof(MinCenturies), typeof(double), typeof(ChartControlBase), new PropertyMetadata(0d));
     public double MinCenturies
     {
         get => (double)GetValue(MinCenturiesProperty);
         set => throw new InvalidOperationException("The set method for MinCenturies should not be called.");
     }
-    public static readonly DependencyProperty MaxCenturiesProperty = DependencyProperty.Register(nameof(MaxCenturies), typeof(double), typeof(ChartControlBase), new PropertyMetadata(0));
+    public static readonly DependencyProperty MaxCenturiesProperty = DependencyProperty.Register(nameof(MaxCenturies), typeof(double), typeof(ChartControlBase), new PropertyMetadata(0d));
     public double MaxCenturies
     {
         get => (double)GetValue(MaxCenturiesProperty);
@@ -187,6 +186,12 @@ public abstract partial class ChartControlBase
     {
         get => (int)GetValue(HorizontalShiftProperty);
         set => SetValue(HorizontalShiftProperty, value);
+    }
+    public static readonly DependencyProperty VerticalShiftProperty = DependencyProperty.Register(nameof(VerticalShift), typeof(double), typeof(ChartControlBase), new PropertyMetadata(0d));
+    public double VerticalShift
+    {
+        get => (double)GetValue(VerticalShiftProperty);
+        set => SetValue(VerticalShiftProperty, value);
     }
 
     public static readonly DependencyProperty IsVerticalLineRequestedProperty = DependencyProperty.Register(nameof(IsVerticalLineRequested), typeof(bool), typeof(ChartControlBase), new PropertyMetadata(false));

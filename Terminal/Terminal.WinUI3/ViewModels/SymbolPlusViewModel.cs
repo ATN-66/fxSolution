@@ -83,8 +83,8 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
     [RelayCommand]
     private Task ResetShiftsAsync()
     {
-        ChartControlBaseFirst.HorizontalShift = HorizontalShift;
-        ChartControlBaseFirst.ResetShifts();
+        //ChartControlBaseFirst.HorizontalShift = HorizontalShift;
+        //ChartControlBaseFirst.ResetShifts();
         return Task.CompletedTask;
     }
 

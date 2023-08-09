@@ -51,40 +51,38 @@
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
                 Orientation="Horizontal">
-                <ToggleButton
-                    Margin="3,3,3,3"
-                    Command="{x:Bind Path=ViewModel.TicksCommand, Mode=OneWay}"
-                    Content="Ticks"
-                    IsChecked="{x:Bind Path=ViewModel.IsTicksSelected, Mode=OneWay}"
-                    IsEnabled="{x:Bind Path=ViewModel.IsTicksEnabled, Mode=OneWay}" />
-                <ToggleButton
-                    Margin="3,3,3,3"
-                    Command="{x:Bind Path=ViewModel.CandlesticksCommand, Mode=OneWay}"
-                    Content="Candles"
-                    IsChecked="{x:Bind Path=ViewModel.IsCandlesticksSelected, Mode=OneWay}"
-                    IsEnabled="{x:Bind Path=ViewModel.IsCandlesticksEnabled, Mode=OneWay}" />
-                <ToggleButton
-                    Margin="3,3,3,3"
-                    Command="{x:Bind Path=ViewModel.ThresholdBarsCommand, Mode=OneWay}"
-                    Content="Thresholds"
-                    IsChecked="{x:Bind Path=ViewModel.IsThresholdBarsSelected, Mode=OneWay}"
-                    IsEnabled="{x:Bind Path=ViewModel.IsThresholdBarsEnabled, Mode=OneWay}" />
-                <Button
-                    Margin="3,3,3,3"
-                    Command="{x:Bind Path=ViewModel.ClearMessagesCommand, Mode=OneWay}"
-                    Content="Clear" />
-                <Button
-                    Margin="3,3,3,3"
-                    Command="{x:Bind Path=ViewModel.ResetShiftsCommand, Mode=OneWay}"
-                    Content="Reset" />
-                <ToggleButton
-                    Margin="3,3,3,3"
-                    Content="VL"
-                    IsChecked="{x:Bind Path=ViewModel.IsVerticalLineRequested, Mode=TwoWay}" />
-                <ToggleButton
-                    Margin="3,3,3,3"
-                    Content="HL"
-                    IsChecked="{x:Bind Path=ViewModel.IsHorizontalLineRequested, Mode=TwoWay}" />
+                <CommandBar
+                    Background="Transparent"
+                    DefaultLabelPosition="Right"
+                    IsOpen="False">
+                    <AppBarToggleButton
+                        Command="{x:Bind Path=ViewModel.TicksCommand, Mode=OneWay}"
+                        Icon="Share"
+                        IsChecked="{x:Bind Path=ViewModel.IsTicksSelected, Mode=OneWay}"
+                        IsEnabled="{x:Bind Path=ViewModel.IsTicksEnabled, Mode=OneWay}"
+                        Label="Ticks" />
+                    <AppBarToggleButton
+                        Command="{x:Bind Path=ViewModel.CandlesticksCommand, Mode=OneWay}"
+                        Icon="Share"
+                        IsChecked="{x:Bind Path=ViewModel.IsCandlesticksSelected, Mode=OneWay}"
+                        IsEnabled="{x:Bind Path=ViewModel.IsCandlesticksEnabled, Mode=OneWay}"
+                        Label="Candles" />
+                    <AppBarToggleButton
+                        Command="{x:Bind Path=ViewModel.ThresholdBarsCommand, Mode=OneWay}"
+                        Icon="Share"
+                        IsChecked="{x:Bind Path=ViewModel.IsThresholdBarsSelected, Mode=OneWay}"
+                        IsEnabled="{x:Bind Path=ViewModel.IsThresholdBarsEnabled, Mode=OneWay}"
+                        Label="Thresholds" />
+                    <AppBarSeparator />
+                    <AppBarButton Command="{x:Bind Path=ViewModel.ClearMessagesCommand, Mode=OneWay}" Icon="Remove" />
+                    <AppBarButton Command="{x:Bind Path=ViewModel.ResetShiftsCommand, Mode=OneWay}" Label="R" />
+                    <AppBarButton Command="{x:Bind Path=ViewModel.ResetVerticalShiftCommand, Mode=OneWay}" Label="RV" />
+                    <AppBarButton Command="{x:Bind Path=ViewModel.ResetHorizontalShiftCommand, Mode=OneWay}" Label="RH" />
+                    <AppBarSeparator />
+                    <AppBarToggleButton Icon="Up" IsChecked="{x:Bind Path=ViewModel.IsVerticalLineRequested, Mode=TwoWay}" />
+                    <AppBarToggleButton Icon="Forward" IsChecked="{x:Bind Path=ViewModel.IsHorizontalLineRequested, Mode=TwoWay}" />
+                    <AppBarSeparator />
+                </CommandBar>
             </StackPanel>
             <StackPanel
                 Grid.Row="0"

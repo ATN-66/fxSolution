@@ -22,7 +22,7 @@ namespace Terminal.WinUI3.Controls.Chart.Base;
 public abstract partial class ChartControlBase : Control
 {
     protected readonly ILogger<ChartControlBase> Logger;
-    public readonly bool IsReversed;
+    protected readonly bool IsReversed;
     protected readonly double Digits;
     protected int DecimalPlaces
     {
@@ -188,12 +188,6 @@ public abstract partial class ChartControlBase : Control
     {
         _messageQueue.Clear();
         DebugCanvas!.Invalidate();
-    }
-    public void ResetShifts()
-    {
-        VerticalShift = 0;
-        KernelShift = 0;
-        Invalidate();
     }
     protected double GetPrice(float positionY)
     {
