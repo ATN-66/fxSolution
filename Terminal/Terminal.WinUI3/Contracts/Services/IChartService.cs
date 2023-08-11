@@ -19,4 +19,6 @@ public interface IChartService
     Task<T> GetChartAsync<T, TItem, TK>(Symbol symbol, bool isReversed, ChartType chartType) where T : Controls.Chart.ChartControl<TItem, TK> where TItem : IChartItem where TK : IDataSourceKernel<TItem>;
     void DisposeChart(ChartSettings settings, bool isDefault);
     void Tick(Symbol symbol);
+    void ListAllRegisteredCharts();
+    void ListAllNonNullCharts();
 }

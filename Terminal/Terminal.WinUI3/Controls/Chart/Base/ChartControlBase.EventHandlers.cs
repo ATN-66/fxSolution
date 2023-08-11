@@ -5,6 +5,7 @@
 
 using System.Numerics;
 using Windows.UI;
+using ABI.Windows.UI.Notifications;
 using Common.ExtensionsAndHelpers;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Geometry;
@@ -15,17 +16,18 @@ using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Terminal.WinUI3.Models.Notifications;
 
 namespace Terminal.WinUI3.Controls.Chart.Base;
 
 public abstract partial class ChartControlBase
 {
     protected CanvasControl?  GraphCanvas;
-    protected CanvasControl? CenturyAxisCanvas;
-    protected CanvasControl? PipsAxisCanvas;
-    protected CanvasControl? XAxisCanvas;
+    private CanvasControl? _centuryAxisCanvas;
+    private CanvasControl? _pipsAxisCanvas;
+    private CanvasControl? _xAxisCanvas;
     private CanvasControl? _textCanvas;
-    protected CanvasControl? DebugCanvas;
+    private CanvasControl? _debugCanvas;
 
     protected bool IsMouseDown;
     protected double PreviousMouseX;
@@ -51,7 +53,7 @@ public abstract partial class ChartControlBase
     protected const float AxisFontSize = 12f;
     private const float AskBidFontSize = 18f;
     protected const float CurrencyFontSize = AskBidFontSize * 2;
-    protected const string AxisFontFamily = "Lucida Console";
+    private const string AxisFontFamily = "Lucida Console";
     private const string CurrencyFontFamily = "Lucida Console";
 
     protected readonly string PriceTextFormat;
@@ -84,13 +86,13 @@ public abstract partial class ChartControlBase
         base.OnApplyTemplate();
 
         GraphCanvas = GetTemplateChild("graphCanvas") as CanvasControl;
-        CenturyAxisCanvas = GetTemplateChild("centuryAxisCanvas") as CanvasControl;
-        PipsAxisCanvas = GetTemplateChild("pipsAxisCanvas") as CanvasControl;
-        XAxisCanvas = GetTemplateChild("xAxisCanvas") as CanvasControl;
+        _centuryAxisCanvas = GetTemplateChild("centuryAxisCanvas") as CanvasControl;
+        _pipsAxisCanvas = GetTemplateChild("pipsAxisCanvas") as CanvasControl;
+        _xAxisCanvas = GetTemplateChild("xAxisCanvas") as CanvasControl;
         _textCanvas = GetTemplateChild("textCanvas") as CanvasControl;
-        DebugCanvas = GetTemplateChild("debugCanvas") as CanvasControl;
+        _debugCanvas = GetTemplateChild("debugCanvas") as CanvasControl;
 
-        if (GraphCanvas is null || CenturyAxisCanvas is null || PipsAxisCanvas is null || XAxisCanvas is null || _textCanvas is null || DebugCanvas is null)
+        if (GraphCanvas is null || _centuryAxisCanvas is null || _pipsAxisCanvas is null || _xAxisCanvas is null || _textCanvas is null || _debugCanvas is null)
         {
             throw new InvalidOperationException("Canvas controls not found in the template.");
         }
@@ -104,43 +106,32 @@ public abstract partial class ChartControlBase
         GraphCanvas.RightTapped += GraphCanvas_RightTapped;
         GraphCanvas.PointerWheelChanged += GraphCanvasOnPointerWheelChanged;
 
-        CenturyAxisCanvas.SizeChanged += CenturyAxisCanvasOnSizeChanged;
-        CenturyAxisCanvas.Draw += CenturyAxisCanvasOnDraw;
-        CenturyAxisCanvas.PointerEntered += CenturyAxisCanvasOnPointerEntered;
-        CenturyAxisCanvas.PointerExited += CenturyAxisCanvasOnPointerExited;
-        CenturyAxisCanvas.PointerPressed += CenturyAxisCanvasOnPointerPressed;
-        CenturyAxisCanvas.PointerMoved += CenturyAxisCanvasOnPointerMoved;
-        CenturyAxisCanvas.PointerReleased += CenturyAxisCanvasOnPointerReleased;
+        _centuryAxisCanvas.SizeChanged += CenturyAxisCanvasOnSizeChanged;
+        _centuryAxisCanvas.Draw += CenturyAxisCanvasOnDraw;
+        _centuryAxisCanvas.PointerEntered += CenturyAxisCanvasOnPointerEntered;
+        _centuryAxisCanvas.PointerExited += CenturyAxisCanvasOnPointerExited;
+        _centuryAxisCanvas.PointerPressed += CenturyAxisCanvasOnPointerPressed;
+        _centuryAxisCanvas.PointerMoved += CenturyAxisCanvasOnPointerMoved;
+        _centuryAxisCanvas.PointerReleased += CenturyAxisCanvasOnPointerReleased;
 
-        PipsAxisCanvas.Draw += PipsAxisCanvasOnDraw;
-        PipsAxisCanvas.PointerEntered += PipsAxisCanvasOnPointerEntered;
-        PipsAxisCanvas.PointerExited += PipsAxisCanvasOnPointerExited;
-        PipsAxisCanvas.PointerPressed += PipsAxisCanvasOnPointerPressed;
-        PipsAxisCanvas.PointerMoved += PipsAxisCanvasOnPointerMoved;
-        PipsAxisCanvas.PointerReleased += PipsAxisCanvasOnPointerReleased;
+        _pipsAxisCanvas.Draw += PipsAxisCanvasOnDraw;
+        _pipsAxisCanvas.PointerEntered += PipsAxisCanvasOnPointerEntered;
+        _pipsAxisCanvas.PointerExited += PipsAxisCanvasOnPointerExited;
+        _pipsAxisCanvas.PointerPressed += PipsAxisCanvasOnPointerPressed;
+        _pipsAxisCanvas.PointerMoved += PipsAxisCanvasOnPointerMoved;
+        _pipsAxisCanvas.PointerReleased += PipsAxisCanvasOnPointerReleased;
 
-        XAxisCanvas.SizeChanged += XAxisCanvas_OnSizeChanged;
-        XAxisCanvas.Draw += XAxisCanvas_OnDraw;
-        XAxisCanvas.PointerEntered += XAxisCanvas_OnPointerEntered;
-        XAxisCanvas.PointerExited += XAxisCanvas_OnPointerExited;
-        XAxisCanvas.PointerPressed += XAxisCanvas_OnPointerPressed;
-        XAxisCanvas.PointerMoved += XAxisCanvas_OnPointerMoved;
-        XAxisCanvas.PointerReleased += XAxisCanvas_OnPointerReleased;
+        _xAxisCanvas.SizeChanged += XAxisCanvas_OnSizeChanged;
+        _xAxisCanvas.Draw += XAxisCanvas_OnDraw;
+        _xAxisCanvas.PointerEntered += XAxisCanvas_OnPointerEntered;
+        _xAxisCanvas.PointerExited += XAxisCanvas_OnPointerExited;
+        _xAxisCanvas.PointerPressed += XAxisCanvas_OnPointerPressed;
+        _xAxisCanvas.PointerMoved += XAxisCanvas_OnPointerMoved;
+        _xAxisCanvas.PointerReleased += XAxisCanvas_OnPointerReleased;
 
         _textCanvas.Draw += TextCanvas_OnDraw;
-        DebugCanvas.Draw += DebugCanvas_OnDraw;
+        _debugCanvas.Draw += DebugCanvas_OnDraw;
     }
-
-    private void GraphCanvasOnPointerWheelChanged(object sender, PointerRoutedEventArgs e)
-    {
-        throw new NotImplementedException();
-    }
-
-    private void GraphCanvas_RightTapped(object sender, RightTappedRoutedEventArgs e)
-    {
-        
-    }
-
     public void Detach()
     {
         if (GraphCanvas != null)
@@ -155,36 +146,36 @@ public abstract partial class ChartControlBase
             GraphCanvas.PointerWheelChanged -= GraphCanvasOnPointerWheelChanged;
         }
 
-        if (CenturyAxisCanvas != null)
+        if (_centuryAxisCanvas != null)
         {
-            CenturyAxisCanvas.SizeChanged -= CenturyAxisCanvasOnSizeChanged;
-            CenturyAxisCanvas.Draw -= CenturyAxisCanvasOnDraw;
-            CenturyAxisCanvas.PointerEntered -= CenturyAxisCanvasOnPointerEntered;
-            CenturyAxisCanvas.PointerExited -= CenturyAxisCanvasOnPointerExited;
-            CenturyAxisCanvas.PointerPressed -= CenturyAxisCanvasOnPointerPressed;
-            CenturyAxisCanvas.PointerMoved -= CenturyAxisCanvasOnPointerMoved;
-            CenturyAxisCanvas.PointerReleased -= CenturyAxisCanvasOnPointerReleased;
+            _centuryAxisCanvas.SizeChanged -= CenturyAxisCanvasOnSizeChanged;
+            _centuryAxisCanvas.Draw -= CenturyAxisCanvasOnDraw;
+            _centuryAxisCanvas.PointerEntered -= CenturyAxisCanvasOnPointerEntered;
+            _centuryAxisCanvas.PointerExited -= CenturyAxisCanvasOnPointerExited;
+            _centuryAxisCanvas.PointerPressed -= CenturyAxisCanvasOnPointerPressed;
+            _centuryAxisCanvas.PointerMoved -= CenturyAxisCanvasOnPointerMoved;
+            _centuryAxisCanvas.PointerReleased -= CenturyAxisCanvasOnPointerReleased;
         }
 
-        if (PipsAxisCanvas != null)
+        if (_pipsAxisCanvas != null)
         {
-            PipsAxisCanvas.Draw -= PipsAxisCanvasOnDraw;
-            PipsAxisCanvas.PointerEntered -= PipsAxisCanvasOnPointerEntered;
-            PipsAxisCanvas.PointerExited -= PipsAxisCanvasOnPointerExited;
-            PipsAxisCanvas.PointerPressed -= PipsAxisCanvasOnPointerPressed;
-            PipsAxisCanvas.PointerMoved -= PipsAxisCanvasOnPointerMoved;
-            PipsAxisCanvas.PointerReleased -= PipsAxisCanvasOnPointerReleased;
+            _pipsAxisCanvas.Draw -= PipsAxisCanvasOnDraw;
+            _pipsAxisCanvas.PointerEntered -= PipsAxisCanvasOnPointerEntered;
+            _pipsAxisCanvas.PointerExited -= PipsAxisCanvasOnPointerExited;
+            _pipsAxisCanvas.PointerPressed -= PipsAxisCanvasOnPointerPressed;
+            _pipsAxisCanvas.PointerMoved -= PipsAxisCanvasOnPointerMoved;
+            _pipsAxisCanvas.PointerReleased -= PipsAxisCanvasOnPointerReleased;
         }
 
-        if (XAxisCanvas != null)
+        if (_xAxisCanvas != null)
         {
-            XAxisCanvas.SizeChanged -= XAxisCanvas_OnSizeChanged;
-            XAxisCanvas.Draw -= XAxisCanvas_OnDraw;
-            XAxisCanvas.PointerEntered -= XAxisCanvas_OnPointerEntered;
-            XAxisCanvas.PointerExited -= XAxisCanvas_OnPointerExited;
-            XAxisCanvas.PointerPressed -= XAxisCanvas_OnPointerPressed;
-            XAxisCanvas.PointerMoved -= XAxisCanvas_OnPointerMoved;
-            XAxisCanvas.PointerReleased -= XAxisCanvas_OnPointerReleased;
+            _xAxisCanvas.SizeChanged -= XAxisCanvas_OnSizeChanged;
+            _xAxisCanvas.Draw -= XAxisCanvas_OnDraw;
+            _xAxisCanvas.PointerEntered -= XAxisCanvas_OnPointerEntered;
+            _xAxisCanvas.PointerExited -= XAxisCanvas_OnPointerExited;
+            _xAxisCanvas.PointerPressed -= XAxisCanvas_OnPointerPressed;
+            _xAxisCanvas.PointerMoved -= XAxisCanvas_OnPointerMoved;
+            _xAxisCanvas.PointerReleased -= XAxisCanvas_OnPointerReleased;
         }
 
         if (_textCanvas != null)
@@ -192,9 +183,9 @@ public abstract partial class ChartControlBase
             _textCanvas.Draw -= TextCanvas_OnDraw;
         }
 
-        if (DebugCanvas != null)
+        if (_debugCanvas != null)
         {
-            DebugCanvas.Draw -= DebugCanvas_OnDraw;
+            _debugCanvas.Draw -= DebugCanvas_OnDraw;
         }
     }
 
@@ -233,8 +224,8 @@ public abstract partial class ChartControlBase
         GraphHeight = e.NewSize.Height;
         Centuries = MinCenturies + (MaxCenturies - MinCenturies) * CenturiesPercent / 100d;
 
-        PipsPerCentury = Century / TickValue / 10d;
-        Pips = (int)(PipsPerCentury * Centuries);
+        _pipsPerCentury = Century / TickValue / 10d;
+        Pips = (int)(_pipsPerCentury * Centuries);
         VerticalScale = GraphHeight / Pips;
 
         GraphWidth = e.NewSize.Width;
@@ -259,6 +250,15 @@ public abstract partial class ChartControlBase
         GraphCanvas!.ReleasePointerCapture(e.Pointer);
     }
     protected abstract void GraphCanvas_OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e);
+    private void GraphCanvasOnPointerWheelChanged(object sender, PointerRoutedEventArgs e)
+    {
+        //throw new NotImplementedException();
+    }
+
+    private void GraphCanvas_RightTapped(object sender, RightTappedRoutedEventArgs e)
+    {
+
+    }
 
     protected abstract void CenturyAxisCanvasOnSizeChanged(object sender, SizeChangedEventArgs e);
     protected abstract void CenturyAxisCanvasOnDraw(CanvasControl sender, CanvasDrawEventArgs args);
@@ -281,27 +281,11 @@ public abstract partial class ChartControlBase
     protected abstract void PipsAxisCanvasOnDraw(CanvasControl sender, CanvasDrawEventArgs args);
     private void PipsAxisCanvasOnPointerEntered(object sender, PointerRoutedEventArgs e)
     {
-        try
-        {
-            ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "PipsAxisCanvasOnPointerEntered");
-            throw;
-        }
+        //ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
     }
     private void PipsAxisCanvasOnPointerExited(object sender, PointerRoutedEventArgs e)
     {
-        try
-        {
-            ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
-        }
-        catch (Exception exception)
-        {
-            LogExceptionHelper.LogException(Logger, exception, "PipsAxisCanvasOnPointerExited");
-            throw;
-        }
+        //ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
     }
     private void PipsAxisCanvasOnPointerPressed(object sender, PointerRoutedEventArgs e)
     {
@@ -352,11 +336,11 @@ public abstract partial class ChartControlBase
     protected abstract void XAxisCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args);
     private void XAxisCanvas_OnPointerEntered(object sender, PointerRoutedEventArgs e)
     {
-        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
+         //ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
     }
     private void XAxisCanvas_OnPointerExited(object sender, PointerRoutedEventArgs e)
     {
-        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+        //ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
     }
     private void XAxisCanvas_OnPointerPressed(object sender, PointerRoutedEventArgs e)
     {
@@ -430,11 +414,11 @@ public abstract partial class ChartControlBase
         }
 
         GraphCanvas!.Invalidate();
-        CenturyAxisCanvas!.Invalidate();
-        PipsAxisCanvas!.Invalidate();
-        XAxisCanvas!.Invalidate();
+        _centuryAxisCanvas!.Invalidate();
+        _pipsAxisCanvas!.Invalidate();
+        _xAxisCanvas!.Invalidate();
         _textCanvas!.Invalidate();
-        DebugCanvas!.Invalidate();
+        _debugCanvas!.Invalidate();
     }
 
     private (float width, float height) CalculateTextBounds(string textSample, CanvasTextFormat textFormat)
@@ -467,6 +451,9 @@ public abstract partial class ChartControlBase
         }
     }
     protected abstract int CalculateMaxUnits();
+
     public abstract void DeleteSelectedNotification();
     public abstract void DeleteAllNotifications();
+    public abstract void RepeatSelectedNotification();
+    public abstract void OnRepeatSelectedNotification(NotificationBase notificationBase);
 }

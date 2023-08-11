@@ -16,7 +16,11 @@ using Terminal.WinUI3.Contracts.Models;
 using Terminal.WinUI3.Models.Chart;
 using Terminal.WinUI3.Models.Kernels;
 using Windows.UI;
+using CommunityToolkit.Mvvm.Messaging;
+using Terminal.WinUI3.Helpers;
+using Terminal.WinUI3.Messenger.Chart;
 using Terminal.WinUI3.Models.Notifications;
+using System;
 
 namespace Terminal.WinUI3.Controls.Chart.Candlestick;
 
@@ -196,37 +200,38 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
                 return index;
             }
 
-            int leftSearch = 1, rightSearch = 1;
+            throw new NotImplementedException("int FindClosestIndex(DateTime target)");
 
-            while (true)
-            {
-                var leftIndex = Math.Max(0, index - leftSearch);
-                var rightIndex = Math.Min(_dateTime.Length - 1, index + rightSearch);
+            //int leftSearch = 1, rightSearch = 1;
+            //while (true)
+            //{
+            //    var leftIndex = Math.Max(0, index - leftSearch);
+            //    var rightIndex = Math.Min(_dateTime.Length - 1, index + rightSearch);
 
-                if (leftIndex == rightIndex) // reached bounds of array
-                {
-                    return leftIndex; // or throw an exception if you want to signal no close value found
-                }
+            //    if (leftIndex == rightIndex) // reached bounds of array
+            //    {
+            //        return leftIndex; // or throw an exception if you want to signal no close value found
+            //    }
 
-                if (_dateTime[leftIndex] < target && target < _dateTime[rightIndex])
-                {
-                    // decide which one is closer
-                    return (target - _dateTime[leftIndex] < _dateTime[rightIndex] - target) ? leftIndex : rightIndex;
-                }
+            //    if (_dateTime[leftIndex] < target && target < _dateTime[rightIndex])
+            //    {
+            //        // decide which one is closer
+            //        return (target - _dateTime[leftIndex] < _dateTime[rightIndex] - target) ? leftIndex : rightIndex;
+            //    }
 
-                if (_dateTime[leftIndex] < target)
-                {
-                    return leftIndex;
-                }
+            //    if (_dateTime[leftIndex] < target)
+            //    {
+            //        return leftIndex;
+            //    }
 
-                if (_dateTime[rightIndex] > target)
-                {
-                    return rightIndex;
-                }
+            //    if (_dateTime[rightIndex] > target)
+            //    {
+            //        return rightIndex;
+            //    }
 
-                leftSearch++;
-                rightSearch++;
-            }
+            //    leftSearch++;
+            //    rightSearch++;
+            //}
         }
     }
 
@@ -344,6 +349,59 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
                 notification.Description = price.ToString(PriceTextFormat);
                 break;
             default: throw new ArgumentOutOfRangeException($@" protected override void GraphCanvas_OnPointerMoved(object sender, PointerRoutedEventArgs e)");
+        }
+    }
+
+    public override void RepeatSelectedNotification()
+    {
+        var notification = Notifications.GetSelectedNotification(Symbol);
+        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.RepeatSelectedNotification) { ChartType = ChartType, Symbol = Symbol, Notification = notification }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
+    }
+
+    public override void OnRepeatSelectedNotification(NotificationBase notificationBase)
+    {
+        DeselectAllLines();
+
+        switch (notificationBase)
+        {
+            case CandlestickNotification candlestickNotification:
+                var index = Array.IndexOf(_dateTime, ((IDateTimeNotification)candlestickNotification).DateTime);
+                var unit = index + KernelShift - HorizontalShift;
+                var candlestick = DataSource[unit];
+                Debug.Assert(candlestick.Start == ((IDateTimeNotification)candlestickNotification).DateTime);
+                Debug.Assert(candlestickNotification.Type == NotificationType.Candlestick);
+                NotificationBase notification = new CandlestickNotification
+                {
+                    Symbol = Symbol,
+                    Type = NotificationType.Candlestick,
+                    Description = candlestick.ToString(),
+                    IsSelected = true,
+                    DateTime = candlestick.Start,
+                };
+
+                Notifications.Add(notification);
+                Invalidate();
+
+                break;
+            case PriceNotification priceNotification:
+                if (priceNotification.Symbol != Symbol)
+                {
+                    return;
+                }
+                throw new NotImplementedException("OnRepeatSelectedNotification");
+
+                //notification = new PriceNotification
+                //{
+                //    Symbol = Symbol,
+                //    Type = NotificationType.Price,
+                //    Description = priceNotification.Description,
+                //    IsSelected = true,
+                //    Price = priceNotification.Price,
+                //};
+                break;
+            case ThresholdBarChartNotification thresholdBarChartNotification:
+                break;
+            default: throw new InvalidOperationException("Unsupported notification type.");
         }
     }
 }

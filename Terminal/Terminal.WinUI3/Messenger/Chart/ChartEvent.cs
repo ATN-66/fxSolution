@@ -4,5 +4,7 @@ public enum ChartEvent
 {
     IsSelected,
     CenturyShift,
-    HorizontalShift
+    HorizontalShift,
+    KernelShift,
+    RepeatSelectedNotification
 }

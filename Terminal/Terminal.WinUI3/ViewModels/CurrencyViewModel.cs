@@ -10,8 +10,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Configuration;
+using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
+using Terminal.WinUI3.Controls.Chart.Base;
 using Terminal.WinUI3.Messenger.Chart;
 using Terminal.WinUI3.Models.Chart;
 using Enum = System.Enum;
@@ -20,8 +23,10 @@ namespace Terminal.WinUI3.ViewModels;
 
 public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, IRecipient<ChartMessage>
 {
+    private readonly IChartService _chartService;
     private readonly ISymbolViewModelFactory _symbolViewModelFactory;
 
+    private int _selectedIndex;
     private Currency _currency;
     private List<Symbol> Symbols { get; } = new();
     private List<bool> IsReversed { get; } = new();
@@ -32,8 +37,14 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
     [ObservableProperty] private int _unitsPercent;
     [ObservableProperty] private int _kernelShiftPercent;
 
-    public CurrencyViewModel(IConfiguration configuration, ISymbolViewModelFactory symbolViewModelFactory)
+    [ObservableProperty] private bool _isVerticalLineRequested;
+    [ObservableProperty] private bool _isHorizontalLineRequested;
+    [ObservableProperty] private bool _isVerticalLineRequestEnabled;
+    [ObservableProperty] private bool _isHorizontalLineRequestEnabled;
+
+    public CurrencyViewModel(IConfiguration configuration, IChartService chartService, ISymbolViewModelFactory symbolViewModelFactory)
     {
+        _chartService = chartService;
         _symbolViewModelFactory = symbolViewModelFactory;
 
         _centuriesPercent = configuration.GetValue<int>($"{nameof(_centuriesPercent)}");
@@ -55,8 +66,6 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
             SetupCommands(ChartType.Ticks);
             return;
         }
-
-        IsTicksSelected = false;
     }
 
     [RelayCommand(CanExecute = nameof(CanChangeChart))]
@@ -73,8 +82,6 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
             SetupCommands(ChartType.Candlesticks);
             return;
         }
-
-        IsCandlesticksSelected = false;
     }
 
     [RelayCommand(CanExecute = nameof(CanChangeChart))]
@@ -91,8 +98,6 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
             SetupCommands(ChartType.ThresholdBars);
             return;
         }
-
-        IsThresholdBarsSelected = false;
     }
 
     private bool CanChangeChart()
@@ -144,6 +149,20 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
         }
     }
 
+    [RelayCommand]
+    private Task DebugOneAsync()
+    {
+        _chartService.ListAllRegisteredCharts();
+        return Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    private Task DebugTwoAsync()
+    {
+        _chartService.ListAllNonNullCharts();
+        return Task.CompletedTask;
+    }
+
     partial void OnCenturiesPercentChanged(int value)
     {
         foreach (var model in SymbolViewModels)
@@ -165,6 +184,26 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
         foreach (var model in SymbolViewModels)
         {
             model.KernelShiftPercent = value;
+        }
+    }
+
+    partial void OnIsVerticalLineRequestedChanged(bool value)
+    {
+        SymbolViewModels[_selectedIndex].ChartControlBase.IsVerticalLineRequested = value;
+
+        if (value && IsHorizontalLineRequested)
+        {
+            SymbolViewModels[_selectedIndex].IsHorizontalLineRequested = IsHorizontalLineRequested = false;
+        }
+    }
+
+    partial void OnIsHorizontalLineRequestedChanged(bool value)
+    {
+        SymbolViewModels[_selectedIndex].ChartControlBase.IsHorizontalLineRequested = value;
+
+        if (value && IsVerticalLineRequested)
+        {
+            SymbolViewModels[_selectedIndex].IsVerticalLineRequested = IsVerticalLineRequested = false;
         }
     }
 
@@ -308,6 +347,8 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
             case ChartEvent.IsSelected: OnIsSelected(message); break;
             case ChartEvent.CenturyShift: OnCenturyShift(message); break;
             case ChartEvent.HorizontalShift: OnHorizontalShift(message); break;
+            case ChartEvent.KernelShift: OnKernelShift(message); break;
+            case ChartEvent.RepeatSelectedNotification: OnRepeatSelectedNotification(message); break;
             default: throw new ArgumentOutOfRangeException();
         }
     }
@@ -319,6 +360,12 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
         if (SymbolViewModels[2].Symbol != message.Symbol) { SymbolViewModels[2].ChartControlBase.IsSelected = false; }
 
         SetupCommands(message.ChartType);
+        IsVerticalLineRequestEnabled = IsHorizontalLineRequestEnabled = true;
+
+        _selectedIndex = Symbols.IndexOf(message.Symbol);
+        SymbolViewModels[_selectedIndex].ChartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
+        SymbolViewModels[_selectedIndex].ChartControlBase.SetBinding(ChartControlBase.IsVerticalLineRequestedProperty, new Binding { Source = this, Path = new PropertyPath(nameof(IsVerticalLineRequested)), Mode = BindingMode.TwoWay });
+        SymbolViewModels[_selectedIndex].ChartControlBase.SetBinding(ChartControlBase.IsHorizontalLineRequestedProperty, new Binding { Source = this, Path = new PropertyPath(nameof(IsHorizontalLineRequested)), Mode = BindingMode.TwoWay });
     }
 
     private void OnCenturyShift(ChartMessage message)
@@ -335,8 +382,25 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
         if (SymbolViewModels[2].Symbol != message.Symbol) { SymbolViewModels[2].ChartControlBase.OnHorizontalShift(message.IntValue); }
     }
 
+    private void OnKernelShift(ChartMessage message)
+    {
+        if (SymbolViewModels[0].Symbol != message.Symbol) { SymbolViewModels[0].ChartControlBase.OnKernelShift(message.IntValue); }
+        if (SymbolViewModels[1].Symbol != message.Symbol) { SymbolViewModels[1].ChartControlBase.OnKernelShift(message.IntValue); }
+        if (SymbolViewModels[2].Symbol != message.Symbol) { SymbolViewModels[2].ChartControlBase.OnKernelShift(message.IntValue); }
+    }
+
+    private void OnRepeatSelectedNotification(ChartMessage message)
+    {
+        if (SymbolViewModels[0].Symbol != message.Symbol) { SymbolViewModels[0].ChartControlBase.OnRepeatSelectedNotification(message.Notification); }
+        if (SymbolViewModels[1].Symbol != message.Symbol) { SymbolViewModels[1].ChartControlBase.OnRepeatSelectedNotification(message.Notification); }
+        if (SymbolViewModels[2].Symbol != message.Symbol) { SymbolViewModels[2].ChartControlBase.OnRepeatSelectedNotification(message.Notification); }
+    }
+
     private void SetupCommands(ChartType chartType)
     {
+        IsHorizontalLineRequested = IsVerticalLineRequested = false;
+        IsVerticalLineRequestEnabled = IsHorizontalLineRequestEnabled = false;
+
         TicksCommand.NotifyCanExecuteChanged();
         CandlesticksCommand.NotifyCanExecuteChanged();
         ThresholdBarsCommand.NotifyCanExecuteChanged();

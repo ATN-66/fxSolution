@@ -23,7 +23,10 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <Grid Grid.Row="1" Grid.RowSpan="2" Grid.Column="0">
+        <Grid
+            Grid.Row="1"
+            Grid.RowSpan="2"
+            Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
@@ -48,7 +51,10 @@
                     CornerRadius="10,0,10,0" />
             </StackPanel>
         </Grid>
-        <Grid Grid.Row="1" Grid.RowSpan="2" Grid.Column="1">
+        <Grid
+            Grid.Row="1"
+            Grid.RowSpan="2"
+            Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
@@ -73,7 +79,10 @@
                     CornerRadius="10,0,10,0" />
             </StackPanel>
         </Grid>
-        <Grid Grid.Row="1" Grid.RowSpan="2" Grid.Column="2">
+        <Grid
+            Grid.Row="1"
+            Grid.RowSpan="2"
+            Grid.Column="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
@@ -138,12 +147,13 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <StackPanel Background="{StaticResource SystemChromeLowColor }"
-                        Grid.Row="0"
-                        Grid.Column="0"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal">
+            <StackPanel
+                Grid.Row="0"
+                Grid.Column="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource SystemChromeLowColor}"
+                Orientation="Horizontal">
                 <CommandBar
                     Background="Transparent"
                     DefaultLabelPosition="Right"
@@ -172,9 +182,11 @@
                     <AppBarButton Command="{x:Bind Path=ViewModel.ResetVerticalShiftCommand, Mode=OneWay}" Label="RV" />
                     <AppBarButton Command="{x:Bind Path=ViewModel.ResetHorizontalShiftCommand, Mode=OneWay}" Label="RH" />
                     <AppBarSeparator />
-                    <!--<AppBarToggleButton Icon="Up" IsChecked="{x:Bind Path=ViewModel.IsVerticalLineRequested, Mode=TwoWay}" />-->
-                    <!--<AppBarToggleButton Icon="Forward" IsChecked="{x:Bind Path=ViewModel.IsHorizontalLineRequested, Mode=TwoWay}" />-->
+                    <AppBarToggleButton Icon="Up" IsEnabled="{x:Bind Path=ViewModel.IsVerticalLineRequestEnabled, Mode=OneWay}" IsChecked="{x:Bind Path=ViewModel.IsVerticalLineRequested, Mode=TwoWay}" />
+                    <AppBarToggleButton Icon="Forward" IsEnabled="{x:Bind Path=ViewModel.IsHorizontalLineRequestEnabled, Mode=OneWay}" IsChecked="{x:Bind Path=ViewModel.IsHorizontalLineRequested, Mode=TwoWay}" />
                     <AppBarSeparator />
+                    <AppBarButton Command="{x:Bind Path=ViewModel.DebugOneCommand, Mode=OneWay}" Label="Debug 1" />
+                    <AppBarButton Command="{x:Bind Path=ViewModel.DebugTwoCommand, Mode=OneWay}" Label="Debug 2" />
                 </CommandBar>
             </StackPanel>
         </Grid>

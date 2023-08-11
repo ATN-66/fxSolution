@@ -144,11 +144,11 @@ public abstract partial class ChartControlBase : Control
         }
 
         _messageQueue.Enqueue((++_debugMessageId, type, $"{methodName}: {message}"));
-        DebugCanvas!.Invalidate();
+        _debugCanvas!.Invalidate();
     }
     public void ClearMessages()
     {
         _messageQueue.Clear();
-        DebugCanvas!.Invalidate();
+        _debugCanvas!.Invalidate();
     }
 }

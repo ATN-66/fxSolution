@@ -16,6 +16,10 @@ using Microsoft.UI.Xaml.Input;
 using Terminal.WinUI3.Models.Chart;
 using Terminal.WinUI3.Models.Kernels;
 using Terminal.WinUI3.Contracts.Models;
+using Terminal.WinUI3.Models.Notifications;
+using CommunityToolkit.Mvvm.Messaging;
+using Terminal.WinUI3.Helpers;
+using Terminal.WinUI3.Messenger.Chart;
 
 namespace Terminal.WinUI3.Controls.Chart.Tick;
 
@@ -236,45 +240,17 @@ public class TickChartControl : ChartControl<Quotation, Quotations>
         Invalidate();
     }
 
-    protected override void GraphCanvas_OnPointerReleased(object sender, PointerRoutedEventArgs e)
+    protected override void MoveSelectedNotification(double deltaX, double deltaY)
     {
-        base.GraphCanvas_OnPointerReleased(sender, e);
-
-        //if (VerticalLines.Any(line => line.IsSelected))
-        //{
-        //    var selectedLine = VerticalLines.FirstOrDefault(line => line.IsSelected);
-        //    if (selectedLine != null)
-        //    {
-        //        var distances = _askData.Skip(HorizontalShift).Take(Math.Min(Units - HorizontalShift, DataSource.Count)).
-        //            Select((vector, index) => new { Distance = Math.Abs(vector.X - selectedLine.StartPoint.X), Index = index }).ToList();
-        //        var minDistanceTuple = distances.Aggregate((a, b) => a.Distance < b.Distance ? a : b);
-        //        var index = minDistanceTuple.Index;
-        //        var closestVector = _askData[index + HorizontalShift];
-        //        selectedLine.StartPoint.X = selectedLine.EndPoint.X = closestVector.X;
-        //        var unit = index + KernelShift;
-        //        selectedLine.Description = DataSource[unit].ToString();
-        //        Invalidate();
-        //    }
-        //    else
-        //    {
-        //        throw new InvalidOperationException("selected vertical line is null");
-        //    }
-        //}
-
-        //if (HorizontalLines.Any(line => line.IsSelected))
-        //{
-        //    var selectedLine = HorizontalLines.FirstOrDefault(line => line.IsSelected);
-        //    if (selectedLine != null)
-        //    {
-        //        EnqueueMessage(MessageType.Information, $"y: {selectedLine.StartPoint.Y}");
-        //        Invalidate();
-        //    }
-        //    else
-        //    {
-        //        throw new InvalidOperationException("selected horizontal line is null");
-        //    }
-        //}
+        throw new NotImplementedException("TickChartControl: protected override void MoveSelectedNotification");
     }
-
-    protected override void MoveSelectedNotification(double deltaX, double deltaY) => throw new NotImplementedException();
+    public override void RepeatSelectedNotification()
+    {
+        var notification = Notifications.GetSelectedNotification(Symbol);
+        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.RepeatSelectedNotification) { ChartType = ChartType, Symbol = Symbol, Notification = notification }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
+    }
+    public override void OnRepeatSelectedNotification(NotificationBase notification)
+    {
+        throw new NotImplementedException("TickChartControl: protected override void OnRepeatSelectedNotification");
+    }
 }

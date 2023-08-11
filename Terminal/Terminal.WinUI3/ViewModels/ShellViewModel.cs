@@ -115,8 +115,11 @@ public partial class ShellViewModel : ObservableRecipient
                         {
                             Content = navigationItem.Content,
                             Tag = navigationItem.Tag,
-                            Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = navigationItem.Glyph }
+                            Icon = new FontIcon { FontFamily = _symbolThemeFontFamily, Glyph = navigationItem.Glyph },
+                            IsExpanded = true
                         };
+
+                        navigationViewItem.Tapped += NavigationViewItem_Tapped;
 
                         var navigationPage = Type.GetType($"{Assembly.GetExecutingAssembly().GetName().Name}.ViewModels.{navigationItem.NavigateTo}")!.FullName;
                         NavigationHelper.SetNavigateTo(navigationViewItem, navigationPage!);
@@ -151,5 +154,13 @@ public partial class ShellViewModel : ObservableRecipient
                 throw;
             }
         });
+    }
+
+    private static void NavigationViewItem_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+    {
+        if (sender is NavigationViewItem navigationViewItem)
+        {
+            navigationViewItem.IsExpanded = false;
+        }
     }
 }

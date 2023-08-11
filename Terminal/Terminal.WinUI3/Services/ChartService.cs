@@ -137,21 +137,6 @@ public class ChartService : IChartService
         T result;
         ChartSettings settings;
 
-        try
-        {
-            settings = _settings[symbol][isReversed][chartType];
-        }
-        catch (Exception e)
-        {
-            Debug.WriteLine(e);
-            throw;
-        }
-        
-        ValidateSettings(ref settings);
-        Debug.Assert(settings.Symbol == symbol);
-        Debug.Assert(settings.IsReversed == isReversed);
-        Debug.Assert(settings.ChartType == chartType);
-
         var notifications = _notifications[symbol];
 
         switch (chartType)
@@ -162,10 +147,14 @@ public class ChartService : IChartService
                 {
                     if (_tickChartsReversed[symbol] != null)
                     {
-                        DisposeChart(_tickChartsReversed[symbol]!.GetChartSettings(), true);
+                        settings = _tickChartsReversed[symbol]!.GetChartSettings();
+                        _tickChartsReversed[symbol]!.Dispose();
                         _tickChartsReversed[symbol] = null;
                     }
-
+                    else
+                    {
+                        settings = LoadSettings();
+                    }
                     _tickChartsReversed[symbol] = new TickChartControl(_configuration, settings, _tickValues[symbol], quotations, notifications, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     result = (_tickChartsReversed[symbol] as T)!;
                     RegisterChart(_tickChartsCounter, symbol, isReversed);
@@ -174,8 +163,13 @@ public class ChartService : IChartService
                 {
                     if (_tickCharts[symbol] != null)
                     {
-                        DisposeChart(_tickCharts[symbol]!.GetChartSettings(), true);
+                        settings = _tickCharts[symbol]!.GetChartSettings();
+                        _tickCharts[symbol]!.Dispose();
                         _tickCharts[symbol] = null;
+                    }
+                    else
+                    {
+                        settings = LoadSettings();
                     }
                     _tickCharts[symbol] = new TickChartControl(_configuration, settings, _tickValues[symbol], quotations, notifications, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     result = (_tickCharts[symbol] as T)!;
@@ -188,8 +182,12 @@ public class ChartService : IChartService
                 {
                     if (_candlestickChartsReversed[symbol] != null)
                     {
-                        DisposeChart(_candlestickChartsReversed[symbol]!.GetChartSettings(), true);
+                        settings = _candlestickChartsReversed[symbol]!.GetChartSettings();
+                        _candlestickChartsReversed[symbol]!.Dispose();
                         _candlestickChartsReversed[symbol] = null;
+                    }else
+                    {
+                        settings = LoadSettings();
                     }
                     _candlestickChartsReversed[symbol] = new CandlestickChartControl(_configuration, settings, _tickValues[symbol], candlesticks, notifications, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     result = (_candlestickChartsReversed[symbol] as T)!;
@@ -199,8 +197,13 @@ public class ChartService : IChartService
                 {
                     if (_candlestickCharts[symbol] != null)
                     {
-                        DisposeChart(_candlestickCharts[symbol]!.GetChartSettings(), true);
+                        settings = _candlestickCharts[symbol]!.GetChartSettings();
+                        _candlestickCharts[symbol]!.Dispose();
                         _candlestickCharts[symbol] = null;
+                    }
+                    else
+                    {
+                        settings = LoadSettings();
                     }
                     _candlestickCharts[symbol] = new CandlestickChartControl(_configuration, settings, _tickValues[symbol], candlesticks, notifications, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     result = (_candlestickCharts[symbol] as T)!;
@@ -213,8 +216,13 @@ public class ChartService : IChartService
                 {
                     if (_thresholdBarChartsReversed[symbol] != null)
                     {
-                        DisposeChart(_thresholdBarChartsReversed[symbol]!.GetChartSettings(), true);
+                        settings = _thresholdBarChartsReversed[symbol]!.GetChartSettings();
+                        _thresholdBarChartsReversed[symbol]!.Dispose();
                         _thresholdBarChartsReversed[symbol] = null;
+                    }
+                    else
+                    {
+                        settings = LoadSettings();
                     }
                     _thresholdBarChartsReversed[symbol] = new ThresholdBarChartControl(_configuration, settings, _tickValues[symbol], thresholdBars, notifications, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     result = (_thresholdBarChartsReversed[symbol] as T)!;
@@ -224,8 +232,13 @@ public class ChartService : IChartService
                 {
                     if (_thresholdBarCharts[symbol] != null)
                     {
-                        DisposeChart(_thresholdBarCharts[symbol]!.GetChartSettings(), true);
+                        //DisposeChart(_thresholdBarCharts[symbol]!.GetChartSettings(), true);
+                        settings = _thresholdBarCharts[symbol]!.GetChartSettings();
                         _thresholdBarCharts[symbol] = null;
+                    }
+                    else
+                    {
+                        settings = LoadSettings();
                     }
                     _thresholdBarCharts[symbol] = new ThresholdBarChartControl(_configuration, settings, _tickValues[symbol], thresholdBars, notifications, _symbolColorsMap[symbol].BaseColor, _symbolColorsMap[symbol].QuoteColor, App.GetService<ILogger<ChartControlBase>>());
                     result = (_thresholdBarCharts[symbol] as T)!;
@@ -236,6 +249,25 @@ public class ChartService : IChartService
         }
         await result.InitializeAsync().ConfigureAwait(false);
         return result;
+
+        ChartSettings LoadSettings()
+        {
+            try
+            {
+                settings = _settings[symbol][isReversed][chartType];
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+                throw;
+            }
+
+            ValidateSettings(ref settings);
+            Debug.Assert(settings.Symbol == symbol);
+            Debug.Assert(settings.IsReversed == isReversed);
+            Debug.Assert(settings.ChartType == chartType);
+            return settings;
+        }
     }
 
     public void DisposeChart(ChartSettings settings, bool isDefault)
@@ -273,9 +305,9 @@ public class ChartService : IChartService
                             _tickCharts[symbol]?.Dispose();
                             _tickCharts[symbol] = null;
                         }
-
-                        UnRegisterChart(_tickChartsCounter, symbol, isReversed);
                     }
+
+                    UnRegisterChart(_tickChartsCounter, symbol, isReversed);
                 }
                 catch (Exception e)
                 {
@@ -298,9 +330,9 @@ public class ChartService : IChartService
                             _candlestickCharts[symbol]?.Dispose();
                             _candlestickCharts[symbol] = null;
                         }
-
-                        UnRegisterChart(_candlestickChartsCounter, symbol, isReversed);
                     }
+
+                    UnRegisterChart(_candlestickChartsCounter, symbol, isReversed);
                 }
                 catch (Exception e)
                 {
@@ -323,9 +355,9 @@ public class ChartService : IChartService
                             _thresholdBarCharts[symbol]?.Dispose();
                             _thresholdBarCharts[symbol] = null;
                         }
-
-                        UnRegisterChart(_thresholdBarChartsCounter, symbol, isReversed);
                     }
+
+                    UnRegisterChart(_thresholdBarChartsCounter, symbol, isReversed);
                 }
                 catch (Exception e)
                 {
@@ -492,5 +524,63 @@ public class ChartService : IChartService
                 innerInnerKvp => innerInnerKvp.Key.ToString(), innerInnerKvp => innerInnerKvp.Value)));
 
         _localSettingsService.SaveSetting("ChartsSettings", serializableSettings);
+    }
+
+    public void ListAllRegisteredCharts()
+    {
+        var result = new List<(Symbol Symbol, bool IsReversed, ChartType ChartType)>();
+        foreach (Symbol symbol in Enum.GetValues(typeof(Symbol)))
+        {
+            foreach (var isReversed in new[] { false, true })
+            {
+                result.AddRange(from ChartType chartType in Enum.GetValues(typeof(ChartType))
+                    let count = chartType switch
+                    {
+                        ChartType.Ticks => _tickChartsCounter[Tuple.Create(symbol, isReversed)],
+                        ChartType.Candlesticks => _candlestickChartsCounter[Tuple.Create(symbol, isReversed)],
+                        ChartType.ThresholdBars => _thresholdBarChartsCounter[Tuple.Create(symbol, isReversed)],
+                        _ => 0 // or throw an exception for unsupported types
+                    }
+                    where count > 0
+                    select (symbol, isReversed, chartType));
+            }
+        }
+
+        Debug.WriteLine("--- All Registered Charts: ---");
+        foreach (var chart in result)
+        {
+            Debug.WriteLine($"Symbol: {chart.Symbol}, IsReversed: {chart.IsReversed}, ChartType: {chart.ChartType}");
+        }
+        Debug.WriteLine("--- done ---");
+    }
+
+    public void ListAllNonNullCharts()
+    {
+        var result = new List<(Symbol Symbol, bool IsReversed, ChartType ChartType)>();
+
+        foreach (Symbol symbol in Enum.GetValues(typeof(Symbol)))
+        {
+            if (_tickChartsReversed[symbol] != null)
+                result.Add((symbol, true, ChartType.Ticks));
+            if (_tickCharts[symbol] != null)
+                result.Add((symbol, false, ChartType.Ticks));
+
+            if (_candlestickChartsReversed[symbol] != null)
+                result.Add((symbol, true, ChartType.Candlesticks));
+            if (_candlestickCharts[symbol] != null)
+                result.Add((symbol, false, ChartType.Candlesticks));
+
+            if (_thresholdBarChartsReversed[symbol] != null)
+                result.Add((symbol, true, ChartType.ThresholdBars));
+            if (_thresholdBarCharts[symbol] != null)
+                result.Add((symbol, false, ChartType.ThresholdBars));
+        }
+
+        Debug.WriteLine("--- All Non-Null Charts: ---");
+        foreach (var chart in result)
+        {
+            Debug.WriteLine($"Symbol: {chart.Symbol}, IsReversed: {chart.IsReversed}, ChartType: {chart.ChartType}");
+        }
+        Debug.WriteLine("--- done ---");
     }
 }

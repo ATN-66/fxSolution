@@ -5,7 +5,6 @@
 
 using System.Numerics;
 using Windows.UI;
-using Common.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas;
@@ -18,7 +17,9 @@ using Terminal.WinUI3.Models.Kernels;
 using System.Diagnostics;
 using Terminal.WinUI3.Models.Notifications;
 using Microsoft.UI;
-using System;
+using CommunityToolkit.Mvvm.Messaging;
+using Terminal.WinUI3.Helpers;
+using Terminal.WinUI3.Messenger.Chart;
 
 namespace Terminal.WinUI3.Controls.Chart.ThresholdBar;
 
@@ -315,5 +316,15 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
                 break;
             default: throw new ArgumentOutOfRangeException($@" protected override void GraphCanvas_OnPointerMoved(object sender, PointerRoutedEventArgs e)");
         }
+    }
+    public override void RepeatSelectedNotification()
+    {
+        var notification = Notifications.GetSelectedNotification(Symbol);
+        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.RepeatSelectedNotification) { ChartType = ChartType, Symbol = Symbol, Notification = notification }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
+    }
+    public override void OnRepeatSelectedNotification(NotificationBase notification)
+    {
+        throw new NotImplementedException("ThresholdBarChartControl: OnRepeatSelectedNotification");
+
     }
 }

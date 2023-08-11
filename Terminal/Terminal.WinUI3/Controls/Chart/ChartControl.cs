@@ -13,7 +13,6 @@ using Microsoft.Graphics.Canvas;
 using Terminal.WinUI3.Contracts.Models;
 using Terminal.WinUI3.Messenger.AccountService;
 using Terminal.WinUI3.Models.Chart;
-using Terminal.WinUI3.Models.Notifications;
 using Terminal.WinUI3.Models.Trade;
 using Terminal.WinUI3.Models.Trade.Enums;
 using Color = Windows.UI.Color;
@@ -190,12 +189,10 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> : Base.Char
     {
         if (IsReversed)
         {
-            return ViewPort.High - (ViewPort.High - ViewPort.Low) * (positionY / GraphHeight);
+            return ViewPort.Low + (ViewPort.High - ViewPort.Low) * (positionY / GraphHeight);
         }
-        else
-        {
-            return ViewPort.Low + (ViewPort.High - ViewPort.Low) * (1 - positionY / GraphHeight);
-        }
+
+        return ViewPort.Low + (ViewPort.High - ViewPort.Low) * (1 - positionY / GraphHeight);
     }
     protected float GetPositionY(double price)
     {
@@ -203,9 +200,7 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> : Base.Char
         {
             return (float)(((price - ViewPort.Low) / (ViewPort.High - ViewPort.Low)) * GraphHeight);
         }
-        else
-        {
-            return (float)((1 - ((price - ViewPort.Low) / (ViewPort.High - ViewPort.Low))) * GraphHeight);
-        }
+
+        return (float)((1 - ((price - ViewPort.Low) / (ViewPort.High - ViewPort.Low))) * GraphHeight);
     }
 }

@@ -47,6 +47,7 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
 
     [ObservableProperty] private int _minUnits;
     [ObservableProperty] private int _unitsPercent;
+    [ObservableProperty] private int _kernelShift;
     [ObservableProperty] private int _kernelShiftPercent;
     [ObservableProperty] private int _horizontalShift;
     [ObservableProperty] private double _verticalShift;
@@ -120,7 +121,7 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         IsTicksSelected = true;
         IsCandlesticksSelected = IsThresholdBarsSelected = false;
 
-        DisposeChart(false);
+        DisposeViewModel(false);
         ChartControlBase = await _chartService.GetChartAsync<TickChartControl, Quotation, Quotations>(Symbol, IsReversed, ChartType.Ticks).ConfigureAwait(true);
         SetupViewModel();
     }
@@ -132,7 +133,7 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         IsCandlesticksSelected = true;
         IsTicksSelected = IsThresholdBarsSelected = false;
 
-        DisposeChart(false);
+        DisposeViewModel(false);
         ChartControlBase = await _chartService.GetChartAsync<CandlestickChartControl, Candlestick, Candlesticks>(Symbol, IsReversed, ChartType.Candlesticks).ConfigureAwait(true);
         SetupViewModel();
     }
@@ -144,7 +145,7 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         IsThresholdBarsSelected = true;
         IsTicksSelected = IsCandlesticksSelected = false;
 
-        DisposeChart(false);
+        DisposeViewModel(false);
         ChartControlBase = await _chartService.GetChartAsync<ThresholdBarChartControl, ThresholdBar, ThresholdBars>(Symbol, IsReversed, ChartType.ThresholdBars).ConfigureAwait(true);
         SetupViewModel();
     }
@@ -183,12 +184,18 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         return Task.CompletedTask;
     }
 
-    private void DisposeChart(bool isDefault)
+    [RelayCommand]
+    private Task DebugOneAsync()
     {
-        _accountService.PropertyChanged -= OnAccountServicePropertyChanged;
-        ChartControlBase.Detach();
-        _chartService.DisposeChart(ChartControlBase.GetChartSettings(), isDefault);
-        ChartControlBase = null!;
+        _chartService.ListAllRegisteredCharts();
+        return Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    private Task DebugTwoAsync()
+    {
+        _chartService.ListAllNonNullCharts();
+        return Task.CompletedTask;
     }
 
     public SymbolViewModel(IConfiguration configuration, IChartService chartService, ICoordinator coordinator, IAccountService accountService, IDispatcherService dispatcherService)
@@ -210,6 +217,9 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         _kernelShiftPercentDefault = configuration.GetValue<int>($"{nameof(_kernelShiftPercentDefault)}");
 
         GraphMenuFlyout = new MenuFlyout();
+        var repeatSelected = new MenuFlyoutItem { Text = "Repeat Selected" };
+        repeatSelected.Click += async (sender, e) => { ChartControlBase.RepeatSelectedNotification(); };//todo
+        GraphMenuFlyout.Items.Add(repeatSelected);
         var deleteSelected = new MenuFlyoutItem { Text = "Delete Selected" };
         deleteSelected.Click += async (sender, e) => { ChartControlBase.DeleteSelectedNotification(); };//todo
         GraphMenuFlyout.Items.Add(deleteSelected);
@@ -253,6 +263,16 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     partial void OnUnitsPercentChanged(int value)
     {
         ChartControlBase.UnitsPercent = value;
+    }
+
+    partial void OnKernelShiftChanged(int value)
+    {
+        if (!ChartControlBase.IsSelected || ChartControlBase.ChartType != ChartType.Candlesticks)
+        {
+            return;
+        }
+
+        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.KernelShift) { ChartType = ChartControlBase.ChartType, Symbol = Symbol, IntValue = value }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
     }
 
     partial void OnKernelShiftPercentChanged(int value)
@@ -316,6 +336,7 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         ChartControlBase.SetBinding(ChartControlBase.CenturiesPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(CenturiesPercent)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.UnitsPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(UnitsPercent)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.MinUnitsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnits)), Mode = BindingMode.OneWay });
+        ChartControlBase.SetBinding(ChartControlBase.KernelShiftProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShift)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.HorizontalShiftProperty, new Binding { Source = this, Path = new PropertyPath(nameof(HorizontalShift)), Mode = BindingMode.TwoWay });
         ChartControlBase.SetBinding(ChartControlBase.VerticalShiftProperty, new Binding { Source = this, Path = new PropertyPath(nameof(VerticalShift)), Mode = BindingMode.TwoWay });
@@ -341,14 +362,12 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
         IsReversed = bool.Parse(parts?[1].Trim()!);
 
         ChartControlBase = await _chartService.GetDefaultChartAsync(Symbol, IsReversed).ConfigureAwait(true);
-        ChartControlBase.IsSelected = true;
         SetupViewModel();
     }
 
     public void OnNavigatedFrom()
     {
-        Task.Delay(5000);//todo: remove!!!
-        DisposeChart(true);
+        DisposeViewModel(true);
     }
 
     public async void LoadChart(ChartType chartType)
@@ -400,6 +419,15 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
 
         SetChartBindings();
         UpdateOperationalProperties();
+    }
+
+    private void DisposeViewModel(bool isDefault)
+    {
+        _accountService.PropertyChanged -= OnAccountServicePropertyChanged;
+        ChartControlBase.Detach();
+        _chartService.DisposeChart(ChartControlBase.GetChartSettings(), isDefault);
+        ChartControlBase = null!;
+        StrongReferenceMessenger.Default.UnregisterAll(this);
     }
 
     private bool _isTicksEnabled;

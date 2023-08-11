@@ -6,9 +6,6 @@
 using System.Diagnostics;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
-using Terminal.WinUI3.Controls.Chart.Candlestick;
-using Terminal.WinUI3.Controls.Chart.ThresholdBar;
-using Terminal.WinUI3.Controls.Chart.Tick;
 using Terminal.WinUI3.Models.Chart;
 
 namespace Terminal.WinUI3.Controls.Chart.Base;
@@ -16,7 +13,7 @@ namespace Terminal.WinUI3.Controls.Chart.Base;
 public abstract partial class ChartControlBase
 {
     public readonly ChartType ChartType;
-    public readonly bool IsReversed;
+    protected readonly bool IsReversed;
     protected readonly double Digits;
     protected int DecimalPlaces
     {
@@ -39,7 +36,7 @@ public abstract partial class ChartControlBase
         set;
     }
     private const double Century = 100d; // todo: settings // one hundred dollars of the balance currency
-    protected double PipsPerCentury;
+    private double _pipsPerCentury;
     protected readonly ViewPort ViewPort = new();
 
     protected double GraphWidth;
@@ -162,20 +159,30 @@ public abstract partial class ChartControlBase
     }
     protected abstract void OnUnitsChanged();
 
-    private int _kernelShift;
+    public static readonly DependencyProperty KernelShiftProperty = DependencyProperty.Register(nameof(KernelShift), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
     protected int KernelShift
     {
-        get => _kernelShift;
+        get => (int)GetValue(KernelShiftProperty);
         set
         {
-            if (value.Equals(_kernelShift))
+            if (value.Equals(KernelShift))
             {
                 return;
             }
-            _kernelShift = value;
+            SetValue(KernelShiftProperty, value);
             SetValue(KernelShiftPercentProperty, CalculateKernelShiftPercent());
         }
     }
+    public void OnKernelShift(int value)
+    {
+        if (ChartType != ChartType.Candlesticks)
+        {
+            return;
+        }
+        KernelShift = value;
+        Invalidate();
+    }
+
     public static readonly DependencyProperty KernelShiftPercentProperty = DependencyProperty.Register(nameof(KernelShiftPercent), typeof(int), typeof(ChartControlBase), new PropertyMetadata(0));
     public int KernelShiftPercent
     {
@@ -188,7 +195,7 @@ public abstract partial class ChartControlBase
             }
             SetValue(KernelShiftPercentProperty, value);
             HorizontalShift = 0;
-            _kernelShift = CalculateKernelShift();
+            SetValue(KernelShiftProperty, CalculateKernelShift());
             Invalidate();
         }
     }
@@ -222,7 +229,7 @@ public abstract partial class ChartControlBase
                 return;
             }
             SetValue(VerticalShiftProperty, value);
-            CenturyShift = VerticalShift / PipsPerCentury;
+            CenturyShift = VerticalShift / _pipsPerCentury;
         }
     }
     public static readonly DependencyProperty CenturyShiftProperty = DependencyProperty.Register(nameof(CenturyShift), typeof(double), typeof(ChartControlBase), new PropertyMetadata(0d));
@@ -239,31 +246,35 @@ public abstract partial class ChartControlBase
         }
 
         SetValue(CenturyShiftProperty, value);
-        SetValue(VerticalShiftProperty, value * PipsPerCentury);
+        SetValue(VerticalShiftProperty, value * _pipsPerCentury);
         Invalidate();
     }
 
     public static readonly DependencyProperty IsVerticalLineRequestedProperty = DependencyProperty.Register(nameof(IsVerticalLineRequested), typeof(bool), typeof(ChartControlBase), new PropertyMetadata(false));
-    private bool _isVerticalLineRequested;
     public bool IsVerticalLineRequested
     {
-        get => _isVerticalLineRequested;
+        get => (bool)GetValue(IsVerticalLineRequestedProperty);
         set
         {
-            _isVerticalLineRequested = value;
+            if (IsVerticalLineRequested == value)
+            {
+                return;
+            }
             SetValue(IsVerticalLineRequestedProperty, value);
             ProtectedCursor = InputSystemCursor.Create(value ? InputSystemCursorShape.Cross : InputSystemCursorShape.Arrow);
         }
     }
 
     public static readonly DependencyProperty IsHorizontalLineRequestedProperty = DependencyProperty.Register(nameof(IsHorizontalLineRequested), typeof(bool), typeof(ChartControlBase), new PropertyMetadata(false));
-    private bool _isHorizontalLineRequested;
     public bool IsHorizontalLineRequested
     {
-        get => _isHorizontalLineRequested;
+        get => (bool)GetValue(IsHorizontalLineRequestedProperty);
         set
         {
-            _isHorizontalLineRequested = value;
+            if (IsHorizontalLineRequested == value)
+            {
+                return;
+            }
             SetValue(IsHorizontalLineRequestedProperty, value);
             ProtectedCursor = InputSystemCursor.Create(value ? InputSystemCursorShape.Cross : InputSystemCursorShape.Arrow);
         }
@@ -288,6 +299,4 @@ public abstract partial class ChartControlBase
     {
         _textCanvas!.Invalidate();
     }
-
-   
 }
