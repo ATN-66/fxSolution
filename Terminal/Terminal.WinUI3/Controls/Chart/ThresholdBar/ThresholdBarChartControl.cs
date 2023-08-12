@@ -18,7 +18,6 @@ using System.Diagnostics;
 using Terminal.WinUI3.Models.Notifications;
 using Microsoft.UI;
 using CommunityToolkit.Mvvm.Messaging;
-using Terminal.WinUI3.Helpers;
 using Terminal.WinUI3.Messenger.Chart;
 
 namespace Terminal.WinUI3.Controls.Chart.ThresholdBar;
@@ -58,48 +57,56 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
 
         void DrawData()
         {
-            using var openCloseUpCpb = new CanvasPathBuilder(args.DrawingSession);
-            using var openCloseDownCpb = new CanvasPathBuilder(args.DrawingSession);
-            var end = Math.Min(Units - HorizontalShift, DataSource.Count);
-
-            for (var unit = 0; unit < HorizontalShift; unit++)
+            try
             {
-                _dateTime[unit] = DateTime.MaxValue;
-            }
+                using var openCloseUpCpb = new CanvasPathBuilder(args.DrawingSession);
+                using var openCloseDownCpb = new CanvasPathBuilder(args.DrawingSession);
+                var end = Math.Min(Units - HorizontalShift, DataSource.Count);
 
-            for (var unit = 0; unit < end; unit++)
+                for (var unit = 0; unit < HorizontalShift; unit++)
+                {
+                    _dateTime[unit] = DateTime.MaxValue;
+                }
+
+                for (var unit = 0; unit < end; unit++)
+                {
+                    var open = DataSource[unit + KernelShift].Open;
+                    var close = DataSource[unit + KernelShift].Close;
+                    var dateTime = DataSource[unit + KernelShift].Start;
+
+                    var yOpen = (ViewPort.High - open) / Digits * VerticalScale;
+                    var yClose = (ViewPort.High - close) / Digits * VerticalScale;
+
+                    _open[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yOpen) : (float)yOpen;
+                    _close[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yClose) : (float)yClose;
+                    _dateTime[unit + HorizontalShift] = dateTime;
+
+                    if (open < close)
+                    {
+                        openCloseUpCpb.BeginFigure(_close[unit + HorizontalShift]);
+                        openCloseUpCpb.AddLine(_open[unit + HorizontalShift]);
+                        openCloseUpCpb.EndFigure(CanvasFigureLoop.Open);
+                    }
+                    else if (open > close)
+                    {
+                        openCloseDownCpb.BeginFigure(_close[unit + HorizontalShift]);
+                        openCloseDownCpb.AddLine(_open[unit + HorizontalShift]);
+                        openCloseDownCpb.EndFigure(CanvasFigureLoop.Open);
+                    }
+                    else
+                    {
+                        throw new Exception("DrawData: open == close");
+                    }
+                }
+
+                openCloseUpGeometries = CanvasGeometry.CreatePath(openCloseUpCpb);
+                openCloseDownGeometries = CanvasGeometry.CreatePath(openCloseDownCpb);
+            }
+            catch (Exception e)
             {
-                var open = DataSource[unit + KernelShift].Open;
-                var close = DataSource[unit + KernelShift].Close;
-                var dateTime = DataSource[unit + KernelShift].Start;
-
-                var yOpen = (ViewPort.High - open) / Digits * VerticalScale;
-                var yClose = (ViewPort.High - close) / Digits * VerticalScale;
-
-                _open[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yOpen) : (float)yOpen;
-                _close[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yClose) : (float)yClose;
-                _dateTime[unit + HorizontalShift] = dateTime;
-
-                if (open < close)
-                {
-                    openCloseUpCpb.BeginFigure(_close[unit + HorizontalShift]);
-                    openCloseUpCpb.AddLine(_open[unit + HorizontalShift]);
-                    openCloseUpCpb.EndFigure(CanvasFigureLoop.Open);
-                }
-                else if (open > close)
-                {
-                    openCloseDownCpb.BeginFigure(_close[unit + HorizontalShift]);
-                    openCloseDownCpb.AddLine(_open[unit + HorizontalShift]);
-                    openCloseDownCpb.EndFigure(CanvasFigureLoop.Open);
-                }
-                else
-                {
-                    throw new Exception("DrawData: open == close");
-                }
+                Debug.WriteLine(e);
+                throw;
             }
-
-            openCloseUpGeometries = CanvasGeometry.CreatePath(openCloseUpCpb);
-            openCloseDownGeometries = CanvasGeometry.CreatePath(openCloseDownCpb);
         }
 
         void DrawNotifications()
@@ -107,47 +114,24 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
             var notifications = Notifications.GetAllNotifications(Symbol, ViewPort);
             foreach (var notification in notifications)
             {
-                int index;
                 switch (notification.Type)
                 {
                     case NotificationType.ThresholdBar:
-                        index = Array.IndexOf(_dateTime, ((IDateTimeNotification)notification).DateTime);
+                        var index = Array.IndexOf(_dateTime, ((IDateTimeNotification)notification).Start);
                         notification.StartPoint.X = notification.EndPoint.X = _open[index].X;
                         notification.StartPoint.Y = (float)GraphHeight;
                         notification.EndPoint.Y = 0f;
                         DrawLine(notification);
-                        args.DrawingSession.DrawText(notification.Description, notification.EndPoint, Colors.Gray, VerticalTextFormat);
-                        break;
-                    case NotificationType.Candlestick:
-                        var givenDateTime = ((IDateTimeNotification)notification).DateTime;
-                        var nearestDateTime = DateTime.MaxValue;
-                        for (var i = 0; i <= _dateTime.Length - 1; i++)
-                        {
-                            var dateTime = _dateTime[i];
-                            if (_dateTime[i] > givenDateTime)
-                            {
-                                continue;
-                            }
-
-                            nearestDateTime = _dateTime[i];
-                            break;
-                        }
-
-                        index = Array.IndexOf(_dateTime, nearestDateTime);
-                        notification.StartPoint.X = notification.EndPoint.X = _open[index].X;
-                        notification.StartPoint.Y = (float)GraphHeight;
-                        notification.EndPoint.Y = 0f;
-                        DrawLine(notification);
-                        args.DrawingSession.DrawText(notification.Description, notification.EndPoint, Colors.Gray, VerticalTextFormat);
+                        args.DrawingSession.DrawText(notification.Description, notification.EndPoint, !notification.IsSelected ? Colors.Gray : Colors.White, VerticalTextFormat);
                         break;
                     case NotificationType.Price:
                         notification.StartPoint.X = 0f;
                         notification.EndPoint.X = (float)GraphWidth;
                         notification.StartPoint.Y = notification.EndPoint.Y = GetPositionY(((IPriceNotification)notification).Price);
                         DrawLine(notification);
-                        args.DrawingSession.DrawText(notification.Description, notification.StartPoint, Colors.Gray, HorizontalTextFormat);
+                        args.DrawingSession.DrawText(notification.Description, notification.StartPoint, !notification.IsSelected ? Colors.Gray : Colors.White, HorizontalTextFormat);
                         break;
-                    default: throw new ArgumentOutOfRangeException();
+                    default: throw new InvalidOperationException("Unsupported notification type.");
                 }
             }
         }
@@ -158,9 +142,9 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
             args.DrawingSession.DrawGeometry(openCloseDownGeometries, QuoteColor, _ocThickness);
         }
 
-        void DrawLine(NotificationBase notification)
+        void DrawLine(NotificationBase? notification)
         {
-            if (!notification.IsSelected)
+            if (!notification!.IsSelected)
             {
                 args.DrawingSession.DrawLine(notification.StartPoint, notification.EndPoint, Colors.Gray, 0.5f, NotificationStrokeStyle);
             }
@@ -184,18 +168,19 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
             var unit = index + KernelShift;
             Debug.Assert(closestDateTime == DataSource[unit].Start);
 
-            var notification = new ThresholdBarChartNotification()
+            var notification = new ThresholdBarNotification()
             {
                 Symbol = Symbol,
                 Type = NotificationType.ThresholdBar,
-                DateTime = closestDateTime,
+                Start = DataSource[unit].Start,
+                End = DataSource[unit].End,
                 IsSelected = true,
                 Description = DataSource[unit].ToString(),
                 StartPoint = new Vector2(),
                 EndPoint = new Vector2()
             };
-
             Notifications.Add(notification);
+            EnqueueMessage(MessageType.Trace, notification.ToString());
             Invalidate();
             IsVerticalLineRequested = false;
             return;
@@ -243,61 +228,16 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
         }
     }
 
-    protected override void GraphCanvas_OnPointerReleased(object sender, PointerRoutedEventArgs e)
-    {
-        base.GraphCanvas_OnPointerReleased(sender, e);
-
-        //if (VerticalLines.Any(line => line.IsSelected))
-        //{
-        //    var selectedLine = VerticalLines.FirstOrDefault(line => line.IsSelected);
-        //    if (selectedLine != null)
-        //    {
-        //        var distances = _open.Skip(HorizontalShift).Take(Math.Min(Units - HorizontalShift, DataSource.Count)).
-        //            Select((vector, index) => new { Distance = Math.Abs(vector.X - selectedLine.StartPoint.X), Index = index }).ToList();
-        //        var minDistanceTuple = distances.Aggregate((a, b) => a.Distance < b.Distance ? a : b);
-        //        var index = minDistanceTuple.Index;
-        //        var closestVector = _open[index + HorizontalShift];
-        //        selectedLine.StartPoint.X = selectedLine.EndPoint.X = closestVector.X;
-        //        var unit = index + KernelShift;
-        //        selectedLine.Description = DataSource[unit].ToString();
-        //        Invalidate();
-        //    }
-        //    else
-        //    {
-        //        throw new InvalidOperationException("selected vertical line is null");
-        //    }
-        //}
-
-        //if (HorizontalLines.Any(line => line.IsSelected))
-        //{
-        //    var selectedLine = HorizontalLines.FirstOrDefault(line => line.IsSelected);
-        //    if (selectedLine != null)
-        //    {
-        //        EnqueueMessage(MessageType.Information, $"y: {selectedLine.StartPoint.Y}");
-        //        Invalidate();
-        //    }
-        //    else
-        //    {
-        //        throw new InvalidOperationException("selected horizontal line is null");
-        //    }
-        //}
-    }
-
     protected override void MoveSelectedNotification(double deltaX, double deltaY)
     {
-        var notification = Notifications.GetSelectedNotification(Symbol);
-        switch (notification.Type)
+        var notification = Notifications.GetSelectedNotification(Symbol, ViewPort);
+        switch (notification!.Type)
         {
-            case NotificationType.Candlestick:
-                notification.IsSelected = false;
-                break;
             case NotificationType.ThresholdBar:
                 var x = notification.StartPoint.X - (float)deltaX;
-                var index = GetIndex(x, _open);
-                var closestDateTime = _dateTime[index + HorizontalShift];
-                var unit = index + KernelShift;
-                Debug.Assert(closestDateTime == DataSource[unit].Start);
-                ((IDateTimeNotification)notification).DateTime = closestDateTime;
+                var unit = GetIndex(x, _open) + KernelShift;
+                ((IDateTimeRangeNotification)notification).Start = DataSource[unit].Start;
+                ((IDateTimeRangeNotification)notification).End = DataSource[unit].End;
                 notification.Description = DataSource[unit].ToString();
                 break;
             case NotificationType.Price:
@@ -314,19 +254,62 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
                 ((IPriceNotification)notification).Price = price;
                 notification.Description = price.ToString(PriceTextFormat);
                 break;
-            default: throw new ArgumentOutOfRangeException($@" protected override void GraphCanvas_OnPointerMoved(object sender, PointerRoutedEventArgs e)");
+            default: throw new InvalidOperationException("Unsupported notification type.");
         }
+        EnqueueMessage(MessageType.Trace, notification.ToString()!);
     }
     public override void RepeatSelectedNotification()
     {
-        throw new NotImplementedException("RepeatSelectedNotification");
+        if (CommunicationToken is null)
+        {
+            return;
+        }
 
-        var notification = Notifications.GetSelectedNotification(Symbol);
-        //StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.RepeatSelectedNotification) { ChartType = ChartType, Symbol = Symbol, Notification = notification }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
+        var notification = Notifications.GetSelectedNotification(Symbol, ViewPort);
+        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.RepeatSelectedNotification) { ChartType = ChartType, Symbol = Symbol, Notification = notification }, CommunicationToken);
     }
-    public override void OnRepeatSelectedNotification(NotificationBase notification)
+    public override void OnRepeatSelectedNotification(NotificationBase notificationBase)
     {
-        throw new NotImplementedException("ThresholdBarChartControl: OnRepeatSelectedNotification");
-
+        DeselectAllLines();
+        NotificationBase notification;
+        switch (notificationBase)
+        {
+            case CandlestickNotification candlestickNotification:
+                var thresholdBar = DataSource.FindItem(candlestickNotification.Start)!;
+                notification = new ThresholdBarNotification()
+                {
+                    Symbol = Symbol,
+                    Type = NotificationType.ThresholdBar,
+                    Start = thresholdBar.Start,
+                    End = thresholdBar.End,
+                    IsSelected = ViewPort.Start <= thresholdBar.Start && thresholdBar.End <= ViewPort.End,
+                    Description = thresholdBar.ToString(),
+                    StartPoint = new Vector2(),
+                    EndPoint = new Vector2()
+                };
+                break;
+            case PriceNotification priceNotification:
+                if (priceNotification.Symbol != Symbol)
+                {
+                    return;
+                }
+                notification = new PriceNotification
+                {
+                    Symbol = Symbol,
+                    Type = NotificationType.Price,
+                    Description = priceNotification.Description,
+                    IsSelected = ViewPort.High >= priceNotification.Price && priceNotification.Price >= ViewPort.Low,
+                    Price = priceNotification.Price,
+                };
+                break;
+            default: throw new InvalidOperationException("Unsupported notification type.");
+        }
+        Notifications.Add(notification);
+        EnqueueMessage(MessageType.Trace, notification.ToString()!);
+        Invalidate();
+    }
+    public override void SaveUnits()
+    {
+        DataSource.SaveUnits(Notifications.GetDateTimeRange());
     }
 }

@@ -1,9 +1,11 @@
-﻿/*+------------------------------------------------------------------+
+﻿
+/*+------------------------------------------------------------------+
   |                                    Terminal.WinUI3.Models.Kernels|
   |                                                 ThresholdBars.cs |
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
+using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Models.Entities;
 using Quotation = Common.Entities.Quotation;
 
@@ -11,16 +13,14 @@ namespace Terminal.WinUI3.Models.Kernels;
 
 public class ThresholdBars : DataSourceKernel<ThresholdBar>
 {
-    //private readonly IFileService _fileService;
-    //private readonly Symbol _symbol;
+    private readonly Symbol _symbol;
     private const double StartingThreshold = 50d; // 5 pips //todo: settings
     private readonly double _threshold;
     private readonly double _digit;
 
-    public ThresholdBars(int thresholdInPips, double digit)
+    public ThresholdBars(Symbol symbol, int thresholdInPips, double digit, IFileService fileService) : base(fileService)
     {
-        //_fileService = fileService;IFileService fileService//Symbol symbol,
-        //_symbol = symbol;
+        _symbol = symbol;
         _digit = digit;
         _threshold = thresholdInPips / _digit;
     }
@@ -66,8 +66,6 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
 
             Add(quotation);
         }
-
-        //SaveThresholdBarsToJson(Items, @"D:\forex.Terminal.WinUI3.Logs\", "thresholdBars.json");
     }
 
     public override void Add(Quotation quotation)
@@ -85,8 +83,10 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
                     lastThresholdBar.Ask = quotation.Ask;
                     lastThresholdBar.Bid = quotation.Bid;
                 }
-                else if (quotation.Ask < lastThresholdBar.Threshold)
+                else if (quotation.Ask <= lastThresholdBar.Threshold)
                 {
+                    lastThresholdBar.End = quotation.Start;
+
                     Items.Add(new ThresholdBar(lastThresholdBar.Close, quotation.Ask)
                     {
                         Symbol = quotation.Symbol,
@@ -113,8 +113,10 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
                     lastThresholdBar.Ask = quotation.Ask;
                     lastThresholdBar.Bid = quotation.Bid;
                 }
-                else if (quotation.Ask > lastThresholdBar.Threshold)
+                else if (quotation.Ask >= lastThresholdBar.Threshold)
                 {
+                    lastThresholdBar.End = quotation.Start;
+
                     Items.Add(new ThresholdBar(lastThresholdBar.Close, quotation.Ask)
                     {
                         Symbol = quotation.Symbol,
@@ -137,10 +139,18 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
         }
     }
 
-    //private void SaveThresholdBarsToJson(IEnumerable<ThresholdBar> thresholdBars, string folderPath, string fileName)
-    //{
-    //    var symbolName = _symbol.ToString();
-    //    var fullFileName = $"{symbolName}_{fileName}";
-    //    _fileService.Save(folderPath, fullFileName, thresholdBars);
-    //}
+    public override int FindIndex(DateTime dateTime)
+    {
+        throw new NotImplementedException("ThresholdBars:FindIndex");
+    }
+    public override ThresholdBar? FindItem(DateTime dateTime)
+    {
+        return Items.FirstOrDefault(t => dateTime >= t.Start && dateTime <= t.End);
+    }
+
+    public override void SaveUnits((DateTime first, DateTime second) dateRange)
+    {
+        var items = Items.Where(t => t.Start >= dateRange.first && t.End <= dateRange.second);
+        SaveItemsToJson(items, _symbol, GetType().Name.ToLower());
+    }
 }

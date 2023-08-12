@@ -4,13 +4,20 @@
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
-using Common.ExtensionsAndHelpers;
+using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Models.Entities;
 
 namespace Terminal.WinUI3.Models.Kernels;
 
 public class Candlesticks : DataSourceKernel<Candlestick>
 {
+    private readonly Symbol _symbol;
+
+    public Candlesticks(Symbol symbol, IFileService fileService) : base(fileService)
+    {
+        _symbol = symbol;
+    }
+
     public override void AddRange(IEnumerable<Quotation> quotations)
     {
         var groupedQuotations = quotations.GroupBy(q => new
@@ -76,5 +83,29 @@ public class Candlesticks : DataSourceKernel<Candlestick>
 
             Items.Add(newCandlestick);
         }
+    }
+
+    public override int FindIndex(DateTime dateTime)
+    {
+        for (var i = 0; i < Items.Count; i++)
+        {
+            if (Items[i].Start.Equals(dateTime))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    public override Candlestick? FindItem(DateTime dateTime)
+    {
+        return Items.FirstOrDefault(t => t.Start.Equals(dateTime));
+    }
+
+    public override void SaveUnits((DateTime first, DateTime second) dateRange)
+    {
+        var items = Items.Where(t => t.Start >= dateRange.first && t.End <= dateRange.second);
+        SaveItemsToJson(items, _symbol, GetType().Name.ToLower());
     }
 }

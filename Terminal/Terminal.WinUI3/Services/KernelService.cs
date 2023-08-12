@@ -15,16 +15,18 @@ namespace Terminal.WinUI3.Services;
 public class KernelService : IKernelService
 {
     private readonly IChartService _chartService;
+    private readonly IFileService _fileService;
 
     private readonly Dictionary<Symbol, int> _thresholdsInPips = new() { { Symbol.EURUSD, 20 }, { Symbol.GBPUSD, 30 }, { Symbol.USDJPY, 20 }, { Symbol.EURGBP, 30 }, { Symbol.EURJPY, 40 }, { Symbol.GBPJPY, 60 } };//todo:
     private readonly Dictionary<Symbol, int> _digits = new() { { Symbol.EURUSD, 100000 }, { Symbol.GBPUSD, 100000 }, { Symbol.USDJPY, 1000 }, { Symbol.EURGBP, 100000 }, { Symbol.EURJPY, 1000 }, { Symbol.GBPJPY, 100000 } };//todo
 
-    private readonly Dictionary<Symbol, Dictionary<ChartType, IDataSourceKernel<IChartItem>>> _dataSourceKernels = new();
-    private readonly Dictionary<Symbol, INotificationsKernel> _notificationsKernels = new();
+    private readonly Dictionary<Symbol, Dictionary<ChartType, IDataSourceKernel<IChartItem>>> _dataSources = new();
+    private readonly Dictionary<Symbol, Dictionary<ChartType, INotificationsKernel>> _notifications = new();
 
-    public KernelService(IChartService chartService)
+    public KernelService(IChartService chartService, IFileService fileService)
     {
         _chartService = chartService;
+        _fileService = fileService;
     }
 
     public void Initialize(IDictionary<Symbol, List<Quotation>> quotations)
@@ -33,36 +35,40 @@ public class KernelService : IKernelService
         {
             var symbolKernels = new Dictionary<ChartType, IDataSourceKernel<IChartItem>>();
 
-            var thresholdKernel = new ThresholdBars(_thresholdsInPips[symbol], _digits[symbol]);
+            var thresholdKernel = new ThresholdBars(symbol, _thresholdsInPips[symbol], _digits[symbol], _fileService);
             thresholdKernel.AddRange(symbolQuotations);
             symbolKernels[ChartType.ThresholdBars] = thresholdKernel;
 
-            var candlestickKernel = new Candlesticks();
+            var candlestickKernel = new Candlesticks(symbol, _fileService);
             candlestickKernel.AddRange(symbolQuotations);
             symbolKernels[ChartType.Candlesticks] = candlestickKernel;
 
-            var quotationKernel = new Quotations();
+            var quotationKernel = new Quotations(_fileService);
             quotationKernel.AddRange(symbolQuotations);
             symbolKernels[ChartType.Ticks] = quotationKernel;
 
-            _dataSourceKernels[symbol] = symbolKernels;
+            _dataSources[symbol] = symbolKernels;
         }
 
-        // todo: initialize historical data to _notificationsKernels
+        // todo: initialize historical data to _notifications
         foreach (Symbol symbol in Enum.GetValues(typeof(Symbol)))
         {
-            _notificationsKernels[symbol] = new Notifications();
+            _notifications[symbol] = new Dictionary<ChartType, INotificationsKernel>();
+            foreach (ChartType chartType in Enum.GetValues(typeof(ChartType)))
+            {
+                _notifications[symbol][chartType] = new Notifications(symbol, chartType);
+            }
         }
 
-        _chartService.Initialize(_dataSourceKernels, _notificationsKernels);
+        _chartService.Initialize(_dataSources, _notifications);
     }
 
     public void Add(Quotation quotation)
     {
         var symbol = quotation.Symbol;
-        ((IDataSourceKernel<ThresholdBar>)_dataSourceKernels[symbol][ChartType.ThresholdBars]).Add(quotation);
-        ((IDataSourceKernel<Candlestick>)_dataSourceKernels[symbol][ChartType.Candlesticks]).Add(quotation);
-        ((IDataSourceKernel<Quotation>)_dataSourceKernels[symbol][ChartType.Ticks]).Add(quotation);
+        ((IDataSourceKernel<ThresholdBar>)_dataSources[symbol][ChartType.ThresholdBars]).Add(quotation);
+        ((IDataSourceKernel<Candlestick>)_dataSources[symbol][ChartType.Candlesticks]).Add(quotation);
+        ((IDataSourceKernel<Quotation>)_dataSources[symbol][ChartType.Ticks]).Add(quotation);
         _chartService.Tick(symbol);
     }
 }

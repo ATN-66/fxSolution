@@ -12,10 +12,24 @@ namespace Terminal.WinUI3.Models.Kernels;
 
 public class Notifications : INotificationsKernel
 {
+    public Symbol Symbol { get; }
+    public ChartType ChartType { get; }
+
     private readonly IList<NotificationBase> _items = new List<NotificationBase>();
+
+    public Notifications(Symbol symbol, ChartType chartType)
+    {
+        Symbol = symbol;
+        ChartType = chartType;
+    }
 
     public void Add(NotificationBase notificationBase)
     {
+        if (notificationBase.IsSelected)
+        {
+            DeSelectAll();
+        }
+
         _items.Add(notificationBase);
     }
 
@@ -27,42 +41,29 @@ public class Notifications : INotificationsKernel
         }
     }
 
-    public IEnumerable<NotificationBase> GetAllNotifications(Symbol symbol, ViewPort viewPort)
+    public List<NotificationBase> GetAllNotifications(Symbol symbol, ViewPort viewPort)
     {
         var dateTimeNotifications = _items.OfType<IDateTimeNotification>().
-            Where(notification => notification.DateTime >= viewPort.Start && notification.DateTime <= viewPort.End).Cast<NotificationBase>(); 
+            Where(notification => notification.Start >= viewPort.Start && notification.Start <= viewPort.End).Cast<NotificationBase>(); 
         var priceNotifications = _items.OfType<IPriceNotification>().
             Where(notification => notification.Price >= viewPort.Low && notification.Price <= viewPort.High).Cast<NotificationBase>(); 
-
-        return dateTimeNotifications.Concat(priceNotifications);
+        return dateTimeNotifications.Concat(priceNotifications).ToList();
     }
 
-    public IEnumerable<NotificationBase> GetAllNotifications(Symbol symbol)
+    public NotificationBase? GetSelectedNotification(Symbol symbol, ViewPort viewPort)
     {
-        return _items.Where(notification => notification.Symbol == symbol).ToList();
-    }
-
-    public List<CandlestickNotification> GetCandlestickNotifications(Symbol symbol, ViewPort viewPort)
-    {
-        return _items.OfType<CandlestickNotification>().Where(notification => notification.Symbol == symbol && notification.DateTime >= viewPort.Start && notification.DateTime <= viewPort.End).ToList();
-    }
-
-    public bool IsAnySelected(Symbol symbol)
-    {
-        return _items.Any(notification => notification.Symbol == symbol && notification.IsSelected);
-    }
-
-    public NotificationBase GetSelectedNotification(Symbol symbol)
-    {
-        var selectedNotifications = _items.Where(notification => notification.Symbol == symbol && notification.IsSelected).ToList();
+        var allNotifications = GetAllNotifications(symbol, viewPort);
+        var selectedNotifications = allNotifications.Where(notification => notification.IsSelected).ToList();
         if (!selectedNotifications.Any())
         {
-            throw new InvalidOperationException("No notification is selected for the given symbol.");
+            return null;
         }
+
         if (selectedNotifications.Count > 1)
         {
-            throw new InvalidOperationException("More than one notification is selected for the given symbol.");
+            throw new InvalidOperationException("More than one notification is selected for the given symbol within the viewport.");
         }
+
         return selectedNotifications.Single();
     }
 
@@ -80,5 +81,26 @@ public class Notifications : INotificationsKernel
     public void DeleteAll()
     {
         _items.Clear();
+    }
+
+    public (DateTime, DateTime) GetDateTimeRange() 
+    {
+        var dateTimeNotifications = _items.OfType<IDateTimeNotification>().Take(2).ToList();
+        if (dateTimeNotifications.Count < 2)
+        {
+            throw new InvalidOperationException("There must be at least two items that implement IDateTimeNotification.");
+        }
+
+        var startDate = dateTimeNotifications[0].Start;
+        DateTime endDate;
+        if (dateTimeNotifications[1] is IDateTimeRangeNotification dateTimeRangeNotification)
+        {
+            endDate = dateTimeRangeNotification.End;
+        }
+        else
+        {
+            endDate = dateTimeNotifications[1].Start;
+        }
+        return (startDate, endDate);
     }
 }

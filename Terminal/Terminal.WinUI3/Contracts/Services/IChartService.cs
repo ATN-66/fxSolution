@@ -12,7 +12,7 @@ namespace Terminal.WinUI3.Contracts.Services;
 
 public interface IChartService
 {
-    void Initialize(Dictionary<Symbol, Dictionary<ChartType, IDataSourceKernel<IChartItem>>> dataSourceKernels, Dictionary<Symbol, INotificationsKernel> eventsKernels);
+    public void Initialize(Dictionary<Symbol, Dictionary<ChartType, IDataSourceKernel<IChartItem>>> dataSourceKernels, Dictionary<Symbol, Dictionary<ChartType, INotificationsKernel>> notificationsKernels);
     void ProcessTickValues(string details);
     Task<ChartControlBase> GetDefaultChartAsync(Symbol symbol, bool isReversed);
     Task<ChartControlBase> GetChartByTypeAsync(Symbol symbol, bool isReversed, ChartType chartType);

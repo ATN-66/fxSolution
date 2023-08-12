@@ -1,11 +1,11 @@
 ﻿/*+------------------------------------------------------------------+
   |                              Terminal.WinUI3.Models.Notifications|
-  |                                         IDateTimeNotification.cs |
+  |                                    IDateTimeRangeNotification.cs |
   +------------------------------------------------------------------+*/
 
 namespace Terminal.WinUI3.Models.Notifications;
 
-public interface IDateTimeNotification
+public interface IDateTimeRangeNotification : IDateTimeNotification
 {
-    DateTime Start { get; set; }
+    DateTime End { get; set; }
 }

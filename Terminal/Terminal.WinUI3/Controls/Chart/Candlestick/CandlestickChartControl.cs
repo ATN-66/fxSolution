@@ -17,10 +17,8 @@ using Terminal.WinUI3.Models.Chart;
 using Terminal.WinUI3.Models.Kernels;
 using Windows.UI;
 using CommunityToolkit.Mvvm.Messaging;
-using Terminal.WinUI3.Helpers;
 using Terminal.WinUI3.Messenger.Chart;
 using Terminal.WinUI3.Models.Notifications;
-using System;
 
 namespace Terminal.WinUI3.Controls.Chart.Candlestick;
 
@@ -65,71 +63,79 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
 
         void DrawData()
         {
-            using var highLowUpCpb = new CanvasPathBuilder(args.DrawingSession);
-            using var highLowDownCpb = new CanvasPathBuilder(args.DrawingSession);
-            using var openCloseUpCpb = new CanvasPathBuilder(args.DrawingSession);
-            using var openCloseDownCpb = new CanvasPathBuilder(args.DrawingSession);
-            using var flatCpb = new CanvasPathBuilder(args.DrawingSession);
-
-            var end = Math.Min(Units - HorizontalShift, DataSource.Count);
-
-            for (var unit = 0; unit < HorizontalShift; unit++)
+            try
             {
-                _dateTime[unit] = DateTime.MaxValue;
-            }
+                using var highLowUpCpb = new CanvasPathBuilder(args.DrawingSession);
+                using var highLowDownCpb = new CanvasPathBuilder(args.DrawingSession);
+                using var openCloseUpCpb = new CanvasPathBuilder(args.DrawingSession);
+                using var openCloseDownCpb = new CanvasPathBuilder(args.DrawingSession);
+                using var flatCpb = new CanvasPathBuilder(args.DrawingSession);
 
-            for (var unit = 0; unit < end; unit++)
+                var end = Math.Min(Units - HorizontalShift, DataSource.Count);
+
+                for (var unit = 0; unit < HorizontalShift; unit++)
+                {
+                    _dateTime[unit] = DateTime.MaxValue;
+                }
+
+                for (var unit = 0; unit < end; unit++)
+                {
+                    var high = DataSource[unit + KernelShift].High;
+                    var low = DataSource[unit + KernelShift].Low;
+                    var open = DataSource[unit + KernelShift].Open;
+                    var close = DataSource[unit + KernelShift].Close;
+                    var dateTime = DataSource[unit + KernelShift].Start;
+
+                    var yHigh = (ViewPort.High - high) / Digits * VerticalScale;
+                    var yLow = (ViewPort.High - low) / Digits * VerticalScale;
+                    var yOpen = (ViewPort.High - open) / Digits * VerticalScale;
+                    var yClose = (ViewPort.High - close) / Digits * VerticalScale;
+
+                    _high[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yHigh) : (float)yHigh;
+                    _low[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yLow) : (float)yLow;
+                    _open[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yOpen) : (float)yOpen;
+                    _close[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yClose) : (float)yClose;
+                    _dateTime[unit + HorizontalShift] = dateTime;
+
+                    if (open < close)
+                    {
+                        highLowUpCpb.BeginFigure(_low[unit + HorizontalShift]);
+                        highLowUpCpb.AddLine(_high[unit + HorizontalShift]);
+                        highLowUpCpb.EndFigure(CanvasFigureLoop.Open);
+
+                        openCloseUpCpb.BeginFigure(_close[unit + HorizontalShift]);
+                        openCloseUpCpb.AddLine(_open[unit + HorizontalShift]);
+                        openCloseUpCpb.EndFigure(CanvasFigureLoop.Open);
+                    }
+                    else if (open > close)
+                    {
+                        highLowDownCpb.BeginFigure(_low[unit + HorizontalShift]);
+                        highLowDownCpb.AddLine(_high[unit + HorizontalShift]);
+                        highLowDownCpb.EndFigure(CanvasFigureLoop.Open);
+
+                        openCloseDownCpb.BeginFigure(_close[unit + HorizontalShift]);
+                        openCloseDownCpb.AddLine(_open[unit + HorizontalShift]);
+                        openCloseDownCpb.EndFigure(CanvasFigureLoop.Open);
+                    }
+                    else
+                    {
+                        flatCpb.BeginFigure(_low[unit + HorizontalShift]);
+                        flatCpb.AddLine(_high[unit + HorizontalShift]);
+                        flatCpb.EndFigure(CanvasFigureLoop.Open);
+                    }
+                }
+
+                highLowUpGeometries = CanvasGeometry.CreatePath(highLowUpCpb);
+                highLowDownGeometries = CanvasGeometry.CreatePath(highLowDownCpb);
+                openCloseUpGeometries = CanvasGeometry.CreatePath(openCloseUpCpb);
+                openCloseDownGeometries = CanvasGeometry.CreatePath(openCloseDownCpb);
+                flatGeometries = CanvasGeometry.CreatePath(flatCpb);
+            }
+            catch (Exception e)
             {
-                var high = DataSource[unit + KernelShift].High;
-                var low = DataSource[unit + KernelShift].Low;
-                var open = DataSource[unit + KernelShift].Open;
-                var close = DataSource[unit + KernelShift].Close;
-                var dateTime = DataSource[unit + KernelShift].Start;
-
-                var yHigh = (ViewPort.High - high) / Digits * VerticalScale;
-                var yLow = (ViewPort.High - low) / Digits * VerticalScale;
-                var yOpen = (ViewPort.High - open) / Digits * VerticalScale;
-                var yClose = (ViewPort.High - close) / Digits * VerticalScale;
-
-                _high[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yHigh) : (float)yHigh;
-                _low[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yLow) : (float)yLow;
-                _open[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yOpen) : (float)yOpen;
-                _close[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yClose) : (float)yClose;
-                _dateTime[unit + HorizontalShift] = dateTime;
-
-                if (open < close)
-                {
-                    highLowUpCpb.BeginFigure(_low[unit + HorizontalShift]);
-                    highLowUpCpb.AddLine(_high[unit + HorizontalShift]);
-                    highLowUpCpb.EndFigure(CanvasFigureLoop.Open);
-
-                    openCloseUpCpb.BeginFigure(_close[unit + HorizontalShift]);
-                    openCloseUpCpb.AddLine(_open[unit + HorizontalShift]);
-                    openCloseUpCpb.EndFigure(CanvasFigureLoop.Open);
-                }
-                else if (open > close)
-                {
-                    highLowDownCpb.BeginFigure(_low[unit + HorizontalShift]);
-                    highLowDownCpb.AddLine(_high[unit + HorizontalShift]);
-                    highLowDownCpb.EndFigure(CanvasFigureLoop.Open);
-
-                    openCloseDownCpb.BeginFigure(_close[unit + HorizontalShift]);
-                    openCloseDownCpb.AddLine(_open[unit + HorizontalShift]);
-                    openCloseDownCpb.EndFigure(CanvasFigureLoop.Open);
-                }
-                else
-                {
-                    flatCpb.BeginFigure(_low[unit + HorizontalShift]);
-                    flatCpb.AddLine(_high[unit + HorizontalShift]);
-                    flatCpb.EndFigure(CanvasFigureLoop.Open);
-                }
+                Debug.WriteLine(e);
+                throw;
             }
-
-            highLowUpGeometries = CanvasGeometry.CreatePath(highLowUpCpb);
-            highLowDownGeometries = CanvasGeometry.CreatePath(highLowDownCpb);
-            openCloseUpGeometries = CanvasGeometry.CreatePath(openCloseUpCpb);
-            openCloseDownGeometries = CanvasGeometry.CreatePath(openCloseDownCpb);
-            flatGeometries = CanvasGeometry.CreatePath(flatCpb);
         }
 
         void DrawNotifications()
@@ -137,35 +143,24 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
             var notifications = Notifications.GetAllNotifications(Symbol, ViewPort);
             foreach (var notification in notifications)
             {
-                int index;
                 switch (notification.Type)
                 {
-                    case NotificationType.ThresholdBar:
-                        var targetDateTime = ((IDateTimeNotification)notification).DateTime;
-                        var roundedDateTime = new DateTime(targetDateTime.Year, targetDateTime.Month, targetDateTime.Day, targetDateTime.Hour, targetDateTime.Minute, 0);
-                        index = FindClosestIndex(roundedDateTime);
-                        notification.StartPoint.X = notification.EndPoint.X = _open[index].X;
-                        notification.StartPoint.Y = (float)GraphHeight;
-                        notification.EndPoint.Y = 0f;
-                        DrawLine(notification);
-                        args.DrawingSession.DrawText(notification.Description, notification.EndPoint, Colors.Gray, VerticalTextFormat);
-                        break;
                     case NotificationType.Candlestick:
-                        index = Array.IndexOf(_dateTime, ((IDateTimeNotification)notification).DateTime);
+                        var index = Array.IndexOf(_dateTime, ((IDateTimeNotification)notification).Start);
                         notification.StartPoint.X = notification.EndPoint.X = _open[index].X;
                         notification.StartPoint.Y = (float)GraphHeight;
                         notification.EndPoint.Y = 0f;
                         DrawLine(notification);
-                        args.DrawingSession.DrawText(notification.Description, notification.EndPoint, Colors.Gray, VerticalTextFormat);
+                        args.DrawingSession.DrawText(notification.Description, notification.EndPoint, !notification.IsSelected ? Colors.Gray : Colors.White, VerticalTextFormat);
                         break;
                     case NotificationType.Price:
                         notification.StartPoint.X = 0f; 
                         notification.EndPoint.X = (float)GraphWidth;
                         notification.StartPoint.Y = notification.EndPoint.Y = GetPositionY(((IPriceNotification)notification).Price);
                         DrawLine(notification);
-                        args.DrawingSession.DrawText(notification.Description, notification.StartPoint, Colors.Gray, HorizontalTextFormat);
+                        args.DrawingSession.DrawText(notification.Description, notification.StartPoint, !notification.IsSelected ? Colors.Gray : Colors.White, HorizontalTextFormat);
                         break;
-                    default: throw new ArgumentOutOfRangeException();
+                    default: throw new InvalidOperationException("Unsupported notification type.");
                 }
             }
         }
@@ -179,9 +174,9 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
             args.DrawingSession.DrawGeometry(flatGeometries, Colors.Gray, _hlThickness);
         }
 
-        void DrawLine(NotificationBase notification)
+        void DrawLine(NotificationBase? notification)
         {
-            if (!notification.IsSelected)
+            if (!notification!.IsSelected)
             {
                 args.DrawingSession.DrawLine(notification.StartPoint, notification.EndPoint, Colors.Gray, 0.5f, NotificationStrokeStyle);
             }
@@ -190,48 +185,6 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
                 args.DrawingSession.DrawLine(notification.StartPoint, notification.EndPoint, Colors.Yellow, 1.0f, NotificationStrokeStyleSelected);
                 DrawSquares(args.DrawingSession, notification, Colors.Yellow);
             }
-        }
-
-        int FindClosestIndex(DateTime target)
-        {
-            var index = Array.IndexOf(_dateTime, target);
-            if (index != -1)
-            {
-                return index;
-            }
-
-            throw new NotImplementedException("int FindClosestIndex(DateTime target)");
-
-            //int leftSearch = 1, rightSearch = 1;
-            //while (true)
-            //{
-            //    var leftIndex = Math.Max(0, index - leftSearch);
-            //    var rightIndex = Math.Min(_dateTime.Length - 1, index + rightSearch);
-
-            //    if (leftIndex == rightIndex) // reached bounds of array
-            //    {
-            //        return leftIndex; // or throw an exception if you want to signal no close value found
-            //    }
-
-            //    if (_dateTime[leftIndex] < target && target < _dateTime[rightIndex])
-            //    {
-            //        // decide which one is closer
-            //        return (target - _dateTime[leftIndex] < _dateTime[rightIndex] - target) ? leftIndex : rightIndex;
-            //    }
-
-            //    if (_dateTime[leftIndex] < target)
-            //    {
-            //        return leftIndex;
-            //    }
-
-            //    if (_dateTime[rightIndex] > target)
-            //    {
-            //        return rightIndex;
-            //    }
-
-            //    leftSearch++;
-            //    rightSearch++;
-            //}
         }
     }
 
@@ -251,7 +204,7 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
             {
                 Symbol = Symbol,
                 Type = NotificationType.Candlestick,
-                DateTime = closestDateTime,
+                Start = closestDateTime,
                 IsSelected = true,
                 Description = DataSource[unit].ToString(),
                 StartPoint = new Vector2(),
@@ -259,6 +212,7 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
             };
             
             Notifications.Add(notification);
+            EnqueueMessage(MessageType.Trace, notification.ToString());
             Invalidate();
             IsVerticalLineRequested = false;
             return;
@@ -319,19 +273,16 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
 
     protected override void MoveSelectedNotification(double deltaX, double deltaY)
     {
-        var notification = Notifications.GetSelectedNotification(Symbol);
-        switch (notification.Type)
+        var notification = Notifications.GetSelectedNotification(Symbol, ViewPort);
+        switch (notification!.Type)
         {
-            case NotificationType.ThresholdBar:
-                notification.IsSelected = false;
-                break;
             case NotificationType.Candlestick:
                 var x = notification.StartPoint.X - (float)deltaX;
                 var index = GetIndex(x, _open);
                 var closestDateTime = _dateTime[index + HorizontalShift];
                 var unit = index + KernelShift;
                 Debug.Assert(closestDateTime == DataSource[unit].Start);
-                ((IDateTimeNotification)notification).DateTime = closestDateTime;
+                ((IDateTimeNotification)notification).Start = closestDateTime;
                 notification.Description = DataSource[unit].ToString();
                 break;
             case NotificationType.Price:
@@ -348,10 +299,10 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
                 ((IPriceNotification)notification).Price = price;
                 notification.Description = price.ToString(PriceTextFormat);
                 break;
-            default: throw new ArgumentOutOfRangeException($@" protected override void GraphCanvas_OnPointerMoved(object sender, PointerRoutedEventArgs e)");
+            default: throw new InvalidOperationException("Unsupported notification type.");
         }
+        EnqueueMessage(MessageType.Trace, notification.ToString()!);
     }
-
     public override void RepeatSelectedNotification()
     {
         if (CommunicationToken is null)
@@ -359,54 +310,65 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
             return;
         }
 
-        var notification = Notifications.GetSelectedNotification(Symbol);
+        var notification = Notifications.GetSelectedNotification(Symbol, ViewPort);
         StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.RepeatSelectedNotification) { ChartType = ChartType, Symbol = Symbol, Notification = notification }, CommunicationToken);
     }
-
     public override void OnRepeatSelectedNotification(NotificationBase notificationBase)
     {
         DeselectAllLines();
-
         switch (notificationBase)
         {
-            case CandlestickNotification candlestickNotification:
-                var index = Array.IndexOf(_dateTime, ((IDateTimeNotification)candlestickNotification).DateTime);
-                var unit = index + KernelShift - HorizontalShift;
-                var candlestick = DataSource[unit];
-                Debug.Assert(candlestick.Start == ((IDateTimeNotification)candlestickNotification).DateTime);
-                Debug.Assert(candlestickNotification.Type == NotificationType.Candlestick);
-                NotificationBase notification = new CandlestickNotification
-                {
-                    Symbol = Symbol,
-                    Type = NotificationType.Candlestick,
-                    Description = candlestick.ToString(),
-                    IsSelected = true,
-                    DateTime = candlestick.Start,
-                };
-
-                Notifications.Add(notification);
-                Invalidate();
-
+            case CandlestickNotification csNotification:
+                AddDateTimeNotification(csNotification.Start);
                 break;
             case PriceNotification priceNotification:
                 if (priceNotification.Symbol != Symbol)
                 {
                     return;
                 }
-                throw new NotImplementedException("OnRepeatSelectedNotification");
-
-                //notification = new PriceNotification
-                //{
-                //    Symbol = Symbol,
-                //    Type = NotificationType.Price,
-                //    Description = priceNotification.Description,
-                //    IsSelected = true,
-                //    Price = priceNotification.Price,
-                //};
+                var newPriceNotification = new PriceNotification
+                {
+                    Symbol = Symbol,
+                    Type = NotificationType.Price,
+                    Description = priceNotification.Description,
+                    IsSelected = false,
+                    Price = priceNotification.Price,
+                };
+                Notifications.Add(newPriceNotification);
+                EnqueueMessage(MessageType.Trace, newPriceNotification.ToString());
                 break;
-            case ThresholdBarChartNotification thresholdBarChartNotification:
+            case ThresholdBarNotification tbNotification:
+                var dateTimeStart = new DateTime(tbNotification.Start.Year, tbNotification.Start.Month, tbNotification.Start.Day, tbNotification.Start.Hour, tbNotification.Start.Minute, 0);
+                AddDateTimeNotification(dateTimeStart);
+                var dateTimeEnd = new DateTime(tbNotification.End.Year, tbNotification.End.Month, tbNotification.End.Day, tbNotification.End.Hour, tbNotification.End.Minute, 0);
+                if (!dateTimeStart.Equals(dateTimeEnd))
+                {
+                    AddDateTimeNotification(dateTimeEnd);
+                }
                 break;
             default: throw new InvalidOperationException("Unsupported notification type.");
         }
+        
+        Invalidate();
+        return;
+
+        void AddDateTimeNotification(DateTime dateTime)
+        {
+            var candlestick = DataSource.FindItem(dateTime)!;
+            var notification = new CandlestickNotification
+            {
+                Symbol = Symbol,
+                Type = NotificationType.Candlestick,
+                Description = candlestick.ToString(),
+                IsSelected = ViewPort.Start <= dateTime && dateTime <= ViewPort.End,
+                Start = candlestick.Start,
+            };
+            Notifications.Add(notification);
+            EnqueueMessage(MessageType.Trace, notification.ToString());
+        }
+    }
+    public override void SaveUnits()
+    {
+        DataSource.SaveUnits(Notifications.GetDateTimeRange());
     }
 }

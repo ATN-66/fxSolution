@@ -19,7 +19,7 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> where TItem
         get;
     }
 
-    private static bool IsPointOnLine(Point point, NotificationBase notification, double allowableDistance = ProximityThresholdStatic)
+    private static bool IsPointOnLine(Point point, NotificationBase? notification, double allowableDistance = ProximityThresholdStatic)
     {
         var lineStart = notification.StartPoint;
         var lineEnd = notification.EndPoint;
@@ -27,7 +27,8 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> where TItem
         var distance = Math.Abs((lineEnd.X - lineStart.X) * (lineStart.Y - point.Y) - (lineStart.X - point.X) * (lineEnd.Y - lineStart.Y)) / lineLength;
         return distance <= allowableDistance;
     }
-    protected static void DrawSquares(CanvasDrawingSession session, NotificationBase notificationBase, Color color)
+
+    protected static void DrawSquares(CanvasDrawingSession session, NotificationBase? notificationBase, Color color)
     {
         const float halfSquareSize = SquareSize / 2f;
         Vector2 firstPoint, secondPoint;
@@ -47,5 +48,35 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> where TItem
             session.FillRectangle(firstPoint.X - halfSquareSize, firstPoint.Y - halfSquareSize, SquareSize, SquareSize, color);
             session.FillRectangle(secondPoint.X - halfSquareSize, secondPoint.Y - halfSquareSize, SquareSize, SquareSize, color);
         }
+    }
+
+    protected int GetIndex(float positionX, IEnumerable<Vector2> points)
+    {
+        var distances = points.Skip(HorizontalShift).Take(Math.Min(Units - HorizontalShift, DataSource.Count)).Select((vector, index) => new { Distance = Math.Abs(vector.X - positionX), Index = index }).ToList();
+        var minDistanceTuple = distances.Aggregate((a, b) => a.Distance < b.Distance ? a : b);
+        var index = minDistanceTuple.Index;
+        return index;
+    }
+
+    protected abstract void MoveSelectedNotification(double deltaX, double deltaY);
+
+    protected double GetPrice(float positionY)
+    {
+        if (IsReversed)
+        {
+            return ViewPort.Low + (ViewPort.High - ViewPort.Low) * (positionY / GraphHeight);
+        }
+
+        return ViewPort.Low + (ViewPort.High - ViewPort.Low) * (1 - positionY / GraphHeight);
+    }
+
+    protected float GetPositionY(double price)
+    {
+        if (IsReversed)
+        {
+            return (float)(((price - ViewPort.Low) / (ViewPort.High - ViewPort.Low)) * GraphHeight);
+        }
+
+        return (float)((1 - ((price - ViewPort.Low) / (ViewPort.High - ViewPort.Low))) * GraphHeight);
     }
 }

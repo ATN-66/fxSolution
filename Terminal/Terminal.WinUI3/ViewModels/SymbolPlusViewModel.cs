@@ -77,6 +77,11 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
     [RelayCommand]
     private Task DebugOneAsync()
     {
+        if (_selectedChart != null)
+        {
+            SymbolViewModels[_selectedChart.Value].ChartControlBase.SaveUnits();
+        }
+
         return Task.CompletedTask;
     }
 
@@ -171,8 +176,8 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
             case ChartEvent.CenturyShift: OnCenturyShift(message); break;
             case ChartEvent.HorizontalShift: break;
             case ChartEvent.KernelShift: break;
-            //case ChartEvent.RepeatSelectedNotification: OnRepeatSelectedNotification(message); break;
-            default: throw new ArgumentOutOfRangeException();
+            case ChartEvent.RepeatSelectedNotification: OnRepeatSelectedNotification(message); break;
+            default: throw new ArgumentOutOfRangeException($"Unexpected ChartEvent value: {message.Value}. Please check the implementation.");
         }
     }
 
@@ -193,5 +198,11 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
     {
         if (SymbolViewModels[0].ChartControlBase.ChartType != message.ChartType) { SymbolViewModels[0].ChartControlBase.OnCenturyShift(message.IsReversed, message.DoubleValue); }
         if (SymbolViewModels[1].ChartControlBase.ChartType != message.ChartType) { SymbolViewModels[1].ChartControlBase.OnCenturyShift(message.IsReversed, message.DoubleValue); }
+    }
+
+    private void OnRepeatSelectedNotification(ChartMessage message)
+    {
+        if (SymbolViewModels[0].ChartControlBase.ChartType != message.ChartType) { SymbolViewModels[0].ChartControlBase.OnRepeatSelectedNotification(message.Notification!); }
+        if (SymbolViewModels[1].ChartControlBase.ChartType != message.ChartType) { SymbolViewModels[1].ChartControlBase.OnRepeatSelectedNotification(message.Notification!); }
     }
 }

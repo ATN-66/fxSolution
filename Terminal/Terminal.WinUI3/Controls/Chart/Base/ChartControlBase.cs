@@ -19,12 +19,11 @@ using Enum = System.Enum;
 using Terminal.WinUI3.Messenger.Chart;
 
 namespace Terminal.WinUI3.Controls.Chart.Base;
-
 public abstract partial class ChartControlBase : Control
 {
     protected readonly ILogger<ChartControlBase> Logger;
     private readonly Queue<(int ID, MessageType Type, string Message)> _messageQueue = new();
-    private const int DebugMessageQueueSize = 10;
+    private int _debugMessageQueueSize;
     private int _debugMessageId;
     private readonly MessageType _messageTypeLevel;
     public CommunicationToken? CommunicationToken { get; set; }
@@ -75,6 +74,7 @@ public abstract partial class ChartControlBase : Control
 
         var messageTypeStr = configuration.GetValue<string>($"{nameof(_messageTypeLevel)}")!;
         _messageTypeLevel = Enum.TryParse(messageTypeStr, out MessageType parsedMessageType) ? parsedMessageType : MessageType.Trace;
+        _debugMessageQueueSize = configuration.GetValue<int>($"{nameof(_debugMessageQueueSize)}");
     }
 
     protected Symbol  Symbol { get; }
@@ -125,9 +125,13 @@ public abstract partial class ChartControlBase : Control
         }
         throw new Exception("Failed to parse currencies from symbol.");
     }
-
     protected void EnqueueMessage(MessageType type, string message, [CallerMemberName] string methodName = "")
     {
+        if (type < _messageTypeLevel)
+        {
+            return;
+        }
+
         var latestSameMethodMessage = _messageQueue
             .Reverse()
             .FirstOrDefault(t => t.Message.StartsWith($"{methodName}:"));
@@ -137,7 +141,7 @@ public abstract partial class ChartControlBase : Control
             return;
         }
 
-        if (_messageQueue.Count > DebugMessageQueueSize)
+        if (_messageQueue.Count > _debugMessageQueueSize)
         {
             _messageQueue.Dequeue();
         }

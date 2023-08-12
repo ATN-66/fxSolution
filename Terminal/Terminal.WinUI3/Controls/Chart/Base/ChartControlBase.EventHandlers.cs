@@ -4,6 +4,7 @@
   +------------------------------------------------------------------+*/
 
 using System.Numerics;
+using System.Windows.Forms;
 using Windows.UI;
 using ABI.Windows.UI.Notifications;
 using Common.ExtensionsAndHelpers;
@@ -390,22 +391,18 @@ public abstract partial class ChartControlBase
         args.DrawingSession.Clear(Colors.Transparent);
         args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
 
-        var x = (float)sender.ActualWidth / 5;
-        var y = 0f; // Start from the top.
-
-        foreach (var (id, type, message) in _messageQueue)
+        const float x = 0f;
+        var y = (float)sender.ActualHeight;
+        var reversedMessages = _messageQueue.Reverse();
+        foreach (var (id, type, message) in reversedMessages)
         {
-            if (type < _messageTypeLevel)
-            {
-                continue;
-            }
-
             using var textLayout = new CanvasTextLayout(args.DrawingSession, $"{id:##00}: {message}", YAxisCanvasTextFormat, float.PositiveInfinity, float.PositiveInfinity);
+            y -= (float)textLayout.LayoutBounds.Height;
             args.DrawingSession.DrawTextLayout(textLayout, x, y, Colors.White);
-            y += (float)textLayout.LayoutBounds.Height;
         }
     }
 
+    // todo : do not invalidate all canvases, only the one that needs to be redrawn
     public void Invalidate()
     {
         if (GraphCanvas is null)
@@ -451,9 +448,4 @@ public abstract partial class ChartControlBase
         }
     }
     protected abstract int CalculateMaxUnits();
-
-    public abstract void DeleteSelectedNotification();
-    public abstract void DeleteAllNotifications();
-    public abstract void RepeatSelectedNotification();
-    public abstract void OnRepeatSelectedNotification(NotificationBase notificationBase);
 }

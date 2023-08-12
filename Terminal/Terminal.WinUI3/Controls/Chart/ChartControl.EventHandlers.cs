@@ -256,10 +256,6 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> where TItem
                 _slLine.EndPoint.Y -= (float)deltaY;
                 _sl = ViewPort.High - _slLine.StartPoint.Y * Digits / VerticalScale;
             }
-
-            Invalidate();
-            PreviousMouseY = currentMouseY;
-            PreviousMouseX = currentMouseX;
         }
         else if (_tpLine is { IsSelected: true })
         {
@@ -275,64 +271,61 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> where TItem
                 _tpLine.EndPoint.Y -= (float)deltaY;
                 _tp = ViewPort.High - _tpLine.StartPoint.Y * Digits / VerticalScale;
             }
-
-            Invalidate();
-            PreviousMouseY = currentMouseY;
-            PreviousMouseX = currentMouseX;
-        }
-        else if (Notifications.IsAnySelected(Symbol))
-        {
-            MoveSelectedNotification(deltaX, deltaY);
-            Invalidate();
-            PreviousMouseY = currentMouseY;
-            PreviousMouseX = currentMouseX;
         }
         else 
         {
-            VerticalShift += pipsChange;
-
-            switch (HorizontalShift)
+            var selectedNotification = Notifications.GetSelectedNotification(Symbol, ViewPort);
+            if (selectedNotification != null)
             {
-                case 0 when KernelShift == 0:
-                    switch (unitsChange)
+                MoveSelectedNotification(deltaX, deltaY);
+            }
+            else
+            {
+                VerticalShift += pipsChange;
+
+                switch (HorizontalShift)
+                {
+                    case 0 when KernelShift == 0:
+                        switch (unitsChange)
+                        {
+                            case > 0:
+                                HorizontalShift += unitsChange;
+                                HorizontalShift = Math.Clamp(HorizontalShift, 0, Units - 1);
+                                break;
+                            case < 0:
+                                KernelShift -= unitsChange;
+                                KernelShift = Math.Clamp(KernelShift, 0, Math.Max(0, DataSource.Count - Units));
+                                break;
+                        }
+
+                        break;
+                    case > 0:
+                        Debug.Assert(KernelShift == 0);
+                        HorizontalShift += unitsChange;
+                        HorizontalShift = Math.Clamp(HorizontalShift, 0, Units - 1);
+                        break;
+                    default:
                     {
-                        case > 0:
-                            HorizontalShift += unitsChange;
-                            HorizontalShift = Math.Clamp(HorizontalShift, 0, Units - 1);
-                            break;
-                        case < 0:
+                        if (KernelShift > 0)
+                        {
+                            Debug.Assert(HorizontalShift == 0);
                             KernelShift -= unitsChange;
                             KernelShift = Math.Clamp(KernelShift, 0, Math.Max(0, DataSource.Count - Units));
-                            break;
-                    }
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("_horizontalShift <= 0 && _kernelShiftValue <= 0");
+                        }
 
-                    break;
-                case > 0:
-                    Debug.Assert(KernelShift == 0);
-                    HorizontalShift += unitsChange;
-                    HorizontalShift = Math.Clamp(HorizontalShift, 0, Units - 1);
-                    break;
-                default:
-                {
-                    if (KernelShift > 0)
-                    {
-                        Debug.Assert(HorizontalShift == 0);
-                        KernelShift -= unitsChange;
-                        KernelShift = Math.Clamp(KernelShift, 0, Math.Max(0, DataSource.Count - Units));
+                        break;
                     }
-                    else
-                    {
-                        throw new InvalidOperationException("_horizontalShift <= 0 && _kernelShiftValue <= 0");
-                    }
-
-                    break;
                 }
             }
-
-            Invalidate();
-            PreviousMouseY = currentMouseY;
-            PreviousMouseX = currentMouseX;
         }
+
+        Invalidate();
+        PreviousMouseY = currentMouseY;
+        PreviousMouseX = currentMouseX;
     }
     protected async override void GraphCanvas_OnPointerReleased(object sender, PointerRoutedEventArgs e)
     {

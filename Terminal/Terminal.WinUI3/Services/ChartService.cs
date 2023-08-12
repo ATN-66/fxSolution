@@ -30,7 +30,7 @@ public class ChartService : IChartService
 
     private Dictionary<Symbol, Dictionary<bool, Dictionary<ChartType, ChartSettings>>> _settings = null!;
     private Dictionary<Symbol, Dictionary<ChartType, IDataSourceKernel<IChartItem>>> _dataSources = null!;
-    private Dictionary<Symbol, INotificationsKernel> _notifications = new();
+    private Dictionary<Symbol, Dictionary<ChartType, INotificationsKernel>> _notifications = new();
 
     private readonly Dictionary<Symbol, TickChartControl?> _tickChartsReversed = new();
     private readonly Dictionary<Symbol, TickChartControl?> _tickCharts = new();
@@ -64,10 +64,10 @@ public class ChartService : IChartService
         App.MainWindow.GetAppWindow().Closing += OnClosing;
     }
 
-    public void Initialize(Dictionary<Symbol, Dictionary<ChartType, IDataSourceKernel<IChartItem>>> dataSourceKernels, Dictionary<Symbol, INotificationsKernel> eventsKernels)
+    public void Initialize(Dictionary<Symbol, Dictionary<ChartType, IDataSourceKernel<IChartItem>>> dataSourceKernels, Dictionary<Symbol, Dictionary<ChartType, INotificationsKernel>> notificationsKernels)
     {
         _dataSources = dataSourceKernels;
-        _notifications = eventsKernels;
+        _notifications = notificationsKernels;
 
         foreach (var symbol in Enum.GetValues(typeof(Symbol)))
         {
@@ -137,7 +137,7 @@ public class ChartService : IChartService
         T result;
         ChartSettings settings;
 
-        var notifications = _notifications[symbol];
+        var notifications = _notifications[symbol][chartType];
 
         switch (chartType)
         {

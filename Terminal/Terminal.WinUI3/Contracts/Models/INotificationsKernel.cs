@@ -13,10 +13,9 @@ public interface INotificationsKernel : IKernel
 {
     void Add(NotificationBase notificationBase);
     void DeSelectAll();
-    IEnumerable<NotificationBase> GetAllNotifications(Symbol symbol, ViewPort viewPort);
-    List<CandlestickNotification> GetCandlestickNotifications(Symbol symbol, ViewPort viewPort);
-    bool IsAnySelected(Symbol symbol);
-    NotificationBase GetSelectedNotification(Symbol symbol);
+    List<NotificationBase> GetAllNotifications(Symbol symbol, ViewPort viewPort);
+    NotificationBase? GetSelectedNotification(Symbol symbol, ViewPort viewPort);
     void DeleteSelected();
     void DeleteAll();
+    (DateTime, DateTime) GetDateTimeRange();
 }

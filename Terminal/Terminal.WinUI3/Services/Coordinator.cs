@@ -78,7 +78,7 @@ public class Coordinator : ICoordinator
 
             //todo: remove this
             //_startDateTime = new DateTime(2023, 6, 5, 0, 0, 0);
-            //_nowDateTime = new DateTime(2023, 6, 5, 3, 0, 0);
+            //_nowDateTime = new DateTime(2023, 6, 5, 23, 0, 0);
 
             var diff = (_nowDateTime - _startDateTime).Hours + 1;
             Debug.WriteLine($"Coordinator.StartAsync: difference = {diff} hours");

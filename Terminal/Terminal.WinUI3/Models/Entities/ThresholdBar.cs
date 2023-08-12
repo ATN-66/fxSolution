@@ -87,6 +87,6 @@ public class ThresholdBar : IChartItem
 
     public override string ToString()
     {
-        return $"{Start:D} {Start:T} - {End:D} {End:T} OC: {Open}, {Close}";
+        return $"{Start:yyyy-MM-dd}, from: {Start:HH:mm:ss} to: {End:HH:mm:ss}; OC: {Open}, {Close}";
     }
 }

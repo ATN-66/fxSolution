@@ -7,9 +7,14 @@ namespace Terminal.WinUI3.Models.Notifications;
 
 public class CandlestickNotification : NotificationBase, IDateTimeNotification
 {
-    public DateTime DateTime
+    public DateTime Start
     {
         get;
         set;
+    }
+
+    public override string ToString()
+    {
+        return $"CS notification: {Description}";
     }
 }

@@ -3,6 +3,7 @@
   |                              ChartControlBaseFirst.Properties.cs |
   +------------------------------------------------------------------+*/
 
+using System.Diagnostics;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Terminal.WinUI3.Models.Chart;
@@ -290,8 +291,17 @@ public abstract partial class ChartControlBase
                 return;
             }
 
-            SetValue(IsSelectedProperty, value);
-            OnIsSelectedChanged();
+            try // memory violation in WPF
+            {
+                SetValue(IsSelectedProperty, value);
+                OnIsSelectedChanged();
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+                throw;
+            }
+           
         }
     }
     private void OnIsSelectedChanged()
