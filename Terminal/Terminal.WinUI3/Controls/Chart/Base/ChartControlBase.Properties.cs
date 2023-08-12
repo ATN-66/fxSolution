@@ -3,7 +3,6 @@
   |                              ChartControlBaseFirst.Properties.cs |
   +------------------------------------------------------------------+*/
 
-using System.Diagnostics;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Terminal.WinUI3.Models.Chart;

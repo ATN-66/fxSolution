@@ -354,8 +354,13 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
 
     public override void RepeatSelectedNotification()
     {
+        if (CommunicationToken is null)
+        {
+            return;
+        }
+
         var notification = Notifications.GetSelectedNotification(Symbol);
-        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.RepeatSelectedNotification) { ChartType = ChartType, Symbol = Symbol, Notification = notification }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
+        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.RepeatSelectedNotification) { ChartType = ChartType, Symbol = Symbol, Notification = notification }, CommunicationToken);
     }
 
     public override void OnRepeatSelectedNotification(NotificationBase notificationBase)

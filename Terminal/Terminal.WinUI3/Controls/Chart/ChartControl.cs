@@ -11,7 +11,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas;
 using Terminal.WinUI3.Contracts.Models;
+using Terminal.WinUI3.Controls.Chart.Base;
 using Terminal.WinUI3.Messenger.AccountService;
+using Terminal.WinUI3.Messenger.Chart;
 using Terminal.WinUI3.Models.Chart;
 using Terminal.WinUI3.Models.Trade;
 using Terminal.WinUI3.Models.Trade.Enums;
@@ -19,7 +21,7 @@ using Color = Windows.UI.Color;
 
 namespace Terminal.WinUI3.Controls.Chart;
 
-public abstract partial class ChartControl<TItem, TDataSourceKernel> : Base.ChartControlBase, IRecipient<OrderAcceptMessage> where TItem : IChartItem where TDataSourceKernel : IDataSourceKernel<TItem>
+public abstract partial class ChartControl<TItem, TDataSourceKernel> : ChartControlBase, IRecipient<OrderAcceptMessage> where TItem : IChartItem where TDataSourceKernel : IDataSourceKernel<TItem>
 {
     private readonly SimpleLine _ask = new();
     private readonly SimpleLine _bid = new();
@@ -36,11 +38,12 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> : Base.Char
     private const float SquareSize = 10.0f;
     private const float ProximityThresholdStatic = 5.0f;
 
-    protected ChartControl(IConfiguration configuration, ChartSettings chartSettings, double tickValue, TDataSourceKernel dataSource, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, chartSettings, tickValue, baseColor, quoteColor, logger)
+    protected ChartControl(IConfiguration configuration, ChartSettings chartSettings, double tickValue, TDataSourceKernel dataSource, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(configuration, chartSettings, tickValue, baseColor, quoteColor, logger)
     {
         DataSource = dataSource;
         Notifications = notifications;
-        StrongReferenceMessenger.Default.Register(this, new SymbolToken(Symbol));
+
+        StrongReferenceMessenger.Default.Register<ChartControl<TItem, TDataSourceKernel>, OrderAcceptMessage, CommunicationToken>(recipient: this, token: new SymbolToken(Symbol), handler: (recipient, message) => recipient.Receive(message));
     }
 
     protected TDataSourceKernel DataSource

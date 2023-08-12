@@ -246,8 +246,10 @@ public class TickChartControl : ChartControl<Quotation, Quotations>
     }
     public override void RepeatSelectedNotification()
     {
+        throw new NotImplementedException("RepeatSelectedNotification");
+
         var notification = Notifications.GetSelectedNotification(Symbol);
-        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.RepeatSelectedNotification) { ChartType = ChartType, Symbol = Symbol, Notification = notification }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
+        //StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.RepeatSelectedNotification) { ChartType = ChartType, Symbol = Symbol, Notification = notification }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
     }
     public override void OnRepeatSelectedNotification(NotificationBase notification)
     {

@@ -26,12 +26,13 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
     private readonly IChartService _chartService;
     private readonly ISymbolViewModelFactory _symbolViewModelFactory;
 
-    private int _selectedIndex;
+    private int _selectedSymbol;
     private Currency _currency;
-    private List<Symbol> Symbols { get; } = new();
-    private List<bool> IsReversed { get; } = new();
-    
-    public ObservableCollection<SymbolViewModel> SymbolViewModels { get; set; } = new();
+    private readonly List<Symbol> _symbols = new();
+    private readonly List<bool> _isReversed = new();
+    private CommunicationToken _communicationToken = null!;
+
+    public ObservableCollection<SymbolViewModel> SymbolViewModels { get; } = new();
 
     [ObservableProperty] private int _centuriesPercent;
     [ObservableProperty] private int _unitsPercent;
@@ -55,7 +56,7 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
     [RelayCommand(CanExecute = nameof(CanChangeChart))]
     private async Task TicksAsync()
     {
-        for (var i = 0; i < Symbols.Count; i++)
+        for (var i = 0; i < _symbols.Count; i++)
         {
             if (!SymbolViewModels[i].IsSelected)
             {
@@ -71,7 +72,7 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
     [RelayCommand(CanExecute = nameof(CanChangeChart))]
     private async Task CandlesticksAsync()
     {
-        for (var i = 0; i < Symbols.Count; i++)
+        for (var i = 0; i < _symbols.Count; i++)
         {
             if (!SymbolViewModels[i].IsSelected)
             {
@@ -87,7 +88,7 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
     [RelayCommand(CanExecute = nameof(CanChangeChart))]
     private async Task ThresholdBarsAsync()
     {
-        for (var i = 0; i < Symbols.Count; i++)
+        for (var i = 0; i < _symbols.Count; i++)
         {
             if (!SymbolViewModels[i].IsSelected)
             {
@@ -102,7 +103,7 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
 
     private bool CanChangeChart()
     {
-        for (var i = 0; i < Symbols.Count; i++)
+        for (var i = 0; i < _symbols.Count; i++)
         {
             if (SymbolViewModels[i].IsSelected)
             {
@@ -116,37 +117,33 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
     [RelayCommand]
     private async Task ClearMessagesAsync()
     {
-        for (var i = 0; i < Symbols.Count; i++)
-        {
-            await SymbolViewModels[i].ClearMessagesAsync().ConfigureAwait(true);
-        }
+        await SymbolViewModels[0].ClearMessagesAsync().ConfigureAwait(true);
+        await SymbolViewModels[1].ClearMessagesAsync().ConfigureAwait(true);
+        await SymbolViewModels[2].ClearMessagesAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
     private async Task ResetShiftsAsync()
     {
-        for (var i = 0; i < Symbols.Count; i++)
-        {
-            await SymbolViewModels[i].ResetShiftsAsync().ConfigureAwait(true);
-        }
+        await SymbolViewModels[0].ResetShiftsAsync().ConfigureAwait(true);
+        await SymbolViewModels[1].ResetShiftsAsync().ConfigureAwait(true);
+        await SymbolViewModels[2].ResetShiftsAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
     private async Task ResetVerticalShiftAsync()
     {
-        for (var i = 0; i < Symbols.Count; i++)
-        {
-            await SymbolViewModels[i].ResetHorizontalShiftAsync().ConfigureAwait(true);
-        }
+        await SymbolViewModels[0].ResetHorizontalShiftAsync().ConfigureAwait(true);
+        await SymbolViewModels[1].ResetHorizontalShiftAsync().ConfigureAwait(true);
+        await SymbolViewModels[2].ResetHorizontalShiftAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
     private async Task ResetHorizontalShiftAsync()
     {
-        for (var i = 0; i < Symbols.Count; i++)
-        {
-            await SymbolViewModels[i].ResetVerticalShiftAsync().ConfigureAwait(true);
-        }
+        await SymbolViewModels[0].ResetVerticalShiftAsync().ConfigureAwait(true);
+        await SymbolViewModels[1].ResetVerticalShiftAsync().ConfigureAwait(true);
+        await SymbolViewModels[2].ResetVerticalShiftAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
@@ -165,45 +162,39 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
 
     partial void OnCenturiesPercentChanged(int value)
     {
-        foreach (var model in SymbolViewModels)
-        {
-            model.CenturiesPercent = value;
-        }
+        SymbolViewModels[0].CenturiesPercent = value;
+        SymbolViewModels[1].CenturiesPercent = value;
+        SymbolViewModels[2].CenturiesPercent = value;
     }
-
     partial void OnUnitsPercentChanged(int value)
     {
-        foreach (var model in SymbolViewModels)
-        {
-            model.UnitsPercent = value;
-        }
+        SymbolViewModels[0].UnitsPercent = value;
+        SymbolViewModels[1].UnitsPercent = value;
+        SymbolViewModels[2].UnitsPercent = value;
     }
-
     partial void OnKernelShiftPercentChanged(int value)
     {
-        foreach (var model in SymbolViewModels)
-        {
-            model.KernelShiftPercent = value;
-        }
+        SymbolViewModels[0].KernelShiftPercent = value;
+        SymbolViewModels[1].KernelShiftPercent = value;
+        SymbolViewModels[2].KernelShiftPercent = value;
     }
 
     partial void OnIsVerticalLineRequestedChanged(bool value)
     {
-        SymbolViewModels[_selectedIndex].ChartControlBase.IsVerticalLineRequested = value;
+        SymbolViewModels[_selectedSymbol].ChartControlBase.IsVerticalLineRequested = value;
 
         if (value && IsHorizontalLineRequested)
         {
-            SymbolViewModels[_selectedIndex].IsHorizontalLineRequested = IsHorizontalLineRequested = false;
+            SymbolViewModels[_selectedSymbol].IsHorizontalLineRequested = IsHorizontalLineRequested = false;
         }
     }
-
     partial void OnIsHorizontalLineRequestedChanged(bool value)
     {
-        SymbolViewModels[_selectedIndex].ChartControlBase.IsHorizontalLineRequested = value;
+        SymbolViewModels[_selectedSymbol].ChartControlBase.IsHorizontalLineRequested = value;
 
         if (value && IsVerticalLineRequested)
         {
-            SymbolViewModels[_selectedIndex].IsVerticalLineRequested = IsVerticalLineRequested = false;
+            SymbolViewModels[_selectedSymbol].IsVerticalLineRequested = IsVerticalLineRequested = false;
         }
     }
 
@@ -224,14 +215,16 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
             throw new Exception($"Invalid currency: {parts[0]}");
         }
 
+        _communicationToken = new CurrencyToken(_currency);
+
         for (var i = 1; i < parts.Length; i++)
         {
             var symbolParts = parts[i].Trim('(', ')').Split(':');
             if (Enum.TryParse(symbolParts[0], out Symbol symbol))
             {
                 var isReversed = bool.Parse(symbolParts[1]);
-                Symbols.Add(symbol);
-                IsReversed.Add(isReversed);
+                _symbols.Add(symbol);
+                _isReversed.Add(isReversed);
             }
             else
             {
@@ -239,27 +232,26 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
             }
         }
 
-        for (var i = 0; i < Symbols.Count; i++)
+        for (var i = 0; i < _symbols.Count; i++)
         {
             var symbolViewModel = _symbolViewModelFactory.Create();
-            symbolViewModel.Symbol = Symbols[i];
-            symbolViewModel.IsReversed = IsReversed[i];
+            symbolViewModel.Symbol = _symbols[i];
+            symbolViewModel.IsReversed = _isReversed[i];
             symbolViewModel.LoadChart(ChartType.Candlesticks);//todo: load from config
             symbolViewModel.CenturiesPercent = CenturiesPercent;
             symbolViewModel.UnitsPercent = UnitsPercent;
             symbolViewModel.KernelShiftPercent = KernelShiftPercent;
             SymbolViewModels.Add(symbolViewModel);
+            symbolViewModel.CommunicationToken = symbolViewModel.ChartControlBase.CommunicationToken = _communicationToken;
         }
 
-        StrongReferenceMessenger.Default.Register(this, new CurrencyToken(_currency));
+        StrongReferenceMessenger.Default.Register<CurrencyViewModel, ChartMessage, CommunicationToken>(recipient: this, token: _communicationToken, handler: (recipient, message) => recipient.Receive(message));
     }
-
     public void OnNavigatedFrom()
     {
-        for (var i = 0; i < Symbols.Count; i++)
-        {
-            SymbolViewModels[i].OnNavigatedFrom();
-        }
+        SymbolViewModels[0].OnNavigatedFrom();
+        SymbolViewModels[1].OnNavigatedFrom();
+        SymbolViewModels[2].OnNavigatedFrom();
 
         StrongReferenceMessenger.Default.UnregisterAll(this);
     }
@@ -362,10 +354,10 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
         SetupCommands(message.ChartType);
         IsVerticalLineRequestEnabled = IsHorizontalLineRequestEnabled = true;
 
-        _selectedIndex = Symbols.IndexOf(message.Symbol);
-        SymbolViewModels[_selectedIndex].ChartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
-        SymbolViewModels[_selectedIndex].ChartControlBase.SetBinding(ChartControlBase.IsVerticalLineRequestedProperty, new Binding { Source = this, Path = new PropertyPath(nameof(IsVerticalLineRequested)), Mode = BindingMode.TwoWay });
-        SymbolViewModels[_selectedIndex].ChartControlBase.SetBinding(ChartControlBase.IsHorizontalLineRequestedProperty, new Binding { Source = this, Path = new PropertyPath(nameof(IsHorizontalLineRequested)), Mode = BindingMode.TwoWay });
+        _selectedSymbol = _symbols.IndexOf(message.Symbol);
+        SymbolViewModels[_selectedSymbol].ChartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
+        SymbolViewModels[_selectedSymbol].ChartControlBase.SetBinding(ChartControlBase.IsVerticalLineRequestedProperty, new Binding { Source = this, Path = new PropertyPath(nameof(IsVerticalLineRequested)), Mode = BindingMode.TwoWay });
+        SymbolViewModels[_selectedSymbol].ChartControlBase.SetBinding(ChartControlBase.IsHorizontalLineRequestedProperty, new Binding { Source = this, Path = new PropertyPath(nameof(IsHorizontalLineRequested)), Mode = BindingMode.TwoWay });
     }
 
     private void OnCenturyShift(ChartMessage message)
@@ -391,9 +383,9 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
 
     private void OnRepeatSelectedNotification(ChartMessage message)
     {
-        if (SymbolViewModels[0].Symbol != message.Symbol) { SymbolViewModels[0].ChartControlBase.OnRepeatSelectedNotification(message.Notification); }
-        if (SymbolViewModels[1].Symbol != message.Symbol) { SymbolViewModels[1].ChartControlBase.OnRepeatSelectedNotification(message.Notification); }
-        if (SymbolViewModels[2].Symbol != message.Symbol) { SymbolViewModels[2].ChartControlBase.OnRepeatSelectedNotification(message.Notification); }
+        if (SymbolViewModels[0].Symbol != message.Symbol) { SymbolViewModels[0].ChartControlBase.OnRepeatSelectedNotification(message.Notification!); }
+        if (SymbolViewModels[1].Symbol != message.Symbol) { SymbolViewModels[1].ChartControlBase.OnRepeatSelectedNotification(message.Notification!); }
+        if (SymbolViewModels[2].Symbol != message.Symbol) { SymbolViewModels[2].ChartControlBase.OnRepeatSelectedNotification(message.Notification!); }
     }
 
     private void SetupCommands(ChartType chartType)

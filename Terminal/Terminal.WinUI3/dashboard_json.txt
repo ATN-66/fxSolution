@@ -1,8 +1,0 @@
-﻿
-
- //{
- //                 "Content": "EUR USD +",
- //                 "Tag": "EURUSD, false",
- //                 "Glyph": "\u20AC\u00B7\u0024",
- //                 "NavigateTo": "SymbolPlusViewModel"
- //               },

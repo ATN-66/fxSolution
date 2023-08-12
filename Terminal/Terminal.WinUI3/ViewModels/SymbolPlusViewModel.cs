@@ -1,261 +1,131 @@
-﻿using System.ComponentModel;
+﻿/*+------------------------------------------------------------------+
+  |                                        Terminal.WinUI3.ViewModels|
+  |                                           SymbolPlusViewModel.cs |
+  +------------------------------------------------------------------+*/
+
 using Common.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml;
 using Terminal.WinUI3.Contracts.Services;
 using Terminal.WinUI3.Contracts.ViewModels;
-using Terminal.WinUI3.Controls;
-using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
-using Terminal.WinUI3.Helpers;
-using Terminal.WinUI3.Models.Account.Enums;
 using Microsoft.Extensions.Configuration;
-using Terminal.WinUI3.Services;
-using ICoordinator = Terminal.WinUI3.Contracts.Services.ICoordinator;
+using System.Collections.ObjectModel;
 using Terminal.WinUI3.Models.Chart;
-using ChartControlBase = Terminal.WinUI3.Controls.Chart.Base.ChartControlBase;
+using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Data;
+using Terminal.WinUI3.Controls.Chart.Base;
+using Terminal.WinUI3.Messenger.Chart;
 
 namespace Terminal.WinUI3.ViewModels;
 
-public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
+public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware, IRecipient<ChartMessage>
 {
-    private readonly IChartService _chartService;
-    private readonly ICoordinator _coordinator;
-    private readonly IAccountService _accountService;
-    private readonly IDispatcherService _dispatcherService;
+    private readonly ISymbolViewModelFactory _symbolViewModelFactory;
+    public ObservableCollection<SymbolViewModel> SymbolViewModels { get; } = new();
+    private int? _selectedChart;
+    private readonly List<ChartType> _charts = new();
+    private Symbol Symbol { get; set; }
+    private bool IsReversed { get; set; }
+    private CommunicationToken _communicationToken = null!;
 
-    [ObservableProperty] private double _minCenturies;
-    [ObservableProperty] private double _maxCenturies;
     [ObservableProperty] private int _centuriesPercent;
-
-    [ObservableProperty] private int _minUnits;
     [ObservableProperty] private int _unitsPercent;
-    [ObservableProperty] private int _kernelShiftPercent;
-    [ObservableProperty] private int _horizontalShift;
+    [ObservableProperty] private bool _isVerticalLineRequested;
+    [ObservableProperty] private bool _isHorizontalLineRequested;
+    [ObservableProperty] private bool _isVerticalLineRequestEnabled;
+    [ObservableProperty] private bool _isHorizontalLineRequestEnabled;
 
-    private string _operationalButtonContent = null!;
-    private ICommand _operationalCommand = null!;
-    public ICommand OperationalCommand
+    public SymbolPlusViewModel(IConfiguration configuration, ISymbolViewModelFactory symbolViewModelFactory)
     {
-        get => _operationalCommand;
-        set
-        {
-            _operationalCommand = value;
-            _dispatcherService.ExecuteOnUIThreadAsync(() => OnPropertyChanged());
-        }
-    }
+        _symbolViewModelFactory = symbolViewModelFactory;
 
-    [RelayCommand]
-    private Task TicksAsync()
-    {
-        //DisposeChart();
-        //ChartControlBase = await ChartService.GetChartAsync<TickChartControl, Quotation, Quotations>(Symbol, ChartType.Ticks, IsReversed).ConfigureAwait(true);
-        //SetChartBindings();
-        return Task.CompletedTask;
-    }
-
-    [RelayCommand]
-    private Task CandlesticksAsync()
-    {
-        //DisposeChart();
-        //ChartControlBaseFirst = _chartService.GetChart<CandlestickChartControl, Candlestick, DataSource>(Symbol, ChartType.DataSource, IsReversed);
-        //SetChartBindings();
-        return Task.CompletedTask;
-    }
-
-    [RelayCommand]
-    private Task ThresholdBarsAsync()
-    {
-        //DisposeChart();
-        //ChartControlBaseFirst = _chartService.GetChart<ThresholdBarChartControl, ThresholdBars, ThresholdBars>(Symbol, ChartType.ThresholdBars, IsReversed);
-        //SetChartBindings();
-        return Task.CompletedTask;
-    }
-
-    [RelayCommand]
-    private Task ClearMessagesAsync()
-    {
-        ChartControlBaseFirst.ClearMessages();
-        return Task.CompletedTask;
-    }
-
-    [RelayCommand]
-    private Task ResetShiftsAsync()
-    {
-        //ChartControlBaseFirst.HorizontalShift = HorizontalShift;
-        //ChartControlBaseFirst.ResetShifts();
-        return Task.CompletedTask;
-    }
-
-    private void DisposeChart()
-    {
-        throw new NotImplementedException();
-
-        //_chartService.DisposeChart(ChartControlBaseFirst);
-        //ChartControlBaseFirst.Detach();
-        //ChartControlBaseFirst = null!;
-    }
-
-    public SymbolPlusViewModel(IConfiguration configuration, IChartService chartService, ICoordinator coordinator, IAccountService accountService, IDispatcherService dispatcherService)
-    {
-        _chartService = chartService;
-        _coordinator = coordinator;
-        _accountService = accountService;
-        _accountService.PropertyChanged += OnAccountServicePropertyChanged;
-        _dispatcherService = dispatcherService;
-
-        _minCenturies = configuration.GetValue<double>($"{nameof(_minCenturies)}");
-        _maxCenturies = configuration.GetValue<double>($"{nameof(_maxCenturies)}");
         _centuriesPercent = configuration.GetValue<int>($"{nameof(_centuriesPercent)}");
-        _minUnits = configuration.GetValue<int>($"{nameof(_minUnits)}");
         _unitsPercent = configuration.GetValue<int>($"{nameof(_unitsPercent)}");
-        _kernelShiftPercent = configuration.GetValue<int>($"{nameof(_kernelShiftPercent)}");
-        _horizontalShift = configuration.GetValue<int>($"{nameof(_horizontalShift)}");
+        _charts.Add(ChartType.ThresholdBars);
+        _charts.Add(ChartType.Candlesticks);
     }
 
-    private Symbol Symbol
+    [RelayCommand]
+    private async Task ClearMessagesAsync()
     {
-        get;
-        set;
+        await SymbolViewModels[0].ClearMessagesAsync().ConfigureAwait(true);
+        await SymbolViewModels[1].ClearMessagesAsync().ConfigureAwait(true);
     }
 
-    private bool IsReversed
+    [RelayCommand]
+    private async Task ResetShiftsAsync()
     {
-        get;
-        set;
+        await SymbolViewModels[0].ResetShiftsAsync().ConfigureAwait(true);
+        await SymbolViewModels[1].ResetShiftsAsync().ConfigureAwait(true);
     }
 
-    public Currency Currency
+    [RelayCommand]
+    private async Task ResetVerticalShiftAsync()
     {
-        get;
-        set;
+        await SymbolViewModels[0].ResetHorizontalShiftAsync().ConfigureAwait(true);
+        await SymbolViewModels[1].ResetHorizontalShiftAsync().ConfigureAwait(true);
     }
 
-    private ChartControlBase _chartControlBaseFirst = null!;
-    public ChartControlBase ChartControlBaseFirst
+    [RelayCommand]
+    private async Task ResetHorizontalShiftAsync()
     {
-        get => _chartControlBaseFirst;
-        private set
-        {
-            if (_chartControlBaseFirst == value)
-            {
-                return;
-            }
-
-            _chartControlBaseFirst = value;
-            OnPropertyChanged();
-        }
+        await SymbolViewModels[0].ResetVerticalShiftAsync().ConfigureAwait(true);
+        await SymbolViewModels[1].ResetVerticalShiftAsync().ConfigureAwait(true);
     }
 
-    private ChartControlBase _chartControlBaseSecond = null!;
-    public ChartControlBase ChartControlBaseSecond
+    [RelayCommand]
+    private Task DebugOneAsync()
     {
-        get => _chartControlBaseSecond;
-        private set
-        {
-            if (_chartControlBaseSecond == value)
-            {
-                return;
-            }
-
-            _chartControlBaseSecond = value;
-            OnPropertyChanged();
-        }
+        return Task.CompletedTask;
     }
 
-    private void OnAccountServicePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    [RelayCommand]
+    private Task DebugTwoAsync()
     {
-        if (e.PropertyName != "ServiceState")
+        return Task.CompletedTask;
+    }
+   
+    partial void OnCenturiesPercentChanged(int value)
+    {
+        SymbolViewModels[0].CenturiesPercent = value;
+        SymbolViewModels[1].CenturiesPercent = value;
+    }
+    partial void OnUnitsPercentChanged(int value)
+    {
+        SymbolViewModels[0].UnitsPercent = value;
+        SymbolViewModels[1].UnitsPercent = value;
+    }
+    partial void OnIsVerticalLineRequestedChanged(bool value)
+    {
+        if (_selectedChart is null)
         {
             return;
         }
 
-        UpdateOperationalProperties();
-    }
+        SymbolViewModels[_selectedChart.Value].ChartControlBase.IsVerticalLineRequested = value;
 
-    partial void OnCenturiesPercentChanged(int value)
-    {
-        ChartControlBaseFirst.CenturiesPercent = value;
-        ChartControlBaseSecond.CenturiesPercent = value;
-    }
-
-    partial void OnUnitsPercentChanged(int value)
-    {
-        ChartControlBaseFirst.UnitsPercent = value;
-    }
-
-    partial void OnKernelShiftPercentChanged(int value)
-    {
-        ChartControlBaseFirst.KernelShiftPercent = value;
-    }
-
-    private void UpdateProperties(ChartControlBase chartControlBase)
-    {
-        chartControlBase.DataContext = this;
-        chartControlBase.SetBinding(ChartControlBase.MinCenturiesProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinCenturies)), Mode = BindingMode.OneWay });
-        chartControlBase.SetBinding(ChartControlBase.MaxCenturiesProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MaxCenturies)), Mode = BindingMode.OneWay });
-        chartControlBase.SetBinding(ChartControlBase.CenturiesPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(CenturiesPercent)), Mode = BindingMode.TwoWay });
-        chartControlBase.SetBinding(ChartControlBase.UnitsPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(UnitsPercent)), Mode = BindingMode.TwoWay });
-        chartControlBase.SetBinding(ChartControlBase.MinUnitsProperty, new Binding { Source = this, Path = new PropertyPath(nameof(MinUnits)), Mode = BindingMode.OneWay });
-        chartControlBase.SetBinding(ChartControlBase.KernelShiftPercentProperty, new Binding { Source = this, Path = new PropertyPath(nameof(KernelShiftPercent)), Mode = BindingMode.TwoWay });
-        chartControlBase.SetBinding(ChartControlBase.HorizontalShiftProperty, new Binding { Source = this, Path = new PropertyPath(nameof(HorizontalShift)), Mode = BindingMode.OneWay });
-    }
-
-    public string OperationalButtonContent
-    {
-        get => _operationalButtonContent;
-        set
+        if (value && IsHorizontalLineRequested)
         {
-            _operationalButtonContent = value;
-            _dispatcherService.ExecuteOnUIThreadAsync(() => OnPropertyChanged());
+            SymbolViewModels[_selectedChart.Value].IsHorizontalLineRequested = IsHorizontalLineRequested = false;
+        }
+    }
+    partial void OnIsHorizontalLineRequestedChanged(bool value)
+    {
+        if (_selectedChart is null)
+        {
+            return;
+        }
+
+        SymbolViewModels[_selectedChart.Value].ChartControlBase.IsHorizontalLineRequested = value;
+
+        if (value && IsVerticalLineRequested)
+        {
+            SymbolViewModels[_selectedChart.Value].IsVerticalLineRequested = IsVerticalLineRequested = false;
         }
     }
 
-    private void UpdateOperationalProperties()
-    {
-        UpdateOperationalButtonContent();
-        UpdateOperationalCommand();
-    }
-
-    private void UpdateOperationalCommand()
-    {
-        switch (_accountService.ServiceState)
-        {
-            case ServiceState.Off or ServiceState.Busy:
-                OperationalCommand = new RelayCommand(execute: () => { }, canExecute: () => false);
-                break;
-            case ServiceState.ReadyToOpen:
-            {
-                //async void ExecuteAsync()
-                //{
-                //    //await _coordinator.DoOpenPositionAsync(Symbol, IsReversed).ConfigureAwait(true);
-                //}
-
-                //OperationalCommand = new RelayCommand(execute: ExecuteAsync, canExecute: () => true);
-                break;
-            }
-            case ServiceState.ReadyToClose:
-            {
-                //async void ExecuteAsync()
-                //{
-                //    await _coordinator.DoClosePositionAsync(Symbol, IsReversed).ConfigureAwait(true);
-                //}
-
-                //OperationalCommand = new RelayCommand(execute: ExecuteAsync, canExecute: () => true);
-                break;
-            }
-            default:
-                throw new InvalidOperationException($"{nameof(_accountService.ServiceState)} is not implemented.");
-        }
-    }
-
-    private void UpdateOperationalButtonContent()
-    {
-        OperationalButtonContent = _accountService.ServiceState.GetDescription();
-    }
-
-    public async void OnNavigatedTo(object parameter)
+    public void OnNavigatedTo(object parameter)
     {
         var parts = parameter.ToString()?.Split(',');
         var symbolStr = parts?[0].Trim();
@@ -268,27 +138,60 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
             throw new Exception($"Failed to parse '{symbolStr}' into a Symbol enum value.");
         }
 
+        _communicationToken = new SymbolToken(Symbol);
         IsReversed = bool.Parse(parts?[1].Trim()!);
 
-        ChartControlBaseFirst = await _chartService.GetChartByTypeAsync(Symbol, IsReversed, ChartType.Candlesticks).ConfigureAwait(true);
-        UpdateProperties(ChartControlBaseFirst);
-        ChartControlBaseSecond = await _chartService.GetChartByTypeAsync(Symbol, IsReversed, ChartType.ThresholdBars).ConfigureAwait(true);
-        UpdateProperties(ChartControlBaseSecond);
+        for (var i = 0; i < _charts.Count; i++)
+        {
+            var symbolViewModel = _symbolViewModelFactory.Create();
+            symbolViewModel.Symbol = Symbol;
+            symbolViewModel.IsReversed = IsReversed;
+            symbolViewModel.LoadChart(_charts[i]);
+            symbolViewModel.CenturiesPercent = CenturiesPercent;
+            symbolViewModel.UnitsPercent = UnitsPercent;
+            SymbolViewModels.Add(symbolViewModel);
+            symbolViewModel.CommunicationToken = symbolViewModel.ChartControlBase.CommunicationToken = _communicationToken;
+        }
 
-        UpdateOperationalProperties();
-        Currency = IsReversed ? ChartControlBaseFirst.BaseCurrency : ChartControlBaseFirst.QuoteCurrency;
+        StrongReferenceMessenger.Default.Register<SymbolPlusViewModel, ChartMessage, CommunicationToken>(recipient: this, token: _communicationToken, handler: (recipient, message) => recipient.Receive(message));
     }
-
     public void OnNavigatedFrom()
     {
-        throw new NotImplementedException();
+        SymbolViewModels[0].OnNavigatedFrom();
+        SymbolViewModels[1].OnNavigatedFrom();
 
-        //_chartService.DisposeChart(ChartControlBaseFirst);
-        //ChartControlBaseFirst.Detach();
-        //ChartControlBaseFirst = null!;
+        StrongReferenceMessenger.Default.UnregisterAll(this);
+    }
 
-        //_chartService.DisposeChart(ChartControlBaseSecond);
-        //ChartControlBaseSecond.Detach();
-        //ChartControlBaseSecond = null!;
+    public void Receive(ChartMessage message)
+    {
+        switch (message.Value)
+        {
+            case ChartEvent.IsSelected: OnIsSelected(message); break;
+            case ChartEvent.CenturyShift: OnCenturyShift(message); break;
+            case ChartEvent.HorizontalShift: break;
+            case ChartEvent.KernelShift: break;
+            //case ChartEvent.RepeatSelectedNotification: OnRepeatSelectedNotification(message); break;
+            default: throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    private void OnIsSelected(ChartMessage message)
+    {
+        if (SymbolViewModels[0].ChartControlBase.ChartType != message.ChartType) { SymbolViewModels[0].ChartControlBase.IsSelected = false; }
+        if (SymbolViewModels[1].ChartControlBase.ChartType != message.ChartType) { SymbolViewModels[1].ChartControlBase.IsSelected = false; }
+
+        IsHorizontalLineRequested = IsVerticalLineRequested = false;
+        IsVerticalLineRequestEnabled = IsHorizontalLineRequestEnabled = true;
+       
+        _selectedChart = _charts.IndexOf(message.ChartType);
+        SymbolViewModels[_selectedChart.Value].ChartControlBase.SetBinding(ChartControlBase.IsVerticalLineRequestedProperty, new Binding { Source = this, Path = new PropertyPath(nameof(IsVerticalLineRequested)), Mode = BindingMode.TwoWay });
+        SymbolViewModels[_selectedChart.Value].ChartControlBase.SetBinding(ChartControlBase.IsHorizontalLineRequestedProperty, new Binding { Source = this, Path = new PropertyPath(nameof(IsHorizontalLineRequested)), Mode = BindingMode.TwoWay });
+    }
+
+    private void OnCenturyShift(ChartMessage message)
+    {
+        if (SymbolViewModels[0].ChartControlBase.ChartType != message.ChartType) { SymbolViewModels[0].ChartControlBase.OnCenturyShift(message.IsReversed, message.DoubleValue); }
+        if (SymbolViewModels[1].ChartControlBase.ChartType != message.ChartType) { SymbolViewModels[1].ChartControlBase.OnCenturyShift(message.IsReversed, message.DoubleValue); }
     }
 }

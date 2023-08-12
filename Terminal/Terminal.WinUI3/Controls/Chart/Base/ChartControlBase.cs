@@ -6,12 +6,9 @@
 using System.Runtime.CompilerServices;
 using Windows.UI;
 using Common.Entities;
-using Common.ExtensionsAndHelpers;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Graphics.Canvas;
-using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml.Controls;
 using Terminal.WinUI3.Controls.Chart.Candlestick;
 using Terminal.WinUI3.Controls.Chart.ThresholdBar;
@@ -19,6 +16,7 @@ using Terminal.WinUI3.Controls.Chart.Tick;
 using Terminal.WinUI3.Models.Chart;
 using Symbol = Common.Entities.Symbol;
 using Enum = System.Enum;
+using Terminal.WinUI3.Messenger.Chart;
 
 namespace Terminal.WinUI3.Controls.Chart.Base;
 
@@ -29,6 +27,7 @@ public abstract partial class ChartControlBase : Control
     private const int DebugMessageQueueSize = 10;
     private int _debugMessageId;
     private readonly MessageType _messageTypeLevel;
+    public CommunicationToken? CommunicationToken { get; set; }
 
     protected ChartControlBase(IConfiguration configuration, ChartSettings chartSettings, double tickValue, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger)
     {

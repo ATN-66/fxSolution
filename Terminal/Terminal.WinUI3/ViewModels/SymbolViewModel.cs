@@ -218,27 +218,19 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
 
         GraphMenuFlyout = new MenuFlyout();
         var repeatSelected = new MenuFlyoutItem { Text = "Repeat Selected" };
-        repeatSelected.Click += async (sender, e) => { ChartControlBase.RepeatSelectedNotification(); };//todo
+        repeatSelected.Click += (_, _) => { ChartControlBase.RepeatSelectedNotification(); };//todo
         GraphMenuFlyout.Items.Add(repeatSelected);
         var deleteSelected = new MenuFlyoutItem { Text = "Delete Selected" };
-        deleteSelected.Click += async (sender, e) => { ChartControlBase.DeleteSelectedNotification(); };//todo
+        deleteSelected.Click += (_, _) => { ChartControlBase.DeleteSelectedNotification(); };//todo
         GraphMenuFlyout.Items.Add(deleteSelected);
         var deleteAll = new MenuFlyoutItem { Text = "Delete All" };
-        deleteAll.Click += async (sender, e) => { ChartControlBase.DeleteAllNotifications(); };//todo
+        deleteAll.Click += (_, _) => { ChartControlBase.DeleteAllNotifications(); };//todo
         GraphMenuFlyout.Items.Add(deleteAll);
     }
 
-    public Symbol Symbol
-    {
-        get;
-        set;
-    }
-    public bool IsReversed
-    {
-        get;
-        set;
-    }
-
+    public Symbol Symbol { get; set; }
+    public bool IsReversed { get; set; }
+    public CommunicationToken? CommunicationToken { get; set; }
     private ChartControlBase _chartControlBase = null!;
     public ChartControlBase ChartControlBase
     {
@@ -267,12 +259,12 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
 
     partial void OnKernelShiftChanged(int value)
     {
-        if (!ChartControlBase.IsSelected || ChartControlBase.ChartType != ChartType.Candlesticks)
+        if (!ChartControlBase.IsSelected || ChartControlBase.ChartType != ChartType.Candlesticks || CommunicationToken is null)
         {
             return;
         }
 
-        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.KernelShift) { ChartType = ChartControlBase.ChartType, Symbol = Symbol, IntValue = value }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
+        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.KernelShift) { ChartType = ChartControlBase.ChartType, Symbol = Symbol, IntValue = value }, CommunicationToken);
     }
 
     partial void OnKernelShiftPercentChanged(int value)
@@ -282,22 +274,22 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
 
     partial void OnHorizontalShiftChanged(int value)
     {
-        if (!ChartControlBase.IsSelected || ChartControlBase.ChartType != ChartType.Candlesticks)
+        if (!ChartControlBase.IsSelected || ChartControlBase.ChartType != ChartType.Candlesticks || CommunicationToken is null)
         {
             return;
         }
 
-        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.HorizontalShift) { ChartType = ChartControlBase.ChartType, Symbol = Symbol, IntValue = value }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
+        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.HorizontalShift) { ChartType = ChartControlBase.ChartType, Symbol = Symbol, IntValue = value }, CommunicationToken);
     }
 
     partial void OnCenturyShiftChanged(double value)
     {
-        if (!ChartControlBase.IsSelected)
+        if (!ChartControlBase.IsSelected || CommunicationToken is null)
         {
             return;
         }
 
-        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.CenturyShift) { Symbol = Symbol, IsReversed = IsReversed, DoubleValue = value }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
+        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.CenturyShift) { Symbol = Symbol, IsReversed = IsReversed, DoubleValue = value }, CommunicationToken);
     }
 
     partial void OnIsVerticalLineRequestedChanged(bool value)
@@ -320,12 +312,14 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
 
     partial void OnIsSelectedChanged(bool value)
     {
-        if (!value)
+        OnPropertyChanged(nameof(IsSelected));
+
+        if (!value || CommunicationToken is null)
         {
             return;
         }
 
-        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.IsSelected) { ChartType = ChartControlBase.ChartType, Symbol = Symbol }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
+        StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.IsSelected) { ChartType = ChartControlBase.ChartType, Symbol = Symbol }, CommunicationToken);
     }
 
     private void SetChartBindings()

@@ -1,31 +1,31 @@
 ﻿/*+------------------------------------------------------------------+
   |                                  Terminal.WinUI3.Messenger.Chart |
-  |                                                 CurrencyToken.cs |
+  |                                                   SymbolToken.cs |
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
 
 namespace Terminal.WinUI3.Messenger.Chart;
 
-public sealed class CurrencyToken : CommunicationToken
+public sealed class SymbolToken : CommunicationToken
 {
-    public Currency Currency
+    public Symbol Symbol
     {
         get;
     }
 
-    public CurrencyToken(Currency currency)
+    public SymbolToken(Symbol symbol)
     {
-        Currency = currency;
+        Symbol = symbol;
     }
 
     public override bool Equals(CommunicationToken? other)
     {
-        return other is CurrencyToken token && Currency == token.Currency;
+        return other is SymbolToken token && Symbol == token.Symbol;
     }
 
     public override int GetHashCode()
     {
-        return (int)Currency;
+        return (int)Symbol;
     }
 }

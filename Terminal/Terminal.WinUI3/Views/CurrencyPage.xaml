@@ -23,6 +23,7 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
+
         <Grid
             Grid.Row="1"
             Grid.RowSpan="2"
@@ -107,6 +108,7 @@
                     CornerRadius="10,0,10,0" />
             </StackPanel>
         </Grid>
+
         <Slider
             Grid.Row="0"
             Grid.Column="0"
@@ -137,6 +139,7 @@
             SmallChange="1"
             StepFrequency="1"
             Value="{x:Bind Path=ViewModel.KernelShiftPercent, Mode=TwoWay}" />
+
         <Grid
             Grid.Row="1"
             Grid.Column="0"
@@ -182,8 +185,14 @@
                     <AppBarButton Command="{x:Bind Path=ViewModel.ResetVerticalShiftCommand, Mode=OneWay}" Label="RV" />
                     <AppBarButton Command="{x:Bind Path=ViewModel.ResetHorizontalShiftCommand, Mode=OneWay}" Label="RH" />
                     <AppBarSeparator />
-                    <AppBarToggleButton Icon="Up" IsEnabled="{x:Bind Path=ViewModel.IsVerticalLineRequestEnabled, Mode=OneWay}" IsChecked="{x:Bind Path=ViewModel.IsVerticalLineRequested, Mode=TwoWay}" />
-                    <AppBarToggleButton Icon="Forward" IsEnabled="{x:Bind Path=ViewModel.IsHorizontalLineRequestEnabled, Mode=OneWay}" IsChecked="{x:Bind Path=ViewModel.IsHorizontalLineRequested, Mode=TwoWay}" />
+                    <AppBarToggleButton
+                        Icon="Up"
+                        IsChecked="{x:Bind Path=ViewModel.IsVerticalLineRequested, Mode=TwoWay}"
+                        IsEnabled="{x:Bind Path=ViewModel.IsVerticalLineRequestEnabled, Mode=OneWay}" />
+                    <AppBarToggleButton
+                        Icon="Forward"
+                        IsChecked="{x:Bind Path=ViewModel.IsHorizontalLineRequested, Mode=TwoWay}"
+                        IsEnabled="{x:Bind Path=ViewModel.IsHorizontalLineRequestEnabled, Mode=OneWay}" />
                     <AppBarSeparator />
                     <AppBarButton Command="{x:Bind Path=ViewModel.DebugOneCommand, Mode=OneWay}" Label="Debug 1" />
                     <AppBarButton Command="{x:Bind Path=ViewModel.DebugTwoCommand, Mode=OneWay}" Label="Debug 2" />
