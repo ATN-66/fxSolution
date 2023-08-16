@@ -1,6 +1,6 @@
 ﻿/*+------------------------------------------------------------------+
   |                                          Terminal.WinUI3.AI.Data |
-  |                                                  ThresholdBars.cs |
+  |                                                 ThresholdBars.cs |
   +------------------------------------------------------------------+*/
 
 using Common.Entities;
@@ -18,11 +18,17 @@ public class ThresholdBar : IChartItem
     }
 
     [JsonIgnore]
+    public DualForce Force
+    {
+        get; set;
+    }
+
+    [JsonIgnore]
     public Symbol Symbol
     {
         get; init;
     }
-
+    
     public DateTime Start
     {
         get; init;
@@ -33,13 +39,11 @@ public class ThresholdBar : IChartItem
         get; set;
     }
 
-    [JsonIgnore]
-    public double Open
+   public double Open
     {
         get; init;
     }
 
-    [JsonIgnore]
     public double Close
     {
         get; set;
@@ -64,7 +68,7 @@ public class ThresholdBar : IChartItem
         set;
     }
 
-    [JsonIgnore]
+    //[JsonIgnore]
     public Direction Direction
     {
         get; init;
@@ -87,6 +91,7 @@ public class ThresholdBar : IChartItem
 
     public override string ToString()
     {
-        return $"{Start:yyyy-MM-dd}, from: {Start:HH:mm:ss} to: {End:HH:mm:ss}; OC: {Open}, {Close}";
+        //return $"{Start:yyyy-MM-dd}, from: {Start:HH:mm:ss} to: {End:HH:mm:ss}; OC: {Open}, {Close}";
+        return $"{Direction}, up: {Force.UpForce}, down: {Force.DownForce}";
     }
 }

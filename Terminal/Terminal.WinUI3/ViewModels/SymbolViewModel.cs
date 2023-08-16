@@ -187,7 +187,8 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     [RelayCommand]
     private Task DebugOneAsync()
     {
-        _chartService.ListAllRegisteredCharts();
+        ChartControlBase.SaveUnits();
+        //_chartService.ListAllRegisteredCharts();
         return Task.CompletedTask;
     }
 

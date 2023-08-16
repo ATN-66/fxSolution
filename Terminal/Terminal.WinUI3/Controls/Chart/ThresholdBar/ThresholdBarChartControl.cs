@@ -180,7 +180,7 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
                 EndPoint = new Vector2()
             };
             Notifications.Add(notification);
-            EnqueueMessage(MessageType.Trace, notification.ToString());
+            EnqueueMessage(MessageType.Debug, notification.ToString());
             Invalidate();
             IsVerticalLineRequested = false;
             return;
@@ -256,7 +256,7 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
                 break;
             default: throw new InvalidOperationException("Unsupported notification type.");
         }
-        EnqueueMessage(MessageType.Trace, notification.ToString()!);
+        EnqueueMessage(MessageType.Debug, notification.ToString()!);
     }
     public override void RepeatSelectedNotification()
     {
