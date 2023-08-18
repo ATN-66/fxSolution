@@ -1,64 +1,56 @@
 ﻿/*+------------------------------------------------------------------+
-  |                                          Terminal.WinUI3.AI.Data |
-  |                                                 ThresholdBars.cs |
+  |                                  Terminal.WinUI3.Models.Entities |
+  |                                                  ThresholdBar.cs |
   +------------------------------------------------------------------+*/
+
 
 using Common.Entities;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Terminal.WinUI3.Models.Entities;
 
 public class ThresholdBar : IChartItem
 {
-    public ThresholdBar(double open, double close)
+    public ThresholdBar(int id, double open, double close)
     {
+        ID = id;
         Open = open;
         Close = close;
         Direction = DetermineDirection(open, close);
     }
 
-    [JsonIgnore]
-    public DualForce Force
+    private int ID
     {
-        get; set;
+        get;
     }
 
-    [JsonIgnore]
-    public Symbol Symbol
+    [JsonConverter(typeof(StringEnumConverter))]
+    public Force UpForce
     {
-        get; init;
-    }
-    
-    public DateTime Start
-    {
-        get; init;
+        get;
+        set;
     }
 
-    public DateTime End
+    [JsonConverter(typeof(StringEnumConverter))]
+    public Force DownForce
     {
-        get; set;
+        get;
+        set;
     }
 
-   public double Open
+    //[JsonIgnore]
+    public double Open
     {
-        get; init;
+        get;
+        init;
     }
 
+    //[JsonIgnore]
     public double Close
     {
-        get; set;
-    }
-
-    [JsonIgnore]
-    public double Ask
-    {
-        get; set;
-    }
-
-    [JsonIgnore]
-    public double Bid
-    {
-        get; set;
+        get;
+        set;
     }
 
     [JsonIgnore]
@@ -68,10 +60,46 @@ public class ThresholdBar : IChartItem
         set;
     }
 
-    //[JsonIgnore]
+    [JsonIgnore] //[JsonConverter(typeof(StringEnumConverter))]
     public Direction Direction
     {
-        get; init;
+        get;
+        init;
+    }
+
+    [JsonIgnore]
+    public Symbol Symbol
+    {
+        get;
+        init;
+    }
+
+    //[JsonIgnore]
+    public DateTime Start
+    {
+        get;
+        init;
+    }
+
+    //[JsonIgnore]
+    public DateTime End
+    {
+        get;
+        set;
+    }
+
+    [JsonIgnore]
+    public double Ask
+    {
+        get;
+        set;
+    }
+
+    [JsonIgnore]
+    public double Bid
+    {
+        get;
+        set;
     }
 
     private static Direction DetermineDirection(double open, double close)
@@ -89,9 +117,7 @@ public class ThresholdBar : IChartItem
         throw new Exception("DetermineDirection: Open and close cannot be equal.");
     }
 
-    public override string ToString()
-    {
+    public override string ToString() =>
         //return $"{Start:yyyy-MM-dd}, from: {Start:HH:mm:ss} to: {End:HH:mm:ss}; OC: {Open}, {Close}";
-        return $"{Direction}, up: {Force.UpForce}, down: {Force.DownForce}";
-    }
+        $"{ID}, up: {UpForce}, down: {DownForce}";
 }

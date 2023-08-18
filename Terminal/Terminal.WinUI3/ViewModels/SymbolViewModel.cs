@@ -187,7 +187,7 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     [RelayCommand]
     private Task DebugOneAsync()
     {
-        ChartControlBase.SaveUnits();
+        ChartControlBase.SaveItems();
         //_chartService.ListAllRegisteredCharts();
         return Task.CompletedTask;
     }
@@ -195,7 +195,8 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     [RelayCommand]
     private Task DebugTwoAsync()
     {
-        _chartService.ListAllNonNullCharts();
+        ChartControlBase.SaveForceTransformations();
+        //_chartService.ListAllNonNullCharts();
         return Task.CompletedTask;
     }
 

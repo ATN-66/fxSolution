@@ -103,9 +103,14 @@ public class Candlesticks : DataSourceKernel<Candlestick>
         return Items.FirstOrDefault(t => t.Start.Equals(dateTime));
     }
 
-    public override void SaveUnits((DateTime first, DateTime second) dateRange)
+    public override void SaveItems((DateTime first, DateTime second) dateRange)
     {
         var items = Items.Where(t => t.Start >= dateRange.first && t.End <= dateRange.second);
         SaveItemsToJson(items, _symbol, GetType().Name.ToLower());
+    }
+
+    public override void SaveForceTransformations()
+    {
+        
     }
 }

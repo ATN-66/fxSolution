@@ -6,6 +6,7 @@
 using Common.Entities;
 using Terminal.WinUI3.Contracts.Models;
 using Terminal.WinUI3.Contracts.Services;
+using Terminal.WinUI3.Models.Entities;
 using Quotation = Common.Entities.Quotation;
 
 namespace Terminal.WinUI3.Models.Kernels;
@@ -40,12 +41,20 @@ public abstract class DataSourceKernel<TItem> : IDataSourceKernel<TItem> where T
     public abstract void Add(Quotation quotation);
     public abstract int FindIndex(DateTime dateTime);
     public abstract TItem? FindItem(DateTime dateTime);
-    public abstract void SaveUnits((DateTime first, DateTime second) dateRange);
+    public abstract void SaveItems((DateTime first, DateTime second) dateRange);
+    public abstract void SaveForceTransformations();
 
     protected void SaveItemsToJson(IEnumerable<IChartItem> items, Symbol symbol, string typeName)
     {
         var symbolName = symbol.ToString();
-        var fullFileName = $"{symbolName}_{typeName}.json";
+        var fullFileName = $"{symbolName}_{typeName}_tbars.json";
         _fileService.Save(FolderPath, fullFileName, items);
     }
+
+    //protected void SaveForceTransformationsToJson(List<ForceTransformation> transformations, Symbol symbol, string typeName)
+    //{
+    //    var symbolName = symbol.ToString();
+    //    var fullFileName = $"{symbolName}_{typeName}__tbars_transformations.json";
+    //    _fileService.Save(FolderPath, fullFileName, transformations);
+    //}
 }

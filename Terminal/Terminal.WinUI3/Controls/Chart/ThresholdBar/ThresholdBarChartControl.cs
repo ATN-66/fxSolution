@@ -308,8 +308,12 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
         EnqueueMessage(MessageType.Trace, notification.ToString()!);
         Invalidate();
     }
-    public override void SaveUnits()
+    public override void SaveItems()
     {
-        DataSource.SaveUnits(Notifications.GetDateTimeRange());
+        DataSource.SaveItems(Notifications.GetDateTimeRange());
+    }
+    public override void SaveForceTransformations()
+    {
+        DataSource.SaveForceTransformations();
     }
 }

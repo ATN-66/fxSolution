@@ -367,8 +367,12 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
             EnqueueMessage(MessageType.Trace, notification.ToString());
         }
     }
-    public override void SaveUnits()
+    public override void SaveItems()
     {
-        DataSource.SaveUnits(Notifications.GetDateTimeRange());
+        DataSource.SaveItems(Notifications.GetDateTimeRange());
+    }
+    public override void SaveForceTransformations()
+    {
+        
     }
 }

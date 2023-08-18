@@ -79,7 +79,7 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
     {
         if (_selectedChart != null)
         {
-            SymbolViewModels[_selectedChart.Value].ChartControlBase.SaveUnits();
+            SymbolViewModels[_selectedChart.Value].ChartControlBase.SaveItems();
         }
 
         return Task.CompletedTask;
@@ -88,6 +88,10 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
     [RelayCommand]
     private Task DebugTwoAsync()
     {
+        if (_selectedChart != null)
+        {
+            SymbolViewModels[_selectedChart.Value].ChartControlBase.SaveForceTransformations();
+        }
         return Task.CompletedTask;
     }
    

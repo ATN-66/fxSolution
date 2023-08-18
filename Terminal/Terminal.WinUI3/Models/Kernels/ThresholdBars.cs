@@ -19,6 +19,7 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
     private const double StartingThreshold = 50d; // 5 pips //todo: settings
     private readonly double _threshold;
     private readonly double _digit;
+    private int _id;
 
     public ThresholdBars(Symbol symbol, int thresholdInPips, double digit, IFileService fileService) : base(fileService)
     {
@@ -49,15 +50,10 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
                     }
 
                     var direction = ask > bufferOpen ? Direction.Up : Direction.Down;
-                    var force = new DualForce
+                    Items.Add(new ThresholdBar(++_id, bufferOpen, ask)
                     {
                         UpForce = direction == Direction.Up ? Force.Extension : Force.Nothing,
-                        DownForce = direction == Direction.Down ? Force.Extension : Force.Nothing
-                    };
-
-                    Items.Add(new ThresholdBar(bufferOpen, ask)
-                    {
-                        Force = force,
+                        DownForce = direction == Direction.Down ? Force.Extension : Force.Nothing,
                         Symbol = quotation.Symbol,
                         Start = bufferDateTime,
                         End = quotation.End,
@@ -73,7 +69,7 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
                     {
                         Items[^1].Threshold = Items[^1].Close + _threshold;
                     }
-
+                    
                     started = true;
                     continue;
                 }
@@ -91,6 +87,8 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
     public override void Add(Quotation quotation)
     {
         double ask;
+        ThresholdBar tbar;
+
         if (Count <= 1)
         {
             var present = Items[^1];
@@ -109,21 +107,19 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
                     else if (ask <= present.Threshold)
                     {
                         present.End = quotation.Start;
-                        var force = new DualForce
+                        tbar = new ThresholdBar(++_id, present.Close, ask)
                         {
-                            UpForce = Force.Retracement,
-                            DownForce = Force.Initiation
-                        };
-                        Items.Add(new ThresholdBar(present.Close, ask)
-                        {
-                            Force = force,
                             Symbol = quotation.Symbol,
                             Start = quotation.Start,
                             End = quotation.End,
                             Threshold = ask + _threshold,
                             Ask = quotation.Ask,
-                            Bid = quotation.Bid
-                        });
+                            Bid = quotation.Bid,
+                            UpForce = Force.Retracement,
+                            DownForce = Force.Initiation
+                        };
+
+                        Items.Add(tbar);
                     }
                     else
                     {
@@ -144,21 +140,19 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
                     else if (ask >= present.Threshold)
                     {
                         present.End = quotation.Start;
-                        var force = new DualForce
+                        tbar = new ThresholdBar(++_id, present.Close, ask)
                         {
-                            UpForce = Force.Initiation,
-                            DownForce = Force.Retracement
-                        };
-                        Items.Add(new ThresholdBar(present.Close, ask)
-                        {
-                            Force = force,
                             Symbol = quotation.Symbol,
                             Start = quotation.Start,
                             End = quotation.End,
                             Threshold = ask - _threshold,
                             Ask = quotation.Ask,
-                            Bid = quotation.Bid
-                        });
+                            Bid = quotation.Bid,
+                            UpForce = Force.Initiation,
+                            DownForce = Force.Retracement
+                        };
+
+                        Items.Add(tbar);
                     }
                     else
                     {
@@ -176,28 +170,30 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
             var present = Items[^1];
             var previous = Items[^2];
             ask = RoundNumber(quotation.Ask, present.Direction);
-            DualForce force;
+            
             switch (present.Direction)
             {
                 case Direction.Up:
                     if (ask > present.Close)
                     {
-                        switch (present.Force.UpForce)
+                        switch (present.UpForce)
                         {
                             case Force.Initiation:
-                                Debug.Assert(present.Force.DownForce == Force.Retracement);
+                                Debug.Assert(present.DownForce == Force.Retracement);
                                 if (ask > previous.Open)
                                 {
-                                    present.Force = new DualForce { UpForce = Force.Extension, DownForce = Force.Nothing };
+                                    present.UpForce = Force.Extension;
+                                    present.DownForce = Force.Nothing;
                                 }
                                 present.Close = ask;
                                 present.Threshold = ask - _threshold;
                                 break;
                             case Force.Recovery:
-                                Debug.Assert(present.Force.DownForce is Force.Retracement or Force.NegativeSideWay);
+                                Debug.Assert(present.DownForce is Force.Retracement or Force.NegativeSideWay);
                                 if (ask > previous.Open)
                                 {
-                                    present.Force = new DualForce { UpForce = Force.Extension, DownForce = Force.Nothing };
+                                    present.UpForce = Force.Extension;
+                                    present.DownForce = Force.Nothing;
                                 }
                                 present.Close = ask;
                                 present.Threshold = ask - _threshold;
@@ -207,10 +203,11 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
                                 present.Threshold = ask - _threshold;
                                 break;
                             case Force.PositiveSideWay:
-                                Debug.Assert(present.Force.DownForce is Force.NegativeSideWay);
+                                Debug.Assert(present.DownForce is Force.NegativeSideWay);
                                 if (ask > previous.Open)
                                 {
-                                    present.Force = new DualForce { UpForce = Force.Extension, DownForce = Force.Nothing };
+                                    present.UpForce = Force.Extension;
+                                    present.DownForce = Force.Nothing;
                                 }
                                 present.Close = ask;
                                 present.Threshold = ask - _threshold;
@@ -220,84 +217,114 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
                     }
                     else if (ask <= present.Threshold)
                     {
-                        switch (present.Force.UpForce)
+                        switch (present.UpForce)
                         {
                             case Force.Initiation:
-                                Debug.Assert(present.Force.DownForce == Force.Retracement);
+                                Debug.Assert(present.DownForce == Force.Retracement);
                                 present.End = quotation.Start;
-                                force = ask < present.Open ? new DualForce { UpForce = Force.Nothing, DownForce = Force.Extension } : new DualForce { UpForce = Force.Retracement, DownForce = Force.Recovery };
-                                Items.Add(new ThresholdBar(present.Close, ask)
+                                tbar = new ThresholdBar(++_id, present.Close, ask)
                                 {
-                                    Force = force,
                                     Symbol = quotation.Symbol,
                                     Start = quotation.Start,
                                     End = quotation.End,
                                     Threshold = ask + _threshold,
                                     Ask = quotation.Ask,
                                     Bid = quotation.Bid
-                                });
+                                };
+
+                                if (ask < present.Open)
+                                {
+                                    tbar.UpForce = Force.Nothing;
+                                    tbar.DownForce = Force.Extension;
+                                }
+                                else
+                                {
+                                    tbar.UpForce = Force.Retracement;
+                                    tbar.DownForce = Force.Recovery;
+                                }
+
+                                Items.Add(tbar);
                                 return;
                             case Force.Recovery:
                                 present.End = quotation.Start;
-                                if (ask < present.Open)
+                                tbar = new ThresholdBar(++_id, present.Close, ask)
                                 {
-                                    force = new DualForce { UpForce = Force.Nothing, DownForce = Force.Extension };
-                                }
-                                else
-                                {
-                                    force = present.Force.DownForce switch
-                                    {
-                                        Force.Retracement => new DualForce { UpForce = Force.NegativeSideWay, DownForce = Force.Recovery },
-                                        Force.NegativeSideWay => new DualForce { UpForce = Force.NegativeSideWay, DownForce = Force.PositiveSideWay },
-                                        _ => throw new ArgumentOutOfRangeException()
-                                    };
-                                }
-                                Items.Add(new ThresholdBar(present.Close, ask)
-                                {
-                                    Force = force,
                                     Symbol = quotation.Symbol,
                                     Start = quotation.Start,
                                     End = quotation.End,
                                     Threshold = ask + _threshold,
                                     Ask = quotation.Ask,
                                     Bid = quotation.Bid
-                                });
+                                };
+
+                                if (ask < present.Open)
+                                {
+                                    tbar.UpForce = Force.Nothing;
+                                    tbar.DownForce = Force.Extension;
+                                }
+                                else
+                                {
+                                    switch (present.DownForce)
+                                    {
+                                        case Force.Retracement:
+                                            tbar.UpForce = Force.NegativeSideWay; 
+                                            tbar.DownForce = Force.Recovery;
+                                            break;
+                                        case Force.NegativeSideWay:
+                                            tbar.UpForce = Force.NegativeSideWay;
+                                            tbar.DownForce = Force.PositiveSideWay;
+                                            break;
+                                        default: throw new ArgumentOutOfRangeException();
+                                    }
+                                }
+                                Items.Add(tbar);
                                 return;
                             case Force.Extension:
                                 present.End = quotation.Start;
-                                force = ask < present.Open ? new DualForce { UpForce = Force.Nothing, DownForce = Force.Extension } : new DualForce { UpForce = Force.Retracement, DownForce = Force.Initiation };
-                                Items.Add(new ThresholdBar(present.Close, ask)
+                                tbar = new ThresholdBar(++_id, present.Close, ask)
                                 {
-                                    Force = force,
                                     Symbol = quotation.Symbol,
                                     Start = quotation.Start,
                                     End = quotation.End,
                                     Threshold = ask + _threshold,
                                     Ask = quotation.Ask,
                                     Bid = quotation.Bid
-                                });
-                                return;
-                            case Force.PositiveSideWay:
-                                present.End = quotation.Start;
-                                Debug.Assert(present.Force.DownForce is Force.NegativeSideWay);
+                                };
                                 if (ask < present.Open)
                                 {
-                                    force = new DualForce { UpForce = Force.Nothing, DownForce = Force.Extension };
+                                    tbar.UpForce = Force.Nothing;
+                                    tbar.DownForce = Force.Extension;
                                 }
                                 else
                                 {
-                                    force = new DualForce { UpForce = Force.NegativeSideWay, DownForce = Force.PositiveSideWay };
+                                    tbar.UpForce = Force.Retracement;
+                                    tbar.DownForce = Force.Initiation;
                                 }
-                                Items.Add(new ThresholdBar(present.Close, ask)
+                                Items.Add(tbar);
+                                return;
+                            case Force.PositiveSideWay:
+                                present.End = quotation.Start;
+                                Debug.Assert(present.DownForce is Force.NegativeSideWay);
+                                tbar = new ThresholdBar(++_id, present.Close, ask)
                                 {
-                                    Force = force,
                                     Symbol = quotation.Symbol,
                                     Start = quotation.Start,
                                     End = quotation.End,
                                     Threshold = ask + _threshold,
                                     Ask = quotation.Ask,
                                     Bid = quotation.Bid
-                                });
+                                };
+                                if (ask < present.Open)
+                                {
+                                    tbar.UpForce = Force.Nothing;
+                                    tbar.DownForce = Force.Extension;
+                                }
+                                else
+                                {
+                                    tbar.UpForce = Force.NegativeSideWay;
+                                    tbar.DownForce = Force.PositiveSideWay;
+                                }
+                                Items.Add(tbar);
                                 return;
                             default: throw new ArgumentOutOfRangeException();
                         }
@@ -306,22 +333,24 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
                 case Direction.Down:
                     if (ask < present.Close)
                     {
-                        switch (present.Force.DownForce)
+                        switch (present.DownForce)
                         {
                             case Force.Initiation:
-                                Debug.Assert(present.Force.UpForce == Force.Retracement);
+                                Debug.Assert(present.UpForce == Force.Retracement);
                                 if (ask < previous.Open)
                                 {
-                                    present.Force = new DualForce { UpForce = Force.Nothing, DownForce = Force.Extension };
+                                    present.UpForce = Force.Nothing;
+                                    present.DownForce = Force.Extension;
                                 }
                                 present.Close = ask;
                                 present.Threshold = ask + _threshold;
                                 break;
                             case Force.Recovery:
-                                Debug.Assert(present.Force.UpForce is Force.Retracement or Force.NegativeSideWay);
+                                Debug.Assert(present.UpForce is Force.Retracement or Force.NegativeSideWay);
                                 if (ask < previous.Open)
                                 {
-                                    present.Force = new DualForce { UpForce = Force.Nothing, DownForce = Force.Extension };
+                                    present.UpForce = Force.Nothing;
+                                    present.DownForce = Force.Extension;
                                 }
                                 present.Close = ask;
                                 present.Threshold = ask + _threshold;
@@ -331,10 +360,11 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
                                 present.Threshold = ask + _threshold;
                                 break;
                             case Force.PositiveSideWay:
-                                Debug.Assert(present.Force.UpForce is Force.NegativeSideWay);
+                                Debug.Assert(present.UpForce is Force.NegativeSideWay);
                                 if (ask < previous.Open)
                                 {
-                                    present.Force = new DualForce { UpForce = Force.Nothing, DownForce = Force.Extension };
+                                    present.UpForce = Force.Nothing;
+                                    present.DownForce = Force.Extension;
                                 }
                                 present.Close = ask;
                                 present.Threshold = ask + _threshold;
@@ -344,84 +374,111 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
                     }
                     else if (ask >= present.Threshold)
                     {
-                        switch (present.Force.DownForce)
+                        switch (present.DownForce)
                         {
                             case Force.Initiation:
-                                Debug.Assert(present.Force.UpForce == Force.Retracement);
+                                Debug.Assert(present.UpForce == Force.Retracement);
                                 present.End = quotation.Start;
-                                force = ask > present.Open ? new DualForce { UpForce = Force.Extension, DownForce = Force.Nothing } : new DualForce { UpForce = Force.Recovery, DownForce = Force.Retracement };
-                                Items.Add(new ThresholdBar(present.Close, ask)
+                                tbar = new ThresholdBar(++_id, present.Close, ask)
                                 {
-                                    Force = force,
                                     Symbol = quotation.Symbol,
                                     Start = quotation.Start,
                                     End = quotation.End,
                                     Threshold = ask - _threshold,
                                     Ask = quotation.Ask,
                                     Bid = quotation.Bid
-                                });
+                                };
+                                if (ask > present.Open)
+                                {
+                                    tbar.UpForce = Force.Extension;
+                                    tbar.DownForce = Force.Nothing;
+                                }
+                                else
+                                {
+                                    tbar.UpForce = Force.Recovery;
+                                    tbar.DownForce = Force.Retracement;
+                                }
+                                Items.Add(tbar);
                                 return;
                             case Force.Recovery:
                                 present.End = quotation.Start;
-                                if (ask > present.Open)
+                                tbar = new ThresholdBar(++_id, present.Close, ask)
                                 {
-                                    force = new DualForce { UpForce = Force.Extension, DownForce = Force.Nothing };
-                                }
-                                else
-                                {
-                                    force = present.Force.UpForce switch
-                                    {
-                                        Force.Retracement => new DualForce { UpForce = Force.Recovery, DownForce = Force.NegativeSideWay },
-                                        Force.NegativeSideWay => new DualForce { UpForce = Force.PositiveSideWay, DownForce = Force.NegativeSideWay },
-                                        _ => throw new ArgumentOutOfRangeException()
-                                    };
-                                }
-                                Items.Add(new ThresholdBar(present.Close, ask)
-                                {
-                                    Force = force,
                                     Symbol = quotation.Symbol,
                                     Start = quotation.Start,
                                     End = quotation.End,
                                     Threshold = ask - _threshold,
                                     Ask = quotation.Ask,
                                     Bid = quotation.Bid
-                                });
+                                };
+                                if (ask > present.Open)
+                                {
+                                    tbar.UpForce = Force.Extension;
+                                    tbar.DownForce = Force.Nothing;
+                                }
+                                else
+                                {
+                                    switch (present.UpForce)
+                                    {
+                                        case Force.Retracement:
+                                            tbar.UpForce = Force.Recovery;
+                                            tbar.DownForce = Force.NegativeSideWay;
+                                            break;
+                                        case Force.NegativeSideWay:
+                                            tbar.UpForce = Force.PositiveSideWay;
+                                            tbar.DownForce = Force.NegativeSideWay;
+                                            break;
+                                        default: throw new ArgumentOutOfRangeException();
+                                    }
+                                }
+                                Items.Add(tbar);
                                 return;
                             case Force.Extension:
                                 present.End = quotation.Start;
-                                force = ask > present.Open ? new DualForce { UpForce = Force.Extension, DownForce = Force.Nothing } : new DualForce { UpForce = Force.Initiation, DownForce = Force.Retracement };
-                                Items.Add(new ThresholdBar(present.Close, ask)
+                                tbar = new ThresholdBar(++_id, present.Close, ask)
                                 {
-                                    Force = force,
                                     Symbol = quotation.Symbol,
                                     Start = quotation.Start,
                                     End = quotation.End,
                                     Threshold = ask - _threshold,
                                     Ask = quotation.Ask,
                                     Bid = quotation.Bid
-                                });
-                                return;
-                            case Force.PositiveSideWay:
-                                present.End = quotation.Start;
-                                Debug.Assert(present.Force.UpForce is Force.NegativeSideWay);
+                                };
                                 if (ask > present.Open)
                                 {
-                                    force = new DualForce { UpForce = Force.Extension, DownForce = Force.Nothing };
+                                    tbar.UpForce = Force.Extension;
+                                    tbar.DownForce = Force.Nothing;
                                 }
                                 else
                                 {
-                                    force = new DualForce { UpForce = Force.PositiveSideWay, DownForce = Force.NegativeSideWay };
+                                    tbar.UpForce = Force.Initiation;
+                                    tbar.DownForce = Force.Retracement;
                                 }
-                                Items.Add(new ThresholdBar(present.Close, ask)
+                                Items.Add(tbar);
+                                return;
+                            case Force.PositiveSideWay:
+                                present.End = quotation.Start;
+                                Debug.Assert(present.UpForce is Force.NegativeSideWay);
+                                tbar = new ThresholdBar(++_id, present.Close, ask)
                                 {
-                                    Force = force,
                                     Symbol = quotation.Symbol,
                                     Start = quotation.Start,
                                     End = quotation.End,
                                     Threshold = ask - _threshold,
                                     Ask = quotation.Ask,
                                     Bid = quotation.Bid
-                                });
+                                };
+                                if (ask > present.Open)
+                                {
+                                    tbar.UpForce = Force.Extension;
+                                    tbar.DownForce = Force.Nothing;
+                                }
+                                else
+                                {
+                                    tbar.UpForce = Force.PositiveSideWay;
+                                    tbar.DownForce = Force.NegativeSideWay;
+                                }
+                                Items.Add(tbar);
                                 return;
                             default: throw new ArgumentOutOfRangeException();
                         }
@@ -430,6 +487,7 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
                 case Direction.NaN:
                 default: throw new ArgumentOutOfRangeException($"{nameof(present.Direction)}", @"Encountered a ThresholdBars with invalid direction.");
             }
+
             present.End = quotation.End;
             present.Ask = quotation.Ask;
             present.Bid = quotation.Bid;
@@ -461,9 +519,13 @@ public class ThresholdBars : DataSourceKernel<ThresholdBar>
     {
         return Items.FirstOrDefault(t => dateTime >= t.Start && dateTime <= t.End);
     }
-    public override void SaveUnits((DateTime first, DateTime second) dateRange)
+    public override void SaveItems((DateTime first, DateTime second) dateRange)
     {
         var items = Items.Where(t => t.Start >= dateRange.first && t.End <= dateRange.second);
         SaveItemsToJson(items, _symbol, GetType().Name.ToLower());
+    }
+    public override void SaveForceTransformations()
+    {
+        
     }
 }

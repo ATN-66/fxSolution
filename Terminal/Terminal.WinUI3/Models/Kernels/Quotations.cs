@@ -32,8 +32,13 @@ public class Quotations : DataSourceKernel<Quotation>
     {
         throw new NotImplementedException("FindItem");
     }
-    public override void SaveUnits((DateTime first, DateTime second) dateRange)
+    public override void SaveItems((DateTime first, DateTime second) dateRange)
     {
-        throw new NotImplementedException("SaveUnits");
+        throw new NotImplementedException("SaveItems");
+    }
+
+    public override void SaveForceTransformations()
+    {
+        throw new NotImplementedException("SaveForceTransformations");
     }
 }

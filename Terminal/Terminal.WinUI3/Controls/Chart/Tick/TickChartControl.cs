@@ -255,7 +255,11 @@ public class TickChartControl : ChartControl<Quotation, Quotations>
     {
         throw new NotImplementedException("TickChartControl: protected override void OnRepeatSelectedNotification");
     }
-    public override void SaveUnits()
+    public override void SaveItems()
+    {
+        
+    }
+    public override void SaveForceTransformations()
     {
         
     }
