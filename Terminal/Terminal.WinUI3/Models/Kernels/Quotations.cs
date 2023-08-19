@@ -18,12 +18,10 @@ public class Quotations : DataSourceKernel<Quotation>
     {
         Items.AddRange(quotations);
     }
-
     public override void Add(Quotation quotation)
     {
         Items.Add(quotation);
     }
-
     public override int FindIndex(DateTime dateTime)
     {
         throw new NotImplementedException("Quotations:FindIndex");
@@ -35,10 +33,5 @@ public class Quotations : DataSourceKernel<Quotation>
     public override void SaveItems((DateTime first, DateTime second) dateRange)
     {
         throw new NotImplementedException("SaveItems");
-    }
-
-    public override void SaveForceTransformations()
-    {
-        throw new NotImplementedException("SaveForceTransformations");
     }
 }

@@ -90,7 +90,7 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
     {
         if (_selectedChart != null)
         {
-            SymbolViewModels[_selectedChart.Value].ChartControlBase.SaveForceTransformations();
+            SymbolViewModels[_selectedChart.Value].ChartControlBase.SaveTransitions();
         }
         return Task.CompletedTask;
     }

@@ -7,5 +7,4 @@ namespace Terminal.WinUI3.Contracts.Models;
 
 public interface IKernel
 {
-    
 }

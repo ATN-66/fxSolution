@@ -22,6 +22,7 @@ public class KernelService : IKernelService
 
     private readonly Dictionary<Symbol, Dictionary<ChartType, IDataSourceKernel<IChartItem>>> _dataSources = new();
     private readonly Dictionary<Symbol, Dictionary<ChartType, INotificationsKernel>> _notifications = new();
+    private readonly Dictionary<Symbol, IImpulsesKernel> _impulses = new();
 
     public KernelService(IChartService chartService, IFileService fileService)
     {
@@ -31,11 +32,16 @@ public class KernelService : IKernelService
 
     public void Initialize(IDictionary<Symbol, List<Quotation>> quotations)
     {
+        foreach (Symbol symbol in Enum.GetValues(typeof(Symbol)))
+        {
+            _impulses[symbol] = new Impulses(symbol, _fileService);
+        }
+
         foreach (var (symbol, symbolQuotations) in quotations)
         {
             var symbolKernels = new Dictionary<ChartType, IDataSourceKernel<IChartItem>>();
 
-            var thresholdKernel = new ThresholdBars(symbol, _thresholdsInPips[symbol], _digits[symbol], _fileService);
+            var thresholdKernel = new ThresholdBars(symbol, _thresholdsInPips[symbol], _digits[symbol], _impulses[symbol], _fileService);
             thresholdKernel.AddRange(symbolQuotations);
             symbolKernels[ChartType.ThresholdBars] = thresholdKernel;
 
@@ -60,7 +66,7 @@ public class KernelService : IKernelService
             }
         }
 
-        _chartService.Initialize(_dataSources, _notifications);
+        _chartService.Initialize(_dataSources, _impulses, _notifications);
     }
 
     public void Add(Quotation quotation)

@@ -45,7 +45,6 @@ public class Candlesticks : DataSourceKernel<Candlestick>
 
         Items.AddRange(candlesticks);
     }
-
     public override void Add(Quotation quotation)
     {
         if (Items[^1].Start.AddMinutes(1) > quotation.Start)
@@ -84,7 +83,6 @@ public class Candlesticks : DataSourceKernel<Candlestick>
             Items.Add(newCandlestick);
         }
     }
-
     public override int FindIndex(DateTime dateTime)
     {
         for (var i = 0; i < Items.Count; i++)
@@ -97,20 +95,13 @@ public class Candlesticks : DataSourceKernel<Candlestick>
 
         return -1;
     }
-
     public override Candlestick? FindItem(DateTime dateTime)
     {
         return Items.FirstOrDefault(t => t.Start.Equals(dateTime));
     }
-
     public override void SaveItems((DateTime first, DateTime second) dateRange)
     {
         var items = Items.Where(t => t.Start >= dateRange.first && t.End <= dateRange.second);
         SaveItemsToJson(items, _symbol, GetType().Name.ToLower());
-    }
-
-    public override void SaveForceTransformations()
-    {
-        
     }
 }

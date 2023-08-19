@@ -17,9 +17,6 @@ using Terminal.WinUI3.Models.Chart;
 using Terminal.WinUI3.Models.Kernels;
 using Terminal.WinUI3.Contracts.Models;
 using Terminal.WinUI3.Models.Notifications;
-using CommunityToolkit.Mvvm.Messaging;
-using Terminal.WinUI3.Helpers;
-using Terminal.WinUI3.Messenger.Chart;
 
 namespace Terminal.WinUI3.Controls.Chart.Tick;
 
@@ -28,7 +25,7 @@ public class TickChartControl : ChartControl<Quotation, Quotations>
     private Vector2[] _askData = null!;
     private Vector2[] _bidData = null!;
 
-    public TickChartControl(IConfiguration configuration, ChartSettings chartSettings, double tickValue, Quotations ticks, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, chartSettings, tickValue, ticks, notifications, baseColor, quoteColor, logger)
+    public TickChartControl(IConfiguration configuration, ChartSettings chartSettings, double tickValue, Quotations ticks, IImpulsesKernel impulses, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, chartSettings, tickValue, ticks, impulses, notifications, baseColor, quoteColor, logger)
     {
         DefaultStyleKey = typeof(TickChartControl);
     }
@@ -247,8 +244,7 @@ public class TickChartControl : ChartControl<Quotation, Quotations>
     public override void RepeatSelectedNotification()
     {
         throw new NotImplementedException("RepeatSelectedNotification");
-
-        var notification = Notifications.GetSelectedNotification(Symbol, ViewPort);
+        //var notification = Notifications.GetSelectedNotification(Symbol, ViewPort);
         //StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.RepeatSelectedNotification) { ChartType = ChartType, Symbol = Symbol, Notification = notification }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
     }
     public override void OnRepeatSelectedNotification(NotificationBase notification)
@@ -259,7 +255,7 @@ public class TickChartControl : ChartControl<Quotation, Quotations>
     {
         
     }
-    public override void SaveForceTransformations()
+    public override void SaveTransitions()
     {
         
     }

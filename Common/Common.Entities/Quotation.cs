@@ -68,6 +68,24 @@ public class Quotation : IChartItem, IComparable
         }
     }
 
+    public double Price(Direction direction, int digit)
+    {
+        var tempNumber = Ask * digit;
+        var lastDigit = (int)tempNumber % 10d;
+        tempNumber = direction switch
+        {
+            Direction.Down when lastDigit <= 5d => Math.Floor(tempNumber / 10d) * 10d,
+            Direction.Down => Math.Floor(tempNumber / 10d) * 10d + 5d,
+            Direction.Up when lastDigit < 5d => Math.Floor(tempNumber / 10d) * 10d - 5d,
+            Direction.Up => Math.Floor(tempNumber / 10d) * 10d,
+            Direction.NaN => throw new ArgumentOutOfRangeException(nameof(direction), direction, @"invalid direction"),
+            _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, @"invalid direction")
+        };
+
+        var result = tempNumber / digit;
+        return result;
+    }
+
     public override string ToString()
     {
         return $"{Symbol}, {Start:D}, {Start:T}";

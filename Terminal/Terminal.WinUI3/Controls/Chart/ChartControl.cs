@@ -38,15 +38,21 @@ public abstract partial class ChartControl<TItem, TDataSourceKernel> : ChartCont
     private const float SquareSize = 10.0f;
     private const float ProximityThresholdStatic = 5.0f;
 
-    protected ChartControl(IConfiguration configuration, ChartSettings chartSettings, double tickValue, TDataSourceKernel dataSource, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(configuration, chartSettings, tickValue, baseColor, quoteColor, logger)
+    protected ChartControl(IConfiguration configuration, ChartSettings chartSettings, double tickValue, TDataSourceKernel dataSource, IImpulsesKernel impulses, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<ChartControlBase> logger) : base(configuration, chartSettings, tickValue, baseColor, quoteColor, logger)
     {
         DataSource = dataSource;
+        Impulses = impulses; 
         Notifications = notifications;
 
         StrongReferenceMessenger.Default.Register<ChartControl<TItem, TDataSourceKernel>, OrderAcceptMessage, CommunicationToken>(recipient: this, token: new SymbolToken(Symbol), handler: (recipient, message) => recipient.Receive(message));
     }
 
     protected TDataSourceKernel DataSource
+    {
+        get;
+    }
+
+    protected IImpulsesKernel Impulses
     {
         get;
     }

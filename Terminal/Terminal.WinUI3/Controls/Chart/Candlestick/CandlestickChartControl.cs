@@ -35,7 +35,7 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
     private int _ocThickness = MinOcThickness;
     private int _hlThickness = (MinOcThickness - 1) / 2;
 
-    public CandlestickChartControl(IConfiguration configuration, ChartSettings chartSettings, double tickValue, Candlesticks candlesticks, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, chartSettings, tickValue, candlesticks, notifications, baseColor, quoteColor, logger)
+    public CandlestickChartControl(IConfiguration configuration, ChartSettings chartSettings, double tickValue, Candlesticks candlesticks, IImpulsesKernel impulses, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, chartSettings, tickValue, candlesticks, impulses, notifications, baseColor, quoteColor, logger)
     {
         DefaultStyleKey = typeof(CandlestickChartControl);
     }
@@ -371,8 +371,7 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
     {
         DataSource.SaveItems(Notifications.GetDateTimeRange());
     }
-    public override void SaveForceTransformations()
+    public override void SaveTransitions()
     {
-        
     }
 }
