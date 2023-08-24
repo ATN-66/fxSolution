@@ -103,8 +103,7 @@
                     <AppBarToggleButton Icon="Up" IsChecked="{x:Bind Path=ViewModel.IsVerticalLineRequested, Mode=TwoWay}" />
                     <AppBarToggleButton Icon="Forward" IsChecked="{x:Bind Path=ViewModel.IsHorizontalLineRequested, Mode=TwoWay}" />
                     <AppBarSeparator />
-                    <AppBarButton Command="{x:Bind Path=ViewModel.DebugOneCommand, Mode=OneWay}" Label="Debug 1" />
-                    <AppBarButton Command="{x:Bind Path=ViewModel.DebugTwoCommand, Mode=OneWay}" Label="Debug 2" />
+                    <AppBarButton Command="{x:Bind Path=ViewModel.SaveCommand, Mode=OneWay}" Label="Save" />
                 </CommandBar>
             </StackPanel>
         </Grid>

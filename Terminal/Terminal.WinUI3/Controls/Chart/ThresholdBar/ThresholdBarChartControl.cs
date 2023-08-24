@@ -24,12 +24,19 @@ namespace Terminal.WinUI3.Controls.Chart.ThresholdBar;
 
 public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.ThresholdBar, ThresholdBars>
 {
+    readonly Color _leaderImpulseColor = Color.FromArgb(255, 255, 255, 255); // Alpha set to 128 for semi-opacity
+
     private Vector2[] _thinOpen = null!;
     private Vector2[] _thinClose = null!;
-    private DateTime[] _dateTime = null!;
+    private Vector2[] _thickOpen = null!;
+    private Vector2[] _thickClose = null!;
+    private DateTime[] _startDateTime = null!;
+    private DateTime[] _endDateTime = null!;
 
-    private const int MinOcThickness = 2;
-    private int _ocThickness = MinOcThickness;
+    private const int MinThinOCThickness = 1;
+    private const int MinThickOCThickness = 3;
+    private int _thinOCThickness = MinThinOCThickness;
+    private int _thickOCThickness = MinThickOCThickness;
     private const int Space = 1;
 
     public ThresholdBarChartControl(IConfiguration configuration, ChartSettings chartSettings, double tickValue, ThresholdBars thresholdBars, IImpulsesKernel impulses, INotificationsKernel notifications, Color baseColor, Color quoteColor, ILogger<Base.ChartControlBase> logger) : base(configuration, chartSettings, tickValue, thresholdBars, impulses, notifications, baseColor, quoteColor, logger)
@@ -39,7 +46,7 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
 
     protected override int CalculateMaxUnits()
     {
-        return (int)Math.Floor((GraphWidth - Space) / (MinOcThickness + Space));
+        return (int)Math.Floor((GraphWidth - Space) / (MinThickOCThickness + Space));
     }
 
     protected override void GraphCanvas_OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
@@ -49,10 +56,12 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
 
         CanvasGeometry thinOpenCloseUpGeometries;
         CanvasGeometry thinOpenCloseDownGeometries;
+        CanvasGeometry thickOpenCloseUpGeometries;
+        CanvasGeometry thickOpenCloseDownGeometries;
 
         DrawData();
+        DrawImpulses();
         DrawNotifications();
-        Execute();
         return;
 
         void DrawData()
@@ -61,37 +70,56 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
             {
                 using var thinOpenCloseUpCpb = new CanvasPathBuilder(args.DrawingSession);
                 using var thinOpenCloseDownCpb = new CanvasPathBuilder(args.DrawingSession);
-                var end = Math.Min(Units - HorizontalShift, DataSource.Count);
+                using var thickOpenCloseUpCpb = new CanvasPathBuilder(args.DrawingSession);
+                using var thickOpenCloseDownCpb = new CanvasPathBuilder(args.DrawingSession);
 
+                var end = Math.Min(Units - HorizontalShift, DataSource.Count);
                 for (var unit = 0; unit < HorizontalShift; unit++)
                 {
-                    _dateTime[unit] = DateTime.MaxValue;
+                    _startDateTime[unit] = DateTime.MaxValue;
+                    _endDateTime[unit] = DateTime.MaxValue;
                 }
 
                 for (var unit = 0; unit < end; unit++)
                 {
                     var thinOpen = DataSource[unit + KernelShift].OpenArray[0];
                     var thinClose = DataSource[unit + KernelShift].CloseArray[0];
-                    var dateTime = DataSource[unit + KernelShift].Start;
+                    var thickOpen = DataSource[unit + KernelShift].OpenArray[1];
+                    var thickClose = DataSource[unit + KernelShift].CloseArray[1];
+                    var startDateTime = DataSource[unit + KernelShift].Start;
+                    var endDateTime = DataSource[unit + KernelShift].End;
 
                     var yThinOpen = (ViewPort.High - thinOpen) / Digits * VerticalScale;
                     var yThinClose = (ViewPort.High - thinClose) / Digits * VerticalScale;
+                    var yThickOpen = (ViewPort.High - thickOpen) / Digits * VerticalScale;
+                    var yThickClose = (ViewPort.High - thickClose) / Digits * VerticalScale;
 
                     _thinOpen[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yThinOpen) : (float)yThinOpen;
                     _thinClose[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yThinClose) : (float)yThinClose;
-                    _dateTime[unit + HorizontalShift] = dateTime;
+                    _thickOpen[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yThickOpen) : (float)yThickOpen;
+                    _thickClose[unit + HorizontalShift].Y = IsReversed ? (float)(GraphHeight - yThickClose) : (float)yThickClose;
+                    _startDateTime[unit + HorizontalShift] = startDateTime;
+                    _endDateTime[unit + HorizontalShift] = endDateTime;
 
-                    if (thinOpen < thinClose)
+                    if (thinOpen < thickClose)
                     {
                         thinOpenCloseUpCpb.BeginFigure(_thinClose[unit + HorizontalShift]);
                         thinOpenCloseUpCpb.AddLine(_thinOpen[unit + HorizontalShift]);
                         thinOpenCloseUpCpb.EndFigure(CanvasFigureLoop.Open);
+
+                        thickOpenCloseUpCpb.BeginFigure(_thickClose[unit + HorizontalShift]);
+                        thickOpenCloseUpCpb.AddLine(_thickOpen[unit + HorizontalShift]);
+                        thickOpenCloseUpCpb.EndFigure(CanvasFigureLoop.Open);
                     }
-                    else if (thinOpen > thinClose)
+                    else if (thinOpen > thickClose)
                     {
                         thinOpenCloseDownCpb.BeginFigure(_thinClose[unit + HorizontalShift]);
                         thinOpenCloseDownCpb.AddLine(_thinOpen[unit + HorizontalShift]);
                         thinOpenCloseDownCpb.EndFigure(CanvasFigureLoop.Open);
+
+                        thickOpenCloseDownCpb.BeginFigure(_thickClose[unit + HorizontalShift]);
+                        thickOpenCloseDownCpb.AddLine(_thickOpen[unit + HorizontalShift]);
+                        thickOpenCloseDownCpb.EndFigure(CanvasFigureLoop.Open);
                     }
                     else
                     {
@@ -101,11 +129,67 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
 
                 thinOpenCloseUpGeometries = CanvasGeometry.CreatePath(thinOpenCloseUpCpb);
                 thinOpenCloseDownGeometries = CanvasGeometry.CreatePath(thinOpenCloseDownCpb);
+                thickOpenCloseUpGeometries = CanvasGeometry.CreatePath(thickOpenCloseUpCpb);
+                thickOpenCloseDownGeometries = CanvasGeometry.CreatePath(thickOpenCloseDownCpb);
+
+                args.DrawingSession.DrawGeometry(thinOpenCloseUpGeometries, BaseColor, _thinOCThickness);
+                args.DrawingSession.DrawGeometry(thinOpenCloseDownGeometries, QuoteColor, _thinOCThickness);
+                //args.DrawingSession.DrawGeometry(thinOpenCloseUpGeometries, Color.FromArgb(255, 0, 128, 0), _thinOCThickness);
+                //args.DrawingSession.DrawGeometry(thinOpenCloseDownGeometries, Color.FromArgb(255, 128, 0, 0), _thinOCThickness);
+                args.DrawingSession.DrawGeometry(thickOpenCloseUpGeometries, BaseColor, _thickOCThickness);
+                args.DrawingSession.DrawGeometry(thickOpenCloseDownGeometries, QuoteColor, _thickOCThickness);
             }
             catch (Exception e)
             {
                 Debug.WriteLine(e);
                 throw;
+            }
+        }
+
+        void DrawImpulses()
+        {
+            try
+            {
+                var impulses = Impulses.GetAllImpulses(ViewPort);
+                foreach (var impulse in impulses)
+                {
+                    var start = _endDateTime.FirstOrDefault(t => impulse.Start >= t && impulse.Start <= t);//todo
+                    int startIndex;
+                    if (start == DateTime.MinValue || start == DateTime.MaxValue)
+                    {
+                        start = _startDateTime.FirstOrDefault(t => impulse.Start >= t && impulse.Start <= t);
+                        //Debug.Assert(start != DateTime.MinValue && start != DateTime.MaxValue);
+                        startIndex = Array.IndexOf(_startDateTime, start);
+                    }
+                    else
+                    {
+                        startIndex = Array.IndexOf(_endDateTime, start);
+                    }
+
+                    var end = _endDateTime.FirstOrDefault(t => impulse.End >= t && impulse.End <= t);//todo
+                    var endIndex = Array.IndexOf(_endDateTime, end);
+
+                    impulse.StartPoint.X = _thinOpen[startIndex].X;
+                    var yStartPoint = (float)((ViewPort.High - impulse.Open) / Digits * VerticalScale);
+                    impulse.StartPoint.Y = IsReversed ? (float)(GraphHeight - yStartPoint) : yStartPoint;
+
+                    impulse.EndPoint.X = _thinOpen[endIndex].X;
+                    var yEndPoint = (float)((ViewPort.High - impulse.Close) / Digits * VerticalScale);
+                    impulse.EndPoint.Y = IsReversed ? (float)(GraphHeight - yEndPoint) : yEndPoint;
+
+                    if (impulse.IsLeader)
+                    {
+                        args.DrawingSession.DrawLine(impulse.StartPoint, impulse.EndPoint, _leaderImpulseColor, 1f, new CanvasStrokeStyle { DashStyle = CanvasDashStyle.Solid });
+                    }
+                    else
+                    {
+                        args.DrawingSession.DrawLine(impulse.StartPoint, impulse.EndPoint, Colors.White, 1f, new CanvasStrokeStyle { DashStyle = CanvasDashStyle.Solid });
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
             }
         }
 
@@ -117,7 +201,7 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
                 switch (notification.Type)
                 {
                     case NotificationType.ThresholdBar:
-                        var index = Array.IndexOf(_dateTime, ((IDateTimeNotification)notification).Start);
+                        var index = Array.IndexOf(_startDateTime, ((IDateTimeNotification)notification).Start);
                         notification.StartPoint.X = notification.EndPoint.X = _thinOpen[index].X;
                         notification.StartPoint.Y = (float)GraphHeight;
                         notification.EndPoint.Y = 0f;
@@ -135,13 +219,6 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
                 }
             }
         }
-
-        void Execute()
-        {
-            args.DrawingSession.DrawGeometry(thinOpenCloseUpGeometries, BaseColor, _ocThickness);
-            args.DrawingSession.DrawGeometry(thinOpenCloseDownGeometries, QuoteColor, _ocThickness);
-        }
-
         void DrawLine(NotificationBase? notification)
         {
             if (!notification!.IsSelected)
@@ -164,7 +241,7 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
         {
             DeselectAllLines();
             var index = GetIndex((float)e.GetCurrentPoint(GraphCanvas).Position.X, _thinOpen);
-            var closestDateTime = _dateTime[index + HorizontalShift];
+            var closestDateTime = _startDateTime[index + HorizontalShift];
             var unit = index + KernelShift;
             Debug.Assert(closestDateTime == DataSource[unit].Start);
 
@@ -205,7 +282,10 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
 
         _thinOpen = new Vector2[Units];
         _thinClose = new Vector2[Units];
-        _dateTime = new DateTime[Units];
+        _thickOpen = new Vector2[Units];
+        _thickClose = new Vector2[Units];
+        _startDateTime = new DateTime[Units];
+        _endDateTime = new DateTime[Units];
 
         var chartIndex = 0;
         do
@@ -213,6 +293,8 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
             var x = (float)((Units - chartIndex - 1) * HorizontalScale);
             _thinOpen[chartIndex] = new Vector2 { X = x };
             _thinClose[chartIndex] = new Vector2 { X = x };
+            _thickOpen[chartIndex] = new Vector2 { X = x };
+            _thickClose[chartIndex] = new Vector2 { X = x };
         } while (++chartIndex < Units);
 
         EnqueueMessage(MessageType.Trace, $"W: {GraphWidth}, maxU: {MaxUnits}, U%: {UnitsPercent}, U: {Units}, HS: {HorizontalShift}, KS: {KernelShift}, KS%: {KernelShiftPercent}");
@@ -221,11 +303,10 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
 
     private void AdjustThickness()
     {
-        _ocThickness = (int)Math.Floor((GraphWidth - (Units - 1) * Space) / Units);
-        if (_ocThickness < MinOcThickness)
-        {
-            _ocThickness = MinOcThickness;
-        }
+        _thickOCThickness = (int)Math.Floor((GraphWidth - (Units - 1) * Space) / Units);
+        _thinOCThickness = _thickOCThickness / 3;
+        if (_thinOCThickness < MinThinOCThickness) { _thinOCThickness = MinThinOCThickness; }
+        if (_thickOCThickness < MinThickOCThickness) { _thickOCThickness = MinThickOCThickness; }
     }
 
     protected override void MoveSelectedNotification(double deltaX, double deltaY)
@@ -308,12 +389,9 @@ public sealed class ThresholdBarChartControl : ChartControl<Models.Entities.Thre
         EnqueueMessage(MessageType.Trace, notification.ToString()!);
         Invalidate();
     }
-    public override void SaveItems()
+    public override void Save()
     {
-        DataSource.SaveItems(Notifications.GetDateTimeRange());
-    }
-    public override void SaveTransitions()
-    {
-        Impulses.SaveTransitions();
+        DataSource.Save(Notifications.GetDateTimeRange());
+        Impulses.Save(Notifications.GetDateTimeRange());
     }
 }

@@ -17,8 +17,8 @@ public class KernelService : IKernelService
     private readonly IChartService _chartService;
     private readonly IFileService _fileService;
 
-    private readonly Dictionary<Symbol, int> _thresholdsInPips = new() { { Symbol.EURUSD, 18 }, { Symbol.GBPUSD, 30 }, { Symbol.USDJPY, 20 }, { Symbol.EURGBP, 30 }, { Symbol.EURJPY, 35 }, { Symbol.GBPJPY, 50 } };//todo:
-    private readonly Dictionary<Symbol, int> _digits = new() { { Symbol.EURUSD, 100000 }, { Symbol.GBPUSD, 100000 }, { Symbol.USDJPY, 1000 }, { Symbol.EURGBP, 100000 }, { Symbol.EURJPY, 1000 }, { Symbol.GBPJPY, 1000 } };//todo
+    private readonly Dictionary<Symbol, int> _thresholdsInPips = new() { { Symbol.EURUSD, 20 }, {     Symbol.GBPUSD, 30 }, {     Symbol.USDJPY, 20 }, {   Symbol.EURGBP, 20 }, {     Symbol.EURJPY, 30 }, {   Symbol.GBPJPY, 40 } };//todo:
+    private readonly Dictionary<Symbol, int> _digits = new() {           { Symbol.EURUSD, 100000 }, { Symbol.GBPUSD, 100000 }, { Symbol.USDJPY, 1000 }, { Symbol.EURGBP, 100000 }, { Symbol.EURJPY, 1000 }, { Symbol.GBPJPY, 1000 } };//todo
 
     private readonly Dictionary<Symbol, Dictionary<ChartType, IDataSourceKernel<IChartItem>>> _dataSources = new();
     private readonly Dictionary<Symbol, Dictionary<ChartType, INotificationsKernel>> _notifications = new();
@@ -30,7 +30,7 @@ public class KernelService : IKernelService
         _fileService = fileService;
     }
 
-    public void Initialize(IDictionary<Symbol, List<Quotation>> quotations)
+    public void Initialize(IDictionary<Symbol, List<Quotation>> quotations, CancellationToken token)
     {
         foreach (Symbol symbol in Enum.GetValues(typeof(Symbol)))
         {
@@ -43,6 +43,7 @@ public class KernelService : IKernelService
 
             var thresholdKernel = new ThresholdBars(symbol, _thresholdsInPips[symbol], _digits[symbol], _impulses[symbol], _fileService);
             thresholdKernel.AddRange(symbolQuotations);
+            thresholdKernel.StartAsync(token);
             symbolKernels[ChartType.ThresholdBars] = thresholdKernel;
 
             var candlestickKernel = new Candlesticks(symbol, _fileService);

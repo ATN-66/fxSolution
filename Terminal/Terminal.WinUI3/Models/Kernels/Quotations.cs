@@ -14,7 +14,7 @@ public class Quotations : DataSourceKernel<Quotation>
     {
     }
 
-    public override void AddRange(IEnumerable<Quotation> quotations)
+    public override void AddRange(List<Quotation> quotations)
     {
         Items.AddRange(quotations);
     }
@@ -30,8 +30,8 @@ public class Quotations : DataSourceKernel<Quotation>
     {
         throw new NotImplementedException("FindItem");
     }
-    public override void SaveItems((DateTime first, DateTime second) dateRange)
+    public override void Save((DateTime first, DateTime second) dateRange)
     {
-        throw new NotImplementedException("SaveItems");
+        throw new NotImplementedException("Save");
     }
 }

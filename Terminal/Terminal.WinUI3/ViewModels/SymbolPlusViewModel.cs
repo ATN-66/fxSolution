@@ -79,22 +79,12 @@ public partial class SymbolPlusViewModel : ObservableRecipient, INavigationAware
     {
         if (_selectedChart != null)
         {
-            SymbolViewModels[_selectedChart.Value].ChartControlBase.SaveItems();
+            SymbolViewModels[_selectedChart.Value].ChartControlBase.Save();
         }
 
         return Task.CompletedTask;
     }
 
-    [RelayCommand]
-    private Task DebugTwoAsync()
-    {
-        if (_selectedChart != null)
-        {
-            SymbolViewModels[_selectedChart.Value].ChartControlBase.SaveTransitions();
-        }
-        return Task.CompletedTask;
-    }
-   
     partial void OnCenturiesPercentChanged(int value)
     {
         SymbolViewModels[0].CenturiesPercent = value;

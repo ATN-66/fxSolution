@@ -10,51 +10,21 @@ namespace Terminal.WinUI3.Models.Entities;
 
 public class Transition
 {
-    public int ID
-    {
-        get;
-    }
-    public DateTime DateTime
-    {
-        get;
-    }
-    public double Close
-    {
-        get;
-    }
+    public int ID { get; }
+    public DateTime End { get; }
+    public double Close { get; }
+    [JsonConverter(typeof(StringEnumConverter))] public Stage Stage { get; }
 
-    [JsonConverter(typeof(StringEnumConverter))]
-    public Force Force
-    {
-        get;
-    }
-
-    [JsonConverter(typeof(StringEnumConverter))]
-    public TransitionType Type
-    {
-        get;
-    }
-
-    public Transition(int id, double close, DateTime dateTime,  Force force, TransitionType transitionType)
-    {
-        ID = id;
-        DateTime = dateTime;
-        Close = close;
-        Force = force;
-        Type = transitionType;
-    }
-
-    public Transition(int id, ThresholdBar tBar, TransitionType transitionType)
+    public Transition(int id, ThresholdBar tBar)
     {
         ID = id;
         Close = tBar.Close;
-        DateTime = tBar.End;
-        Force = tBar.Force;
-        Type = transitionType;
+        End = tBar.End;
+        Stage = tBar.Stage;
     }
 
     public override string ToString()
     {
-        return $"ID: {ID}, DateTime: {DateTime}, Close: {Close}, force: {Force}, Type: {Type}";
+        return $"ID: {ID}, End: {End}, Close: {Close}, stage: {Stage}";
     }
 }

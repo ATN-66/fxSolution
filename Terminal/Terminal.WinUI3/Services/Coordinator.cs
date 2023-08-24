@@ -66,38 +66,43 @@ public class Coordinator : ICoordinator
     public async Task StartAsync(CancellationToken token)
     {
         _splashScreenService.DisplaySplash();
+        
+        var (executiveTask, executiveCall, executiveChannel) = await _executiveConsumerService.StartAsync(_responses, token).ConfigureAwait(false);
+        _executiveCall = executiveCall;
+        var executiveProcessingTask = ExecutiveProcessingTaskAsync(token);
+        await RequestAccountPropertiesAsync().ConfigureAwait(false);
+        await RequestTickValuesAsync().ConfigureAwait(false);
+        await _accountReady.Task.ConfigureAwait(false);
+
+        //todo: remove this
+        //_startDateTime = new DateTime(2023, 6, 5, 0, 0, 0);
+        //  _nowDateTime = new DateTime(2023, 6, 5, 23, 0, 0);
+
+        var diff = (_nowDateTime - _startDateTime).Hours + 1;
+        Debug.WriteLine($"Coordinator.StartAsync: difference = {diff} hours");
+        var historicalData = await _dataService.LoadDataAsync(_startDateTime, _nowDateTime).ConfigureAwait(false);
+        // todo: load notifications ...
+        _kernelService.Initialize(historicalData, token);
+
+        var (dataTask, dataChannel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
+        var dataProcessingTask = DataProcessingTaskAsync(token);
+
+        await _dispatcherService.ExecuteOnUIThreadAsync(() =>
+        {
+            _splashScreenService.HideSplash();
+        }).ConfigureAwait(true);
+
+        //await Task.WhenAll(executiveTask, executiveProcessingTask).ConfigureAwait(false);
+        await Task.WhenAll(dataTask, dataProcessingTask, executiveTask, executiveProcessingTask).ConfigureAwait(false);
 
         try
         {
-            var (executiveTask, executiveCall, executiveChannel) = await _executiveConsumerService.StartAsync(_responses, token).ConfigureAwait(false);
-            _executiveCall = executiveCall;
-            var executiveProcessingTask = ExecutiveProcessingTaskAsync(token);
-            await RequestAccountPropertiesAsync().ConfigureAwait(false);
-            await RequestTickValuesAsync().ConfigureAwait(false);
-            await _accountReady.Task.ConfigureAwait(false);
-
-            //todo: remove this
-            //_startDateTime = new DateTime(2023, 6, 5, 0, 0, 0);
-            //  _nowDateTime = new DateTime(2023, 6, 5, 23, 0, 0);
-
-            var diff = (_nowDateTime - _startDateTime).Hours + 1;
-            Debug.WriteLine($"Coordinator.StartAsync: difference = {diff} hours");
-            var historicalData = await _dataService.LoadDataAsync(_startDateTime, _nowDateTime).ConfigureAwait(false);
-            // todo: load notifications ...
-            _kernelService.Initialize(historicalData);
-
-            var (dataTask, dataChannel) = await _dataService.StartAsync(_liveDataQueue, token).ConfigureAwait(false);
-            var dataProcessingTask = DataProcessingTaskAsync(token);
-
-            await _dispatcherService.ExecuteOnUIThreadAsync(() =>
-            {
-                _splashScreenService.HideSplash();
-            }).ConfigureAwait(true);
-            
-            //await Task.WhenAll(executiveTask, executiveProcessingTask).ConfigureAwait(false);
-            await Task.WhenAll(dataTask, dataProcessingTask, executiveTask, executiveProcessingTask).ConfigureAwait(false);
             await dataChannel.ShutdownAsync().ConfigureAwait(false);
             await executiveChannel.ShutdownAsync().ConfigureAwait(false);
+        }
+        catch (RpcException rpcException)
+        {
+            LogExceptionHelper.LogException(_logger, rpcException, "");
         }
         catch (Exception exception)
         {

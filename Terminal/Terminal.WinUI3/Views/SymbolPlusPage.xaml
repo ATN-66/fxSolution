@@ -163,8 +163,7 @@
                         IsEnabled="{x:Bind Path=ViewModel.IsHorizontalLineRequestEnabled, Mode=OneWay}" />
                     <AppBarSeparator />
                     <AppBarSeparator />
-                    <AppBarButton Command="{x:Bind Path=ViewModel.DebugOneCommand, Mode=OneWay}" Label="Debug 1" />
-                    <AppBarButton Command="{x:Bind Path=ViewModel.DebugTwoCommand, Mode=OneWay}" Label="Debug 2" />
+                    <AppBarButton Command="{x:Bind Path=ViewModel.DebugOneCommand, Mode=OneWay}" Label="Save" />
                 </CommandBar>
             </StackPanel>
         </Grid>

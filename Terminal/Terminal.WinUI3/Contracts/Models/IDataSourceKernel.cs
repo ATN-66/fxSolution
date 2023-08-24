@@ -11,6 +11,6 @@ public interface IDataSourceKernel<out TItem> : IKernel where TItem : IChartItem
 {
     int Count { get; }
     TItem this[int i] { get; }
-    void AddRange(IEnumerable<Quotation> quotations);
+    void AddRange(List<Quotation> quotations);
     void Add(Quotation quotation);
 }

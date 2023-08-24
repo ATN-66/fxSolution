@@ -185,18 +185,10 @@ public partial class SymbolViewModel : ObservableRecipient, INavigationAware
     }
 
     [RelayCommand]
-    private Task DebugOneAsync()
+    private Task Save()
     {
-        ChartControlBase.SaveItems();
+        ChartControlBase.Save();
         //_chartService.ListAllRegisteredCharts();
-        return Task.CompletedTask;
-    }
-
-    [RelayCommand]
-    private Task DebugTwoAsync()
-    {
-        ChartControlBase.SaveTransitions();
-        //_chartService.ListAllNonNullCharts();
         return Task.CompletedTask;
     }
 

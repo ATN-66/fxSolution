@@ -3,7 +3,9 @@
   |                                                       Impulse.cs |
   +------------------------------------------------------------------+*/
 
+using System.Numerics;
 using Common.Entities;
+using Newtonsoft.Json;
 
 namespace Terminal.WinUI3.Models.Entities;
 
@@ -14,15 +16,13 @@ public class Impulse
     public double Close { get; set; }
     public DateTime Start { get; set; }
     public DateTime End { get; set; }
-    public Direction Direction { get; init; }
-    public bool IsLeader { get; set; }
-    public Direction OppositeDirection =>
-        Direction switch
-        {
-            Direction.Up => Direction.Down,
-            Direction.Down => Direction.Up,
-            _ => Direction.NaN
-        };
+
+    [JsonIgnore] public Direction Direction { get; }
+    [JsonIgnore] public bool IsLeader { get; set; }
+    [JsonIgnore] public Direction OppositeDirection => Direction == Direction.Up ? Direction.Down : Direction.Up;
+
+    [JsonIgnore] public Vector2 StartPoint;
+    [JsonIgnore] public Vector2 EndPoint;
 
     public Impulse(int id, double open, double close, DateTime start, DateTime end, Direction direction)
     {
@@ -36,6 +36,6 @@ public class Impulse
 
     public override string ToString()
     {
-        return $"direction:{Direction}, length:{Math.Abs(Open - Close)}, isLeader:{IsLeader}";
+        return $"direction:{Direction}, isLeader:{IsLeader}";
     } 
 }

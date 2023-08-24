@@ -85,22 +85,43 @@ public class Notifications : INotificationsKernel
 
     public (DateTime, DateTime) GetDateTimeRange() 
     {
-        var dateTimeNotifications = _items.OfType<IDateTimeNotification>().Take(2).ToList();
-        if (dateTimeNotifications.Count < 2)
+        var dateTimeNotifications = _items.OfType<IDateTimeNotification>().ToList();
+        if (!dateTimeNotifications.Any())
         {
-            throw new InvalidOperationException("There must be at least two items that implement IDateTimeNotification.");
+            return (DateTime.MinValue, DateTime.MaxValue);
         }
 
-        var startDate = dateTimeNotifications[0].Start;
-        DateTime endDate;
-        if (dateTimeNotifications[1] is IDateTimeRangeNotification dateTimeRangeNotification)
+        if (dateTimeNotifications.Count == 1)
         {
-            endDate = dateTimeRangeNotification.End;
+            return (dateTimeNotifications[0].Start, DateTime.MaxValue);
         }
-        else
+
+        if (dateTimeNotifications.Count >= 2)
         {
-            endDate = dateTimeNotifications[1].Start;
+            var secondLatestStart = dateTimeNotifications[^2].Start;
+            var latestStart = dateTimeNotifications[^1].Start;
+            return (secondLatestStart, latestStart);
         }
-        return (startDate, endDate);
+
+        // Fallback case (should not be hit)
+        throw new InvalidOperationException("Unexpected condition in GetDateTimeRange.");
+
+
+        //var dateTimeNotifications = _items.OfType<IDateTimeNotification>().Take(2).ToList();
+        //if (dateTimeNotifications.Count < 2)
+        //{
+        //    throw new InvalidOperationException("There must be at least two items that implement IDateTimeNotification.");
+        //}
+        //var startDate = dateTimeNotifications[0].Start;
+        //DateTime endDate;
+        //if (dateTimeNotifications[1] is IDateTimeRangeNotification dateTimeRangeNotification)
+        //{
+        //    endDate = dateTimeRangeNotification.End;
+        //}
+        //else
+        //{
+        //    endDate = dateTimeNotifications[1].Start;
+        //}
+        //return (startDate, endDate);
     }
 }

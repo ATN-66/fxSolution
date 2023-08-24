@@ -24,6 +24,8 @@ namespace Terminal.WinUI3.Controls.Chart.Candlestick;
 
 public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candlestick, Candlesticks>
 {
+    readonly Color _leaderImpulseColor = Color.FromArgb(255, 255, 255, 255); // Alpha set to 128 for semi-opacity
+
     private Vector2[] _high = null!;
     private Vector2[] _low = null!;
     private Vector2[] _open = null!;
@@ -57,8 +59,8 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
         CanvasGeometry flatGeometries;
 
         DrawData();
+        DrawImpulses();
         DrawNotifications();
-        Execute();
         return;
 
         void DrawData()
@@ -130,11 +132,51 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
                 openCloseUpGeometries = CanvasGeometry.CreatePath(openCloseUpCpb);
                 openCloseDownGeometries = CanvasGeometry.CreatePath(openCloseDownCpb);
                 flatGeometries = CanvasGeometry.CreatePath(flatCpb);
+
+                args.DrawingSession.DrawGeometry(highLowUpGeometries, BaseColor, _hlThickness);
+                args.DrawingSession.DrawGeometry(highLowDownGeometries, QuoteColor, _hlThickness);
+                args.DrawingSession.DrawGeometry(openCloseUpGeometries, BaseColor, _ocThickness);
+                args.DrawingSession.DrawGeometry(openCloseDownGeometries, QuoteColor, _ocThickness);
+                args.DrawingSession.DrawGeometry(flatGeometries, Colors.Gray, _hlThickness);
             }
             catch (Exception e)
             {
                 Debug.WriteLine(e);
                 throw;
+            }
+        }
+
+        void DrawImpulses()
+        {
+            try
+            {
+                var impulses = Impulses.GetAllImpulses(ViewPort);
+                foreach (var impulse in impulses)
+                {
+                    var startIndex = Array.IndexOf(_dateTime, new DateTime(impulse.Start.Year, impulse.Start.Month, impulse.Start.Day, impulse.Start.Hour, impulse.Start.Minute, 0));
+                    var endIndex = Array.IndexOf(_dateTime, new DateTime(impulse.End.Year, impulse.End.Month, impulse.End.Day, impulse.End.Hour, impulse.End.Minute, 0));
+
+                    impulse.StartPoint.X = _open[startIndex].X;
+                    var yStartPoint = (float)((ViewPort.High - impulse.Open) / Digits * VerticalScale);
+                    impulse.StartPoint.Y = IsReversed ? (float)(GraphHeight - yStartPoint) : yStartPoint;
+
+                    impulse.EndPoint.X = _open[endIndex].X;
+                    var yEndPoint = (float)((ViewPort.High - impulse.Close) / Digits * VerticalScale);
+                    impulse.EndPoint.Y = IsReversed ? (float)(GraphHeight - yEndPoint) : yEndPoint;
+
+                    if (impulse.IsLeader)
+                    {
+                        args.DrawingSession.DrawLine(impulse.StartPoint, impulse.EndPoint, _leaderImpulseColor, 2f, new CanvasStrokeStyle { DashStyle = CanvasDashStyle.Solid });
+                    }
+                    else
+                    {
+                        args.DrawingSession.DrawLine(impulse.StartPoint, impulse.EndPoint, Colors.LightGray, 1f, new CanvasStrokeStyle { DashStyle = CanvasDashStyle.Solid });
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
             }
         }
 
@@ -164,16 +206,6 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
                 }
             }
         }
-
-        void Execute()
-        {
-            args.DrawingSession.DrawGeometry(highLowUpGeometries, BaseColor, _hlThickness);
-            args.DrawingSession.DrawGeometry(highLowDownGeometries, QuoteColor, _hlThickness);
-            args.DrawingSession.DrawGeometry(openCloseUpGeometries, BaseColor, _ocThickness);
-            args.DrawingSession.DrawGeometry(openCloseDownGeometries, QuoteColor, _ocThickness);
-            args.DrawingSession.DrawGeometry(flatGeometries, Colors.Gray, _hlThickness);
-        }
-
         void DrawLine(NotificationBase? notification)
         {
             if (!notification!.IsSelected)
@@ -367,11 +399,8 @@ public sealed class CandlestickChartControl : ChartControl<Models.Entities.Candl
             EnqueueMessage(MessageType.Trace, notification.ToString());
         }
     }
-    public override void SaveItems()
+    public override void Save()
     {
-        DataSource.SaveItems(Notifications.GetDateTimeRange());
-    }
-    public override void SaveTransitions()
-    {
+        DataSource.Save(Notifications.GetDateTimeRange());
     }
 }

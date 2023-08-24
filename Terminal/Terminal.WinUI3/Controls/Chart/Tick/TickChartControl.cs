@@ -239,24 +239,20 @@ public class TickChartControl : ChartControl<Quotation, Quotations>
 
     protected override void MoveSelectedNotification(double deltaX, double deltaY)
     {
-        throw new NotImplementedException("TickChartControl: protected override void MoveSelectedNotification");
+        throw new NotImplementedException("TickChartControl: protected override void MoveSelectedNotification(double deltaX, double deltaY)");
     }
     public override void RepeatSelectedNotification()
     {
-        throw new NotImplementedException("RepeatSelectedNotification");
+        throw new NotImplementedException("TickChartControl: public override void RepeatSelectedNotification()");
         //var notification = Notifications.GetSelectedNotification(Symbol, ViewPort);
         //StrongReferenceMessenger.Default.Send(new ChartMessage(ChartEvent.RepeatSelectedNotification) { ChartType = ChartType, Symbol = Symbol, Notification = notification }, new CurrencyToken(CurrencyHelper.GetCurrency(Symbol, IsReversed)));
     }
     public override void OnRepeatSelectedNotification(NotificationBase notification)
     {
-        throw new NotImplementedException("TickChartControl: protected override void OnRepeatSelectedNotification");
+        throw new NotImplementedException("TickChartControl: public override void OnRepeatSelectedNotification(NotificationBase notification)");
     }
-    public override void SaveItems()
+    public override void Save()
     {
-        
-    }
-    public override void SaveTransitions()
-    {
-        
+        throw new NotImplementedException("TickChartControl: public override void Save()");
     }
 }

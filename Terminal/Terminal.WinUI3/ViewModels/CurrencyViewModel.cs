@@ -237,7 +237,7 @@ public partial class CurrencyViewModel : ObservableRecipient, INavigationAware, 
             var symbolViewModel = _symbolViewModelFactory.Create();
             symbolViewModel.Symbol = _symbols[i];
             symbolViewModel.IsReversed = _isReversed[i];
-            symbolViewModel.LoadChart(ChartType.Candlesticks);//todo: load from config
+            symbolViewModel.LoadChart(ChartType.ThresholdBars);//todo: load from config
             symbolViewModel.CenturiesPercent = CenturiesPercent;
             symbolViewModel.UnitsPercent = UnitsPercent;
             symbolViewModel.KernelShiftPercent = KernelShiftPercent;
